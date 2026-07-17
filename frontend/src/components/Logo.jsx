@@ -25,7 +25,6 @@ export default function Logo({ size = 22, subtitle = false, light = false }) {
             opacity="0.85"
             d="M12.7 10.6c.8 1 1.9 2 1.9 3.6a2.6 2.6 0 0 1-5.2.1c0-1 .5-1.9 1.1-2.5.2.6.7 1 1.3 1.2-.3-1 .3-1.9.9-2.4z"
           />
-          <circle cx="12" cy="20.4" r="1.3" fill="#17b7a4" />
         </svg>
       </span>
       <span className="brand-text">

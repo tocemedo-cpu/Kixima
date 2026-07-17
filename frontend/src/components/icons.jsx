@@ -64,17 +64,18 @@ export function Stars({ value = 0, size = 13 }) {
 }
 
 // Mapeia uma categoria a um ícone + gradiente para a "capa" do cartão.
+// Paleta de marca (sem verde) — tons de aço, vinho, âmbar, ameixa e grafite.
 const CATEGORY_VISUAL = {
-  'Válvulas': { icon: 'valve', from: '#243244', to: '#0e1620' },
-  'Hidráulica': { icon: 'hydraulic', from: '#123038', to: '#0b1a1e' },
+  'Válvulas': { icon: 'valve', from: '#2a2f3a', to: '#14161c' },
+  'Hidráulica': { icon: 'hydraulic', from: '#33241c', to: '#170f08' },
   'Inspeção & Ensaios': { icon: 'inspection', from: '#3a1f2a', to: '#170d13' },
-  'Logística & Transporte': { icon: 'truck', from: '#123322', to: '#0a1c13' },
-  'Engenharia': { icon: 'engineering', from: '#1f2a44', to: '#0d1220' },
-  'Equipamentos': { icon: 'equipment', from: '#332619', to: '#1a130c' },
+  'Logística & Transporte': { icon: 'truck', from: '#2b2733', to: '#14121a' },
+  'Engenharia': { icon: 'engineering', from: '#24272e', to: '#121317' },
+  'Equipamentos': { icon: 'equipment', from: '#332a19', to: '#1a130c' },
   'Formação & Certificação': { icon: 'certification', from: '#2c1f3a', to: '#140d1c' },
   'Materiais': { icon: 'materials', from: '#2a2622', to: '#141210' },
   'Offshore': { icon: 'offshore', from: '#3a1526', to: '#1a0a12' },
-  'Consultoria': { icon: 'consulting', from: '#22262e', to: '#111318' },
+  'Consultoria': { icon: 'consulting', from: '#262a31', to: '#131519' },
 };
 
 export function categoryVisual(category) {

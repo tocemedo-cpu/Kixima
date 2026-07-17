@@ -8,6 +8,7 @@ import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import { formatMoney } from '../../domain';
 import { useCart } from './CartContext';
 import { Icon, Stars, categoryVisual } from '../../components/icons';
+import CategoryArt from '../../components/CategoryArt';
 
 export default function Catalog() {
   const [products, setProducts] = useState(null);
@@ -112,13 +113,12 @@ export default function Catalog() {
       ) : (
         <div className="mk-grid">
           {filtered.map((p) => {
-            const vis = categoryVisual(p.category);
             const verified = p.supplier?.status === 'APROVADA';
             return (
               <div key={p.id} className="mk-card">
-                <div className="mk-cover" style={{ background: `radial-gradient(120% 120% at 30% 20%, ${vis.from}, ${vis.to})` }}>
+                <div className="mk-cover">
+                  <CategoryArt category={p.category} imageUrl={p.imageUrl} alt={p.name} />
                   <span className={`mk-avail ${p.active ? 'on' : 'off'}`}>{p.active ? 'Disponível' : 'Sob Consulta'}</span>
-                  <Icon name={vis.icon} size={72} />
                 </div>
                 <div className="mk-body">
                   <div className="mk-supplier"><span className="mk-logo" />{p.supplier?.name || 'Fornecedor'}</div>
