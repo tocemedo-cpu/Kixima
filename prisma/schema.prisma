@@ -1,0 +1,425 @@
+// KIXIMA — Schema de base de dados (Prisma / PostgreSQL)
+// Reflete a especificação funcional: due diligence, PO, pagamento garantido em 7 dias,
+// apólices (Fornecedor→KIXIMA e KIXIMA→Cliente), contratos/call-offs, notificações.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Empresas e utilizadores
+// ---------------------------------------------------------------------------
+
+enum CompanyType {
+  CLIENTE
+  FORNECEDOR
+}
+
+enum CompanyStatus {
+  PENDENTE      // aguarda due diligence
+  APROVADA
+  REJEITADA
+  SUSPENSA
+}
+
+enum PersonaRole {
+  COMPRADOR
+  COMPANY_ADMIN
+  FORNECEDOR
+  FINANCEIRO
+  ADMIN_SISTEMA // interno KIXIMA, não pertence a nenhuma empresa transacionadora
+}
+
+model Company {
+  id          String        @id @default(uuid())
+  name        String
+  taxId       String        @unique @map("tax_id")
+  type        CompanyType
+  status      CompanyStatus @default(PENDENTE)
+  contactEmail String       @map("contact_email")
+  contactPhone String?      @map("contact_phone")
+  address     String?
+
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  approvedAt  DateTime?     @map("approved_at")
+  rejectedAt  DateTime?     @map("rejected_at")
+
+  users              User[]
+  productsOffered    Product[]              @relation("SupplierProducts")
+  purchaseOrdersMade PurchaseOrder[]        @relation("BuyerCompanyOrders")
+  purchaseOrdersRecv PurchaseOrder[]        @relation("SupplierCompanyOrders")
+  contractsAsClient  Contract[]             @relation("ClientContracts")
+  contractsAsSupplier Contract[]            @relation("SupplierContracts")
+  supplierPolicies   SupplierToKiximaPolicy[]
+  clientPolicies     KiximaToClientPolicy[]
+  notifications      Notification[]
+  budgetLimit        BudgetLimit?
+
+  @@map("companies")
+}
+
+model User {
+  id           String      @id @default(uuid())
+  name         String
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  role         PersonaRole
+  approvalCap  Decimal?    @map("approval_cap") @db.Decimal(14, 2) // teto para aprovações delegadas (Comprador)
+
+  companyId    String?     @map("company_id") // null para ADMIN_SISTEMA
+  company      Company?    @relation(fields: [companyId], references: [id])
+
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  purchaseOrdersCreated PurchaseOrder[]  @relation("PoCreatedBy")
+  purchaseOrdersApproved PurchaseOrder[] @relation("PoApprovedBy")
+  notifications          Notification[]
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Catálogo
+// ---------------------------------------------------------------------------
+
+model Product {
+  id          String   @id @default(uuid())
+  supplierId  String   @map("supplier_id")
+  supplier    Company  @relation("SupplierProducts", fields: [supplierId], references: [id])
+
+  name        String
+  description String?
+  category    String
+  unitPrice   Decimal  @map("unit_price") @db.Decimal(14, 2)
+  currency    String   @default("AOA")
+  leadTimeDays Int?    @map("lead_time_days")
+  active      Boolean  @default(true)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  poItems     PurchaseOrderItem[]
+
+  @@index([category])
+  @@map("products")
+}
+
+// ---------------------------------------------------------------------------
+// Ordens de Compra (PO) — fluxo central
+// ---------------------------------------------------------------------------
+
+enum PoStatus {
+  AGUARDANDO_APROVACAO
+  APROVADA
+  REJEITADA
+  ACEITE_FORNECEDOR      // fornecedor aceitou -> relógio dos 7 dias começa
+  RECUSADA_FORNECEDOR
+  AGUARDANDO_PAGAMENTO
+  PAGA
+  EM_EXECUCAO
+  ENTREGUE
+  RECEBIDA_CONFORME
+  RECEBIDA_COM_DIVERGENCIA
+  CONCLUIDA
+}
+
+model PurchaseOrder {
+  id            String    @id @default(uuid())
+  reference     String    @unique // ex: PO-2026-00001
+
+  buyerCompanyId    String  @map("buyer_company_id")
+  buyerCompany      Company @relation("BuyerCompanyOrders", fields: [buyerCompanyId], references: [id])
+
+  supplierCompanyId String  @map("supplier_company_id")
+  supplierCompany   Company @relation("SupplierCompanyOrders", fields: [supplierCompanyId], references: [id])
+
+  createdById   String    @map("created_by_id")
+  createdBy     User      @relation("PoCreatedBy", fields: [createdById], references: [id])
+
+  approvedById  String?   @map("approved_by_id")
+  approvedBy    User?     @relation("PoApprovedBy", fields: [approvedById], references: [id])
+
+  status        PoStatus  @default(AGUARDANDO_APROVACAO)
+  totalAmount   Decimal   @map("total_amount") @db.Decimal(14, 2)
+  currency      String    @default("AOA")
+
+  // Call-off: PO emitida ao abrigo de contrato-quadro ativo -> dispensa aprovação e pagamento antecipado por PO
+  isCallOff     Boolean   @default(false) @map("is_call_off")
+  contractId    String?   @map("contract_id")
+  contract      Contract? @relation(fields: [contractId], references: [id])
+
+  // Relógio dos 7 dias (ou prazo do contrato, se call-off)
+  acceptedAt      DateTime? @map("accepted_at")       // gatilho do prazo de pagamento
+  paymentDueAt    DateTime? @map("payment_due_at")    // acceptedAt + PAYMENT_SLA_DAYS (ou prazo do contrato)
+  paidAt          DateTime? @map("paid_at")
+
+  dispatchedAt    DateTime? @map("dispatched_at")
+  deliveredAt     DateTime? @map("delivered_at")
+  receivedAt      DateTime? @map("received_at")
+  receptionStatus String?   @map("reception_status") // "Conforme" | "Não Entregue" | "Com Divergência"
+
+  approvedAt    DateTime? @map("approved_at")
+  rejectedAt    DateTime? @map("rejected_at")
+  rejectionReason String? @map("rejection_reason")
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  items         PurchaseOrderItem[]
+  invoice       Invoice?
+
+  @@index([status])
+  @@index([buyerCompanyId])
+  @@index([supplierCompanyId])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String        @map("purchase_order_id")
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  productId       String        @map("product_id")
+  product         Product       @relation(fields: [productId], references: [id])
+
+  quantity        Int
+  unitPrice       Decimal       @map("unit_price") @db.Decimal(14, 2)
+  lineTotal       Decimal       @map("line_total") @db.Decimal(14, 2)
+
+  @@map("purchase_order_items")
+}
+
+// ---------------------------------------------------------------------------
+// Faturas e Pagamentos (geradas automaticamente na aceitação da PO)
+// ---------------------------------------------------------------------------
+
+enum InvoiceStatus {
+  PENDENTE
+  PAGA
+  VENCIDA
+  CANCELADA
+}
+
+model Invoice {
+  id              String        @id @default(uuid())
+  reference       String        @unique // ex: FAT-2026-00001
+
+  purchaseOrderId String?       @unique @map("purchase_order_id") // null se fatura consolidada de call-offs
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+
+  // Faturamento consolidado de call-offs de um contrato (periódico)
+  contractId      String?       @map("contract_id")
+  contract        Contract?     @relation(fields: [contractId], references: [id])
+  consolidatedPoIds String[]    @default([]) @map("consolidated_po_ids")
+
+  amount          Decimal       @db.Decimal(14, 2)
+  currency        String        @default("AOA")
+  status          InvoiceStatus @default(PENDENTE)
+
+  issuedAt        DateTime      @default(now()) @map("issued_at")
+  dueAt           DateTime      @map("due_at")
+
+  payment         Payment?
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@map("invoices")
+}
+
+enum PaymentStatus {
+  PROCESSADO
+  FALHOU
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  invoiceId   String        @unique @map("invoice_id")
+  invoice     Invoice       @relation(fields: [invoiceId], references: [id])
+
+  amount      Decimal       @db.Decimal(14, 2)
+  currency    String        @default("AOA")
+  status      PaymentStatus @default(PROCESSADO)
+  processedById String      @map("processed_by_id") // utilizador Financeiro que executou
+  reference   String        @unique // referência da transação
+
+  processedAt DateTime      @default(now()) @map("processed_at")
+
+  @@map("payments")
+}
+
+// Limite de orçamento simples por empresa/centro de custo (opcional, MVP)
+model BudgetLimit {
+  id        String   @id @default(uuid())
+  companyId String   @unique @map("company_id")
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  periodMonthly Decimal @map("period_monthly") @db.Decimal(14, 2)
+  currency      String  @default("AOA")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("budget_limits")
+}
+
+// ---------------------------------------------------------------------------
+// Apólices de seguro
+// ---------------------------------------------------------------------------
+
+enum PolicyStatus {
+  SUBMETIDA
+  APROVADA
+  REJEITADA
+  EXPIRADA
+}
+
+// Fornecedor → KIXIMA: submetida no onboarding, condição para credenciamento
+model SupplierToKiximaPolicy {
+  id            String       @id @default(uuid())
+  companyId     String       @map("company_id")
+  company       Company      @relation(fields: [companyId], references: [id])
+
+  policyNumber  String       @map("policy_number")
+  insurer       String
+  coverageAmount Decimal     @map("coverage_amount") @db.Decimal(14, 2)
+  currency      String       @default("AOA")
+  status        PolicyStatus @default(SUBMETIDA)
+
+  validFrom     DateTime     @map("valid_from")
+  validUntil    DateTime     @map("valid_until")
+
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  @@map("supplier_to_kixima_policies")
+}
+
+// KIXIMA → Cliente: emitida pelo Admin do Sistema após due diligence, escopo por empresa
+model KiximaToClientPolicy {
+  id            String       @id @default(uuid())
+  companyId     String       @map("company_id")
+  company       Company      @relation(fields: [companyId], references: [id])
+
+  policyNumber  String       @map("policy_number")
+  insurer       String
+  coverageAmount Decimal     @map("coverage_amount") @db.Decimal(14, 2)
+  currency      String       @default("AOA")
+  status        PolicyStatus @default(APROVADA)
+
+  issuedById    String       @map("issued_by_id") // Admin do Sistema KIXIMA
+
+  validFrom     DateTime     @map("valid_from")
+  validUntil    DateTime     @map("valid_until")
+
+  expiryAlertSentAt DateTime? @map("expiry_alert_sent_at") // evita reenviar alerta dos 30 dias
+
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  @@map("kixima_to_client_policies")
+}
+
+// ---------------------------------------------------------------------------
+// Contratos-quadro e Call-offs
+// ---------------------------------------------------------------------------
+
+enum ContractStatus {
+  ATIVO
+  EXPIRADO
+  ENCERRADO
+}
+
+enum BillingPeriodicity {
+  TRIMESTRAL
+  SEMESTRAL
+}
+
+model Contract {
+  id              String             @id @default(uuid())
+  reference       String             @unique // ex: CTR-2026-0001
+
+  clientCompanyId String             @map("client_company_id")
+  clientCompany   Company            @relation("ClientContracts", fields: [clientCompanyId], references: [id])
+
+  supplierCompanyId String           @map("supplier_company_id")
+  supplierCompany Company            @relation("SupplierContracts", fields: [supplierCompanyId], references: [id])
+
+  categoriesCovered String[]         @map("categories_covered") // categorias/itens cobertos pelo contrato
+
+  totalValue      Decimal            @map("total_value") @db.Decimal(14, 2)
+  currency         String            @default("AOA")
+  usedValue        Decimal           @default(0) @map("used_value") @db.Decimal(14, 2)
+
+  billingPeriodicity BillingPeriodicity @map("billing_periodicity")
+  paymentTermDays    Int              @map("payment_term_days") // prazo próprio do contrato (substitui os 7 dias padrão)
+
+  status          ContractStatus     @default(ATIVO)
+  validFrom       DateTime           @map("valid_from")
+  validUntil      DateTime           @map("valid_until")
+
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  callOffs        PurchaseOrder[]
+  consolidatedInvoices Invoice[]
+
+  @@map("contracts")
+}
+
+// ---------------------------------------------------------------------------
+// Notificações
+// ---------------------------------------------------------------------------
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  IN_APP_EMAIL
+}
+
+enum NotificationType {
+  PO_AGUARDA_APROVACAO
+  PO_APROVADA
+  PO_REJEITADA
+  PO_RECEBIDA_FORNECEDOR
+  FATURA_GERADA
+  PAGAMENTO_PROCESSADO
+  ENTREGA_DESPACHADA
+  RECECAO_COM_DIVERGENCIA
+  APOLICE_SUBMETIDA_APROVADA
+  APOLICE_A_EXPIRAR
+  CADASTRO_EMPRESA_APROVADO
+  CADASTRO_EMPRESA_REJEITADO
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+
+  userId    String?             @map("user_id")
+  user      User?               @relation(fields: [userId], references: [id])
+
+  companyId String?             @map("company_id")
+  company   Company?            @relation(fields: [companyId], references: [id])
+
+  type      NotificationType
+  channel   NotificationChannel @default(IN_APP)
+  title     String
+  message   String
+  readAt    DateTime?           @map("read_at")
+
+  relatedEntityType String?     @map("related_entity_type") // "PurchaseOrder" | "Invoice" | "Policy" | "Company" ...
+  relatedEntityId   String?     @map("related_entity_id")
+
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([companyId])
+  @@map("notifications")
+}

@@ -1,0 +1,37 @@
+{
+  "name": "kixima-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "KIXIMA — e-market com pagamento garantido para o setor Oil & Gas",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development node -r dotenv/config src/server.js dotenv_config_path=.env.development",
+    "start": "cross-env NODE_ENV=production node -r dotenv/config src/server.js dotenv_config_path=.env.production",
+    "test": "cross-env NODE_ENV=test jest",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "cross-env NODE_ENV=development dotenv -e .env.development -- prisma migrate dev",
+    "prisma:studio": "cross-env NODE_ENV=development dotenv -e .env.development -- prisma studio",
+    "seed": "cross-env NODE_ENV=development node -r dotenv/config prisma/seed.js dotenv_config_path=.env.development"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.5",
+    "dotenv-cli": "^7.4.2",
+    "express": "^4.19.2",
+    "express-async-errors": "^3.1.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "node-cron": "^3.0.3",
+    "uuid": "^9.0.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "prisma": "^5.20.0",
+    "supertest": "^7.0.0"
+  }
+}
