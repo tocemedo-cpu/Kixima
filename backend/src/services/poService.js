@@ -282,12 +282,15 @@ async function confirmReception(id, buyerCompanyId, { conforme, notes }) {
 
   if (!conforme) {
     await notificationService.events.rececaoComDivergencia(updated);
-  } else {
-    // 8. Sistema fecha a ordem automaticamente quando a receção é conforme.
-    await prisma.purchaseOrder.update({ where: { id }, data: { status: 'CONCLUIDA' } });
+    return updated;
   }
 
-  return updated;
+  // 8. Sistema fecha a ordem automaticamente quando a receção é conforme.
+  const concluida = await prisma.purchaseOrder.update({
+    where: { id },
+    data: { status: 'CONCLUIDA' },
+  });
+  return concluida;
 }
 
 module.exports = {
