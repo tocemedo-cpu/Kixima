@@ -1,10 +1,17 @@
+# Dependências
 node_modules/
-.env
-.env.development
-.env.production
-.env.local
-*.log
+
+# Build
 dist/
 build/
-coverage/
+
+# Ambiente / segredos
+.env
+.env.local
+.env.development
+.env.production
+
+# Logs / SO
+*.log
 .DS_Store
+coverage/
