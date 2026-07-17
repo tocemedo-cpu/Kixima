@@ -7,12 +7,19 @@ import { NAV_CONFIG } from '../navConfig';
 import { api } from '../api/client';
 import NotificationPanel from './NotificationPanel';
 import Logo from './Logo';
+import { Icon } from './icons';
+import { useCart } from '../pages/comprador/CartContext';
+
+function initials(name = '') {
+  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
+}
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const { count: cartCount } = useCart();
 
   useEffect(() => {
     let cancelled = false;
@@ -31,18 +38,15 @@ export default function AppLayout() {
 
   const navItems = NAV_CONFIG[user.role] || [];
   const unread = notifications.filter((n) => !n.readAt).length;
+  const badgeValue = (item) => (item.badge === 'cart' && cartCount > 0 ? cartCount : null);
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <Logo size={20} subtitle />
+          <Logo size={20} subtitle light />
         </div>
-        <div className="sidebar-persona">
-          <strong>{user.name}</strong>
-          {ROLE_LABELS[user.role]}
-          {user.companyName ? <div style={{ marginTop: 4, opacity: 0.8 }}>{user.companyName}</div> : null}
-        </div>
+
         <nav className="sidebar-nav">
           {navItems.map((item) => (
             <NavLink
@@ -51,24 +55,33 @@ export default function AppLayout() {
               end={item.end}
               className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
             >
-              {item.label}
+              <Icon name={item.icon} size={18} className="sidebar-ico" />
+              <span>{item.label}</span>
+              {badgeValue(item) ? <span className="nav-count">{badgeValue(item)}</span> : null}
             </NavLink>
           ))}
         </nav>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <NavLink to="/perfil" className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`} style={{ fontSize: 12.5 }}>
-            Perfil pessoal
+
+        <div className="sidebar-secondary">
+          <NavLink to="/perfil" className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
+            <Icon name="profile" size={18} className="sidebar-ico" />
+            <span>Perfil pessoal</span>
           </NavLink>
-          <NavLink to="/ajuda" className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`} style={{ fontSize: 12.5 }}>
-            Ajuda & Suporte
+          <NavLink to="/ajuda" className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
+            <Icon name="help" size={18} className="sidebar-ico" />
+            <span>Ajuda &amp; Suporte</span>
           </NavLink>
         </div>
 
         <div className="sidebar-footer">
-          Pagamento garantido em 7 dias.
-          <button className="sidebar-logout" onClick={logout}>
-            Terminar sessão
-          </button>
+          <div className="sidebar-user">
+            <span className="sidebar-avatar">{initials(user.name)}</span>
+            <span className="sidebar-user-meta">
+              <strong>{user.name}</strong>
+              <span>{ROLE_LABELS[user.role]}</span>
+            </span>
+          </div>
+          <button className="sidebar-logout" onClick={logout}>Terminar sessão</button>
         </div>
       </aside>
 

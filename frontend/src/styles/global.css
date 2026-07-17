@@ -10,6 +10,15 @@
   --brand-500: #ef3340;
   --brand-100: #fbdadd;
   --brand-050: #fdecee;
+  --magenta: #f5327c;
+  --brand-grad: linear-gradient(135deg, var(--brand-600), var(--magenta));
+
+  /* Chrome escuro da app (sidebar) */
+  --side-bg: #100e15;
+  --side-line: #241f2c;
+  --side-text: #b3adba;
+  --side-text-strong: #ffffff;
+  --side-hover: #1c1824;
 
   /* Neutros escuros — preto de marca (login, painéis escuros, títulos) */
   --navy-950: #0b0c0e;
@@ -177,13 +186,12 @@ textarea {
 }
 
 .sidebar {
-  background: #fff;
-  color: var(--ink-600);
-  border-right: 1px solid var(--line);
-  padding: 22px 14px;
+  background: var(--side-bg);
+  color: var(--side-text);
+  padding: 20px 14px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -191,74 +199,129 @@ textarea {
 
 .sidebar-brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
-  padding: 2px 8px;
-}
-
-.sidebar-persona {
-  padding: 12px;
-  background: var(--paper-050);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  font-size: 12.5px;
-  color: var(--ink-600);
-}
-
-.sidebar-persona strong {
-  display: block;
-  color: var(--navy-900);
-  font-size: 13.5px;
-  font-weight: 600;
+  padding: 2px 8px 4px;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   flex: 1;
+}
+
+.sidebar-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 10px;
+  border-top: 1px solid var(--side-line);
 }
 
 .sidebar-link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: var(--radius-sm);
-  color: var(--ink-600);
+  gap: 11px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  color: var(--side-text);
   text-decoration: none;
   font-size: 13.5px;
-  font-weight: 500;
+  font-weight: 600;
   transition: background 0.12s ease, color 0.12s ease;
 }
 
+.sidebar-ico {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
 .sidebar-link:hover {
-  background: var(--paper-100);
-  color: var(--navy-900);
+  background: var(--side-hover);
+  color: var(--side-text-strong);
 }
 
 .sidebar-link.active {
+  background: var(--brand-grad);
+  color: #fff;
+}
+
+.sidebar-link.active .sidebar-ico {
+  opacity: 1;
+}
+
+.nav-count {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 700;
   background: var(--brand-600);
   color: #fff;
-  font-weight: 600;
+  border-radius: 999px;
+  padding: 1px 7px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.sidebar-link.active .nav-count {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .sidebar-footer {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--side-line);
   padding-top: 14px;
-  font-size: 12px;
-  color: var(--ink-400);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--brand-grad);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12.5px;
+  flex-shrink: 0;
+}
+
+.sidebar-user-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.sidebar-user-meta strong {
+  color: var(--side-text-strong);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-meta span {
+  font-size: 11.5px;
+  color: var(--side-text);
 }
 
 .sidebar-logout {
   background: none;
   border: none;
-  color: var(--brand-600);
+  color: var(--brand-500);
   cursor: pointer;
   padding: 0;
   font-size: 12px;
   text-decoration: underline;
-  margin-top: 6px;
+  margin-top: 12px;
   display: block;
 }
 
@@ -800,4 +863,267 @@ tbody tr:hover {
   .login-hero-title {
     font-size: 30px;
   }
+}
+
+/* --- Marketplace (Direção 01) + autenticidade do setor (Direção 05) ------ */
+
+.market-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 20px;
+}
+
+.market-search svg {
+  color: var(--ink-400);
+  flex-shrink: 0;
+}
+
+.market-search input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+  background: transparent;
+  color: var(--ink-900);
+}
+
+.market-count {
+  font-size: 12.5px;
+  color: var(--ink-400);
+  white-space: nowrap;
+}
+
+/* Tiles de categoria do setor */
+.cat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.cat-tile {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.cat-tile:hover {
+  border-color: var(--brand-500);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+.cat-tile.active {
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 1px var(--brand-600) inset;
+}
+
+.cat-tile-ic {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+  color: #fff;
+}
+
+.cat-tile-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy-900);
+  display: block;
+  line-height: 1.2;
+}
+
+.cat-tile-count {
+  font-size: 10.5px;
+  color: var(--ink-400);
+}
+
+/* Selos de confiança */
+.trust-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  color: var(--ink-600);
+  background: #fff;
+}
+
+.trust-badge svg {
+  color: var(--teal-600);
+}
+
+/* Grelha de cartões de marketplace */
+.mk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.mk-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.mk-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 2px 4px rgba(20, 10, 15, 0.06), 0 16px 40px rgba(20, 10, 15, 0.12);
+}
+
+.mk-cover {
+  height: 150px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mk-cover > svg {
+  width: 72px;
+  height: 72px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.mk-avail {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.mk-avail.on {
+  background: rgba(15, 122, 82, 0.92);
+}
+
+.mk-avail.off {
+  background: rgba(30, 30, 36, 0.72);
+}
+
+.mk-body {
+  padding: 14px 15px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.mk-supplier {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-400);
+  font-weight: 600;
+}
+
+.mk-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--brand-grad);
+  flex-shrink: 0;
+}
+
+.mk-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--navy-900);
+  text-decoration: none;
+  line-height: 1.25;
+}
+
+.mk-title:hover {
+  color: var(--brand-600);
+}
+
+.mk-desc {
+  font-size: 12.5px;
+  color: var(--ink-600);
+  flex: 1;
+}
+
+.mk-rate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-600);
+}
+
+.stars {
+  color: var(--amber-500);
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.mk-verif {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--teal-600);
+  font-weight: 700;
+  font-size: 11.5px;
+}
+
+.mk-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 2px;
+}
+
+.mk-price {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 15.5px;
+  color: var(--navy-900);
+}
+
+.mk-lead {
+  font-size: 11.5px;
+  color: var(--ink-400);
+}
+
+.mk-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.mk-actions .btn {
+  flex: 1;
 }

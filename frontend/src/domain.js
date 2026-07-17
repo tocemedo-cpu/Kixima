@@ -68,8 +68,10 @@ export const POLICY_STATUS = {
 
 export function formatMoney(amount, currency = 'AOA') {
   const value = Number(amount ?? 0);
+  // O Kwanza angolano mostra-se como "Kz" (a moeda local da plataforma).
+  const symbol = currency === 'AOA' ? 'Kz' : currency;
   return new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value) +
-    ' ' + currency;
+    ' ' + symbol;
 }
 
 export function formatDate(value) {

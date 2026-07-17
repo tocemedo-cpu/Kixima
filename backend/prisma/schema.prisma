@@ -103,6 +103,11 @@ model Product {
   leadTimeDays Int?    @map("lead_time_days")
   active      Boolean  @default(true)
 
+  // Reputação (marketplace) — média de avaliações e nº de avaliações.
+  rating      Float?
+  reviewCount Int      @default(0) @map("review_count")
+  imageUrl    String?  @map("image_url")
+
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

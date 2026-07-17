@@ -48,12 +48,12 @@ function Landing() {
   return <Navigate to={user ? ROLE_HOME[user.role] : '/login'} replace />;
 }
 
-// Permite aninhar <CartProvider> à volta de todas as rotas do Comprador
-// mantendo o <Outlet /> normal do react-router.
-function CartScope() {
+// A cesta vive acima do AppLayout para que a sidebar possa mostrar o contador
+// de itens. Para as outras personas o provider fica inativo (sem custo).
+function Shell() {
   return (
     <CartProvider>
-      <Outlet />
+      <AppLayout />
     </CartProvider>
   );
 }
@@ -65,7 +65,7 @@ export default function App() {
       <Route path="/cadastro" element={<Register />} />
 
       <Route element={<RequireAuth />}>
-        <Route element={<AppLayout />}>
+        <Route element={<Shell />}>
           {/* Telas partilhadas / transversais */}
           <Route path="/notificacoes" element={<Notifications />} />
           <Route path="/perfil" element={<Profile />} />
@@ -73,14 +73,12 @@ export default function App() {
 
           {/* Comprador */}
           <Route element={<RequireRole role="COMPRADOR" />}>
-            <Route element={<CartScope />}>
-              <Route path="/comprador" element={<CompradorHome />} />
-              <Route path="/comprador/catalogo" element={<Catalog />} />
-              <Route path="/comprador/catalogo/:id" element={<ItemDetail />} />
-              <Route path="/comprador/cesta" element={<Cart />} />
-              <Route path="/comprador/ordens" element={<Orders />} />
-              <Route path="/comprador/ordens/:id" element={<OrderDetail />} />
-            </Route>
+            <Route path="/comprador" element={<CompradorHome />} />
+            <Route path="/comprador/catalogo" element={<Catalog />} />
+            <Route path="/comprador/catalogo/:id" element={<ItemDetail />} />
+            <Route path="/comprador/cesta" element={<Cart />} />
+            <Route path="/comprador/ordens" element={<Orders />} />
+            <Route path="/comprador/ordens/:id" element={<OrderDetail />} />
           </Route>
 
           {/* Company Admin */}
