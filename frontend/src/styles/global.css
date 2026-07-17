@@ -902,17 +902,16 @@ tbody tr:hover {
 /* Tiles de categoria do setor */
 .cat-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
   gap: 10px;
-  margin-bottom: 22px;
+  margin-bottom: 24px;
 }
 
 .cat-tile {
   background: #fff;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: 14px 10px;
-  text-align: center;
+  overflow: hidden;
   cursor: pointer;
   transition: border-color 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
 }
@@ -928,19 +927,31 @@ tbody tr:hover {
   box-shadow: 0 0 0 1px var(--brand-600) inset;
 }
 
-.cat-tile-ic {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+.cat-cover {
+  display: block;
+  height: 62px;
+}
+
+.cat-cover .mk-art {
+  height: 100%;
+}
+
+.cat-cover-all {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 8px;
   color: #fff;
+  background: var(--brand-grad);
+}
+
+.cat-meta {
+  display: block;
+  padding: 8px 8px 10px;
+  text-align: center;
 }
 
 .cat-tile-name {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--navy-900);
   display: block;
@@ -950,6 +961,302 @@ tbody tr:hover {
 .cat-tile-count {
   font-size: 10.5px;
   color: var(--ink-400);
+}
+
+/* Cabeçalho de secção */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 4px 0 12px;
+}
+
+.section-head h2 {
+  font-size: 18px;
+}
+
+/* Layout de duas colunas do marketplace */
+.market-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.market-main {
+  min-width: 0;
+}
+
+.market-aside {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aside-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+}
+
+.aside-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--navy-900);
+  margin-bottom: 12px;
+}
+
+.aside-head > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.aside-pill {
+  background: var(--brand-600);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 8px;
+}
+
+.aside-link {
+  background: none;
+  border: none;
+  color: var(--brand-600);
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.aside-empty {
+  font-size: 12.5px;
+  color: var(--ink-400);
+}
+
+.aside-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.aside-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.aside-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+}
+
+.aside-thumb .mk-art,
+.aside-thumb .mk-photo {
+  height: 100%;
+}
+
+.aside-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.aside-item-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--navy-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aside-item-qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.aside-item-qty button {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--line);
+  background: var(--paper-050);
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--ink-600);
+  line-height: 1;
+}
+
+.aside-item-qty span {
+  font-size: 12px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.aside-remove {
+  margin-left: auto;
+  border: none !important;
+  background: none !important;
+  color: var(--ink-400) !important;
+}
+
+.aside-item-price {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-600);
+  white-space: nowrap;
+}
+
+.aside-totals {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.aside-totals > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--ink-600);
+}
+
+.aside-total {
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+  margin-top: 2px;
+  font-size: 15px !important;
+  font-weight: 700;
+  color: var(--navy-900) !important;
+}
+
+.aside-total .mono {
+  color: var(--brand-600);
+}
+
+.aside-orders {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aside-order-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.aside-order-row:hover {
+  background: var(--paper-050);
+}
+
+.aside-order-ic {
+  color: var(--brand-600);
+  display: inline-flex;
+}
+
+.aside-order-label {
+  flex: 1;
+  color: var(--ink-600);
+}
+
+.aside-order-count {
+  font-weight: 700;
+  color: var(--navy-900);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hero do marketplace */
+.mk-hero {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 22px;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+}
+
+.mk-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mk-hero-content {
+  position: relative;
+  padding: 32px 34px;
+  color: #fff;
+  max-width: 62%;
+}
+
+.mk-hero-title {
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  color: #fff;
+}
+
+.mk-hero-title .accent {
+  color: var(--brand-500);
+}
+
+.mk-hero-sub {
+  margin-top: 10px;
+  font-size: 14.5px;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 40ch;
+}
+
+.mk-hero-props {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin-top: 22px;
+}
+
+.mk-prop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.mk-prop svg {
+  color: var(--amber-500);
+}
+
+@media (max-width: 1040px) {
+  .market-layout {
+    grid-template-columns: 1fr;
+  }
+  .market-aside {
+    position: static;
+  }
+  .mk-hero-content {
+    max-width: 100%;
+  }
 }
 
 /* Selos de confiança */

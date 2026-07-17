@@ -4,11 +4,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
+import { Loading, ErrorBanner } from '../../components/Common';
 import { formatMoney } from '../../domain';
 import { useCart } from './CartContext';
-import { Icon, Stars, categoryVisual } from '../../components/icons';
+import { Icon, Stars } from '../../components/icons';
 import CategoryArt from '../../components/CategoryArt';
+import MarketHero from '../../components/MarketHero';
+import MarketAside from '../../components/MarketAside';
 
 export default function Catalog() {
   const [products, setProducts] = useState(null);
@@ -49,70 +51,66 @@ export default function Catalog() {
 
   return (
     <div>
-      <PageHeader
-        title="Marketplace"
-        subtitle="Produtos e serviços de fornecedores credenciados para a indústria petrolífera."
-      />
+      <MarketHero />
 
-      <div className="market-search">
-        <Icon name="search" size={18} />
-        <input
-          placeholder="Pesquisar produtos, serviços ou categorias…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <span className="market-count">{filtered.length} de {products.length}</span>
-      </div>
+      <div className="market-layout">
+        <div className="market-main">
+          <div className="market-search">
+            <Icon name="search" size={18} />
+            <input
+              placeholder="Pesquisar produtos, serviços ou categorias…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <span className="market-count">{filtered.length} de {products.length}</span>
+          </div>
 
-      <div className="trust-row">
-        <span className="trust-badge"><Icon name="certification" size={13} /> ISO 9001</span>
-        <span className="trust-badge"><Icon name="policy" size={13} /> Procurement Garantido</span>
-        <span className="trust-badge"><Icon name="approvals" size={13} /> Fornecedores Verificados</span>
-      </div>
+          <div className="trust-row">
+            <span className="trust-badge"><Icon name="certification" size={13} /> ISO 9001</span>
+            <span className="trust-badge"><Icon name="policy" size={13} /> Procurement Garantido</span>
+            <span className="trust-badge"><Icon name="approvals" size={13} /> Fornecedores Verificados</span>
+          </div>
 
-      <div className="cat-tiles">
-        <div
-          className={`cat-tile${category === '' ? ' active' : ''}`}
-          onClick={() => setCategory('')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && setCategory('')}
-        >
-          <span className="cat-tile-ic" style={{ background: 'linear-gradient(135deg,#e11d2a,#f5327c)' }}>
-            <Icon name="catalog" size={22} />
-          </span>
-          <span className="cat-tile-name">Todos</span>
-          <span className="cat-tile-count">{products.length}</span>
-        </div>
-        {categories.map((c) => {
-          const vis = categoryVisual(c.name);
-          return (
+          <div className="section-head"><h2>Categorias principais</h2></div>
+          <div className="cat-tiles">
             <div
-              key={c.name}
-              className={`cat-tile${category === c.name ? ' active' : ''}`}
-              onClick={() => setCategory(category === c.name ? '' : c.name)}
+              className={`cat-tile${category === '' ? ' active' : ''}`}
+              onClick={() => setCategory('')}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && setCategory(category === c.name ? '' : c.name)}
+              onKeyDown={(e) => e.key === 'Enter' && setCategory('')}
             >
-              <span className="cat-tile-ic" style={{ background: `linear-gradient(135deg, ${vis.from}, ${vis.to})` }}>
-                <Icon name={vis.icon} size={22} />
-              </span>
-              <span className="cat-tile-name">{c.name}</span>
-              <span className="cat-tile-count">{c.count}</span>
+              <span className="cat-cover cat-cover-all"><Icon name="catalog" size={24} /></span>
+              <span className="cat-meta"><span className="cat-tile-name">Todos</span><span className="cat-tile-count">{products.length}</span></span>
             </div>
-          );
-        })}
-      </div>
+            {categories.map((c) => (
+              <div
+                key={c.name}
+                className={`cat-tile${category === c.name ? ' active' : ''}`}
+                onClick={() => setCategory(category === c.name ? '' : c.name)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && setCategory(category === c.name ? '' : c.name)}
+              >
+                <span className="cat-cover"><CategoryArt category={c.name} /></span>
+                <span className="cat-meta"><span className="cat-tile-name">{c.name}</span><span className="cat-tile-count">{c.count}</span></span>
+              </div>
+            ))}
+          </div>
 
-      {filtered.length === 0 ? (
-        <div className="empty-state">
-          <h3>Nenhum item encontrado</h3>
-          <p>Tente outro termo de pesquisa ou limpe o filtro de categoria.</p>
-        </div>
-      ) : (
-        <div className="mk-grid">
-          {filtered.map((p) => {
+          <div className="section-head">
+            <h2>Produtos e serviços</h2>
+            <span className="market-count">{filtered.length} {filtered.length === 1 ? 'item' : 'itens'}</span>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="empty-state">
+              <h3>Nenhum item encontrado</h3>
+              <p>Tente outro termo de pesquisa ou limpe o filtro de categoria.</p>
+            </div>
+          ) : (
+            <div className="mk-grid">
+              {filtered.map((p) => {
             const verified = p.supplier?.status === 'APROVADA';
             return (
               <div key={p.id} className="mk-card">
@@ -146,9 +144,13 @@ export default function Catalog() {
                 </div>
               </div>
             );
-          })}
+              })}
+            </div>
+          )}
         </div>
-      )}
+
+        <MarketAside />
+      </div>
     </div>
   );
 }

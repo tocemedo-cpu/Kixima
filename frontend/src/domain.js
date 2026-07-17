@@ -66,6 +66,16 @@ export const POLICY_STATUS = {
   EXPIRADA: { label: 'Expirada', tone: 'danger' },
 };
 
+// Taxas apresentadas no resumo da cesta (nível de apresentação/estimativa).
+export const KIXIMA_FEE_RATE = 0.015; // Taxa de serviço KIXIMA
+export const IVA_RATE = 0.14; // IVA Angola
+
+export function computeCartTotals(subtotal) {
+  const fee = subtotal * KIXIMA_FEE_RATE;
+  const iva = subtotal * IVA_RATE;
+  return { subtotal, fee, iva, total: subtotal + fee + iva };
+}
+
 export function formatMoney(amount, currency = 'AOA') {
   const value = Number(amount ?? 0);
   // O Kwanza angolano mostra-se como "Kz" (a moeda local da plataforma).
