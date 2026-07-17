@@ -45,6 +45,36 @@ atalhos para preencher cada persona:
 | Fornecedor | fornecedor@kianda.co.ao |
 | Admin do Sistema KIXIMA | admin@kixima.co.ao |
 
+## Correr com Docker (stack completa)
+
+Com Docker instalado, uma linha sobe Postgres + backend + frontend:
+
+```bash
+docker compose up --build
+```
+
+- Frontend: **http://localhost:8080** (Nginx serve o build e faz proxy de `/api`)
+- Backend: **http://localhost:4000**
+- Postgres: serviço interno `db` (dados persistidos no volume `pgdata`)
+
+O backend aplica o schema (`prisma db push`) no arranque. Para popular os dados
+de demonstração uma vez:
+
+```bash
+docker compose exec backend node prisma/seed.js
+```
+
+Em produção define `JWT_SECRET` e `DB_PASSWORD` como variáveis de ambiente reais
+(o compose lê `${JWT_SECRET}` / `${DB_PASSWORD}` e só usa valores locais por
+omissão).
+
+## Integração contínua
+
+`.github/workflows/ci.yml` corre em cada push/PR:
+
+- **backend-tests** — sobe um Postgres de serviço e corre a suite Jest + Supertest.
+- **frontend-build** — instala e faz o build de produção do Vite.
+
 ## O produto em uma frase
 
 O fornecedor é pago em **≤ 7 dias** após aceitar a encomenda — a KIXIMA
