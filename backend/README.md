@@ -122,10 +122,31 @@ Conforme a secção 7 da especificação, o schema já guarda dados granulares
 mas **não expõe** relatórios avançados (DRE, Balanço, EBITDA, auditoria
 completa, etc.) — isso fica para uma fase posterior.
 
+## Testes automatizados
+
+Testes de integração em Jest + Supertest, que exercitam a API real (via
+`src/app.js`, sem abrir porta) contra uma base de dados de teste.
+
+```bash
+# Precisa de um PostgreSQL acessível. Por omissão os testes usam
+#   postgresql://kixima:kixima@127.0.0.1:5432/kixima_test
+# Podes sobrepor com a variável DATABASE_URL (ex.: em CI).
+createdb kixima_test          # ou cria a base de dados como preferires
+npm test
+```
+
+Antes de toda a suite, `tests/globalSetup.js` repõe o schema
+(`prisma db push --force-reset`) e corre o seed. Cobertura atual:
+
+- **`auth.test.js`** — login válido/ inválido, proteção de rotas por token.
+- **`po-flow.test.js`** — fluxo completo até `CONCLUIDA`, fatura + relógio dos
+  7 dias na aceitação, despacho bloqueado antes do pagamento, divergência.
+- **`rbac.test.js`** — cada persona só faz o que lhe compete.
+- **`calloff.test.js`** — PO coberta por contrato-quadro vira Call-off e salta
+  a aprovação individual.
+
 ## Próximos passos sugeridos
 
-- Testes automatizados (Jest + Supertest) cobrindo o fluxo end-to-end e as
-  regras críticas (7 dias, ponto único de aprovação, call-off).
 - Upload de documentos (apólices, certificados) para `STORAGE_PROVIDER=s3`.
 - Provider de email real (SMTP/SES) em `notificationService.dispatchEmail`.
 - Paginação nas listagens (`GET /api/purchase-orders`, `/api/catalog`, etc.).
