@@ -39,6 +39,7 @@ import PaymentHistory from './pages/financeiro/PaymentHistory';
 import AdminHome from './pages/adminSistema/Home';
 import DueDiligence from './pages/adminSistema/DueDiligence';
 import PolicyManagement from './pages/adminSistema/PolicyManagement';
+import AdminContracts from './pages/adminSistema/Contracts';
 import Companies from './pages/adminSistema/Companies';
 
 function Landing() {
@@ -116,6 +117,7 @@ export default function App() {
             <Route path="/sistema" element={<AdminHome />} />
             <Route path="/sistema/due-diligence" element={<DueDiligence />} />
             <Route path="/sistema/apolices" element={<PolicyManagement />} />
+            <Route path="/sistema/contratos" element={<AdminContracts />} />
             <Route path="/sistema/empresas" element={<Companies />} />
           </Route>
         </Route>

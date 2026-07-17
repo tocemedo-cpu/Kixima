@@ -37,6 +37,22 @@ async function createContract({
 async function listContractsForCompany(companyId) {
   return prisma.contract.findMany({
     where: { OR: [{ clientCompanyId: companyId }, { supplierCompanyId: companyId }] },
+    include: {
+      clientCompany: { select: { id: true, name: true } },
+      supplierCompany: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+// Admin do Sistema KIXIMA não pertence a nenhuma empresa transacionadora
+// (companyId: null), por isso vê todos os contratos-quadro da plataforma.
+async function listAllContracts() {
+  return prisma.contract.findMany({
+    include: {
+      clientCompany: { select: { id: true, name: true } },
+      supplierCompany: { select: { id: true, name: true } },
+    },
     orderBy: { createdAt: 'desc' },
   });
 }
@@ -135,6 +151,7 @@ async function consolidateContractBilling(contractId) {
 module.exports = {
   createContract,
   listContractsForCompany,
+  listAllContracts,
   getContract,
   findActiveContractForOrder,
   consolidateContractBilling,

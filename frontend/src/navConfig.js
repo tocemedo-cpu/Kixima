@@ -34,6 +34,7 @@ export const NAV_CONFIG = {
     { to: '/sistema', label: 'Início', end: true },
     { to: '/sistema/due-diligence', label: 'Cadastro de Empresas' },
     { to: '/sistema/apolices', label: 'Gestão de Apólices' },
+    { to: '/sistema/contratos', label: 'Contratos-Quadro' },
     { to: '/sistema/empresas', label: 'Empresas' },
   ],
 };

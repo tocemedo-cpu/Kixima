@@ -6,7 +6,11 @@ async function create(req, res) {
 }
 
 async function listMine(req, res) {
-  const contracts = await contractService.listContractsForCompany(req.user.companyId);
+  // O Admin do Sistema não tem empresa própria — vê todos os contratos.
+  const contracts =
+    req.user.role === 'ADMIN_SISTEMA'
+      ? await contractService.listAllContracts()
+      : await contractService.listContractsForCompany(req.user.companyId);
   res.json(contracts);
 }
 

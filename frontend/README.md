@@ -82,11 +82,17 @@ passou a incluir `invoice` + `payment`) para que as telas de Faturas e
 Pagamentos Recebidos do Fornecedor tenham os dados que precisam sem chamadas
 extra. Sem outras alterações ao backend.
 
+## Contratos-Quadro (Admin do Sistema)
+
+`pages/adminSistema/Contracts.jsx` — a equipa KIXIMA cria contratos-quadro entre
+um cliente e um fornecedor aprovados, indicando as categorias cobertas, valor,
+periodicidade de faturação, prazo de pagamento próprio e vigência. A partir de um
+contrato ativo, qualquer PO elegível do cliente para esse fornecedor vira
+automaticamente Call-off (deteção em `poService.createPurchaseOrder`). O Admin do
+Sistema vê todos os contratos da plataforma (`GET /api/contracts`).
+
 ## Fora de escopo deste MVP
 
-- Criação de contratos-quadro não tem tela própria (fica para a equipa KIXIMA
-  operar via API por agora) — a leitura/consulta de contratos e call-offs já
-  está coberta na tela do Company Admin.
 - "Minhas Aprovações" (aprovações delegadas do Comprador) — só relevante se
   houver delegação, que não está no MVP do backend.
 - Seleção de empresa no login (para utilizadores com mais de uma empresa) —

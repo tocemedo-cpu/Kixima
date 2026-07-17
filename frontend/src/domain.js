@@ -48,6 +48,17 @@ export const COMPANY_STATUS = {
   SUSPENSA: { label: 'Suspensa', tone: 'danger' },
 };
 
+export const CONTRACT_STATUS = {
+  ATIVO: { label: 'Ativo', tone: 'success' },
+  EXPIRADO: { label: 'Expirado', tone: 'danger' },
+  ENCERRADO: { label: 'Encerrado', tone: 'neutral' },
+};
+
+export const BILLING_PERIODICITY = {
+  TRIMESTRAL: 'Trimestral',
+  SEMESTRAL: 'Semestral',
+};
+
 export const POLICY_STATUS = {
   SUBMETIDA: { label: 'Submetida', tone: 'pending' },
   APROVADA: { label: 'Aprovada', tone: 'success' },
