@@ -49,6 +49,43 @@ npm run seed                 # popula dados de exemplo (5 personas + catálogo)
 npm run dev                   # arranca em http://localhost:4000
 ```
 
+## Ligar à base de dados Supabase
+
+O backend liga-se por **ligação Postgres direta** (o Prisma **não** usa as chaves
+`anon`/`service_role` nem a REST API — essas são para o SDK do Supabase, que aqui
+não é usado). Só precisas do `DATABASE_URL` com a **Database password**.
+
+1. **Obter a connection string** no dashboard: `Project Settings → Database`.
+   - A password é a *Database password* (não é o JWT secret nem as API keys).
+   - A ligação **direta** (`db.<REF>.supabase.co:5432`) é **IPv6**. Se a tua rede
+     for só IPv4 (comum em casa/escritório), usa o **Connection Pooling**
+     (secção "Connection pooling", *Session mode*, porta 5432) — é IPv4.
+
+2. **Definir no `.env`** (copia de `.env.example`):
+   ```bash
+   # direta (IPv6):
+   DATABASE_URL="postgresql://postgres:SUA_DB_PASSWORD@db.SEU_REF.supabase.co:5432/postgres?sslmode=require"
+   # ou pooler (IPv4):
+   DATABASE_URL="postgresql://postgres.SEU_REF:SUA_DB_PASSWORD@aws-0-REGIAO.pooler.supabase.com:5432/postgres?sslmode=require"
+   JWT_SECRET="<gera com: node -e \"console.log(require('crypto').randomBytes(48).toString('base64url'))\">"
+   ```
+
+3. **Criar as tabelas e popular** (a partir de uma máquina com acesso à internet):
+   ```bash
+   npx prisma db push      # cria/atualiza as tabelas no Supabase
+   npm run seed            # (opcional) 5 personas + catálogo de exemplo
+   ```
+   Em alternativa ao `db push`, podes colar `prisma/supabase_setup.sql` no SQL
+   Editor do dashboard.
+
+4. **Testar a ligação:**
+   ```bash
+   node -e "const{PrismaClient}=require('@prisma/client');new PrismaClient().\$queryRaw\`SELECT 1\`.then(()=>console.log('OK')).catch(e=>console.error(e.message))"
+   ```
+
+> Segurança: nunca faças commit dos `.env` com valores reais (já ignorados pelo
+> `.gitignore`). Se partilhaste chaves/passwords em texto, **roda-as** no dashboard.
+
 Utilizadores de teste criados pelo seed (password: `Kixima@123`):
 
 | Persona | Email |
