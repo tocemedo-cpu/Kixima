@@ -68,6 +68,28 @@ Em produção define `JWT_SECRET` e `DB_PASSWORD` como variáveis de ambiente re
 (o compose lê `${JWT_SECRET}` / `${DB_PASSWORD}` e só usa valores locais por
 omissão).
 
+## Deploy (Render + Supabase)
+
+`render.yaml` define um **serviço único**: o backend serve a API em `/api` **e** o
+frontend compilado (SPA) na mesma origem — sem CORS nem proxy. A base de dados é
+o teu **Supabase** (a `DATABASE_URL` é definida no dashboard como segredo, nunca
+no repositório).
+
+1. Sobe o repositório para o GitHub.
+2. Render → **New → Blueprint** → aponta para o repo (usa o `render.yaml`).
+3. No serviço, em **Environment**, define `DATABASE_URL` com a connection string
+   do **pooler** do Supabase (Session mode, porta 5432, `?sslmode=require`).
+   O `JWT_SECRET` é gerado automaticamente.
+4. Deploy — o build compila o frontend e `prisma db push` cria as tabelas.
+5. (Opcional) popular dados de exemplo, na Shell do serviço: `cd backend && npm run seed`.
+
+O mesmo funciona em qualquer host Node (Railway, Fly, VM): faz o build do
+frontend, define `FRONTEND_DIST=../frontend/dist` + `DATABASE_URL` + `JWT_SECRET`
+e arranca `node backend/src/server.js`.
+
+> As imagens carregadas ficam em disco local (efémero em muitos hosts). Para
+> produção a sério, usa um disco persistente ou um bucket S3.
+
 ## Integração contínua
 
 `.github/workflows/ci.yml` corre em cada push/PR:

@@ -46,6 +46,18 @@ app.use('/api/policies', policyRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/notifications', notificationRoutes);
 
+// Servir o frontend compilado (deploy de serviço único). Define FRONTEND_DIST
+// com o caminho para frontend/dist; a app serve os ficheiros estáticos e faz
+// fallback de SPA para o index.html em qualquer rota que não comece por /api.
+const frontendDist = process.env.FRONTEND_DIST && path.resolve(process.env.FRONTEND_DIST);
+if (frontendDist) {
+  app.use(express.static(frontendDist));
+  app.get(/^(?!\/api\/).*/, (req, res, next) => {
+    if (req.method !== 'GET') return next();
+    return res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
 app.use(notFoundHandler);
 app.use(errorHandler);
 

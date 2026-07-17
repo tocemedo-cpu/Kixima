@@ -1,0 +1,49 @@
+# KIXIMA — Blueprint de deploy (Render) — serviço único.
+# O backend serve a API em /api e o frontend compilado (SPA) na mesma origem,
+# por isso não há CORS nem proxy. A base de dados é o teu Supabase (define
+# DATABASE_URL no dashboard do serviço — é um segredo, não vai no repositório).
+#
+# Como usar:
+#   1. Sobe este repositório para o GitHub.
+#   2. Render -> New -> Blueprint -> aponta para o repo (usa este render.yaml).
+#   3. No serviço criado, em Environment, define DATABASE_URL com a connection
+#      string do POOLER do Supabase (Session mode, porta 5432, ?sslmode=require).
+#      JWT_SECRET é gerado automaticamente.
+#   4. Deploy. O build compila o frontend e `prisma db push` cria as tabelas.
+#
+# Para popular dados de exemplo uma vez (opcional), na Shell do serviço:
+#   cd backend && npm run seed
+services:
+  - type: web
+    name: kixima
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    buildCommand: >-
+      cd frontend && npm ci && npm run build &&
+      cd ../backend && npm ci && npx prisma generate
+    startCommand: >-
+      cd backend && npx prisma db push --skip-generate &&
+      node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_DIST
+        value: ../frontend/dist
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: PAYMENT_SLA_DAYS
+        value: "7"
+      - key: POLICY_EXPIRY_ALERT_DAYS
+        value: "30"
+      - key: EMAIL_PROVIDER
+        value: console
+      - key: LOG_LEVEL
+        value: info
+      # Define no dashboard (segredo): a connection string do Supabase (pooler).
+      - key: DATABASE_URL
+        sync: false
