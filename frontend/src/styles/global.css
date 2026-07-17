@@ -1467,3 +1467,28 @@ tbody tr:hover {
   opacity: 0.7;
   cursor: default;
 }
+
+/* Placeholder de produto sem fotografia (a foto é responsabilidade do fornecedor) */
+.mk-ph {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(160deg, #1c1b22, #111015);
+  color: rgba(255, 255, 255, 0.34);
+}
+
+.mk-ph span {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.detail-cover {
+  height: 220px;
+  border-bottom: 1px solid var(--line);
+}

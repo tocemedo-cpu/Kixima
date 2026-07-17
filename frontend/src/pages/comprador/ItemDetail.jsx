@@ -5,6 +5,7 @@ import { api } from '../../api/client';
 import { Loading, ErrorBanner } from '../../components/Common';
 import { formatMoney } from '../../domain';
 import { useCart } from './CartContext';
+import ProductCover from '../../components/ProductCover';
 
 export default function ItemDetail() {
   const { id } = useParams();
@@ -34,7 +35,11 @@ export default function ItemDetail() {
       </button>
 
       <div className="grid-cols grid-2" style={{ alignItems: 'start' }}>
-        <div className="card card-pad">
+        <div className="card" style={{ overflow: 'hidden' }}>
+          <div className="detail-cover">
+            <ProductCover imageUrl={product.imageUrl} category={product.category} name={product.name} />
+          </div>
+          <div className="card-pad">
           <span className="badge badge-neutral">{product.category}</span>
           <h1 style={{ fontSize: 22, marginTop: 12 }}>{product.name}</h1>
           <p style={{ fontSize: 14, color: 'var(--ink-600)', marginTop: 10, lineHeight: 1.6 }}>
@@ -44,6 +49,7 @@ export default function ItemDetail() {
           <div style={{ marginTop: 20, display: 'grid', gap: 10, fontSize: 13.5 }}>
             <Row label="Fornecedor">{product.supplier?.name}</Row>
             {product.leadTimeDays ? <Row label="Prazo de entrega">{product.leadTimeDays} dias</Row> : null}
+          </div>
           </div>
         </div>
 

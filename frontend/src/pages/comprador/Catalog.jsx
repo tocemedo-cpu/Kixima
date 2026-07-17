@@ -9,6 +9,7 @@ import { formatMoney } from '../../domain';
 import { useCart } from './CartContext';
 import { Icon, Stars } from '../../components/icons';
 import CategoryArt from '../../components/CategoryArt';
+import ProductCover from '../../components/ProductCover';
 import MarketHero from '../../components/MarketHero';
 import MarketAside from '../../components/MarketAside';
 
@@ -115,7 +116,7 @@ export default function Catalog() {
             return (
               <div key={p.id} className="mk-card">
                 <div className="mk-cover">
-                  <CategoryArt category={p.category} imageUrl={p.imageUrl} alt={p.name} />
+                  <ProductCover imageUrl={p.imageUrl} category={p.category} name={p.name} />
                   <span className={`mk-avail ${p.active ? 'on' : 'off'}`}>{p.active ? 'Disponível' : 'Sob Consulta'}</span>
                 </div>
                 <div className="mk-body">

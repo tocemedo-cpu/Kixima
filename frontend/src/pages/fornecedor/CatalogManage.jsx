@@ -6,7 +6,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
 import { formatMoney } from '../../domain';
-import CategoryArt from '../../components/CategoryArt';
+import ProductCover from '../../components/ProductCover';
 import { Icon } from '../../components/icons';
 
 const EMPTY_FORM = { name: '', description: '', category: '', unitPrice: '', currency: 'AOA', leadTimeDays: '' };
@@ -141,7 +141,7 @@ export default function CatalogManage() {
           {products.map((p) => (
             <div key={p.id} className="mk-card">
               <div className="mk-cover">
-                <CategoryArt category={p.category} imageUrl={p.imageUrl} alt={p.name} />
+                <ProductCover imageUrl={p.imageUrl} category={p.category} name={p.name} />
                 <input
                   ref={(el) => (fileInputs.current[p.id] = el)}
                   type="file"

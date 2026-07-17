@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { formatMoney, computeCartTotals } from '../domain';
 import { useCart } from '../pages/comprador/CartContext';
-import CategoryArt from './CategoryArt';
+import ProductCover from './ProductCover';
 import { Icon } from './icons';
 
 const BUCKETS = [
@@ -43,7 +43,7 @@ export default function MarketAside() {
             <div className="aside-items">
               {items.map((i) => (
                 <div key={i.product.id} className="aside-item">
-                  <span className="aside-thumb"><CategoryArt category={i.product.category} imageUrl={i.product.imageUrl} alt="" /></span>
+                  <span className="aside-thumb"><ProductCover imageUrl={i.product.imageUrl} category={i.product.category} caption={false} /></span>
                   <div className="aside-item-main">
                     <div className="aside-item-name">{i.product.name}</div>
                     <div className="aside-item-qty">
