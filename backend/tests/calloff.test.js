@@ -19,6 +19,21 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  // Esta suite cria um contrato-quadro ATIVO sobre o mesmo fornecedor/categoria
+  // que as outras suites usam. Como todas partilham a base de dados semeada
+  // (sem reset por ficheiro), é preciso remover o contrato — e os call-offs que
+  // dele dependem — para não alterar o comportamento das restantes suites,
+  // qualquer que seja a ordem de execução do Jest.
+  const callOffs = await prisma.purchaseOrder.findMany({
+    where: { isCallOff: true },
+    select: { id: true },
+  });
+  const ids = callOffs.map((p) => p.id);
+  if (ids.length) {
+    await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrderId: { in: ids } } });
+    await prisma.purchaseOrder.deleteMany({ where: { id: { in: ids } } });
+  }
+  await prisma.contract.deleteMany({});
   await prisma.$disconnect();
 });
 
