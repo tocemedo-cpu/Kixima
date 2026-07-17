@@ -6,6 +6,7 @@ import { ROLE_LABELS } from '../domain';
 import { NAV_CONFIG } from '../navConfig';
 import { api } from '../api/client';
 import NotificationPanel from './NotificationPanel';
+import Logo from './Logo';
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
@@ -35,7 +36,7 @@ export default function AppLayout() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <span className="sidebar-brand-mark">KIXIMA</span>
+          <Logo size={20} subtitle />
         </div>
         <div className="sidebar-persona">
           <strong>{user.name}</strong>

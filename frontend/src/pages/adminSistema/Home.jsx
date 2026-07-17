@@ -39,7 +39,7 @@ export default function AdminHome() {
         <strong style={{ fontSize: 13.5 }}>Apólices</strong>
         <p className="helptext" style={{ marginTop: 8 }}>
           Emita apólices KIXIMA→Cliente e reveja apólices Fornecedor→KIXIMA em{' '}
-          <Link to="/sistema/apolices" style={{ color: 'var(--navy-700)', fontWeight: 600 }}>Gestão de Apólices</Link>.
+          <Link to="/sistema/apolices" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Gestão de Apólices</Link>.
           Alertas de expiração (30 dias) são enviados automaticamente ao Company Admin e Financeiro de cada empresa.
         </p>
       </div>

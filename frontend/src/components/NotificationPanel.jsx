@@ -58,7 +58,7 @@ export default function NotificationPanel({ notifications, onClose, onRead }) {
       <Link
         to="/notificacoes"
         onClick={onClose}
-        style={{ display: 'block', textAlign: 'center', padding: '10px', fontSize: 12.5, fontWeight: 600, color: 'var(--navy-700)', borderTop: '1px solid var(--line)' }}
+        style={{ display: 'block', textAlign: 'center', padding: '10px', fontSize: 12.5, fontWeight: 600, color: 'var(--brand-600)', borderTop: '1px solid var(--line)' }}
       >
         Ver todas as notificações
       </Link>

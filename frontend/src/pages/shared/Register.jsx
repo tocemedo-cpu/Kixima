@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
+import Logo from '../../components/Logo';
 
 const EMPTY_FORM = { name: '', taxId: '', type: 'CLIENTE', contactEmail: '', contactPhone: '', address: '' };
 
@@ -35,7 +36,7 @@ export default function Register() {
   return (
     <div className="login-screen">
       <div className="login-hero">
-        <span className="login-hero-mark">KIXIMA</span>
+        <Logo size={26} subtitle light />
         <div>
           <h1 className="login-hero-title">Due diligence uma vez. Confiança em cada transação.</h1>
           <p className="login-hero-body">
@@ -99,7 +100,7 @@ export default function Register() {
                 </button>
               </form>
               <p className="helptext" style={{ marginTop: 16 }}>
-                Já tem uma conta? <Link to="/login" style={{ color: 'var(--navy-700)', fontWeight: 600 }}>Entrar</Link>
+                Já tem uma conta? <Link to="/login" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Entrar</Link>
               </p>
             </>
           )}

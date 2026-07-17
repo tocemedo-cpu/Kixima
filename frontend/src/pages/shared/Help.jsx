@@ -46,7 +46,7 @@ export default function Help() {
         <strong style={{ fontSize: 14 }}>Ainda precisa de ajuda?</strong>
         <p style={{ fontSize: 13.5, color: 'var(--ink-600)', marginTop: 6 }}>
           Contacte a equipa KIXIMA em{' '}
-          <a href="mailto:suporte@kixima.co.ao" style={{ color: 'var(--navy-700)', fontWeight: 600 }}>
+          <a href="mailto:suporte@kixima.co.ao" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>
             suporte@kixima.co.ao
           </a>
           .

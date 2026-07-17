@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { ROLE_HOME } from '../../domain';
+import Logo from '../../components/Logo';
 
 const DEMO_USERS = [
   { email: 'comprador@petroangola.co.ao', label: 'Comprador' },
@@ -46,9 +47,11 @@ export default function LoginPage() {
   return (
     <div className="login-screen">
       <div className="login-hero">
-        <span className="login-hero-mark">KIXIMA</span>
+        <Logo size={26} subtitle light />
         <div>
-          <h1 className="login-hero-title">O fornecedor recebe em 7 dias. Antes mesmo de entregar.</h1>
+          <h1 className="login-hero-title">
+            O fornecedor recebe em <span className="accent">7 dias</span>. Antes mesmo de entregar.
+          </h1>
           <p className="login-hero-body">
             E-market com pagamento garantido para o setor petrolífero e de gás em Angola. Due
             diligence, garantia de pagamento e apólice de seguro — para que o comprador nunca
@@ -95,7 +98,7 @@ export default function LoginPage() {
 
           <p className="helptext" style={{ marginTop: 16 }}>
             A sua empresa ainda não está na KIXIMA?{' '}
-            <Link to="/cadastro" style={{ color: 'var(--navy-700)', fontWeight: 600 }}>Registe-a aqui</Link>.
+            <Link to="/cadastro" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Registe-a aqui</Link>.
           </p>
         </div>
       </div>

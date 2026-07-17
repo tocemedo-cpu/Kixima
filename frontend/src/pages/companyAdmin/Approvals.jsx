@@ -32,7 +32,7 @@ export default function Approvals() {
             { key: 'reference', header: 'Referência', render: (r) => <span className="mono">{r.reference}</span> },
             { key: 'total', header: 'Valor', render: (r) => formatMoney(r.totalAmount, r.currency) },
             { key: 'date', header: 'Emitida em', render: (r) => formatDate(r.createdAt) },
-            { key: 'action', header: '', render: () => <span style={{ color: 'var(--navy-700)', fontWeight: 600 }}>Rever →</span> },
+            { key: 'action', header: '', render: () => <span style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Rever →</span> },
           ]}
         />
       </div>

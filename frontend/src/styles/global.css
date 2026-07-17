@@ -1,31 +1,43 @@
 /* KIXIMA — tokens de design
-   Azul petróleo (confiança/indústria) + âmbar (energia) + verde-azulado
-   (pagamento garantido) + terracota (divergência). Ver plano de design. */
+   Identidade da marca: vermelho KIXIMA (ação/energia) sobre preto de
+   operações + âmbar da chama. Verde para "pagamento garantido/OK", vermelho
+   queimado para divergência. Plataforma B2B da indústria petrolífera. */
 
 :root {
-  --navy-950: #0a1f2c;
-  --navy-900: #0e2a3d;
-  --navy-800: #163a52;
-  --navy-700: #1f4d6b;
-  --navy-100: #dbe6ec;
+  /* Vermelho KIXIMA — cor primária da marca */
+  --brand-700: #b3141f;
+  --brand-600: #e11d2a;
+  --brand-500: #ef3340;
+  --brand-100: #fbdadd;
+  --brand-050: #fdecee;
 
-  --amber-500: #e3a23c;
-  --amber-600: #c9871f;
-  --amber-100: #fbead0;
+  /* Neutros escuros — preto de marca (login, painéis escuros, títulos) */
+  --navy-950: #0b0c0e;
+  --navy-900: #14161c;
+  --navy-800: #232733;
+  --navy-700: #3a3f4c;
+  --navy-100: #c7cad2;
 
-  --teal-600: #12786b;
-  --teal-500: #1f9384;
-  --teal-100: #d9efe9;
+  /* Âmbar da chama — usado no logótipo e em estados "pendente" */
+  --amber-500: #f2a33c;
+  --amber-600: #c9821f;
+  --amber-100: #fbe8cf;
 
+  /* Verde — pagamento garantido / estados OK */
+  --teal-600: #0f7a52;
+  --teal-500: #16a066;
+  --teal-100: #d8efe2;
+
+  /* Vermelho queimado — divergência / erro (distinto do vermelho da marca) */
   --terracotta-600: #b3402a;
   --terracotta-100: #f6ddd5;
 
-  --paper-050: #f6f4ef;
-  --paper-100: #efece3;
-  --ink-900: #16232b;
-  --ink-600: #4a5a63;
-  --ink-400: #7c8b92;
-  --line: #dcd6c9;
+  --paper-050: #f7f7f8;
+  --paper-100: #eeeef1;
+  --ink-900: #16181d;
+  --ink-600: #4b4f59;
+  --ink-400: #868b96;
+  --line: #e2e2e7;
 
   --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
   --font-body: 'IBM Plex Sans', 'Segoe UI', sans-serif;
@@ -34,7 +46,7 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
-  --shadow-card: 0 1px 2px rgba(14, 42, 61, 0.06), 0 6px 20px rgba(14, 42, 61, 0.06);
+  --shadow-card: 0 1px 2px rgba(11, 12, 14, 0.05), 0 6px 20px rgba(11, 12, 14, 0.06);
   --sidebar-width: 248px;
 }
 
@@ -86,8 +98,63 @@ textarea {
 }
 
 :focus-visible {
-  outline: 2px solid var(--amber-600);
+  outline: 2px solid var(--brand-600);
   outline-offset: 2px;
+}
+
+/* --- Marca (logótipo da chama) ---------------------------------------- */
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-flame {
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
+.brand-flame svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 1px 1px rgba(225, 29, 42, 0.25));
+}
+
+.flame-outer {
+  fill: var(--brand-600);
+}
+
+.flame-inner {
+  fill: var(--amber-500);
+}
+
+.brand-word {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--brand-600);
+  line-height: 1;
+  display: block;
+}
+
+.brand-word-light {
+  color: #fff;
+}
+
+.brand-sub {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-400);
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.brand-sub-light {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -110,12 +177,13 @@ textarea {
 }
 
 .sidebar {
-  background: var(--navy-900);
-  color: var(--paper-050);
-  padding: 24px 16px;
+  background: #fff;
+  color: var(--ink-600);
+  border-right: 1px solid var(--line);
+  padding: 22px 14px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -125,35 +193,21 @@ textarea {
   display: flex;
   align-items: baseline;
   gap: 6px;
-  padding: 0 8px;
-}
-
-.sidebar-brand-mark {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 20px;
-  color: var(--amber-500);
-  letter-spacing: 0.02em;
-}
-
-.sidebar-brand-sub {
-  font-size: 10.5px;
-  color: var(--navy-100);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  padding: 2px 8px;
 }
 
 .sidebar-persona {
-  padding: 10px 12px;
-  background: var(--navy-800);
+  padding: 12px;
+  background: var(--paper-050);
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
   font-size: 12.5px;
-  color: var(--navy-100);
+  color: var(--ink-600);
 }
 
 .sidebar-persona strong {
   display: block;
-  color: #fff;
+  color: var(--navy-900);
   font-size: 13.5px;
   font-weight: 600;
 }
@@ -171,7 +225,7 @@ textarea {
   gap: 10px;
   padding: 9px 12px;
   border-radius: var(--radius-sm);
-  color: var(--navy-100);
+  color: var(--ink-600);
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
@@ -179,32 +233,33 @@ textarea {
 }
 
 .sidebar-link:hover {
-  background: var(--navy-800);
-  color: #fff;
+  background: var(--paper-100);
+  color: var(--navy-900);
 }
 
 .sidebar-link.active {
-  background: var(--amber-500);
-  color: var(--navy-950);
+  background: var(--brand-600);
+  color: #fff;
   font-weight: 600;
 }
 
 .sidebar-footer {
-  border-top: 1px solid var(--navy-800);
+  border-top: 1px solid var(--line);
   padding-top: 14px;
   font-size: 12px;
-  color: var(--navy-100);
+  color: var(--ink-400);
 }
 
 .sidebar-logout {
   background: none;
   border: none;
-  color: var(--navy-100);
+  color: var(--brand-600);
   cursor: pointer;
   padding: 0;
   font-size: 12px;
   text-decoration: underline;
   margin-top: 6px;
+  display: block;
 }
 
 .main-column {
@@ -258,7 +313,7 @@ textarea {
   right: 7px;
   width: 8px;
   height: 8px;
-  background: var(--terracotta-600);
+  background: var(--brand-600);
   border-radius: 50%;
   border: 2px solid #fff;
 }
@@ -446,21 +501,30 @@ tbody tr:hover {
 }
 
 .btn-primary {
-  background: var(--navy-900);
+  background: var(--brand-600);
   color: #fff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--navy-800);
+  background: var(--brand-700);
 }
 
 .btn-accent {
-  background: var(--amber-500);
-  color: var(--navy-950);
+  background: var(--brand-600);
+  color: #fff;
 }
 
 .btn-accent:hover:not(:disabled) {
-  background: var(--amber-600);
+  background: var(--brand-700);
+}
+
+.btn-dark {
+  background: var(--navy-900);
+  color: #fff;
+}
+
+.btn-dark:hover:not(:disabled) {
+  background: var(--navy-800);
 }
 
 .btn-ghost {
@@ -514,7 +578,7 @@ tbody tr:hover {
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
-  border-color: var(--navy-700);
+  border-color: var(--brand-600);
 }
 
 .helptext {
@@ -621,16 +685,9 @@ tbody tr:hover {
   flex-direction: column;
   justify-content: space-between;
   background:
-    radial-gradient(circle at 15% 20%, rgba(227, 162, 60, 0.16), transparent 40%),
-    linear-gradient(160deg, var(--navy-950), var(--navy-900) 60%, var(--navy-800));
-}
-
-.login-hero-mark {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--amber-500);
-  letter-spacing: 0.02em;
+    radial-gradient(circle at 12% 18%, rgba(225, 29, 42, 0.22), transparent 42%),
+    radial-gradient(circle at 90% 90%, rgba(242, 163, 60, 0.10), transparent 40%),
+    linear-gradient(160deg, var(--navy-950), var(--navy-900) 55%, #1c1f28);
 }
 
 .login-hero-title {
@@ -640,6 +697,11 @@ tbody tr:hover {
   font-weight: 600;
   max-width: 480px;
   margin: 40px 0 18px;
+  color: #fff;
+}
+
+.login-hero-title .accent {
+  color: var(--brand-500);
 }
 
 .login-hero-body {
@@ -679,6 +741,7 @@ tbody tr:hover {
   background: #fff;
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
+  border-top: 3px solid var(--brand-600);
   box-shadow: var(--shadow-card);
   padding: 32px;
 }
