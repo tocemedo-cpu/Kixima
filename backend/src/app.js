@@ -3,6 +3,7 @@
 // para que os testes possam importar `app` sem abrir uma porta real.
 
 require('express-async-errors');
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -22,9 +23,14 @@ const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
-app.use(helmet());
+// crossOriginResourcePolicy: cross-origin para as imagens carregadas poderem
+// ser servidas ao frontend (dev noutra porta) sem bloqueio do helmet.
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors());
 app.use(express.json());
+
+// Imagens de produtos carregadas pelos fornecedores.
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
 if (!config.isTest) {
   app.use(morgan(config.isDevelopment ? 'dev' : 'combined'));
 }

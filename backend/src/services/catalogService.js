@@ -57,4 +57,12 @@ async function deactivateProduct(id, supplierCompanyId) {
   return prisma.product.update({ where: { id }, data: { active: false } });
 }
 
-module.exports = { listCatalog, getProduct, createProduct, updateProduct, deactivateProduct };
+async function setProductImage(id, supplierCompanyId, imageUrl) {
+  const product = await getProduct(id);
+  if (product.supplierId !== supplierCompanyId) {
+    throw new ForbiddenError('Só pode editar itens da sua própria empresa.');
+  }
+  return prisma.product.update({ where: { id }, data: { imageUrl } });
+}
+
+module.exports = { listCatalog, getProduct, createProduct, updateProduct, deactivateProduct, setProductImage };

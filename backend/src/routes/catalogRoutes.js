@@ -4,6 +4,7 @@ const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 const { validate } = require('../utils/validate');
 const { createProductSchema } = require('../utils/schemas');
+const { upload } = require('../config/upload');
 
 const router = express.Router();
 
@@ -13,6 +14,7 @@ router.get('/', catalogController.list);
 router.get('/:id', catalogController.getOne);
 router.post('/', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), validate(createProductSchema), catalogController.create);
 router.put('/:id', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogController.update);
+router.post('/:id/image', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), upload.single('image'), catalogController.uploadImage);
 router.delete('/:id', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogController.deactivate);
 
 module.exports = router;
