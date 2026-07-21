@@ -51,11 +51,21 @@ const config = {
   },
 
   storage: {
-    provider: process.env.STORAGE_PROVIDER || 's3',
+    // 'local' (disco, por omissão) ou 's3' (AWS S3 / Supabase Storage / R2 / MinIO).
+    provider: process.env.STORAGE_PROVIDER || 'local',
     bucket: process.env.STORAGE_BUCKET,
     region: process.env.STORAGE_REGION,
     accessKey: process.env.STORAGE_ACCESS_KEY,
     secretKey: process.env.STORAGE_SECRET_KEY,
+    // Endpoint S3-compatível (ex.: Supabase Storage, R2, MinIO). Vazio = AWS S3.
+    endpoint: process.env.STORAGE_ENDPOINT || undefined,
+    // URL público base para servir as imagens (CDN / bucket público). Se vazio,
+    // é construído a partir do endpoint/bucket ou do host AWS.
+    publicUrl: process.env.STORAGE_PUBLIC_URL || undefined,
+    // path-style é necessário para a maioria dos S3-compatíveis (Supabase/MinIO).
+    forcePathStyle: process.env.STORAGE_FORCE_PATH_STYLE
+      ? process.env.STORAGE_FORCE_PATH_STYLE === 'true'
+      : Boolean(process.env.STORAGE_ENDPOINT),
   },
 
   logLevel: process.env.LOG_LEVEL || 'info',

@@ -2,6 +2,7 @@
 
 const prisma = require('../config/database');
 const { NotFoundError, ForbiddenError } = require('../utils/errors');
+const storageService = require('./storageService');
 
 async function listCatalog({ category, search, supplierId } = {}) {
   return prisma.product.findMany({
@@ -57,11 +58,18 @@ async function deactivateProduct(id, supplierCompanyId) {
   return prisma.product.update({ where: { id }, data: { active: false } });
 }
 
-async function setProductImage(id, supplierCompanyId, imageUrl) {
+async function setProductImage(id, supplierCompanyId, file) {
   const product = await getProduct(id);
   if (product.supplierId !== supplierCompanyId) {
     throw new ForbiddenError('Só pode editar itens da sua própria empresa.');
   }
+  // Guarda no provider configurado (local/S3) só depois de validar a propriedade.
+  const imageUrl = await storageService.saveImage({
+    buffer: file.buffer,
+    originalname: file.originalname,
+    mimetype: file.mimetype,
+    keyHint: id,
+  });
   return prisma.product.update({ where: { id }, data: { imageUrl } });
 }
 

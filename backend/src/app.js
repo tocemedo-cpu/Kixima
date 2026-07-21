@@ -29,8 +29,10 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors());
 app.use(express.json());
 
-// Imagens de produtos carregadas pelos fornecedores.
-app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
+// Imagens de produtos no modo de armazenamento 'local' (em S3 são servidas
+// diretamente pelo URL público do bucket).
+const { uploadsDir } = require('./services/storageService');
+app.use('/api/uploads', express.static(uploadsDir));
 if (!config.isTest) {
   app.use(morgan(config.isDevelopment ? 'dev' : 'combined'));
 }

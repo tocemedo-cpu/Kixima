@@ -29,8 +29,7 @@ async function uploadImage(req, res) {
   if (!req.file) {
     return res.status(400).json({ error: { code: 'NO_FILE', message: 'Nenhuma imagem enviada.' } });
   }
-  const imageUrl = `/api/uploads/${req.file.filename}`;
-  const product = await catalogService.setProductImage(req.params.id, req.user.companyId, imageUrl);
+  const product = await catalogService.setProductImage(req.params.id, req.user.companyId, req.file);
   return res.json(product);
 }
 

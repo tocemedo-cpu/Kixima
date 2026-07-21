@@ -183,8 +183,20 @@ Antes de toda a suite, `tests/globalSetup.js` repõe o schema
 - **`calloff.test.js`** — PO coberta por contrato-quadro vira Call-off e salta
   a aprovação individual.
 
+## Imagens de produtos (armazenamento)
+
+O fornecedor carrega a foto de cada produto (`POST /api/catalog/:id/image`). O
+armazenamento é plugável (`src/services/storageService.js`):
+
+- **`STORAGE_PROVIDER=local`** (por omissão) — guarda em `uploads/` e serve em
+  `/api/uploads`. Bom para dev; **efémero** em muitos hosts (perde-se no deploy).
+- **`STORAGE_PROVIDER=s3`** — envia para um bucket S3-compatível (AWS S3,
+  **Supabase Storage**, Cloudflare R2, MinIO) e guarda o URL público. Persiste
+  entre deploys. Ver a receita do Supabase Storage no `.env.example`.
+
+A propriedade do item é validada **antes** do upload (só o fornecedor dono).
+
 ## Próximos passos sugeridos
 
-- Upload de documentos (apólices, certificados) para `STORAGE_PROVIDER=s3`.
 - Provider de email real (SMTP/SES) em `notificationService.dispatchEmail`.
 - Paginação nas listagens (`GET /api/purchase-orders`, `/api/catalog`, etc.).

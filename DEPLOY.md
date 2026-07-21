@@ -66,9 +66,24 @@ Isto cria as 5 personas de demonstração (password `Kixima@123`) e um catálogo
 | `EMAIL_PROVIDER` | `console` | troca por `smtp` + credenciais para email real |
 
 ## Notas de produção
-- **Imagens de produtos:** ficam em disco local, que no plano free do Render é
-  **efémero** (perde-se em cada deploy). Para persistir, adiciona um *Disk* ao
-  serviço (planos pagos) ou implementa armazenamento **S3** (`STORAGE_PROVIDER=s3`).
+- **Imagens de produtos (persistência):** por omissão ficam em disco local, que
+  no plano free do Render é **efémero** (perde-se em cada deploy). Para
+  persistirem, usa o **Supabase Storage** (S3-compatível, já tens Supabase):
+  1. Supabase → Storage → cria um bucket **público** `product-images`.
+  2. Storage → Settings → **S3 Connection**: ativa e copia Access key / Secret.
+  3. No Render → Environment, acrescenta:
+     ```
+     STORAGE_PROVIDER=s3
+     STORAGE_BUCKET=product-images
+     STORAGE_REGION=eu-central-1
+     STORAGE_ENDPOINT=https://zbaybvxycwkyjkndjhly.supabase.co/storage/v1/s3
+     STORAGE_PUBLIC_URL=https://zbaybvxycwkyjkndjhly.supabase.co/storage/v1/object/public/product-images
+     STORAGE_ACCESS_KEY=...   (segredo)
+     STORAGE_SECRET_KEY=...   (segredo)
+     STORAGE_FORCE_PATH_STYLE=true
+     ```
+  A partir daí, as fotos carregadas pelos fornecedores ficam guardadas no
+  Supabase e sobrevivem aos deploys.
 - **Segurança:** roda a Database password e quaisquer chaves que tenham sido
   partilhadas em texto.
 - **Domínio próprio:** podes ligar `app.kixima.co.ao` em Settings → Custom Domains.
