@@ -35,13 +35,14 @@ src/
 ```bash
 npm install
 
-# O .env.development já está apontado para o projeto Supabase
-# mhonwkmmjngvnjpdvqhk — só falta substituir [DB-PASSWORD] pela password
-# real da base de dados (dashboard -> Project Settings -> Database).
+# Projeto Supabase: zbaybvxycwkyjkndjhly
+# Copia .env.example para .env.development e define o DATABASE_URL com a
+# connection string do POOLER (Session, 5432) — ver secção "Ligar à base de
+# dados Supabase" mais abaixo. A password é a "Database password" do dashboard
+# (Project Settings -> Database).
 #
-# Se ainda não correu o script de criação das tabelas nesse projeto,
-# faça-o primeiro: cole prisma/supabase_setup.sql no SQL Editor do
-# dashboard do Supabase e execute.
+# As tabelas são criadas com `npx prisma db push` (ou colando
+# prisma/supabase_setup.sql no SQL Editor do dashboard).
 
 npx prisma generate
 npm run seed                 # popula dados de exemplo (5 personas + catálogo)
@@ -64,9 +65,9 @@ não é usado). Só precisas do `DATABASE_URL` com a **Database password**.
 2. **Definir no `.env`** (copia de `.env.example`):
    ```bash
    # direta (IPv6):
-   DATABASE_URL="postgresql://postgres:SUA_DB_PASSWORD@db.SEU_REF.supabase.co:5432/postgres?sslmode=require"
+   DATABASE_URL="postgresql://postgres:SUA_DB_PASSWORD@db.zbaybvxycwkyjkndjhly.supabase.co:5432/postgres?sslmode=require"
    # ou pooler (IPv4):
-   DATABASE_URL="postgresql://postgres.SEU_REF:SUA_DB_PASSWORD@aws-0-REGIAO.pooler.supabase.com:5432/postgres?sslmode=require"
+   DATABASE_URL="postgresql://postgres.zbaybvxycwkyjkndjhly:SUA_DB_PASSWORD@aws-0-REGIAO.pooler.supabase.com:5432/postgres?sslmode=require"
    JWT_SECRET="<gera com: node -e \"console.log(require('crypto').randomBytes(48).toString('base64url'))\">"
    ```
 
