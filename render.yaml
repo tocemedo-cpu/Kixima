@@ -19,7 +19,6 @@ services:
     runtime: node
     plan: free
     region: frankfurt
-    branch: main
     buildCommand: >-
       cd frontend && npm ci && npm run build &&
       cd ../backend && npm ci && npx prisma generate
