@@ -24,8 +24,12 @@ const DOC_LABELS = {
  * guarda os documentos de credenciamento exigidos para o tipo de empresa.
  * @param uploadedDocs [{ type, file }]
  */
-async function registerCompany(data, uploadedDocs = []) {
-  const { name, taxId, type, contactEmail, contactPhone, address, adminName, adminEmail, adminPassword } = data;
+async function registerCompany(data, uploadedDocs = [], policyFile = null) {
+  const {
+    name, taxId, type, contactEmail, contactPhone, address,
+    adminName, adminEmail, adminPassword,
+    policyNumber, insurer, coverageAmount, policyCurrency, policyValidFrom, policyValidUntil,
+  } = data;
 
   // 1. Documentos obrigatórios presentes?
   const required = REQUIRED_DOCS[type] || [];
@@ -33,6 +37,18 @@ async function registerCompany(data, uploadedDocs = []) {
   const missing = required.filter((t) => !providedTypes.has(t));
   if (missing.length) {
     throw new BusinessRuleError(`Documentos obrigatórios em falta: ${missing.map((t) => DOC_LABELS[t]).join(', ')}.`);
+  }
+
+  // 1b. Apólice de seguro Fornecedor→KIXIMA — obrigatória para fornecedoras.
+  if (type === 'FORNECEDOR') {
+    if (!policyNumber || !insurer || !coverageAmount || !policyValidFrom || !policyValidUntil) {
+      throw new BusinessRuleError(
+        'A apólice de seguro (Fornecedor→KIXIMA) é obrigatória no cadastro de empresas fornecedoras — indique seguradora, nº, cobertura e validade.'
+      );
+    }
+    if (!policyFile) {
+      throw new BusinessRuleError('Anexe o documento (PDF/imagem) da apólice de seguro.');
+    }
   }
 
   // 2. Unicidade (falhar cedo, antes de guardar ficheiros).
@@ -57,9 +73,21 @@ async function registerCompany(data, uploadedDocs = []) {
     docRecords.push({ type: d.type, fileUrl, originalName: d.file.originalname });
   }
 
+  // 3b. Guardar o documento da apólice (se fornecedora e enviado).
+  let policyDocumentUrl = null;
+  if (type === 'FORNECEDOR' && policyFile) {
+    policyDocumentUrl = await storageService.saveFile({
+      buffer: policyFile.buffer,
+      originalname: policyFile.originalname,
+      mimetype: policyFile.mimetype,
+      keyHint: `${taxId}-APOLICE`,
+      folder: 'documents',
+    });
+  }
+
   const passwordHash = await bcrypt.hash(adminPassword, 10);
 
-  // 4. Criar empresa + admin + documentos de forma atómica.
+  // 4. Criar empresa + admin + documentos (+ apólice, se fornecedora) atómico.
   return prisma.$transaction(async (tx) => {
     const company = await tx.company.create({
       data: { name, taxId, type, contactEmail, contactPhone, address, status: 'PENDENTE' },
@@ -69,6 +97,21 @@ async function registerCompany(data, uploadedDocs = []) {
     });
     for (const dr of docRecords) {
       await tx.companyDocument.create({ data: { ...dr, companyId: company.id } });
+    }
+    if (type === 'FORNECEDOR') {
+      await tx.supplierToKiximaPolicy.create({
+        data: {
+          companyId: company.id,
+          policyNumber,
+          insurer,
+          coverageAmount,
+          currency: policyCurrency || 'AOA',
+          validFrom: policyValidFrom,
+          validUntil: policyValidUntil,
+          documentUrl: policyDocumentUrl,
+          status: 'SUBMETIDA',
+        },
+      });
     }
     return company;
   });

@@ -17,6 +17,13 @@ const EMPTY_FORM = {
   adminName: '',
   adminEmail: '',
   adminPassword: '',
+  // Apólice de seguro Fornecedor→KIXIMA (só fornecedoras).
+  insurer: '',
+  policyNumber: '',
+  coverageAmount: '',
+  policyCurrency: 'AOA',
+  policyValidFrom: '',
+  policyValidUntil: '',
 };
 
 // Documentos obrigatórios por tipo (tem de espelhar o backend).
@@ -42,6 +49,8 @@ export default function Register() {
   const update = (field, value) => setForm((f) => ({ ...f, [field]: value }));
   const requiredDocs = REQUIRED_DOCS[form.type] || [];
 
+  const isSupplier = form.type === 'FORNECEDOR';
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -52,10 +61,21 @@ export default function Register() {
       setError(`Anexe os documentos: ${missing.map((d) => d.label).join(', ')}.`);
       return;
     }
+    if (isSupplier && !docs.APOLICE_SEGURO) {
+      setError('Anexe o documento da apólice de seguro (Fornecedor→KIXIMA).');
+      return;
+    }
 
     const fd = new FormData();
-    Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+    const companyFields = ['type', 'name', 'taxId', 'contactEmail', 'contactPhone', 'address', 'adminName', 'adminEmail', 'adminPassword'];
+    companyFields.forEach((k) => fd.append(k, form[k]));
     requiredDocs.forEach((d) => docs[d.type] && fd.append(d.type, docs[d.type]));
+
+    // Campos da apólice só para fornecedoras (evita quebrar a validação do cliente).
+    if (isSupplier) {
+      ['insurer', 'policyNumber', 'coverageAmount', 'policyCurrency', 'policyValidFrom', 'policyValidUntil'].forEach((k) => fd.append(k, form[k]));
+      fd.append('APOLICE_SEGURO', docs.APOLICE_SEGURO);
+    }
 
     setSubmitting(true);
     try {
@@ -161,6 +181,59 @@ export default function Register() {
                   </div>
                 ))}
                 <small className="helptext">PDF ou imagem, até 10 MB cada.</small>
+
+                {isSupplier ? (
+                  <>
+                    <div className="reg-section">Apólice de seguro (Fornecedor → KIXIMA)</div>
+                    <p className="helptext" style={{ marginTop: -6, marginBottom: 10 }}>
+                      Obrigatória no credenciamento de fornecedoras — garante a cobertura das
+                      transações realizadas na plataforma.
+                    </p>
+                    <div className="grid-cols grid-2">
+                      <div className="field">
+                        <label>Seguradora <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                        <input required value={form.insurer} onChange={(e) => update('insurer', e.target.value)} />
+                      </div>
+                      <div className="field">
+                        <label>Nº da apólice <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                        <input required value={form.policyNumber} onChange={(e) => update('policyNumber', e.target.value)} />
+                      </div>
+                    </div>
+                    <div className="grid-cols grid-2">
+                      <div className="field">
+                        <label>Cobertura <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                        <input type="number" min="0" step="any" required value={form.coverageAmount} onChange={(e) => update('coverageAmount', e.target.value)} />
+                      </div>
+                      <div className="field">
+                        <label>Moeda</label>
+                        <select value={form.policyCurrency} onChange={(e) => update('policyCurrency', e.target.value)}>
+                          <option value="AOA">AOA</option>
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid-cols grid-2">
+                      <div className="field">
+                        <label>Válida de <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                        <input type="date" required value={form.policyValidFrom} onChange={(e) => update('policyValidFrom', e.target.value)} />
+                      </div>
+                      <div className="field">
+                        <label>Válida até <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                        <input type="date" required value={form.policyValidUntil} onChange={(e) => update('policyValidUntil', e.target.value)} />
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label>Documento da apólice <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                      <input
+                        type="file"
+                        accept="application/pdf,image/*"
+                        onChange={(e) => setDocs((prev) => ({ ...prev, APOLICE_SEGURO: e.target.files[0] || undefined }))}
+                      />
+                      {docs.APOLICE_SEGURO ? <small className="helptext">✓ {docs.APOLICE_SEGURO.name}</small> : null}
+                    </div>
+                  </>
+                ) : null}
 
                 {error ? <p className="error-text" style={{ margin: '12px 0' }}>{error}</p> : null}
                 <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%', marginTop: 14 }}>

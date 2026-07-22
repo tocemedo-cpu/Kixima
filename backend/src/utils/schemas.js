@@ -20,6 +20,14 @@ const registerCompanySchema = z.object({
   adminName: z.string().min(2),
   adminEmail: z.string().email(),
   adminPassword: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.'),
+  // Apólice de seguro Fornecedor→KIXIMA — obrigatória para FORNECEDOR (validada
+  // no service). Opcional no schema porque CLIENTE não a submete.
+  policyNumber: z.string().optional(),
+  insurer: z.string().optional(),
+  coverageAmount: z.coerce.number().positive().optional(),
+  policyCurrency: z.string().optional(),
+  policyValidFrom: z.coerce.date().optional(),
+  policyValidUntil: z.coerce.date().optional(),
 });
 
 const decideCompanySchema = z.object({

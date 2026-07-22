@@ -9,8 +9,9 @@ async function register(req, res) {
   const uploadedDocs = DOCUMENT_TYPES
     .filter((type) => files[type] && files[type][0])
     .map((type) => ({ type, file: files[type][0] }));
+  const policyFile = files.APOLICE_SEGURO && files.APOLICE_SEGURO[0];
 
-  const company = await companyService.registerCompany(req.body, uploadedDocs);
+  const company = await companyService.registerCompany(req.body, uploadedDocs, policyFile);
   res.status(201).json(company);
 }
 

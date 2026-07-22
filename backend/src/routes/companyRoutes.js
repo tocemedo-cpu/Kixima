@@ -18,6 +18,7 @@ const registerDocs = uploadDocuments.fields([
   { name: 'CERTIDAO_COMERCIAL', maxCount: 1 },
   { name: 'ALVARA_COMERCIAL', maxCount: 1 },
   { name: 'LICENCA_ANPG', maxCount: 1 },
+  { name: 'APOLICE_SEGURO', maxCount: 1 }, // documento da apólice (fornecedoras)
 ]);
 
 // Cadastro público (onboarding) — sem autenticação. multipart: dados + documentos.

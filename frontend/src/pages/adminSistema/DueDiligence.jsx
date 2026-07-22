@@ -130,6 +130,12 @@ function CompanyReviewCard({ company, expanded, onToggle, onDecided }) {
                       <span>Nº <span className="mono">{supplierPolicy.policyNumber}</span> — {supplierPolicy.insurer}</span>
                       <span>Cobertura: {formatMoney(supplierPolicy.coverageAmount, supplierPolicy.currency)}</span>
                       <span>Válida: {formatDate(supplierPolicy.validFrom)} — {formatDate(supplierPolicy.validUntil)}</span>
+                      {supplierPolicy.documentUrl ? (
+                        <a className="doc-item" href={supplierPolicy.documentUrl} target="_blank" rel="noreferrer" style={{ marginTop: 4 }}>
+                          <Icon name="invoice" size={16} className="doc-ic" />
+                          Documento da apólice
+                        </a>
+                      ) : null}
                       <span><Badge tone={POLICY_STATUS[supplierPolicy.status]?.tone}>{POLICY_STATUS[supplierPolicy.status]?.label}</Badge></span>
                     </div>
                   ) : (
