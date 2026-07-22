@@ -35,20 +35,21 @@ src/
 ```bash
 npm install
 
-# Projeto Supabase: zbaybvxycwkyjkndjhly
-# Copia .env.example para .env.development e define o DATABASE_URL com a
-# connection string do POOLER (Session, 5432) — ver secção "Ligar à base de
-# dados Supabase" mais abaixo. A password é a "Database password" do dashboard
-# (Project Settings -> Database).
-#
-# As tabelas são criadas com `npx prisma db push` (ou colando
-# prisma/supabase_setup.sql no SQL Editor do dashboard).
+# Cria UM ficheiro .env (o Prisma e a app leem-no automaticamente):
+cp .env.example .env
+#   e define o DATABASE_URL (Supabase pooler — ver secção abaixo) e o JWT_SECRET.
 
-npx prisma generate
-npm run seed                 # popula dados de exemplo (5 personas + catálogo)
+npm run prisma:generate
+npm run db:push               # cria as tabelas na base de dados
+npm run seed                  # popula dados de exemplo (5 personas + catálogo)
 
 npm run dev                   # arranca em http://localhost:4000
 ```
+
+> **Um só `.env`.** Todos os scripts (`dev`, `seed`, `db:push`, `prisma:generate`)
+> leem o `.env` da pasta `backend/`. Se o `seed` falhar com *"Unique constraint
+> `tax_id`"* é porque já há dados — corre `npm run db:reset` (apaga e recria as
+> tabelas) e depois `npm run seed`.
 
 ## Ligar à base de dados Supabase
 
@@ -73,7 +74,7 @@ não é usado). Só precisas do `DATABASE_URL` com a **Database password**.
 
 3. **Criar as tabelas e popular** (a partir de uma máquina com acesso à internet):
    ```bash
-   npx prisma db push      # cria/atualiza as tabelas no Supabase
+   npm run db:push         # cria/atualiza as tabelas no Supabase
    npm run seed            # (opcional) 5 personas + catálogo de exemplo
    ```
    Em alternativa ao `db push`, podes colar `prisma/supabase_setup.sql` no SQL

@@ -5,13 +5,15 @@
   "description": "KIXIMA — e-market com pagamento garantido para o setor Oil & Gas",
   "main": "src/server.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development node -r dotenv/config src/server.js dotenv_config_path=.env.development",
-    "start": "cross-env NODE_ENV=production node -r dotenv/config src/server.js dotenv_config_path=.env.production",
+    "dev": "cross-env NODE_ENV=development node -r dotenv/config src/server.js",
+    "start": "cross-env NODE_ENV=production node src/server.js",
     "test": "cross-env NODE_ENV=test jest",
+    "seed": "cross-env NODE_ENV=development node -r dotenv/config prisma/seed.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "cross-env NODE_ENV=development dotenv -e .env.development -- prisma migrate dev",
-    "prisma:studio": "cross-env NODE_ENV=development dotenv -e .env.development -- prisma studio",
-    "seed": "cross-env NODE_ENV=development node -r dotenv/config prisma/seed.js dotenv_config_path=.env.development"
+    "db:push": "prisma db push",
+    "db:reset": "prisma db push --force-reset",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1091.0",
