@@ -68,6 +68,26 @@ async function uploadFile(path, file, field = 'image') {
   return data;
 }
 
+// POST de um FormData já montado (multipart) — ex.: cadastro com documentos.
+async function postForm(path, formData) {
+  const token = getToken();
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  const data = res.headers.get('content-type')?.includes('application/json')
+    ? await res.json().catch(() => null)
+    : null;
+  if (!res.ok) {
+    const err = new Error(data?.error?.message || `Erro ${res.status} ao enviar o formulário.`);
+    err.code = data?.error?.code;
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
 export const api = {
   get: (path, params) => request(path, { method: 'GET', params }),
   post: (path, body) => request(path, { method: 'POST', body }),
@@ -75,4 +95,5 @@ export const api = {
   put: (path, body) => request(path, { method: 'PUT', body }),
   del: (path) => request(path, { method: 'DELETE' }),
   upload: (path, file, field) => uploadFile(path, file, field),
+  postForm: (path, formData) => postForm(path, formData),
 };

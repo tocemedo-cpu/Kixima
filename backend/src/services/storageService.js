@@ -53,9 +53,8 @@ function publicUrlFor(key) {
   return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
 }
 
-async function saveS3(filename, buffer, mimetype) {
+async function saveS3(key, buffer, mimetype) {
   const { PutObjectCommand } = require('@aws-sdk/client-s3');
-  const key = `products/${filename}`;
   await getS3().send(
     new PutObjectCommand({
       Bucket: config.storage.bucket,
@@ -69,13 +68,17 @@ async function saveS3(filename, buffer, mimetype) {
 }
 
 // --- API pública ------------------------------------------------------------
-async function saveImage({ buffer, originalname, mimetype, keyHint }) {
+// folder organiza os ficheiros (ex.: 'products', 'documents').
+async function saveFile({ buffer, originalname, mimetype, keyHint, folder = 'products' }) {
   const filename = buildFilename(keyHint, originalname);
   if (config.storage.provider === 's3') {
-    logger.info(`Storage S3: a enviar ${filename} para o bucket ${config.storage.bucket}`);
-    return saveS3(filename, buffer, mimetype);
+    logger.info(`Storage S3: a enviar ${folder}/${filename} para o bucket ${config.storage.bucket}`);
+    return saveS3(`${folder}/${filename}`, buffer, mimetype);
   }
   return saveLocal(filename, buffer);
 }
 
-module.exports = { saveImage, uploadsDir };
+// Alias mantido para as imagens de produtos.
+const saveImage = (args) => saveFile({ ...args, folder: 'products' });
+
+module.exports = { saveFile, saveImage, uploadsDir };

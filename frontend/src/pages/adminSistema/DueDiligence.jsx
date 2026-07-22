@@ -3,7 +3,14 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
 import Badge from '../../components/Badge';
+import { Icon } from '../../components/icons';
 import { COMPANY_STATUS, POLICY_STATUS, formatDate, formatMoney } from '../../domain';
+
+const DOC_LABELS = {
+  CERTIDAO_COMERCIAL: 'Certidão Comercial',
+  ALVARA_COMERCIAL: 'Alvará Comercial',
+  LICENCA_ANPG: 'Licença da ANPG',
+};
 
 export default function DueDiligence() {
   const [companies, setCompanies] = useState(null);
@@ -98,6 +105,23 @@ function CompanyReviewCard({ company, expanded, onToggle, onDecided }) {
             <Loading />
           ) : (
             <>
+              <div style={{ marginBottom: 16 }}>
+                <strong style={{ fontSize: 13 }}>Documentos de credenciamento</strong>
+                {detail.documents?.length ? (
+                  <div className="doc-list">
+                    {detail.documents.map((doc) => (
+                      <a key={doc.id} className="doc-item" href={doc.fileUrl} target="_blank" rel="noreferrer">
+                        <Icon name="invoice" size={16} className="doc-ic" />
+                        {DOC_LABELS[doc.type] || doc.type}
+                        <span className="doc-name">{doc.originalName}</span>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="helptext" style={{ marginTop: 6 }}>Nenhum documento anexado no cadastro.</p>
+                )}
+              </div>
+
               {company.type === 'FORNECEDOR' && (
                 <div style={{ marginBottom: 16 }}>
                   <strong style={{ fontSize: 13 }}>Apólice Fornecedor→KIXIMA</strong>

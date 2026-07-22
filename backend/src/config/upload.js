@@ -14,4 +14,16 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-module.exports = { upload };
+// Documentos de credenciamento — aceita PDF e imagens (até 10 MB).
+function documentFilter(req, file, cb) {
+  if (/^(image\/(png|jpe?g|webp|gif)|application\/pdf)$/.test(file.mimetype)) cb(null, true);
+  else cb(new Error('Documento inválido — use PDF ou imagem (PNG/JPG).'));
+}
+
+const uploadDocuments = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: documentFilter,
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+
+module.exports = { upload, uploadDocuments };

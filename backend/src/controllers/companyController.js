@@ -1,8 +1,16 @@
 const companyService = require('../services/companyService');
 const authService = require('../services/authService');
 
+const DOCUMENT_TYPES = ['CERTIDAO_COMERCIAL', 'ALVARA_COMERCIAL', 'LICENCA_ANPG'];
+
 async function register(req, res) {
-  const company = await companyService.registerCompany(req.body);
+  // multer .fields() coloca os ficheiros em req.files[<tipo>][0].
+  const files = req.files || {};
+  const uploadedDocs = DOCUMENT_TYPES
+    .filter((type) => files[type] && files[type][0])
+    .map((type) => ({ type, file: files[type][0] }));
+
+  const company = await companyService.registerCompany(req.body, uploadedDocs);
   res.status(201).json(company);
 }
 

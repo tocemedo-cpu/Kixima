@@ -27,6 +27,15 @@ enum CompanyStatus {
   SUSPENSA
 }
 
+// Documentos exigidos no cadastro (secção 4.1). Operadora/cliente: certidão
+// comercial + alvará comercial. Fornecedora: alvará comercial + licença ANPG +
+// certidão comercial.
+enum DocumentType {
+  CERTIDAO_COMERCIAL
+  ALVARA_COMERCIAL
+  LICENCA_ANPG
+}
+
 enum PersonaRole {
   COMPRADOR
   COMPANY_ADMIN
@@ -60,8 +69,22 @@ model Company {
   clientPolicies     KiximaToClientPolicy[]
   notifications      Notification[]
   budgetLimit        BudgetLimit?
+  documents          CompanyDocument[]
 
   @@map("companies")
+}
+
+// Documento de credenciamento submetido no cadastro de uma empresa.
+model CompanyDocument {
+  id           String       @id @default(uuid())
+  companyId    String       @map("company_id")
+  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  type         DocumentType
+  fileUrl      String       @map("file_url")
+  originalName String       @map("original_name")
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  @@map("company_documents")
 }
 
 model User {

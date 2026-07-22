@@ -15,6 +15,11 @@ const registerCompanySchema = z.object({
   contactEmail: z.string().email(),
   contactPhone: z.string().optional(),
   address: z.string().optional(),
+  // Conta do primeiro utilizador (Company Admin) — permite o login após a
+  // aprovação da empresa na due diligence.
+  adminName: z.string().min(2),
+  adminEmail: z.string().email(),
+  adminPassword: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.'),
 });
 
 const decideCompanySchema = z.object({

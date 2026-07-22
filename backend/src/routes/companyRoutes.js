@@ -3,6 +3,7 @@ const companyController = require('../controllers/companyController');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 const { validate } = require('../utils/validate');
+const { uploadDocuments } = require('../config/upload');
 const {
   registerCompanySchema,
   decideCompanySchema,
@@ -12,8 +13,15 @@ const {
 
 const router = express.Router();
 
-// Cadastro público (onboarding) — sem autenticação.
-router.post('/register', validate(registerCompanySchema), companyController.register);
+// Documentos de credenciamento enviados no cadastro (um por tipo).
+const registerDocs = uploadDocuments.fields([
+  { name: 'CERTIDAO_COMERCIAL', maxCount: 1 },
+  { name: 'ALVARA_COMERCIAL', maxCount: 1 },
+  { name: 'LICENCA_ANPG', maxCount: 1 },
+]);
+
+// Cadastro público (onboarding) — sem autenticação. multipart: dados + documentos.
+router.post('/register', registerDocs, validate(registerCompanySchema), companyController.register);
 
 router.use(authenticate);
 
