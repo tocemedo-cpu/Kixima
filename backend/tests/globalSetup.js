@@ -18,6 +18,6 @@ module.exports = async () => {
 
   // Repõe o schema do zero (--force-reset apaga e recria as tabelas).
   run('npx prisma db push --force-reset --skip-generate');
-  // Popula os dados de demonstração.
-  run('node prisma/seed.js');
+  // Popula os dados de demonstração (só para os testes — ver prisma/seed.demo.js).
+  run('node prisma/seed.demo.js');
 };
