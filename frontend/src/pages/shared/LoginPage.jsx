@@ -5,15 +5,6 @@ import { useAuth } from '../../auth/AuthContext';
 import { ROLE_HOME } from '../../domain';
 import Logo from '../../components/Logo';
 
-const DEMO_USERS = [
-  { email: 'comprador@petroangola.co.ao', label: 'Comprador' },
-  { email: 'admin@petroangola.co.ao', label: 'Company Admin' },
-  { email: 'financeiro@petroangola.co.ao', label: 'Financeiro' },
-  { email: 'fornecedor@kianda.co.ao', label: 'Fornecedor' },
-  { email: 'admin@kixima.co.ao', label: 'Admin do Sistema KIXIMA' },
-];
-const DEMO_PASSWORD = 'Kixima@123';
-
 export default function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
@@ -36,12 +27,6 @@ export default function LoginPage() {
     } finally {
       setSubmitting(false);
     }
-  }
-
-  function fillDemo(demoEmail) {
-    setEmail(demoEmail);
-    setPassword(DEMO_PASSWORD);
-    setError('');
   }
 
   return (
@@ -85,16 +70,6 @@ export default function LoginPage() {
               {submitting ? 'A entrar…' : 'Entrar'}
             </button>
           </form>
-
-          <div className="demo-users">
-            <p>Contas de demonstração (seed do backend)</p>
-            {DEMO_USERS.map((u) => (
-              <button key={u.email} type="button" className="demo-user-btn" onClick={() => fillDemo(u.email)}>
-                <span>{u.label}</span>
-                <span className="mono">{u.email}</span>
-              </button>
-            ))}
-          </div>
 
           <p className="helptext" style={{ marginTop: 16 }}>
             A sua empresa ainda não está na KIXIMA?{' '}
