@@ -43,4 +43,49 @@ async function createUser(req, res) {
   res.status(201).json(safeUser);
 }
 
-module.exports = { register, list, getOne, decide, setBudgetLimit, createUser };
+// --- Convites de utilizadores ---------------------------------------------
+
+async function listUsers(req, res) {
+  const users = await companyService.listCompanyUsers(req.user.companyId);
+  res.json(users);
+}
+
+async function createInvite(req, res) {
+  const invite = await companyService.createInvite(req.user.companyId, req.body.role);
+  res.status(201).json(invite);
+}
+
+async function resolveInvite(req, res) {
+  const info = await companyService.resolveInvite(req.params.token);
+  res.json(info);
+}
+
+async function acceptInvite(req, res) {
+  const user = await companyService.acceptInvite(req.params.token, req.body);
+  res.status(201).json(user);
+}
+
+async function activateUser(req, res) {
+  const user = await companyService.activateCompanyUser(req.user.companyId, req.params.id);
+  res.json(user);
+}
+
+async function removeUser(req, res) {
+  const result = await companyService.removeCompanyUser(req.user.companyId, req.params.id);
+  res.json(result);
+}
+
+module.exports = {
+  register,
+  list,
+  getOne,
+  decide,
+  setBudgetLimit,
+  createUser,
+  listUsers,
+  createInvite,
+  resolveInvite,
+  acceptInvite,
+  activateUser,
+  removeUser,
+};

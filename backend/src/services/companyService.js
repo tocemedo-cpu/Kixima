@@ -6,6 +6,16 @@ const prisma = require('../config/database');
 const { NotFoundError, BusinessRuleError, ConflictError } = require('../utils/errors');
 const notificationService = require('./notificationService');
 const storageService = require('./storageService');
+const authService = require('./authService');
+
+// Perfis que o Company Admin pode convidar, por tipo de empresa. Além do próprio
+// Company Admin (criado no cadastro), a equipa é composta por Comprador,
+// Vendedor (FORNECEDOR) e Financeiro — o Vendedor só existe em fornecedoras.
+const INVITABLE_ROLES = {
+  CLIENTE: ['COMPRADOR', 'FINANCEIRO'],
+  FORNECEDOR: ['COMPRADOR', 'FORNECEDOR', 'FINANCEIRO'],
+};
+const USER_SELECT = { id: true, name: true, email: true, role: true, active: true, createdAt: true };
 
 // Documentos obrigatórios por tipo de empresa (secção 4.1).
 const REQUIRED_DOCS = {
@@ -182,4 +192,83 @@ async function setBudgetLimit(companyId, { periodMonthly, currency }) {
   });
 }
 
-module.exports = { registerCompany, listCompanies, getCompany, decideCompanyStatus, setBudgetLimit };
+// ---------------------------------------------------------------------------
+// Convites de utilizadores (self-service com aprovação do Company Admin)
+// ---------------------------------------------------------------------------
+
+// Cria um convite (link assinado) para um perfil da própria empresa.
+async function createInvite(companyId, role) {
+  const company = await prisma.company.findUnique({ where: { id: companyId } });
+  if (!company) throw new NotFoundError('Empresa');
+  const allowed = INVITABLE_ROLES[company.type] || [];
+  if (!allowed.includes(role)) {
+    throw new BusinessRuleError('Este perfil não pode ser convidado para este tipo de empresa.');
+  }
+  const token = authService.signInvite({ companyId, role });
+  return { token, role, companyName: company.name };
+}
+
+// Resolve um convite (público) — mostra ao convidado a empresa e o perfil.
+async function resolveInvite(token) {
+  const { companyId, role } = authService.verifyInvite(token);
+  const company = await prisma.company.findUnique({ where: { id: companyId } });
+  if (!company) throw new NotFoundError('Empresa');
+  return { companyName: company.name, companyType: company.type, role };
+}
+
+// Aceitação de convite (público): o convidado preenche o próprio cadastro. A
+// conta fica inativa até o Company Admin aceitar.
+async function acceptInvite(token, { name, email, password }) {
+  const { companyId, role } = authService.verifyInvite(token);
+  const company = await prisma.company.findUnique({ where: { id: companyId } });
+  if (!company) throw new NotFoundError('Empresa');
+  if (await prisma.user.findUnique({ where: { email } })) {
+    throw new ConflictError('Já existe uma conta com este email.');
+  }
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = await prisma.user.create({
+    data: { name, email, passwordHash, role, companyId, active: false },
+    select: USER_SELECT,
+  });
+  return user;
+}
+
+async function listCompanyUsers(companyId) {
+  return prisma.user.findMany({
+    where: { companyId },
+    orderBy: [{ active: 'asc' }, { createdAt: 'desc' }],
+    select: USER_SELECT,
+  });
+}
+
+// Company Admin aceita o cadastro de um utilizador convidado (ativa a conta).
+async function activateCompanyUser(companyId, userId) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.companyId !== companyId) throw new NotFoundError('Utilizador');
+  return prisma.user.update({ where: { id: userId }, data: { active: true }, select: USER_SELECT });
+}
+
+// Rejeita/remove um utilizador convidado (não permite remover o Company Admin).
+async function removeCompanyUser(companyId, userId) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.companyId !== companyId) throw new NotFoundError('Utilizador');
+  if (user.role === 'COMPANY_ADMIN') {
+    throw new BusinessRuleError('Não é possível remover o administrador da empresa.');
+  }
+  await prisma.user.delete({ where: { id: userId } });
+  return { id: userId };
+}
+
+module.exports = {
+  registerCompany,
+  listCompanies,
+  getCompany,
+  decideCompanyStatus,
+  setBudgetLimit,
+  createInvite,
+  resolveInvite,
+  acceptInvite,
+  listCompanyUsers,
+  activateCompanyUser,
+  removeCompanyUser,
+};

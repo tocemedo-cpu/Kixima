@@ -8,6 +8,7 @@ import { CartProvider } from './pages/comprador/CartContext';
 
 import LoginPage from './pages/shared/LoginPage';
 import Register from './pages/shared/Register';
+import AcceptInvite from './pages/shared/AcceptInvite';
 import Notifications from './pages/shared/Notifications';
 import Profile from './pages/shared/Profile';
 import Help from './pages/shared/Help';
@@ -63,6 +64,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<Register />} />
+      <Route path="/convite/:token" element={<AcceptInvite />} />
 
       <Route element={<RequireAuth />}>
         <Route element={<Shell />}>

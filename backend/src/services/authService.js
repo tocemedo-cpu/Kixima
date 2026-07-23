@@ -18,10 +18,36 @@ function signToken(user) {
   });
 }
 
+// Convite de utilizador: token assinado (sem estado em BD) que o Company Admin
+// partilha por link. Transporta a empresa e o perfil a atribuir; o convidado
+// preenche o próprio cadastro e o admin aprova depois.
+const INVITE_TTL = '7d';
+
+function signInvite({ companyId, role }) {
+  return jwt.sign({ t: 'invite', companyId, role }, config.auth.jwtSecret, { expiresIn: INVITE_TTL });
+}
+
+function verifyInvite(token) {
+  let payload;
+  try {
+    payload = jwt.verify(token, config.auth.jwtSecret);
+  } catch {
+    throw new UnauthorizedError('Convite inválido ou expirado.');
+  }
+  if (payload.t !== 'invite' || !payload.companyId || !payload.role) {
+    throw new UnauthorizedError('Convite inválido.');
+  }
+  return { companyId: payload.companyId, role: payload.role };
+}
+
 async function login({ email, password }) {
   const user = await prisma.user.findUnique({ where: { email }, include: { company: true } });
-  if (!user || !user.active) {
+  if (!user) {
     throw new UnauthorizedError('Credenciais inválidas.');
+  }
+  // Conta criada por convite fica inativa até o Company Admin aceitar o cadastro.
+  if (!user.active) {
+    throw new ForbiddenError('A sua conta ainda aguarda aprovação do administrador da empresa.');
   }
 
   // Empresas de Comprador/Company Admin/Fornecedor/Financeiro só podem entrar
@@ -61,4 +87,4 @@ async function createUser({ name, email, password, role, companyId, approvalCap 
   });
 }
 
-module.exports = { login, createUser, hashPassword, signToken };
+module.exports = { login, createUser, hashPassword, signToken, signInvite, verifyInvite };

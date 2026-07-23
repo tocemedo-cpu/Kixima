@@ -44,6 +44,18 @@ const createUserSchema = z.object({
   approvalCap: z.number().positive().optional(),
 });
 
+// Convite de utilizador emitido pelo Company Admin (Vendedor = FORNECEDOR).
+const createInviteSchema = z.object({
+  role: z.enum(['COMPRADOR', 'FORNECEDOR', 'FINANCEIRO']),
+});
+
+// Aceitação de convite: o convidado preenche o próprio cadastro.
+const acceptInviteSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.'),
+});
+
 const createProductSchema = z.object({
   name: z.string().min(2),
   description: z.string().optional(),
@@ -107,6 +119,8 @@ module.exports = {
   registerCompanySchema,
   decideCompanySchema,
   createUserSchema,
+  createInviteSchema,
+  acceptInviteSchema,
   createProductSchema,
   createPoSchema,
   rejectPoSchema,

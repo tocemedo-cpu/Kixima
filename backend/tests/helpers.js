@@ -40,6 +40,7 @@ function auth(token) {
     get: (path) => request(app).get(path).set('Authorization', `Bearer ${token}`),
     post: (path) => request(app).post(path).set('Authorization', `Bearer ${token}`),
     patch: (path) => request(app).patch(path).set('Authorization', `Bearer ${token}`),
+    del: (path) => request(app).delete(path).set('Authorization', `Bearer ${token}`),
   };
 }
 
