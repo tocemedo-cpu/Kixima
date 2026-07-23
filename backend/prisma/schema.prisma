@@ -118,26 +118,103 @@ model Product {
   supplierId  String   @map("supplier_id")
   supplier    Company  @relation("SupplierProducts", fields: [supplierId], references: [id])
 
-  name        String
-  description String?
-  category    String
+  // --- Identificação ---
+  name            String
+  sku             String?  // referência interna do fornecedor
+  manufacturerCode String? @map("manufacturer_code") // código do fabricante
+  category        String
+  subcategory     String?
+  brand           String?
+  manufacturer    String?
+  model           String?
+  countryOfOrigin String?  @map("country_of_origin")
+
+  // --- Descrição ---
+  description     String?  // descrição curta (usada nos cartões do marketplace)
+  fullDescription String?  @map("full_description")
+  applications    String?
+  benefits        String?
+  keywords        String?
+
+  // --- Especificações técnicas (texto livre — os valores variam muito) ---
+  material        String?
+  weight          String?
+  height          String?
+  width           String?
+  length          String?
+  pressure        String?
+  temperature     String?
+  power           String?
+  voltage         String?
+  measurementUnit String?  @map("measurement_unit")
+
+  // --- Preço ---
   unitPrice   Decimal  @map("unit_price") @db.Decimal(14, 2)
+  promoPrice  Decimal? @map("promo_price") @db.Decimal(14, 2)
   currency    String   @default("AOA")
-  leadTimeDays Int?    @map("lead_time_days")
+  minQuantity Int?     @map("min_quantity")
+  maxQuantity Int?     @map("max_quantity")
+
+  // --- Estoque ---
+  stockQuantity Int?    @map("stock_quantity")
+  warehouse     String?
+  leadTimeDays  Int?    @map("lead_time_days") // tempo de entrega (dias)
+  availability  String? // "Em stock" | "Sob encomenda" | "Esgotado"
+  minStock      Int?    @map("min_stock")
+
   active      Boolean  @default(true)
 
   // Reputação (marketplace) — média de avaliações e nº de avaliações.
   rating      Float?
   reviewCount Int      @default(0) @map("review_count")
-  imageUrl    String?  @map("image_url")
+  imageUrl    String?  @map("image_url") // imagem principal (destaque no marketplace)
 
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   poItems     PurchaseOrderItem[]
+  images      ProductImage[]
+  documents   ProductDocument[]
 
   @@index([category])
   @@map("products")
+}
+
+// Galeria de imagens do produto (a principal também fica em Product.imageUrl).
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  isPrimary Boolean  @default(false) @map("is_primary")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+enum ProductDocType {
+  FICHA_TECNICA
+  DATASHEET
+  MANUAL
+  CATALOGO
+  CERTIFICADO
+  DESENHO_TECNICO
+}
+
+// Documentos técnicos anexados ao produto (ficha técnica, datasheet, etc.).
+model ProductDocument {
+  id           String         @id @default(uuid())
+  productId    String         @map("product_id")
+  product      Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type         ProductDocType
+  fileUrl      String         @map("file_url")
+  originalName String         @map("original_name")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  @@index([productId])
+  @@map("product_documents")
 }
 
 // ---------------------------------------------------------------------------

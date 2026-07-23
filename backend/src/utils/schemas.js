@@ -56,14 +56,61 @@ const acceptInviteSchema = z.object({
   password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.'),
 });
 
+// Campo de texto opcional que trata "" (vindo de multipart) como ausente.
+const optText = z.preprocess((v) => (v === '' || v == null ? undefined : v), z.string().optional());
+const optInt = z.preprocess(
+  (v) => (v === '' || v == null ? undefined : v),
+  z.coerce.number().int().nonnegative().optional()
+);
+const optNum = z.preprocess(
+  (v) => (v === '' || v == null ? undefined : v),
+  z.coerce.number().nonnegative().optional()
+);
+
 const createProductSchema = z.object({
+  // Identificação
   name: z.string().min(2),
-  description: z.string().optional(),
+  sku: optText,
+  manufacturerCode: optText,
   category: z.string().min(2),
-  unitPrice: z.number().positive(),
+  subcategory: optText,
+  brand: optText,
+  manufacturer: optText,
+  model: optText,
+  countryOfOrigin: optText,
+  // Descrição
+  description: optText,
+  fullDescription: optText,
+  applications: optText,
+  benefits: optText,
+  keywords: optText,
+  // Especificações técnicas (texto livre)
+  material: optText,
+  weight: optText,
+  height: optText,
+  width: optText,
+  length: optText,
+  pressure: optText,
+  temperature: optText,
+  power: optText,
+  voltage: optText,
+  measurementUnit: optText,
+  // Preço
+  unitPrice: z.coerce.number().positive(),
+  promoPrice: optNum,
   currency: z.string().default('AOA'),
-  leadTimeDays: z.number().int().nonnegative().optional(),
+  minQuantity: optInt,
+  maxQuantity: optInt,
+  // Estoque
+  stockQuantity: optInt,
+  warehouse: optText,
+  leadTimeDays: optInt,
+  availability: optText,
+  minStock: optInt,
 });
+
+// Atualização: os mesmos campos, todos opcionais (não recria imagens/documentos).
+const updateProductSchema = createProductSchema.partial();
 
 const createPoSchema = z.object({
   supplierCompanyId: z.string().uuid(),
@@ -122,6 +169,7 @@ module.exports = {
   createInviteSchema,
   acceptInviteSchema,
   createProductSchema,
+  updateProductSchema,
   createPoSchema,
   rejectPoSchema,
   receptionSchema,

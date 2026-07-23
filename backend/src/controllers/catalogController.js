@@ -1,5 +1,7 @@
 const catalogService = require('../services/catalogService');
 
+const PRODUCT_DOC_TYPES = ['FICHA_TECNICA', 'DATASHEET', 'MANUAL', 'CATALOGO', 'CERTIFICADO', 'DESENHO_TECNICO'];
+
 async function list(req, res) {
   const products = await catalogService.listCatalog(req.query);
   res.json(products);
@@ -11,7 +13,14 @@ async function getOne(req, res) {
 }
 
 async function create(req, res) {
-  const product = await catalogService.createProduct(req.user.companyId, req.body);
+  // multipart: campos de texto em req.body; ficheiros em req.files (por campo).
+  const files = req.files || {};
+  const media = {
+    mainImage: files.mainImage && files.mainImage[0],
+    gallery: files.gallery || [],
+    documents: PRODUCT_DOC_TYPES.flatMap((type) => (files[type] || []).map((file) => ({ type, file }))),
+  };
+  const product = await catalogService.createProduct(req.user.companyId, req.body, media);
   res.status(201).json(product);
 }
 
