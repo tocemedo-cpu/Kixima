@@ -82,6 +82,17 @@ export default function OrderDetail() {
         </div>
       </div>
 
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/po/${po.id}`, '_blank')}>
+          Imprimir / Descarregar PO
+        </button>
+        {po.invoice ? (
+          <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/fatura/${po.id}`, '_blank')}>
+            Imprimir / Descarregar Fatura
+          </button>
+        ) : null}
+      </div>
+
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 

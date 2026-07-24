@@ -15,6 +15,7 @@ import Help from './pages/shared/Help';
 import OrderDetail from './pages/shared/OrderDetail';
 import ModulePlaceholder from './pages/shared/ModulePlaceholder';
 import Security from './pages/shared/Security';
+import PrintableDocument from './pages/shared/PrintableDocument';
 
 import CompradorHome from './pages/comprador/Home';
 import Catalog from './pages/comprador/Catalog';
@@ -80,6 +81,10 @@ export default function App() {
       <Route path="/convite/:token" element={<AcceptInvite />} />
 
       <Route element={<RequireAuth />}>
+        {/* Documentos imprimíveis (folha A4, sem a moldura da app) */}
+        <Route path="/documento/po/:id" element={<PrintableDocument kind="po" />} />
+        <Route path="/documento/fatura/:id" element={<PrintableDocument kind="invoice" />} />
+
         <Route element={<Shell />}>
           {/* Telas partilhadas / transversais */}
           <Route path="/notificacoes" element={<Notifications />} />

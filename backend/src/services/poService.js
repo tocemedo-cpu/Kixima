@@ -95,10 +95,17 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
   return po;
 }
 
+const COMPANY_FIELDS = { select: { id: true, name: true, taxId: true, contactEmail: true, contactPhone: true, address: true } };
+
 async function getPurchaseOrder(id) {
   const po = await prisma.purchaseOrder.findUnique({
     where: { id },
-    include: { items: { include: { product: true } }, invoice: true },
+    include: {
+      items: { include: { product: true } },
+      invoice: { include: { payment: true } },
+      buyerCompany: COMPANY_FIELDS,
+      supplierCompany: COMPANY_FIELDS,
+    },
   });
   if (!po) throw new NotFoundError('Ordem de compra');
   return po;
