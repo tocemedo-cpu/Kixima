@@ -41,6 +41,7 @@ import CatalogInsights from './pages/fornecedor/CatalogInsights';
 import OrderHistory from './pages/fornecedor/OrderHistory';
 import Wallet from './pages/fornecedor/Wallet';
 import StockMovements from './pages/fornecedor/StockMovements';
+import Kits from './pages/fornecedor/Kits';
 
 import FinanceiroHome from './pages/financeiro/Home';
 import PendingInvoices from './pages/financeiro/PendingInvoices';
@@ -123,6 +124,7 @@ export default function App() {
             <Route path="/fornecedor/catalogo/marcas" element={<CatalogInsights />} />
             <Route path="/fornecedor/catalogo/servicos" element={<CatalogInsights />} />
             <Route path="/fornecedor/catalogo/promocoes" element={<CatalogInsights />} />
+            <Route path="/fornecedor/catalogo/kits" element={<Kits />} />
             <Route path="/fornecedor/inventario/armazens" element={<CatalogInsights />} />
             <Route path="/fornecedor/inventario/entradas" element={<StockMovements />} />
             <Route path="/fornecedor/inventario/saidas" element={<StockMovements />} />

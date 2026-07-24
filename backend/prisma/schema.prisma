@@ -70,6 +70,7 @@ model Company {
   notifications      Notification[]
   budgetLimit        BudgetLimit?
   documents          CompanyDocument[]
+  kits               Kit[]                  @relation("SupplierKits")
 
   @@map("companies")
 }
@@ -176,9 +177,37 @@ model Product {
   images      ProductImage[]
   documents   ProductDocument[]
   movements   StockMovement[]
+  kitItems    KitItem[]
 
   @@index([category])
   @@map("products")
+}
+
+// Kit: conjunto de produtos vendidos como pacote (organização do catálogo).
+model Kit {
+  id          String    @id @default(uuid())
+  supplierId  String    @map("supplier_id")
+  supplier    Company   @relation("SupplierKits", fields: [supplierId], references: [id])
+  name        String
+  description String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  items       KitItem[]
+
+  @@index([supplierId])
+  @@map("kits")
+}
+
+model KitItem {
+  id        String  @id @default(uuid())
+  kitId     String  @map("kit_id")
+  kit       Kit     @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(1)
+
+  @@map("kit_items")
 }
 
 enum StockMovementType {

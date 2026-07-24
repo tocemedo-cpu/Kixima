@@ -117,6 +117,16 @@ const createProductSchema = z.object({
 // Atualização: os mesmos campos, todos opcionais (não recria imagens/documentos).
 const updateProductSchema = createProductSchema.partial();
 
+// Kit: pacote de produtos.
+const createKitSchema = z.object({
+  name: z.string().min(2),
+  description: z.string().optional(),
+  items: z.array(z.object({
+    productId: z.string().uuid(),
+    quantity: z.coerce.number().int().positive().default(1),
+  })).min(1),
+});
+
 // Movimento de inventário (entrada/saída).
 const stockMovementSchema = z.object({
   productId: z.string().uuid(),
@@ -194,6 +204,7 @@ module.exports = {
   updateProductSchema,
   stockUpdateSchema,
   stockMovementSchema,
+  createKitSchema,
   createPoSchema,
   rejectPoSchema,
   receptionSchema,
