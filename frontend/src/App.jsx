@@ -36,6 +36,9 @@ import SupplierCompanyProfile from './pages/fornecedor/CompanyProfile';
 import Inventory from './pages/fornecedor/Inventory';
 import Reports from './pages/fornecedor/Reports';
 import SupplierDocuments from './pages/fornecedor/Documents';
+import CatalogInsights from './pages/fornecedor/CatalogInsights';
+import OrderHistory from './pages/fornecedor/OrderHistory';
+import Wallet from './pages/fornecedor/Wallet';
 
 import FinanceiroHome from './pages/financeiro/Home';
 import PendingInvoices from './pages/financeiro/PendingInvoices';
@@ -113,6 +116,13 @@ export default function App() {
             <Route path="/fornecedor/documentacao/licencas" element={<SupplierDocuments />} />
             <Route path="/fornecedor/documentacao/catalogos" element={<SupplierDocuments />} />
             <Route path="/fornecedor/documentacao/fichas" element={<SupplierDocuments />} />
+            <Route path="/fornecedor/catalogo/categorias" element={<CatalogInsights />} />
+            <Route path="/fornecedor/catalogo/marcas" element={<CatalogInsights />} />
+            <Route path="/fornecedor/catalogo/servicos" element={<CatalogInsights />} />
+            <Route path="/fornecedor/catalogo/promocoes" element={<CatalogInsights />} />
+            <Route path="/fornecedor/inventario/armazens" element={<CatalogInsights />} />
+            <Route path="/fornecedor/pedidos/historico" element={<OrderHistory />} />
+            <Route path="/fornecedor/financeiro/carteira" element={<Wallet />} />
             {/* Módulos do menu ERP ainda em preparação — evita 404 e mantém a navegação. */}
             <Route path="/fornecedor/*" element={<ModulePlaceholder />} />
           </Route>
