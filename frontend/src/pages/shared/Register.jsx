@@ -91,7 +91,7 @@ export default function Register() {
   return (
     <div className="login-screen">
       <div className="login-hero">
-        <Logo size={26} subtitle light />
+        <Logo size={30} mark={72} subtitle light />
         <div>
           <h1 className="login-hero-title">Due diligence uma vez. Confiança em cada transação.</h1>
           <p className="login-hero-body">

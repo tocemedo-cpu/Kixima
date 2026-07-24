@@ -32,7 +32,7 @@ export default function LoginPage() {
   return (
     <div className="login-screen">
       <div className="login-hero">
-        <Logo size={26} subtitle light />
+        <Logo size={30} mark={72} subtitle light />
         <div>
           <h1 className="login-hero-title">
             O fornecedor recebe em <span className="accent">7 dias</span>. Antes mesmo de entregar.

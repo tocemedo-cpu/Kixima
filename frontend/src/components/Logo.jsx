@@ -23,9 +23,10 @@ function FlameFallback({ size }) {
   );
 }
 
-export default function Logo({ size = 22, subtitle = false, light = false }) {
+export default function Logo({ size = 22, subtitle = false, light = false, mark }) {
   const [imgOk, setImgOk] = useState(true);
-  const box = size + 10;
+  // O logótipo (a gota) fica bem maior que o texto para ser bem visível.
+  const box = mark || Math.round(size * 2.4);
 
   return (
     <div className="brand-logo">

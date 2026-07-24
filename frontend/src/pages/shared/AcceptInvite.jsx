@@ -49,7 +49,7 @@ export default function AcceptInvite() {
   return (
     <div className="login-screen">
       <div className="login-hero">
-        <Logo size={26} subtitle light />
+        <Logo size={30} mark={72} subtitle light />
         <div>
           <h1 className="login-hero-title">Junte-se à equipa da sua empresa na KIXIMA.</h1>
           <p className="login-hero-body">

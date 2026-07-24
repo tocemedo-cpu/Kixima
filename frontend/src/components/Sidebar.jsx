@@ -16,7 +16,7 @@ export default function Sidebar({ items, user, roleLabel, cartCount = 0, onLogou
   return (
     <aside className="sb">
       <div className="sb-brand">
-        <Logo size={20} subtitle light />
+        <Logo size={20} mark={48} subtitle light />
       </div>
 
       <nav className="sb-nav">
