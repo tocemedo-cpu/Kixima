@@ -23,6 +23,8 @@ import ItemDetail from './pages/comprador/ItemDetail';
 import Cart from './pages/comprador/Cart';
 import Orders from './pages/comprador/Orders';
 import BuyerQuotes from './pages/comprador/Quotes';
+import Services from './pages/comprador/Services';
+import ServiceDetail from './pages/comprador/ServiceDetail';
 
 import CompanyAdminHome from './pages/companyAdmin/Home';
 import Approvals from './pages/companyAdmin/Approvals';
@@ -97,6 +99,8 @@ export default function App() {
             <Route path="/comprador" element={<CompradorHome />} />
             <Route path="/comprador/catalogo" element={<Catalog />} />
             <Route path="/comprador/catalogo/:id" element={<ItemDetail />} />
+            <Route path="/comprador/servicos" element={<Services />} />
+            <Route path="/comprador/servicos/:slug" element={<ServiceDetail />} />
             <Route path="/comprador/cesta" element={<Cart />} />
             <Route path="/comprador/cotacoes" element={<BuyerQuotes />} />
             <Route path="/comprador/ordens" element={<Orders />} />
