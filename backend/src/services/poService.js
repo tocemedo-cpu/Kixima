@@ -26,6 +26,11 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
     throw new BusinessRuleError('A ordem de compra precisa de pelo menos um item.');
   }
 
+  // Um comprador não pode comprar mercadorias da própria empresa.
+  if (supplierCompanyId === buyerCompanyId) {
+    throw new BusinessRuleError('Não pode comprar produtos da sua própria empresa.');
+  }
+
   const productIds = items.map((i) => i.productId);
   const products = await prisma.product.findMany({ where: { id: { in: productIds } } });
   if (products.length !== productIds.length) {

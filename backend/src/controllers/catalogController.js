@@ -3,7 +3,9 @@ const catalogService = require('../services/catalogService');
 const PRODUCT_DOC_TYPES = ['FICHA_TECNICA', 'DATASHEET', 'MANUAL', 'CATALOGO', 'CERTIFICADO', 'DESENHO_TECNICO'];
 
 async function list(req, res) {
-  const products = await catalogService.listCatalog(req.query);
+  // Compradores não veem produtos da própria empresa (não podem comprá-los).
+  const excludeSupplierId = req.user.role === 'COMPRADOR' ? req.user.companyId : undefined;
+  const products = await catalogService.listCatalog({ ...req.query, excludeSupplierId });
   res.json(products);
 }
 

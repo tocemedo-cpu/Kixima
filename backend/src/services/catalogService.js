@@ -4,12 +4,14 @@ const prisma = require('../config/database');
 const { NotFoundError, ForbiddenError } = require('../utils/errors');
 const storageService = require('./storageService');
 
-async function listCatalog({ category, search, supplierId } = {}) {
+async function listCatalog({ category, search, supplierId, excludeSupplierId } = {}) {
   return prisma.product.findMany({
     where: {
       active: true,
       ...(category ? { category } : {}),
       ...(supplierId ? { supplierId } : {}),
+      // Um comprador não vê (nem compra) produtos da própria empresa.
+      ...(excludeSupplierId ? { supplierId: { not: excludeSupplierId } } : {}),
       ...(search
         ? { name: { contains: search, mode: 'insensitive' } }
         : {}),

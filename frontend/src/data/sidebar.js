@@ -74,35 +74,61 @@ const FORNECEDOR = [
   ...COMMON_TAIL,
 ];
 
-// Personas restantes — listas simples (a Sidebar rende-as como links diretos).
+// Bloco de configurações pessoais, comum às personas.
+const CONFIG = {
+  label: 'Configurações', icon: 'settings', children: [
+    { label: 'Perfil', to: '/perfil' },
+    { label: 'Notificações', to: '/notificacoes' },
+  ],
+};
+
+// Comprador — descobrir, encomendar e acompanhar (não gere catálogo próprio).
 const COMPRADOR = [
-  { label: 'Início', icon: 'home', to: '/comprador', end: true },
-  { label: 'Catálogo', icon: 'catalog', to: '/comprador/catalogo' },
+  { label: 'Dashboard', icon: 'home', to: '/comprador', end: true },
+  { label: 'Marketplace', icon: 'catalog', to: '/comprador/catalogo' },
   { label: 'Cesta', icon: 'cart', to: '/comprador/cesta', badge: 'cart' },
   { label: 'Ordens de Compra', icon: 'orders', to: '/comprador/ordens' },
+  CONFIG,
   ...COMMON_TAIL,
 ];
+
+// Company Admin — aprova POs, gere equipa e a empresa.
 const COMPANY_ADMIN = [
-  { label: 'Início', icon: 'home', to: '/empresa', end: true },
+  { label: 'Dashboard', icon: 'home', to: '/empresa', end: true },
   { label: 'Aprovações de PO', icon: 'approvals', to: '/empresa/aprovacoes' },
   { label: 'Utilizadores & Perfis', icon: 'users', to: '/empresa/utilizadores' },
-  { label: 'Perfil da Empresa', icon: 'building', to: '/empresa/perfil' },
-  { label: 'Contratos', icon: 'contract', to: '/empresa/contratos' },
+  {
+    label: 'Empresa', icon: 'building', children: [
+      { label: 'Perfil da Empresa', to: '/empresa/perfil' },
+      { label: 'Contratos', to: '/empresa/contratos' },
+    ],
+  },
+  CONFIG,
   ...COMMON_TAIL,
 ];
+
+// Financeiro — paga faturas dentro do SLA e acompanha o histórico.
 const FINANCEIRO = [
-  { label: 'Início', icon: 'home', to: '/financeiro', end: true },
+  { label: 'Dashboard', icon: 'home', to: '/financeiro', end: true },
   { label: 'Faturas Pendentes', icon: 'invoice', to: '/financeiro/faturas' },
   { label: 'Histórico de Pagamentos', icon: 'history', to: '/financeiro/historico' },
   { label: 'Perfil da Empresa', icon: 'building', to: '/financeiro/perfil' },
+  CONFIG,
   ...COMMON_TAIL,
 ];
+
+// Admin do Sistema KIXIMA — credenciamento, apólices e contratos-quadro.
 const ADMIN_SISTEMA = [
-  { label: 'Início', icon: 'home', to: '/sistema', end: true },
-  { label: 'Cadastro de Empresas', icon: 'dueDiligence', to: '/sistema/due-diligence' },
+  { label: 'Dashboard', icon: 'home', to: '/sistema', end: true },
+  {
+    label: 'Credenciamento', icon: 'dueDiligence', children: [
+      { label: 'Cadastro de Empresas', to: '/sistema/due-diligence' },
+      { label: 'Empresas', to: '/sistema/empresas' },
+    ],
+  },
   { label: 'Gestão de Apólices', icon: 'policy', to: '/sistema/apolices' },
   { label: 'Contratos-Quadro', icon: 'contract', to: '/sistema/contratos' },
-  { label: 'Empresas', icon: 'suppliers', to: '/sistema/empresas' },
+  CONFIG,
   ...COMMON_TAIL,
 ];
 
