@@ -1851,6 +1851,39 @@ tbody tr:hover {
 }
 
 /* ================================================================== */
+/* Explorar / Pesquisa                                                */
+/* ================================================================== */
+.exp-searchbar { position: relative; display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.exp-searchbar input { flex: 1; padding: 12px 14px 12px 42px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; background: #fff; }
+.exp-searchbar .svc-search-ico { left: 14px; }
+.exp-save { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.exp-total { font-weight: 700; color: var(--ink-900); }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--brand-050); color: var(--brand-700); border: 1px solid var(--brand-100, #d9e6f7); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.chip span { color: var(--ink-400); font-weight: 700; }
+.chip:hover { background: var(--brand-100, #e8f0fb); }
+.chip-clear { background: none; border: none; color: var(--ink-400); font-size: 12.5px; cursor: pointer; text-decoration: underline; }
+.chip-clear:hover { color: var(--brand-600); }
+
+.flt-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.flt-head strong { font-size: 14px; color: var(--ink-900); }
+.flt-clear { background: none; border: none; color: var(--brand-600); font-size: 12px; cursor: pointer; }
+.flt-clear:hover { text-decoration: underline; }
+.flt-lbl { flex: 1; }
+
+.exp-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 7px; box-shadow: var(--shadow-card); }
+.exp-top { display: flex; align-items: flex-start; justify-content: space-between; }
+.exp-logo { width: 42px; height: 42px; border-radius: 10px; background: var(--paper-100); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--ink-600); overflow: hidden; }
+.exp-logo img { width: 100%; height: 100%; object-fit: cover; }
+.exp-card .svc-fav { position: static; background: none; }
+.exp-foot { display: flex; align-items: flex-end; justify-content: space-between; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); }
+.exp-fromlbl { font-size: 11px; color: var(--ink-400); }
+.exp-price { font-size: 16px; font-weight: 800; color: var(--brand-700); }
+.exp-perpage { margin-left: auto; font-size: 12.5px; color: var(--ink-600); }
+.exp-perpage select { margin-left: 6px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 12.5px; }
+
+/* ================================================================== */
 /* Navbar (mockup) — topo full-width                                  */
 /* ================================================================== */
 .navbar {

@@ -115,8 +115,22 @@ model User {
   notifications          Notification[]
   favorites              Favorite[]
   reviews                Review[]
+  savedSearches          SavedSearch[]
 
   @@map("users")
+}
+
+// Pesquisa guardada pelo comprador ("Guardar Pesquisa").
+model SavedSearch {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String
+  query     String   // querystring (ex.: q=UT&kind=SERVICO&country=Angola)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("saved_searches")
 }
 
 // ---------------------------------------------------------------------------

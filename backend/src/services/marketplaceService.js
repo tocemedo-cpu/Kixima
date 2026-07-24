@@ -76,15 +76,34 @@ async function search(filters, { userId } = {}) {
   return { items, total, page, pages: Math.max(1, Math.ceil(total / limit)), limit };
 }
 
-// Facetas (contagens) para os filtros — respeitam kind/pesquisa mas não a
-// categoria escolhida, para mostrar sempre todas as categorias disponíveis.
+// Facetas (contagens) para os filtros. Cada faceta ignora o seu próprio filtro
+// para continuar a mostrar todas as opções disponíveis.
 async function facets(filters) {
-  const base = buildWhere({ ...filters, category: undefined });
-  const byCategory = await prisma.product.groupBy({
-    by: ['category'], where: base, _count: { _all: true }, orderBy: { _count: { category: 'desc' } },
-  });
+  const [byCategory, byKind, byCountry, certRows] = await Promise.all([
+    prisma.product.groupBy({
+      by: ['category'], where: buildWhere({ ...filters, category: undefined }),
+      _count: { _all: true }, orderBy: { _count: { category: 'desc' } },
+    }),
+    prisma.product.groupBy({
+      by: ['kind'], where: buildWhere({ ...filters, kind: undefined }), _count: { _all: true },
+    }),
+    prisma.product.groupBy({
+      by: ['country'], where: buildWhere({ ...filters, country: undefined }), _count: { _all: true },
+    }),
+    prisma.product.findMany({
+      where: buildWhere({ ...filters, certifications: undefined }), select: { certifications: true },
+    }),
+  ]);
+
+  // Certificações são um array por produto — conta-se em memória.
+  const certCount = new Map();
+  for (const r of certRows) for (const c of r.certifications || []) certCount.set(c, (certCount.get(c) || 0) + 1);
+
   return {
     categories: byCategory.map((c) => ({ name: c.category, count: c._count._all })),
+    kinds: byKind.map((k) => ({ name: k.kind, count: k._count._all })),
+    countries: byCountry.filter((c) => c.country).map((c) => ({ name: c.country, count: c._count._all })),
+    certifications: [...certCount.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
   };
 }
 

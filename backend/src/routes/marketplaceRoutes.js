@@ -32,6 +32,22 @@ router.get('/suppliers', async (req, res) => {
   res.json(await marketplaceService.verifiedSuppliers(8));
 });
 
+// Pesquisas guardadas do utilizador.
+const prisma = require('../config/database');
+router.get('/saved-searches', async (req, res) => {
+  res.json(await prisma.savedSearch.findMany({ where: { userId: req.user.id }, orderBy: { createdAt: 'desc' } }));
+});
+router.post('/saved-searches', async (req, res) => {
+  const label = String(req.body?.label || 'Pesquisa').slice(0, 120);
+  const query = String(req.body?.query || '').slice(0, 500);
+  const s = await prisma.savedSearch.create({ data: { userId: req.user.id, label, query } });
+  res.status(201).json(s);
+});
+router.delete('/saved-searches/:id', async (req, res) => {
+  await prisma.savedSearch.deleteMany({ where: { id: req.params.id, userId: req.user.id } });
+  res.json({ id: req.params.id });
+});
+
 // Favoritos do utilizador autenticado.
 router.get('/favorites', async (req, res) => {
   res.json(await favoriteService.listIds(req.user.id));

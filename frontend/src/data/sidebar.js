@@ -86,7 +86,7 @@ const CONFIG = {
 // Comprador — descobrir, encomendar e acompanhar (não gere catálogo próprio).
 const COMPRADOR = [
   { label: 'Home Marketplace', icon: 'home', to: '/comprador', end: true },
-  { label: 'Explorar / Pesquisa', icon: 'search', to: '/comprador/catalogo' },
+  { label: 'Explorar / Pesquisa', icon: 'search', to: '/comprador/explorar' },
   {
     label: 'Produtos / Serviços', icon: 'catalog', children: [
       { label: 'Produtos', to: '/comprador/catalogo' },

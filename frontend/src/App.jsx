@@ -24,6 +24,7 @@ import Cart from './pages/comprador/Cart';
 import Orders from './pages/comprador/Orders';
 import BuyerQuotes from './pages/comprador/Quotes';
 import Services from './pages/comprador/Services';
+import Explore from './pages/comprador/Explore';
 import ServiceDetail from './pages/comprador/ServiceDetail';
 
 import CompanyAdminHome from './pages/companyAdmin/Home';
@@ -97,6 +98,7 @@ export default function App() {
           {/* Comprador */}
           <Route element={<RequireRole role="COMPRADOR" />}>
             <Route path="/comprador" element={<CompradorHome />} />
+            <Route path="/comprador/explorar" element={<Explore />} />
             <Route path="/comprador/catalogo" element={<Catalog />} />
             <Route path="/comprador/catalogo/:id" element={<ItemDetail />} />
             <Route path="/comprador/servicos" element={<Services />} />

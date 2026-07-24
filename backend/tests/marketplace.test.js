@@ -55,6 +55,17 @@ describe('Marketplace — pesquisa e paginação', () => {
     expect(res.body.categories[0]).toHaveProperty('count');
   });
 
+  test('facetas devolvem tipos, localizações e certificações', async () => {
+    const res = await auth(compradorToken).get('/api/marketplace/facets');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.kinds)).toBe(true);
+    expect(res.body.kinds.some((k) => k.name === 'SERVICO' || k.name === 'PRODUTO')).toBe(true);
+    expect(res.body.kinds[0]).toHaveProperty('count');
+    expect(Array.isArray(res.body.countries)).toBe(true);
+    expect(res.body.countries.every((c) => c.name)).toBe(true);
+    expect(Array.isArray(res.body.certifications)).toBe(true);
+  });
+
   test('comprador não vê produtos da própria empresa', async () => {
     const comprador = await prisma.user.findUnique({ where: { email: 'comprador@petroangola.co.ao' } });
     const res = await auth(compradorToken).get('/api/marketplace/search?limit=48');
@@ -75,6 +86,33 @@ describe('Favoritos', () => {
     expect(del.status).toBe(200);
     const list2 = await auth(compradorToken).get('/api/marketplace/favorites');
     expect(list2.body).not.toContain(favProductId);
+  });
+});
+
+describe('Pesquisas guardadas', () => {
+  test('guardar, listar e remover uma pesquisa', async () => {
+    const create = await auth(compradorToken).post('/api/marketplace/saved-searches')
+      .send({ label: '"inspeção"', query: 'q=inspeção&kind=SERVICO' });
+    expect(create.status).toBe(201);
+    expect(create.body).toHaveProperty('id');
+    expect(create.body.label).toBe('"inspeção"');
+
+    const list = await auth(compradorToken).get('/api/marketplace/saved-searches');
+    expect(list.status).toBe(200);
+    expect(list.body.some((s) => s.id === create.body.id)).toBe(true);
+
+    const del = await auth(compradorToken).del(`/api/marketplace/saved-searches/${create.body.id}`);
+    expect(del.status).toBe(200);
+    const list2 = await auth(compradorToken).get('/api/marketplace/saved-searches');
+    expect(list2.body.some((s) => s.id === create.body.id)).toBe(false);
+  });
+
+  test('cada utilizador só vê as suas pesquisas guardadas', async () => {
+    const mine = await auth(compradorToken).post('/api/marketplace/saved-searches')
+      .send({ label: 'só minha', query: 'q=x' });
+    const others = await auth(fornecedorToken).get('/api/marketplace/saved-searches');
+    expect(others.body.some((s) => s.id === mine.body.id)).toBe(false);
+    await auth(compradorToken).del(`/api/marketplace/saved-searches/${mine.body.id}`);
   });
 });
 
