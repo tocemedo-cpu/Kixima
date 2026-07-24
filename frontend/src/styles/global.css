@@ -2162,3 +2162,59 @@ tbody tr:hover {
 .cart-qty button { width: 28px; height: 30px; border: none; background: var(--paper-050); cursor: pointer; font-size: 15px; color: var(--ink-600); }
 .cart-qty button:hover { background: var(--paper-100); }
 .cart-qty input { width: 42px; height: 30px; border: none; border-left: 1px solid var(--line); border-right: 1px solid var(--line); text-align: center; font-size: 13px; }
+
+/* Avatar com upload / câmera */
+.av-wrap { position: relative; }
+.av-photo { position: relative; border-radius: 50%; background: var(--brand-grad, #b02); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; overflow: visible; flex-shrink: 0; }
+.av-photo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.av-initials { font-size: 24px; }
+.av-edit { position: absolute; right: -2px; bottom: -2px; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; background: var(--brand-600); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.av-edit:hover { background: var(--brand-700); }
+.av-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 6px; min-width: 190px; }
+.av-menu button { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 9px 10px; font-size: 13px; color: var(--ink-900); cursor: pointer; border-radius: 7px; text-align: left; }
+.av-menu button:hover { background: var(--paper-050); color: var(--brand-600); }
+.av-error { color: #c0392b; font-size: 12px; margin: 8px 0 0; max-width: 220px; }
+.av-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: flex; align-items: center; justify-content: center; }
+.av-cam { background: #111; border-radius: 14px; padding: 14px; width: min(440px, 92vw); }
+.av-cam video { width: 100%; border-radius: 10px; background: #000; aspect-ratio: 1; object-fit: cover; }
+.av-cam-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; }
+
+/* Ajuda & Suporte */
+.hs-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
+.hs-search { display: flex; gap: 20px; align-items: center; margin-bottom: 16px; }
+.hs-search-ico { width: 72px; height: 72px; border-radius: 16px; background: var(--brand-050); color: var(--brand-600); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hs-h2 { font-size: 18px; margin: 0 0 4px; }
+.hs-searchbar { display: flex; gap: 8px; margin: 12px 0 10px; }
+.hs-searchbar .bz-search { flex: 1; }
+.hs-popular { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12.5px; color: var(--ink-600); }
+.hs-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+.hs-quickcard { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; gap: 10px; align-items: center; box-shadow: var(--shadow-card); }
+.hs-quick-ico { position: relative; width: 40px; height: 40px; border-radius: 10px; background: var(--paper-100); color: var(--brand-600); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hs-badge { position: absolute; top: -6px; right: -6px; background: var(--brand-600); color: #fff; font-size: 10px; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.hs-quickcard strong { font-size: 13px; display: block; }
+.hs-cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+.hs-cat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; gap: 10px; box-shadow: var(--shadow-card); }
+.hs-cat-ico { width: 38px; height: 38px; border-radius: 10px; background: var(--brand-050); color: var(--brand-600); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hs-cat strong { font-size: 13px; display: block; }
+.hs-cat-art { display: block; font-size: 11px; color: var(--ink-400); margin-top: 6px; }
+.hs-cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; background: linear-gradient(90deg, #fbe9e9, #fff); border: 1px solid #f2d4d4; border-radius: 14px; padding: 20px; }
+.hs-cta h3 { margin: 0 0 4px; font-size: 16px; }
+.hs-cta-feats { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 12px; font-size: 12.5px; color: var(--ink-600); }
+.hs-cta-feats span { display: inline-flex; align-items: center; gap: 6px; }
+.hs-hours { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 14px; }
+.hs-ticket { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.hs-ticket:last-child { border-bottom: none; }
+.hs-ticket strong { font-size: 13px; display: block; }
+.hs-ticket-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+.hs-channel { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.hs-channel:last-child { border-bottom: none; }
+.hs-channel-ico { width: 34px; height: 34px; border-radius: 9px; background: var(--paper-100); color: var(--brand-600); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hs-channel strong { font-size: 13px; display: block; }
+.hs-status { display: flex; align-items: center; gap: 10px; color: #16884f; }
+.hs-form { background: #fff; border-radius: 14px; padding: 22px; width: min(520px, 94vw); display: flex; flex-direction: column; gap: 12px; }
+.hs-form h3 { margin: 0; font-size: 17px; }
+.hs-form .field { display: flex; flex-direction: column; gap: 5px; }
+.hs-form .field span { font-size: 12.5px; font-weight: 600; color: var(--ink-600); }
+.hs-form input, .hs-form select, .hs-form textarea { border: 1px solid var(--line); border-radius: 9px; padding: 9px 12px; font-size: 13.5px; font-family: inherit; }
+.hs-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+@media (max-width: 980px) { .hs-layout { grid-template-columns: 1fr; } .hs-quick, .hs-cats { grid-template-columns: repeat(2, 1fr); } }

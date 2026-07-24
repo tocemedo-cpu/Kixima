@@ -5,11 +5,8 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Pill } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
+import AvatarUploader from '../../components/AvatarUploader';
 import { PO_STATUS, ROLE_LABELS, formatMoney, formatDateTime } from '../../domain';
-
-function initials(name = '') {
-  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
-}
 
 export default function Profile() {
   const [data, setData] = useState(null);
@@ -18,6 +15,8 @@ export default function Profile() {
   useEffect(() => {
     api.get('/api/buyer/profile').then(setData).catch((e) => setError(e.message));
   }, []);
+
+  const setAvatar = (avatarUrl) => setData((d) => ({ ...d, user: { ...d.user, avatarUrl } }));
 
   if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
   if (!data) return <div className="bz-empty">A carregar…</div>;
@@ -30,7 +29,7 @@ export default function Profile() {
 
       <div className="pf-top">
         <div className="bz-panel pf-id">
-          <div className="pf-avatar">{initials(user.name)}</div>
+          <AvatarUploader name={user.name} avatarUrl={user.avatarUrl} onChange={setAvatar} size={68} />
           <div>
             <div className="pf-name">{user.name} <Pill tone="success">Ativo</Pill></div>
             <div className="pf-role">{ROLE_LABELS[user.role] || user.role}</div>

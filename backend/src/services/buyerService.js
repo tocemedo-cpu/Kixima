@@ -247,7 +247,7 @@ async function activities({ buyerCompanyId, filter }) {
 // ---------------------------------------------------------------------------
 async function profile({ userId, companyId }) {
   const [user, company, orders] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, role: true, createdAt: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, role: true, avatarUrl: true, createdAt: true } }),
     companyId ? prisma.company.findUnique({ where: { id: companyId } }) : null,
     companyId ? prisma.purchaseOrder.findMany({ where: { buyerCompanyId: companyId }, include: PO_INCLUDE, orderBy: { updatedAt: 'desc' } }) : [],
   ]);

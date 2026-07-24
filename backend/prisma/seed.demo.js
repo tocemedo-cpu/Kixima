@@ -270,6 +270,16 @@ async function main() {
   await makeOrder({ status: 'RECEBIDA_COM_DIVERGENCIA', accepted: true, dispatched: true, delivered: true, received: true, receptionStatus: 'Com Divergência', invoiceStatus: 'PAGA', lines: [['Transporte de Carga Industrial', 2]] });
   await makeOrder({ status: 'REJEITADA', lines: [['Engenharia de Detalhe (Oil & Gas)', 1]] });
 
+  // Pedidos de suporte de demonstração (tela Ajuda & Suporte).
+  await prisma.supportTicket.createMany({
+    data: [
+      { reference: 'SUP-2026-00001', userId: comprador.id, companyId: client.id, subject: 'Dúvida sobre call-off', category: 'Contratos', message: 'Como emito uma PO ao abrigo de contrato-quadro?', status: 'EM_ANDAMENTO', createdAt: ago(0) },
+      { reference: 'SUP-2026-00002', userId: comprador.id, companyId: client.id, subject: 'Problema ao anexar documentos', category: 'Documentos', message: 'O upload falha em PDF grande.', status: 'RESOLVIDO', createdAt: ago(2) },
+      { reference: 'SUP-2026-00003', userId: comprador.id, companyId: client.id, subject: 'Falha ao criar fatura', category: 'Faturação', message: 'Erro ao gerar fatura da PO.', status: 'AGUARDANDO_RESPOSTA', createdAt: ago(4) },
+      { reference: 'SUP-2026-00004', userId: comprador.id, companyId: client.id, subject: 'Acesso ao relatório comercial', category: 'Conta & Acesso', message: 'Não consigo abrir o relatório.', status: 'FECHADO', createdAt: ago(6) },
+    ],
+  });
+
   console.log('Seed concluído.');
   console.log('Password para todos os utilizadores de teste:', PASSWORD);
   console.log({

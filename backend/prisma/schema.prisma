@@ -106,6 +106,7 @@ model User {
   companyId    String?     @map("company_id") // null para ADMIN_SISTEMA
   company      Company?    @relation(fields: [companyId], references: [id])
 
+  avatarUrl    String?     @map("avatar_url") // foto de perfil (upload ou câmera)
   active       Boolean     @default(true)
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
@@ -694,4 +695,31 @@ model Notification {
   @@index([userId])
   @@index([companyId])
   @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Ajuda & Suporte — pedidos de suporte (tickets) do utilizador
+// ---------------------------------------------------------------------------
+enum SupportStatus {
+  ABERTO
+  EM_ANDAMENTO
+  AGUARDANDO_RESPOSTA
+  RESOLVIDO
+  FECHADO
+}
+
+model SupportTicket {
+  id          String        @id @default(uuid())
+  reference   String        @unique // ex: SUP-2026-00001
+  userId      String        @map("user_id")
+  companyId   String?       @map("company_id")
+  subject     String
+  category    String
+  message     String
+  status      SupportStatus @default(ABERTO)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("support_tickets")
 }
