@@ -14,6 +14,7 @@ import Profile from './pages/shared/Profile';
 import Help from './pages/shared/Help';
 import OrderDetail from './pages/shared/OrderDetail';
 import ModulePlaceholder from './pages/shared/ModulePlaceholder';
+import Security from './pages/shared/Security';
 
 import CompradorHome from './pages/comprador/Home';
 import Catalog from './pages/comprador/Catalog';
@@ -79,6 +80,7 @@ export default function App() {
           <Route path="/notificacoes" element={<Notifications />} />
           <Route path="/perfil" element={<Profile />} />
           <Route path="/ajuda" element={<Help />} />
+          <Route path="/seguranca" element={<Security />} />
 
           {/* Comprador */}
           <Route element={<RequireRole role="COMPRADOR" />}>

@@ -30,6 +30,11 @@ const registerCompanySchema = z.object({
   policyValidUntil: z.coerce.date().optional(),
 });
 
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8, 'A nova senha deve ter pelo menos 8 caracteres.'),
+});
+
 const decideCompanySchema = z.object({
   approve: z.boolean(),
   rejectionReason: z.string().optional(),
@@ -171,6 +176,7 @@ const createContractSchema = z.object({
 
 module.exports = {
   loginSchema,
+  changePasswordSchema,
   registerCompanySchema,
   decideCompanySchema,
   createUserSchema,

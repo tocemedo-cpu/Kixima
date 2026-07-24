@@ -67,7 +67,7 @@ const FORNECEDOR = [
   {
     label: 'Configurações', icon: 'settings', children: [
       { label: 'Perfil', to: '/perfil' },
-      { label: 'Segurança', to: '/fornecedor/configuracoes/seguranca' },
+      { label: 'Segurança', to: '/seguranca' },
       { label: 'Notificações', to: '/notificacoes' },
     ],
   },
@@ -78,6 +78,7 @@ const FORNECEDOR = [
 const CONFIG = {
   label: 'Configurações', icon: 'settings', children: [
     { label: 'Perfil', to: '/perfil' },
+    { label: 'Segurança', to: '/seguranca' },
     { label: 'Notificações', to: '/notificacoes' },
   ],
 };

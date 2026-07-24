@@ -87,4 +87,15 @@ async function createUser({ name, email, password, role, companyId, approvalCap 
   });
 }
 
-module.exports = { login, createUser, hashPassword, signToken, signInvite, verifyInvite };
+// Alteração de senha pelo próprio utilizador (módulo Segurança).
+async function changePassword(userId, currentPassword, newPassword) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new UnauthorizedError('Sessão inválida.');
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) throw new UnauthorizedError('A senha atual está incorreta.');
+  const passwordHash = await hashPassword(newPassword);
+  await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  return { ok: true };
+}
+
+module.exports = { login, createUser, hashPassword, signToken, signInvite, verifyInvite, changePassword };
