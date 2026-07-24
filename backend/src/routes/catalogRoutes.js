@@ -3,7 +3,7 @@ const catalogController = require('../controllers/catalogController');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 const { validate } = require('../utils/validate');
-const { createProductSchema, updateProductSchema, stockUpdateSchema, stockMovementSchema } = require('../utils/schemas');
+const { createProductSchema, updateProductSchema, stockUpdateSchema, stockMovementSchema, reviewSchema } = require('../utils/schemas');
 const { upload, uploadProductMedia } = require('../config/upload');
 
 const router = express.Router();
@@ -29,7 +29,10 @@ router.get('/documents', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogCont
 // Movimentos de inventário (Entradas/Saídas) — antes de /:id.
 router.get('/movements', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogController.listMovements);
 router.post('/movements', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), validate(stockMovementSchema), catalogController.createMovement);
+router.get('/slug/:slug', catalogController.getBySlug);
 router.get('/:id', catalogController.getOne);
+router.get('/:id/reviews', catalogController.listReviews);
+router.post('/:id/reviews', requireRole('COMPRADOR'), validate(reviewSchema), catalogController.addReview);
 router.post('/', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), productMedia, validate(createProductSchema), catalogController.create);
 router.put('/:id', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), validate(updateProductSchema), catalogController.update);
 router.patch('/:id/stock', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), validate(stockUpdateSchema), catalogController.updateStock);

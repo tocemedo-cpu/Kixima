@@ -182,6 +182,34 @@ async function main() {
     ],
   });
 
+  // Metadados de marketplace (kind, localização, certificações, slug, verificação).
+  await prisma.company.update({
+    where: { id: supplier.id },
+    data: { verified: true, city: 'Luanda', province: 'Luanda', country: 'Angola' },
+  });
+  const slugify = (s, i) =>
+    s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 50) + '-' + i;
+  const SERVICE_CATS = new Set(['Inspeção & Ensaios', 'Engenharia', 'Consultoria', 'Formação & Certificação', 'Logística & Transporte']);
+  const CERTS = ['ISO 9001', 'ISO 45001', 'API Q1 / Q2', 'ISO 14001'];
+  const all = await prisma.product.findMany({ where: { supplierId: supplier.id } });
+  let i = 0;
+  for (const p of all) {
+    const isService = SERVICE_CATS.has(p.category);
+    await prisma.product.update({
+      where: { id: p.id },
+      data: {
+        slug: slugify(p.name, i),
+        kind: isService ? 'SERVICO' : 'PRODUTO',
+        city: 'Luanda', province: 'Luanda', country: 'Angola',
+        specialty: isService ? p.category : null,
+        availability: isService ? (i % 2 ? 'Sob Consulta' : 'Disponível') : 'Em stock',
+        certifications: [CERTS[i % CERTS.length], CERTS[(i + 1) % CERTS.length]],
+        tags: ['oil & gas', p.category.toLowerCase()],
+      },
+    });
+    i++;
+  }
+
   console.log('Seed concluído.');
   console.log('Password para todos os utilizadores de teste:', PASSWORD);
   console.log({

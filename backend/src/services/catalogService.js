@@ -4,6 +4,14 @@ const prisma = require('../config/database');
 const { NotFoundError, ForbiddenError } = require('../utils/errors');
 const storageService = require('./storageService');
 
+// Gera um slug URL-amigável a partir do nome + sufixo curto para ser único.
+function slugify(name, hint) {
+  const base = String(name || 'item')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60);
+  return `${base || 'item'}-${String(hint).slice(0, 6)}`;
+}
+
 async function listCatalog({ category, search, supplierId, excludeSupplierId } = {}) {
   return prisma.product.findMany({
     where: {
@@ -26,6 +34,19 @@ async function getProduct(id) {
     where: { id },
     include: {
       supplier: { select: { id: true, name: true, status: true } },
+      images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] },
+      documents: { orderBy: { type: 'asc' } },
+    },
+  });
+  if (!product) throw new NotFoundError('Produto');
+  return product;
+}
+
+async function getProductBySlug(slug) {
+  const product = await prisma.product.findUnique({
+    where: { slug },
+    include: {
+      supplier: { select: { id: true, name: true, status: true, verified: true, logoUrl: true } },
       images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] },
       documents: { orderBy: { type: 'asc' } },
     },
@@ -81,10 +102,12 @@ async function createProduct(supplierCompanyId, data, media = {}) {
 
   const keyHint = (data.sku || data.name || 'produto').toString().replace(/\s+/g, '-').slice(0, 40);
   const { imageRecords, docRecords, primaryUrl } = await persistProductMedia(media, keyHint);
+  const slug = slugify(data.name, Math.random().toString(36).slice(2, 8));
 
   return prisma.product.create({
     data: {
       ...data,
+      slug,
       supplierId: supplierCompanyId,
       imageUrl: primaryUrl || undefined,
       images: imageRecords.length ? { create: imageRecords } : undefined,
@@ -203,6 +226,6 @@ async function listStockMovements(supplierCompanyId, { type } = {}) {
 }
 
 module.exports = {
-  listCatalog, getProduct, createProduct, updateProduct, deactivateProduct, setProductImage,
+  listCatalog, getProduct, getProductBySlug, createProduct, updateProduct, deactivateProduct, setProductImage,
   updateStock, listSupplierDocuments, createStockMovement, listStockMovements, incrementView,
 };

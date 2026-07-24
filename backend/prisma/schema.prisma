@@ -53,6 +53,11 @@ model Company {
   contactEmail String       @map("contact_email")
   contactPhone String?      @map("contact_phone")
   address     String?
+  verified    Boolean       @default(false) // selo "Fornecedor Verificado"
+  logoUrl     String?       @map("logo_url")
+  city        String?
+  province    String?
+  country     String?       @default("Angola")
 
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
@@ -108,6 +113,8 @@ model User {
   purchaseOrdersCreated PurchaseOrder[]  @relation("PoCreatedBy")
   purchaseOrdersApproved PurchaseOrder[] @relation("PoApprovedBy")
   notifications          Notification[]
+  favorites              Favorite[]
+  reviews                Review[]
 
   @@map("users")
 }
@@ -165,6 +172,16 @@ model Product {
   availability  String? // "Em stock" | "Sob encomenda" | "Esgotado"
   minStock      Int?    @map("min_stock")
 
+  // --- Marketplace (Serviços/Produtos) ---
+  slug        String?  @unique // URL amigável (ex.: inspecao-por-ultrassom-ut)
+  kind        ProductKind @default(PRODUTO) // PRODUTO | SERVICO
+  specialty   String?  // especialidade (serviços)
+  city        String?
+  province    String?
+  country     String?  @default("Angola")
+  certifications String[] @default([]) // ex.: ISO 9001, API Q1
+  tags        String[]  @default([])
+
   active      Boolean  @default(true)
 
   // Reputação (marketplace) — média de avaliações e nº de avaliações.
@@ -182,9 +199,46 @@ model Product {
   movements   StockMovement[]
   kitItems    KitItem[]
   quoteItems  QuoteItem[]
+  favorites   Favorite[]
+  reviews     Review[]
 
   @@index([category])
+  @@index([kind])
   @@map("products")
+}
+
+enum ProductKind {
+  PRODUTO
+  SERVICO
+}
+
+// Favorito (coração) — persistido por utilizador.
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, productId])
+  @@map("favorites")
+}
+
+// Avaliação de um produto/serviço por um comprador.
+model Review {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  rating    Int      // 1..5
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@map("reviews")
 }
 
 enum QuoteStatus {

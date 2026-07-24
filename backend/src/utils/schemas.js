@@ -132,6 +132,33 @@ const respondQuoteSchema = z.object({
   note: z.string().optional(),
 });
 
+// Marketplace — pesquisa paginada/filtrada (query params, saneados).
+const marketplaceSearchSchema = z.object({
+  q: z.string().trim().max(120).optional(),
+  category: z.string().max(80).optional(),
+  kind: z.enum(['PRODUTO', 'SERVICO']).optional(),
+  certifications: z.string().max(200).optional(),
+  availability: z.string().max(40).optional(),
+  verified: z.enum(['true', 'false']).optional(),
+  country: z.string().max(60).optional(),
+  province: z.string().max(60).optional(),
+  city: z.string().max(60).optional(),
+  specialty: z.string().max(80).optional(),
+  minRating: z.coerce.number().min(0).max(5).optional(),
+  minPrice: z.coerce.number().nonnegative().optional(),
+  maxPrice: z.coerce.number().nonnegative().optional(),
+  sort: z.enum(['relevantes', 'recentes', 'avaliacao', 'preco_asc', 'preco_desc', 'solicitados', 'vendidos']).optional(),
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(48).optional(),
+});
+
+const reviewSchema = z.object({
+  rating: z.coerce.number().int().min(1).max(5),
+  comment: z.string().max(1000).optional(),
+});
+
+const favoriteSchema = z.object({ productId: z.string().uuid() });
+
 // Kit: pacote de produtos.
 const createKitSchema = z.object({
   name: z.string().min(2),
@@ -222,6 +249,9 @@ module.exports = {
   createKitSchema,
   createQuoteSchema,
   respondQuoteSchema,
+  marketplaceSearchSchema,
+  reviewSchema,
+  favoriteSchema,
   createPoSchema,
   rejectPoSchema,
   receptionSchema,

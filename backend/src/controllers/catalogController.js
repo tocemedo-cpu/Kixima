@@ -1,4 +1,5 @@
 const catalogService = require('../services/catalogService');
+const reviewService = require('../services/reviewService');
 
 const PRODUCT_DOC_TYPES = ['FICHA_TECNICA', 'DATASHEET', 'MANUAL', 'CATALOGO', 'CERTIFICADO', 'DESENHO_TECNICO'];
 
@@ -16,6 +17,23 @@ async function getOne(req, res) {
     catalogService.incrementView(product.id); // best-effort, não bloqueia a resposta
   }
   res.json(product);
+}
+
+async function getBySlug(req, res) {
+  const product = await catalogService.getProductBySlug(req.params.slug);
+  if (req.user.role === 'COMPRADOR' && product.supplierId !== req.user.companyId) {
+    catalogService.incrementView(product.id);
+  }
+  res.json(product);
+}
+
+async function listReviews(req, res) {
+  res.json(await reviewService.listForProduct(req.params.id));
+}
+
+async function addReview(req, res) {
+  const result = await reviewService.addReview(req.params.id, req.user.id, req.body);
+  res.status(201).json(result);
 }
 
 async function create(req, res) {
@@ -68,4 +86,4 @@ async function uploadImage(req, res) {
   return res.json(product);
 }
 
-module.exports = { list, getOne, create, update, updateStock, documents, listMovements, createMovement, deactivate, uploadImage };
+module.exports = { list, getOne, getBySlug, create, update, updateStock, documents, listMovements, createMovement, listReviews, addReview, deactivate, uploadImage };

@@ -23,6 +23,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
 const kitRoutes = require('./routes/kitRoutes');
 const quoteRoutes = require('./routes/quoteRoutes');
+const marketplaceRoutes = require('./routes/marketplaceRoutes');
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/kits', kitRoutes);
 app.use('/api/quotes', quoteRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
 
 // Servir o frontend compilado (deploy de serviço único). Define FRONTEND_DIST
 // com o caminho para frontend/dist; a app serve os ficheiros estáticos e faz
