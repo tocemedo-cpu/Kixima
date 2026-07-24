@@ -24,6 +24,8 @@ const productMedia = uploadProductMedia.fields([
 router.use(authenticate);
 
 router.get('/', catalogController.list);
+// Documentos do fornecedor (Documentação) — antes de /:id para não colidir.
+router.get('/documents', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogController.documents);
 router.get('/:id', catalogController.getOne);
 router.post('/', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), productMedia, validate(createProductSchema), catalogController.create);
 router.put('/:id', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), validate(updateProductSchema), catalogController.update);

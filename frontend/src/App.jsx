@@ -35,6 +35,7 @@ import SupplierPayments from './pages/fornecedor/Payments';
 import SupplierCompanyProfile from './pages/fornecedor/CompanyProfile';
 import Inventory from './pages/fornecedor/Inventory';
 import Reports from './pages/fornecedor/Reports';
+import SupplierDocuments from './pages/fornecedor/Documents';
 
 import FinanceiroHome from './pages/financeiro/Home';
 import PendingInvoices from './pages/financeiro/PendingInvoices';
@@ -108,6 +109,10 @@ export default function App() {
             <Route path="/fornecedor/inventario/stock" element={<Inventory />} />
             <Route path="/fornecedor/relatorios/estatisticas" element={<Reports />} />
             <Route path="/fornecedor/relatorios/mais-vendidos" element={<Reports />} />
+            <Route path="/fornecedor/documentacao/certificacoes" element={<SupplierDocuments />} />
+            <Route path="/fornecedor/documentacao/licencas" element={<SupplierDocuments />} />
+            <Route path="/fornecedor/documentacao/catalogos" element={<SupplierDocuments />} />
+            <Route path="/fornecedor/documentacao/fichas" element={<SupplierDocuments />} />
             {/* Módulos do menu ERP ainda em preparação — evita 404 e mantém a navegação. */}
             <Route path="/fornecedor/*" element={<ModulePlaceholder />} />
           </Route>

@@ -138,4 +138,29 @@ async function updateStock(id, supplierCompanyId, data) {
   });
 }
 
-module.exports = { listCatalog, getProduct, createProduct, updateProduct, deactivateProduct, setProductImage, updateStock };
+// Reúne todos os documentos do fornecedor: documentos técnicos dos produtos
+// (ficha técnica, certificado, catálogo, etc.) + documentos da empresa
+// (alvará, licença ANPG, certidão) para o módulo de Documentação.
+async function listSupplierDocuments(supplierCompanyId) {
+  const [productDocs, companyDocs] = await Promise.all([
+    prisma.productDocument.findMany({
+      where: { product: { supplierId: supplierCompanyId } },
+      select: {
+        id: true, type: true, fileUrl: true, originalName: true, createdAt: true,
+        productId: true, product: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.companyDocument.findMany({
+      where: { companyId: supplierCompanyId },
+      select: { id: true, type: true, fileUrl: true, originalName: true, createdAt: true },
+      orderBy: { type: 'asc' },
+    }),
+  ]);
+  return {
+    productDocs: productDocs.map(({ product, ...d }) => ({ ...d, productName: product?.name || '—' })),
+    companyDocs,
+  };
+}
+
+module.exports = { listCatalog, getProduct, createProduct, updateProduct, deactivateProduct, setProductImage, updateStock, listSupplierDocuments };
