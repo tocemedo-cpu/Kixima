@@ -1,55 +1,79 @@
 // src/pages/comprador/Orders.jsx
+// Ordens de Compra (item 6) — KPIs, tabs por estado, tabela ligada a
+// /api/buyer/orders. Cada linha abre o detalhe da PO.
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
-import DataTable from '../../components/DataTable';
-import Badge from '../../components/Badge';
-import { PO_STATUS, formatDate, formatMoney } from '../../domain';
+import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
+import { Icon } from '../../components/icons';
+import { PO_STATUS, formatMoney, formatDate } from '../../domain';
+
+const TABS = [
+  { key: '', label: 'Todas as Ordens' }, { key: 'ANDAMENTO', label: 'Em Andamento' },
+  { key: 'CONCLUIDAS', label: 'Concluídas' }, { key: 'CANCELADAS', label: 'Canceladas' },
+];
 
 export default function Orders() {
-  const [orders, setOrders] = useState(null);
+  const nav = useNavigate();
+  const [tab, setTab] = useState('');
+  const [q, setQ] = useState('');
+  const [data, setData] = useState(null);
   const [error, setError] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
-    api.get('/api/purchase-orders', { status: statusFilter || undefined }).then(setOrders).catch((e) => setError(e.message));
-  }, [statusFilter]);
+    setError('');
+    api.get('/api/buyer/orders', { status: tab || undefined, q: q || undefined, limit: 25 })
+      .then(setData).catch((e) => setError(e.message));
+  }, [tab, q]);
 
+  const k = data?.kpis;
   return (
     <div>
-      <PageHeader title="Ordens de Compra" subtitle="Todas as POs emitidas pela sua empresa e o respetivo estado." />
-      <ErrorBanner message={error} />
+      <Crumbs trail={['Home', 'Ordens de Compra']} />
+      <PageHead title="Ordens de Compra" subtitle="Acompanhe todas as suas Ordens de Compra emitidas aos fornecedores." />
 
-      <div className="field" style={{ maxWidth: 260, marginBottom: 16 }}>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="">Todos os estados</option>
-          {Object.entries(PO_STATUS).map(([key, val]) => (
-            <option key={key} value={key}>{val.label}</option>
-          ))}
-        </select>
-      </div>
+      <KpiRow cards={[
+        { icon: 'orders', tone: 'info', label: 'Total de Ordens', value: k?.total ?? '—', sub: 'Todas as PO emitidas' },
+        { icon: 'payment', tone: 'pending', label: 'Valor Total das PO', value: k ? formatMoney(k.valorTotal) : '—', sub: 'Valor total' },
+        { icon: 'truck', tone: 'info', label: 'Em Andamento', value: k?.emAndamento ?? '—', sub: 'PO em processamento' },
+        { icon: 'reception', tone: 'success', label: 'Concluídas', value: k?.concluidas ?? '—', sub: 'PO concluídas' },
+        { icon: 'approvals', tone: 'danger', label: 'Canceladas', value: k?.canceladas ?? '—', sub: 'PO canceladas' },
+      ]} />
 
-      {!orders ? (
-        <Loading />
-      ) : (
-        <div className="card">
-          <DataTable
-            rows={orders}
-            rowKey="id"
-            onRowClick={(row) => navigate(`/comprador/ordens/${row.id}`)}
-            emptyTitle="Sem ordens de compra"
-            emptyBody="As POs que emitir vão aparecer aqui."
-            columns={[
-              { key: 'reference', header: 'Referência', render: (r) => <span className="mono">{r.reference}</span> },
-              { key: 'supplier', header: 'Fornecedor', render: (r) => r.supplierCompanyId?.slice(0, 8) },
-              { key: 'total', header: 'Valor', render: (r) => formatMoney(r.totalAmount, r.currency) },
-              { key: 'callOff', header: 'Tipo', render: (r) => (r.isCallOff ? <Badge tone="info">Call-off</Badge> : 'PO regular') },
-              { key: 'status', header: 'Estado', render: (r) => <Badge tone={PO_STATUS[r.status]?.tone}>{PO_STATUS[r.status]?.label}</Badge> },
-              { key: 'date', header: 'Emitida em', render: (r) => formatDate(r.createdAt) },
-            ]}
-          />
+      <Tabs tabs={TABS} value={tab} onChange={setTab} />
+      <Toolbar placeholder="Pesquisar por nº da PO, fornecedor…" q={q} onQ={setQ} />
+
+      {error ? <div className="empty-state"><p>{error}</p></div> : (
+        <div className="bz-card bz-tablewrap">
+          <table className="bz-table">
+            <thead><tr>
+              <th>Nº da PO</th><th>Fornecedor</th><th>Data de Emissão</th><th>Entrega Prevista</th>
+              <th>Itens</th><th className="r">Valor Total</th><th>Estado</th><th></th>
+            </tr></thead>
+            <tbody>
+              {!data ? <tr><td colSpan={8}><EmptyRow>A carregar…</EmptyRow></td></tr>
+                : data.items.length === 0 ? <tr><td colSpan={8}><EmptyRow>Sem ordens de compra.</EmptyRow></td></tr>
+                : data.items.map((o) => (
+                  <tr key={o.id}>
+                    <td>
+                      <span className="bz-mono">{o.reference}</span>
+                      <span className="bz-sub2">{o.isCallOff ? 'Call-off' : 'Gerada a partir do Checkout'}</span>
+                    </td>
+                    <td><SupplierCell supplier={o.supplier} /></td>
+                    <td>{formatDate(o.createdAt)}</td>
+                    <td>{o.paymentDueAt ? formatDate(o.paymentDueAt) : '—'}</td>
+                    <td>{o.itemsCount} {o.itemsCount === 1 ? 'item' : 'itens'}</td>
+                    <td className="r"><strong>{formatMoney(o.totalAmount, o.currency)}</strong></td>
+                    <td><Pill tone={PO_STATUS[o.status]?.tone}>{PO_STATUS[o.status]?.label || o.status}</Pill></td>
+                    <td>
+                      <div className="bz-actions">
+                        <button className="bz-iconbtn" title="Ver detalhes" onClick={() => nav(`/comprador/ordens/${o.id}`)}><Icon name="search" size={14} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

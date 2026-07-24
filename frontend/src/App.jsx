@@ -26,6 +26,13 @@ import BuyerQuotes from './pages/comprador/Quotes';
 import Services from './pages/comprador/Services';
 import Explore from './pages/comprador/Explore';
 import ServiceDetail from './pages/comprador/ServiceDetail';
+import Checkout from './pages/comprador/Checkout';
+import Payments from './pages/comprador/Payments';
+import Deliveries from './pages/comprador/Deliveries';
+import Receptions from './pages/comprador/Receptions';
+import Suppliers from './pages/comprador/Suppliers';
+import Activities from './pages/comprador/Activities';
+import BuyerProfile from './pages/comprador/Profile';
 
 import CompanyAdminHome from './pages/companyAdmin/Home';
 import Approvals from './pages/companyAdmin/Approvals';
@@ -104,9 +111,16 @@ export default function App() {
             <Route path="/comprador/servicos" element={<Services />} />
             <Route path="/comprador/servicos/:slug" element={<ServiceDetail />} />
             <Route path="/comprador/cesta" element={<Cart />} />
+            <Route path="/comprador/checkout" element={<Checkout />} />
             <Route path="/comprador/cotacoes" element={<BuyerQuotes />} />
             <Route path="/comprador/ordens" element={<Orders />} />
             <Route path="/comprador/ordens/:id" element={<OrderDetail />} />
+            <Route path="/comprador/pagamentos" element={<Payments />} />
+            <Route path="/comprador/entregas" element={<Deliveries />} />
+            <Route path="/comprador/recepcao" element={<Receptions />} />
+            <Route path="/comprador/fornecedores" element={<Suppliers />} />
+            <Route path="/comprador/atividades" element={<Activities />} />
+            <Route path="/comprador/perfil" element={<BuyerProfile />} />
           </Route>
 
           {/* Company Admin */}
