@@ -88,4 +88,21 @@ async function facets(filters) {
   };
 }
 
-module.exports = { search, facets };
+// Fornecedores verificados (para a home) — com rating médio dos seus produtos.
+async function verifiedSuppliers(limit = 8) {
+  const suppliers = await prisma.company.findMany({
+    where: { type: 'FORNECEDOR', verified: true, status: 'APROVADA' },
+    select: { id: true, name: true, logoUrl: true, city: true, country: true },
+    take: limit,
+  });
+  const withRating = await Promise.all(suppliers.map(async (s) => {
+    const agg = await prisma.product.aggregate({
+      where: { supplierId: s.id, active: true },
+      _avg: { rating: true }, _count: { _all: true },
+    });
+    return { ...s, rating: agg._avg.rating ? Math.round(agg._avg.rating * 10) / 10 : null, productCount: agg._count._all };
+  }));
+  return withRating.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+}
+
+module.exports = { search, facets, verifiedSuppliers };

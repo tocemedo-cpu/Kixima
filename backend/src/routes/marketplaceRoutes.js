@@ -28,6 +28,10 @@ router.get('/facets', async (req, res) => {
   res.json(await marketplaceService.facets(parseFilters(req)));
 });
 
+router.get('/suppliers', async (req, res) => {
+  res.json(await marketplaceService.verifiedSuppliers(8));
+});
+
 // Favoritos do utilizador autenticado.
 router.get('/favorites', async (req, res) => {
   res.json(await favoriteService.listIds(req.user.id));

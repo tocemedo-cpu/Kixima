@@ -1,58 +1,187 @@
 // src/pages/comprador/Home.jsx
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+// Home Marketplace do Comprador — 100% ligada ao banco (dashboard, categorias,
+// trending, fornecedores verificados, atividades). Só o conteúdo; o sidebar e o
+// header não são alterados.
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
-import { PageHeader, StatCard, Loading, ErrorBanner } from '../../components/Common';
-import DataTable from '../../components/DataTable';
-import Badge from '../../components/Badge';
-import { PO_STATUS, formatDate, formatMoney } from '../../domain';
+import { Loading, ErrorBanner } from '../../components/Common';
+import { Icon, Stars, categoryVisual } from '../../components/icons';
+import ProductCover from '../../components/ProductCover';
+import { formatMoney } from '../../domain';
 
-export default function CompradorHome() {
-  const [orders, setOrders] = useState(null);
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? 'Bom dia' : h < 19 ? 'Boa tarde' : 'Boa noite';
+}
+function timeAgo(iso) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 3600) return `há ${Math.max(1, Math.floor(s / 60))} min`;
+  if (s < 86400) return `há ${Math.floor(s / 3600)}h`;
+  return `há ${Math.floor(s / 86400)} dia${Math.floor(s / 86400) > 1 ? 's' : ''}`;
+}
+function initials(name = '') {
+  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
+}
+
+export default function Home() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [d, setD] = useState(null);
   const [error, setError] = useState('');
+  const [q, setQ] = useState('');
 
   useEffect(() => {
-    api.get('/api/purchase-orders').then(setOrders).catch((e) => setError(e.message));
+    Promise.all([
+      api.get('/api/dashboard/comprador'),
+      api.get('/api/marketplace/facets'),
+      api.get('/api/marketplace/search', { sort: 'solicitados', limit: 4 }),
+      api.get('/api/marketplace/search', { sort: 'vendidos', limit: 5 }),
+      api.get('/api/marketplace/suppliers'),
+      api.get('/api/notifications'),
+    ]).then(([dash, facets, trending, frequent, suppliers, notifs]) => {
+      setD({ dash, categories: facets.categories || [], trending: trending.items || [], frequent: frequent.items || [], suppliers: suppliers || [], notifs: (notifs || []).slice(0, 6) });
+    }).catch((e) => setError(e.message));
   }, []);
 
-  if (error) return <ErrorBanner message={error} />;
-  if (!orders) return <Loading />;
+  const firstName = useMemo(() => (user?.name || '').split(' ')[0], [user]);
 
-  const emCurso = orders.filter((o) => !['CONCLUIDA', 'REJEITADA', 'RECUSADA_FORNECEDOR'].includes(o.status));
-  const emTransito = orders.filter((o) => o.status === 'EM_EXECUCAO' || o.status === 'ENTREGUE');
-  const aguardandoRececao = orders.filter((o) => o.status === 'ENTREGUE');
+  if (error) return <ErrorBanner message={error} />;
+  if (!d) return <Loading />;
+
+  const k = d.dash.kpis;
+  const submitSearch = (e) => { e.preventDefault(); navigate(`/comprador/servicos${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`); };
 
   return (
-    <div>
-      <PageHeader
-        title="Visão geral"
-        subtitle="Resumo das suas ordens de compra, entregas e receções pendentes."
-        action={<Link className="btn btn-accent" to="/comprador/catalogo">Ir ao catálogo</Link>}
-      />
-
-      <div className="grid-cols grid-3" style={{ marginBottom: 24 }}>
-        <StatCard label="POs em curso" value={emCurso.length} sub="Aguardando aprovação, aceitação ou execução" />
-        <StatCard label="Entregas em trânsito" value={emTransito.length} sub="Despachadas pelo fornecedor" />
-        <StatCard label="Receções pendentes" value={aguardandoRececao.length} sub="Aguardando a sua confirmação" />
+    <div className="home">
+      <div style={{ marginBottom: 20 }}>
+        <h1 className="home-hi">{greeting()}, {firstName}! <span>👋</span></h1>
+        <p className="home-sub">O que pretende comprar hoje?</p>
+        <form className="home-search" onSubmit={submitSearch}>
+          <span className="home-search-ico"><Icon name="search" size={18} /></span>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar produtos, serviços ou fornecedores…" />
+          <button className="btn btn-accent" type="submit">Pesquisar</button>
+        </form>
       </div>
 
-      <div className="card">
-        <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}>
-          <strong>Últimas ordens de compra</strong>
-        </div>
-        <DataTable
-          rows={orders.slice(0, 8)}
-          rowKey="id"
-          emptyTitle="Ainda não emitiu nenhuma PO"
-          emptyBody="Vá ao catálogo, monte a sua cesta e faça o checkout."
-          columns={[
-            { key: 'reference', header: 'Referência', render: (r) => <span className="mono">{r.reference}</span> },
-            { key: 'total', header: 'Valor', render: (r) => formatMoney(r.totalAmount, r.currency) },
-            { key: 'status', header: 'Estado', render: (r) => <Badge tone={PO_STATUS[r.status]?.tone}>{PO_STATUS[r.status]?.label}</Badge> },
-            { key: 'date', header: 'Emitida em', render: (r) => formatDate(r.createdAt) },
-          ]}
-        />
+      <div className="home-kpis">
+        <Kpi icon="invoice" label="Ordens de Compra" value={k.emAndamento} sub="Em andamento" tone="brand" />
+        <Kpi icon="payment" label="Aguardando Pagamento" value={k.aguardandoPagamento.count} sub={`Total: ${formatMoney(k.aguardandoPagamento.total)}`} tone="amber" />
+        <Kpi icon="truck" label="Em Entrega" value={k.emEntrega.count} sub={`Total: ${formatMoney(k.emEntrega.total)}`} tone="teal" />
+        <Kpi icon="reception" label="Recebidas" value={k.recebidasMes} sub="Este mês" tone="info" />
       </div>
+
+      <div className="home-row home-row-cats">
+        <section className="card card-pad">
+          <SectionHead title="Categorias Principais" to="/comprador/catalogo" />
+          <div className="cat-grid">
+            {d.categories.slice(0, 8).map((c) => {
+              const vis = categoryVisual(c.name);
+              return (
+                <Link key={c.name} to={`/comprador/servicos?category=${encodeURIComponent(c.name)}`} className="cat-tile">
+                  <span className="cat-ico"><Icon name={vis.icon} size={24} /></span>
+                  <span className="cat-name">{c.name}</span>
+                </Link>
+              );
+            })}
+            {d.categories.length === 0 ? <p className="helptext">Sem categorias.</p> : null}
+          </div>
+        </section>
+
+        <section className="protect-card">
+          <span className="protect-shield"><Icon name="policy" size={40} /></span>
+          <h3>COMPRAS PROTEGIDAS KIXIMA</h3>
+          <p>Todas as transações são protegidas pela KIXIMA com fornecedores verificados e seguros de execução.</p>
+          <Link to="/ajuda" className="protect-link">Saiba mais →</Link>
+        </section>
+      </div>
+
+      <div className="home-row home-row-trend">
+        <section className="card card-pad">
+          <SectionHead title="Trending na KIXIMA" sub="Mais visualizados" to="/comprador/servicos" />
+          <div className="mini-grid">
+            {d.trending.map((p) => <MiniCard key={p.id} p={p} onClick={() => navigate(`/comprador/servicos/${p.slug || p.id}`)} />)}
+            {d.trending.length === 0 ? <p className="helptext">Sem dados ainda.</p> : null}
+          </div>
+        </section>
+
+        <section className="card card-pad">
+          <SectionHead title="Minhas Ordens" to="/comprador/ordens" />
+          <ul className="ord-list">
+            {d.dash.minhasOrdens.map((o) => (
+              <li key={o.label}><span className="ord-dot" /><span>{o.label}</span><strong>{o.count}</strong></li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="card card-pad">
+          <SectionHead title="Atividades Recentes" to="/notificacoes" />
+          {d.notifs.length === 0 ? <p className="helptext">Sem atividades.</p> : (
+            <ul className="act-list">
+              {d.notifs.map((n) => (
+                <li key={n.id}><span className="act-ico"><Icon name="activities" size={14} /></span>
+                  <span className="act-txt">{n.title || n.message}</span>
+                  <span className="act-time">{timeAgo(n.createdAt)}</span></li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      <div className="home-row home-row-bottom">
+        <section className="card card-pad">
+          <SectionHead title="Fornecedores Verificados" to="/comprador/servicos?verified=true" />
+          <div className="sup-grid">
+            {d.suppliers.map((s) => (
+              <div key={s.id} className="sup-card">
+                <span className="sup-logo">{s.logoUrl ? <img src={s.logoUrl} alt={s.name} /> : initials(s.name)}</span>
+                <span className="sup-name">{s.name}</span>
+                {s.rating ? <span className="sup-rating">★ {s.rating.toFixed(1)}</span> : null}
+              </div>
+            ))}
+            {d.suppliers.length === 0 ? <p className="helptext">Sem fornecedores verificados.</p> : null}
+          </div>
+        </section>
+
+        <section className="card card-pad">
+          <SectionHead title="Compras Frequentes" to="/comprador/catalogo" />
+          <div className="mini-grid mini-grid-5">
+            {d.frequent.map((p) => <MiniCard key={p.id} p={p} fromPrice onClick={() => navigate(`/comprador/servicos/${p.slug || p.id}`)} />)}
+            {d.frequent.length === 0 ? <p className="helptext">Sem dados ainda.</p> : null}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function SectionHead({ title, sub, to }) {
+  return (
+    <div className="sec-head">
+      <div><strong>{title}</strong>{sub ? <span className="sec-sub"> · {sub}</span> : null}</div>
+      {to ? <Link to={to} className="sec-link">Ver todas</Link> : null}
+    </div>
+  );
+}
+
+function Kpi({ icon, label, value, sub, tone }) {
+  return (
+    <div className={`kpi kpi-${tone}`}>
+      <div className="kpi-body"><div className="kpi-label">{label}</div><div className="kpi-value">{value}</div><div className="kpi-sub">{sub}</div></div>
+      <span className="kpi-ico"><Icon name={icon} size={20} /></span>
+    </div>
+  );
+}
+
+function MiniCard({ p, fromPrice, onClick }) {
+  return (
+    <div className="mini-card" onClick={onClick}>
+      <div className="mini-img"><ProductCover imageUrl={p.imageUrl} category={p.category} name={p.name} caption={false} /></div>
+      <div className="mini-name">{p.name}</div>
+      <div className="mini-company">{p.supplier?.name}</div>
+      <div className="mini-price">{fromPrice ? <span className="mini-from">A partir de </span> : null}{formatMoney(p.promoPrice || p.unitPrice, p.currency)}</div>
+      {!fromPrice && p.rating ? <div className="mini-rating"><Stars value={p.rating} /> <span>{p.rating.toFixed(1)} {p.reviewCount ? `(${p.reviewCount})` : ''}</span></div> : null}
     </div>
   );
 }
