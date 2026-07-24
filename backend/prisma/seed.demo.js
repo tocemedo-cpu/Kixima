@@ -210,6 +210,66 @@ async function main() {
     i++;
   }
 
+  // -------------------------------------------------------------------------
+  // Ordens de Compra de demonstração (vários estados) + faturas.
+  // Dão dados reais às telas do Comprador: Ordens, Pagamentos, Acompanhar
+  // Entrega, Recepção e Atividades.
+  // -------------------------------------------------------------------------
+  const byName = Object.fromEntries(all.map((p) => [p.name, p]));
+  const pick = (name) => byName[name] || all[0];
+  const DAY = 864e5;
+  const ago = (d) => new Date(Date.now() - d * DAY);
+  let poSeq = 0; let invSeq = 0;
+  const pad = (n) => String(n).padStart(5, '0');
+
+  async function makeOrder({ status, lines, accepted, dispatched, delivered, received, receptionStatus, invoiceStatus }) {
+    poSeq += 1;
+    const items = lines.map(([name, qty]) => {
+      const p = pick(name);
+      const unitPrice = Number(p.unitPrice);
+      return { productId: p.id, quantity: qty, unitPrice, lineTotal: unitPrice * qty };
+    });
+    const totalAmount = items.reduce((s, i) => s + i.lineTotal, 0);
+    const po = await prisma.purchaseOrder.create({
+      data: {
+        reference: `PO-2026-${pad(poSeq)}`,
+        buyerCompanyId: client.id, supplierCompanyId: supplier.id, createdById: comprador.id,
+        status, totalAmount, currency: 'AOA',
+        approvedById: status === 'AGUARDANDO_APROVACAO' ? null : companyAdmin.id,
+        approvedAt: status === 'AGUARDANDO_APROVACAO' ? null : ago(9),
+        acceptedAt: accepted ? ago(8) : null,
+        paymentDueAt: accepted ? ago(1) : null,
+        paidAt: invoiceStatus === 'PAGA' ? ago(5) : null,
+        dispatchedAt: dispatched ? ago(4) : null,
+        deliveredAt: delivered ? ago(2) : null,
+        receivedAt: received ? ago(1) : null,
+        receptionStatus: receptionStatus || null,
+        createdAt: ago(10),
+        items: { create: items },
+      },
+    });
+    if (invoiceStatus) {
+      invSeq += 1;
+      await prisma.invoice.create({
+        data: {
+          reference: `FAT-2026-${pad(invSeq)}`, purchaseOrderId: po.id,
+          amount: totalAmount, currency: 'AOA', status: invoiceStatus,
+          issuedAt: ago(7), dueAt: ago(-3),
+        },
+      });
+    }
+    return po;
+  }
+
+  await makeOrder({ status: 'AGUARDANDO_APROVACAO', lines: [['Válvula de esfera 4" API 6D', 2]] });
+  await makeOrder({ status: 'AGUARDANDO_PAGAMENTO', accepted: true, invoiceStatus: 'PENDENTE', lines: [['Gerador Diesel 500 kVA', 1]] });
+  await makeOrder({ status: 'PAGA', accepted: true, invoiceStatus: 'PAGA', lines: [['Mangueira hidráulica de alta pressão 2"', 5]] });
+  await makeOrder({ status: 'EM_EXECUCAO', accepted: true, dispatched: true, invoiceStatus: 'PAGA', lines: [['Tubos de Aço Carbono (lote)', 3]] });
+  await makeOrder({ status: 'ENTREGUE', accepted: true, dispatched: true, delivered: true, invoiceStatus: 'PAGA', lines: [['Inspeção por Ultrassom (UT)', 1]] });
+  await makeOrder({ status: 'RECEBIDA_CONFORME', accepted: true, dispatched: true, delivered: true, received: true, receptionStatus: 'Conforme', invoiceStatus: 'PAGA', lines: [['Ensaios não Destrutivos (NDT)', 1]] });
+  await makeOrder({ status: 'RECEBIDA_COM_DIVERGENCIA', accepted: true, dispatched: true, delivered: true, received: true, receptionStatus: 'Com Divergência', invoiceStatus: 'PAGA', lines: [['Transporte de Carga Industrial', 2]] });
+  await makeOrder({ status: 'REJEITADA', lines: [['Engenharia de Detalhe (Oil & Gas)', 1]] });
+
   console.log('Seed concluído.');
   console.log('Password para todos os utilizadores de teste:', PASSWORD);
   console.log({
