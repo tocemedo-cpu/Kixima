@@ -71,6 +71,8 @@ model Company {
   budgetLimit        BudgetLimit?
   documents          CompanyDocument[]
   kits               Kit[]                  @relation("SupplierKits")
+  quotesAsBuyer      QuoteRequest[]         @relation("BuyerQuotes")
+  quotesAsSupplier   QuoteRequest[]         @relation("SupplierQuotes")
 
   @@map("companies")
 }
@@ -178,9 +180,54 @@ model Product {
   documents   ProductDocument[]
   movements   StockMovement[]
   kitItems    KitItem[]
+  quoteItems  QuoteItem[]
 
   @@index([category])
   @@map("products")
+}
+
+enum QuoteStatus {
+  ABERTA       // pedido enviado, a aguardar resposta do fornecedor
+  RESPONDIDA   // fornecedor respondeu com preço/prazo
+  FECHADA      // comprador encerrou o pedido
+}
+
+// Pedido de cotação (RFQ): comprador pede preço a um fornecedor por itens.
+model QuoteRequest {
+  id                String      @id @default(uuid())
+  buyerCompanyId    String      @map("buyer_company_id")
+  buyerCompany      Company     @relation("BuyerQuotes", fields: [buyerCompanyId], references: [id])
+  supplierCompanyId String      @map("supplier_company_id")
+  supplierCompany   Company     @relation("SupplierQuotes", fields: [supplierCompanyId], references: [id])
+  createdById       String      @map("created_by_id")
+
+  status            QuoteStatus @default(ABERTA)
+  note              String?
+
+  responsePrice     Decimal?    @map("response_price") @db.Decimal(14, 2)
+  responseLeadDays  Int?        @map("response_lead_days")
+  responseNote      String?     @map("response_note")
+  respondedAt       DateTime?   @map("responded_at")
+
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  items             QuoteItem[]
+
+  @@index([buyerCompanyId])
+  @@index([supplierCompanyId])
+  @@map("quote_requests")
+}
+
+model QuoteItem {
+  id             String       @id @default(uuid())
+  quoteRequestId String       @map("quote_request_id")
+  quoteRequest   QuoteRequest @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  productId      String       @map("product_id")
+  product        Product      @relation(fields: [productId], references: [id])
+  quantity       Int          @default(1)
+
+  @@map("quote_items")
 }
 
 // Kit: conjunto de produtos vendidos como pacote (organização do catálogo).

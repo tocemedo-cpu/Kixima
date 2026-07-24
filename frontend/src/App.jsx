@@ -21,6 +21,7 @@ import Catalog from './pages/comprador/Catalog';
 import ItemDetail from './pages/comprador/ItemDetail';
 import Cart from './pages/comprador/Cart';
 import Orders from './pages/comprador/Orders';
+import BuyerQuotes from './pages/comprador/Quotes';
 
 import CompanyAdminHome from './pages/companyAdmin/Home';
 import Approvals from './pages/companyAdmin/Approvals';
@@ -42,6 +43,7 @@ import OrderHistory from './pages/fornecedor/OrderHistory';
 import Wallet from './pages/fornecedor/Wallet';
 import StockMovements from './pages/fornecedor/StockMovements';
 import Kits from './pages/fornecedor/Kits';
+import SupplierQuotes from './pages/fornecedor/SupplierQuotes';
 
 import FinanceiroHome from './pages/financeiro/Home';
 import PendingInvoices from './pages/financeiro/PendingInvoices';
@@ -90,6 +92,7 @@ export default function App() {
             <Route path="/comprador/catalogo" element={<Catalog />} />
             <Route path="/comprador/catalogo/:id" element={<ItemDetail />} />
             <Route path="/comprador/cesta" element={<Cart />} />
+            <Route path="/comprador/cotacoes" element={<BuyerQuotes />} />
             <Route path="/comprador/ordens" element={<Orders />} />
             <Route path="/comprador/ordens/:id" element={<OrderDetail />} />
           </Route>
@@ -129,6 +132,8 @@ export default function App() {
             <Route path="/fornecedor/inventario/entradas" element={<StockMovements />} />
             <Route path="/fornecedor/inventario/saidas" element={<StockMovements />} />
             <Route path="/fornecedor/pedidos/historico" element={<OrderHistory />} />
+            <Route path="/fornecedor/pedidos/solicitacoes" element={<SupplierQuotes />} />
+            <Route path="/fornecedor/pedidos/cotacoes" element={<SupplierQuotes />} />
             <Route path="/fornecedor/financeiro/carteira" element={<Wallet />} />
             {/* Módulos do menu ERP ainda em preparação — evita 404 e mantém a navegação. */}
             <Route path="/fornecedor/*" element={<ModulePlaceholder />} />

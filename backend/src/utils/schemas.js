@@ -117,6 +117,21 @@ const createProductSchema = z.object({
 // Atualização: os mesmos campos, todos opcionais (não recria imagens/documentos).
 const updateProductSchema = createProductSchema.partial();
 
+// Pedido de cotação (RFQ) e resposta do fornecedor.
+const createQuoteSchema = z.object({
+  supplierCompanyId: z.string().uuid(),
+  note: z.string().optional(),
+  items: z.array(z.object({
+    productId: z.string().uuid(),
+    quantity: z.coerce.number().int().positive().default(1),
+  })).min(1),
+});
+const respondQuoteSchema = z.object({
+  price: z.coerce.number().positive(),
+  leadDays: z.coerce.number().int().nonnegative().optional(),
+  note: z.string().optional(),
+});
+
 // Kit: pacote de produtos.
 const createKitSchema = z.object({
   name: z.string().min(2),
@@ -205,6 +220,8 @@ module.exports = {
   stockUpdateSchema,
   stockMovementSchema,
   createKitSchema,
+  createQuoteSchema,
+  respondQuoteSchema,
   createPoSchema,
   rejectPoSchema,
   receptionSchema,

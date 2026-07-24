@@ -88,6 +88,7 @@ const COMPRADOR = [
   { label: 'Dashboard', icon: 'home', to: '/comprador', end: true },
   { label: 'Marketplace', icon: 'catalog', to: '/comprador/catalogo' },
   { label: 'Cesta', icon: 'cart', to: '/comprador/cesta', badge: 'cart' },
+  { label: 'Cotações', icon: 'invoice', to: '/comprador/cotacoes' },
   { label: 'Ordens de Compra', icon: 'orders', to: '/comprador/ordens' },
   CONFIG,
   ...COMMON_TAIL,
