@@ -40,6 +40,17 @@ const PATHS = {
   equipment: <g {...P}><rect x="4" y="8" width="16" height="10" rx="1.5" /><path d="M8 8V6h8v2M9 18v2M15 18v2" /></g>,
   training: <g {...P}><path d="M12 4 2 9l10 5 10-5z" /><path d="M6 11v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5" /></g>,
   box: <g {...P}><path d="M3 8l9-5 9 5v8l-9 5-9-5z" /><path d="M3 8l9 5 9-5M12 13v8" /></g>,
+  // --- Navegação ERP (sidebar do fornecedor) ---
+  chevron: <path {...P} d="m9 6 6 6-6 6" />,
+  settings: <g {...P}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 2.6 1.6 1.6 0 0 0 10 1.1V1a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 17 2.6a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V7a1.6 1.6 0 0 0 1.1 1H23a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z" /></g>,
+  logout: <g {...P}><path d="M15 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3" /><path d="M10 17l5-5-5-5M15 12H3" /></g>,
+  wallet: <g {...P}><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M16 14h2" /></g>,
+  warehouse: <g {...P}><path d="M3 21V8l9-4 9 4v13" /><path d="M7 21v-7h10v7M7 17h10" /></g>,
+  tag: <g {...P}><path d="M3 3h8l10 10-8 8L3 11z" /><circle cx="7.5" cy="7.5" r="1.3" /></g>,
+  layers: <g {...P}><path d="M12 3 2 8l10 5 10-5z" /><path d="m2 12 10 5 10-5M2 16l10 5 10-5" /></g>,
+  shield: <g {...P}><path d="M12 3l7 3v5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z" /></g>,
+  bell: <g {...P}><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></g>,
+  report: <g {...P}><path d="M6 2h9l3 3v17H6z" /><path d="M9 13l2 2 4-4M9 8h6" /></g>,
 };
 
 export function Icon({ name, size = 18, className }) {

@@ -13,6 +13,7 @@ import Notifications from './pages/shared/Notifications';
 import Profile from './pages/shared/Profile';
 import Help from './pages/shared/Help';
 import OrderDetail from './pages/shared/OrderDetail';
+import ModulePlaceholder from './pages/shared/ModulePlaceholder';
 
 import CompradorHome from './pages/comprador/Home';
 import Catalog from './pages/comprador/Catalog';
@@ -102,6 +103,8 @@ export default function App() {
             <Route path="/fornecedor/faturas" element={<SupplierInvoices />} />
             <Route path="/fornecedor/pagamentos" element={<SupplierPayments />} />
             <Route path="/fornecedor/perfil" element={<SupplierCompanyProfile />} />
+            {/* Módulos do menu ERP ainda em preparação — evita 404 e mantém a navegação. */}
+            <Route path="/fornecedor/*" element={<ModulePlaceholder />} />
           </Route>
 
           {/* Financeiro */}

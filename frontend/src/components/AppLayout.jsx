@@ -1,92 +1,52 @@
 // src/components/AppLayout.jsx
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { ROLE_LABELS } from '../domain';
-import { NAV_CONFIG } from '../navConfig';
+import { SIDEBAR_MENUS } from '../data/sidebar';
 import { api } from '../api/client';
 import NotificationPanel from './NotificationPanel';
-import Logo from './Logo';
-import { Icon } from './icons';
+import Sidebar from './Sidebar';
 import { useCart } from '../pages/comprador/CartContext';
-
-function initials(name = '') {
-  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
-}
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [menuOpen, setMenuOpen] = useState(false); // drawer mobile
   const { count: cartCount } = useCart();
 
   useEffect(() => {
     let cancelled = false;
-    api
-      .get('/api/notifications')
-      .then((data) => {
-        if (!cancelled) setNotifications(data);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
+    api.get('/api/notifications').then((data) => { if (!cancelled) setNotifications(data); }).catch(() => {});
+    return () => { cancelled = true; };
   }, [location.pathname]);
+
+  // Fecha o drawer mobile ao mudar de rota.
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   if (!user) return null;
 
-  const navItems = NAV_CONFIG[user.role] || [];
+  const items = SIDEBAR_MENUS[user.role] || [];
   const unread = notifications.filter((n) => !n.readAt).length;
-  const badgeValue = (item) => (item.badge === 'cart' && cartCount > 0 ? cartCount : null);
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <Logo size={20} subtitle light />
-        </div>
-
-        <nav className="sidebar-nav">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
-            >
-              <Icon name={item.icon} size={18} className="sidebar-ico" />
-              <span>{item.label}</span>
-              {badgeValue(item) ? <span className="nav-count">{badgeValue(item)}</span> : null}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="sidebar-secondary">
-          <NavLink to="/perfil" className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
-            <Icon name="profile" size={18} className="sidebar-ico" />
-            <span>Perfil pessoal</span>
-          </NavLink>
-          <NavLink to="/ajuda" className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
-            <Icon name="help" size={18} className="sidebar-ico" />
-            <span>Ajuda &amp; Suporte</span>
-          </NavLink>
-        </div>
-
-        <div className="sidebar-footer">
-          <div className="sidebar-user">
-            <span className="sidebar-avatar">{initials(user.name)}</span>
-            <span className="sidebar-user-meta">
-              <strong>{user.name}</strong>
-              <span>{ROLE_LABELS[user.role]}</span>
-            </span>
-          </div>
-          <button className="sidebar-logout" onClick={logout}>Terminar sessão</button>
-        </div>
-      </aside>
+    <div className={`app-shell${menuOpen ? ' menu-open' : ''}`}>
+      <Sidebar
+        items={items}
+        user={user}
+        roleLabel={ROLE_LABELS[user.role]}
+        cartCount={cartCount}
+        onLogout={logout}
+        onNavigate={() => setMenuOpen(false)}
+      />
+      {/* Fundo escuro clicável quando o drawer mobile está aberto. */}
+      <div className="sb-scrim" onClick={() => setMenuOpen(false)} />
 
       <div className="main-column">
         <header className="topbar">
+          <button className="menu-btn" onClick={() => setMenuOpen((v) => !v)} aria-label="Abrir menu">☰</button>
           <div className="topbar-title">{ROLE_LABELS[user.role]}</div>
           <div className="topbar-actions">
             <button className="bell-button" onClick={() => setNotifOpen((v) => !v)} aria-label="Notificações">

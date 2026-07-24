@@ -1583,3 +1583,155 @@ tbody tr:hover {
   color: var(--ink-600); font-size: 16px; line-height: 1;
 }
 .doc-chips li button:hover { color: var(--brand-600); }
+/* ================================================================== */
+/* Sidebar ERP (accordion) — data-driven, estilo SAP Ariba/Oracle     */
+/* ================================================================== */
+.sb {
+  --sb-bg: #0B0B0B;
+  --sb-active: #E30613;
+  background: var(--sb-bg);
+  color: #fff;
+  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.sb-brand { display: flex; align-items: center; gap: 6px; padding: 2px 8px 6px; }
+
+/* Área de navegação — scroll automático se o menu passar da tela. */
+.sb-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.sb-nav::-webkit-scrollbar { width: 7px; }
+.sb-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); border-radius: 999px; }
+.sb-nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.16) transparent; }
+
+/* Item de topo (link, toggle ou ação) */
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: inherit;
+  text-align: left;
+  text-decoration: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease;
+}
+.sb-ico { color: #fff; flex-shrink: 0; }
+.sb-item:hover { background: rgba(255,255,255,0.09); }
+
+/* Item ativo (folha) — pílula vermelha */
+.sb-item.sb-active { background: var(--sb-active); color: #fff; }
+.sb-item.sb-active .sb-ico { color: #fff; }
+
+/* Cabeçalho de accordion cujo módulo está ativo */
+.sb-active-parent { background: rgba(227,6,19,0.16); }
+
+/* Seta que gira 90° ao abrir */
+.sb-arrow { margin-left: auto; color: rgba(255,255,255,0.65); transition: transform .22s ease; }
+.sb-arrow-open { transform: rotate(90deg); }
+
+/* Badge (ex.: contador da cesta) */
+.sb-badge {
+  margin-left: auto; background: var(--sb-active); color: #fff;
+  font-size: 11px; font-weight: 700; line-height: 1;
+  padding: 3px 7px; border-radius: 999px;
+}
+.sb-item.sb-active .sb-badge { background: rgba(255,255,255,0.25); }
+
+/* Ação Sair */
+.sb-action { color: rgba(255,255,255,0.82); }
+.sb-action:hover { background: rgba(227,6,19,0.18); color: #fff; }
+
+/* Grupo accordion + wrapper animado (grid 0fr->1fr anima a altura) */
+.sb-group { display: flex; flex-direction: column; }
+.sb-sub-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s ease; }
+.sb-sub-wrap.open { grid-template-rows: 1fr; }
+.sb-sub-inner {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 14px;      /* indentação do submenu */
+  margin: 2px 0 2px 10px;
+  border-left: 1px solid rgba(255,255,255,0.10);
+}
+
+/* Folha de submenu */
+.sb-subitem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: rgba(255,255,255,0.72);
+  font-size: 12.8px;
+  text-decoration: none;
+  transition: background .16s ease, color .16s ease;
+}
+.sb-subitem:hover { color: #fff; background: rgba(255,255,255,0.07); }
+.sb-subitem .sb-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(255,255,255,0.4); flex-shrink: 0; transition: background .16s ease;
+}
+.sb-subitem:hover .sb-dot { background: rgba(255,255,255,0.8); }
+.sb-subitem.sb-active { color: #fff; background: var(--sb-active); }
+.sb-subitem.sb-active .sb-dot { background: #fff; }
+
+/* Rodapé — utilizador */
+.sb-user {
+  display: flex; align-items: center; gap: 10px;
+  padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.10);
+}
+.sb-avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--brand-600), var(--magenta));
+  color: #fff; font-size: 13px; font-weight: 700;
+}
+.sb-user-meta { display: flex; flex-direction: column; min-width: 0; }
+.sb-user-meta strong { font-size: 13px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-user-meta span { font-size: 11.5px; color: rgba(255,255,255,0.55); }
+
+/* Botão do menu (mobile) e fundo escuro do drawer */
+.menu-btn { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--ink-900); padding: 0 6px 0 0; }
+.sb-scrim { display: none; }
+
+@media (max-width: 900px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sb {
+    position: fixed; left: 0; top: 0; z-index: 60;
+    width: 270px; max-width: 82vw;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+  }
+  .app-shell.menu-open .sb { transform: translateX(0); }
+  .sb-scrim {
+    display: block; position: fixed; inset: 0; z-index: 55;
+    background: rgba(0,0,0,0.5); opacity: 0; pointer-events: none;
+    transition: opacity .2s ease;
+  }
+  .app-shell.menu-open .sb-scrim { opacity: 1; pointer-events: auto; }
+  .menu-btn { display: inline-flex; align-items: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb, .sb-item, .sb-arrow, .sb-sub-wrap, .sb-subitem, .sb-scrim { transition: none; }
+}
