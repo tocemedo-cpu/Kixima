@@ -163,4 +163,37 @@ async function listSupplierDocuments(supplierCompanyId) {
   };
 }
 
-module.exports = { listCatalog, getProduct, createProduct, updateProduct, deactivateProduct, setProductImage, updateStock, listSupplierDocuments };
+// Regista uma entrada/saída de inventário e ajusta o stock do produto.
+async function createStockMovement(supplierCompanyId, userId, { productId, type, quantity, note }) {
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product || product.supplierId !== supplierCompanyId) {
+    throw new NotFoundError('Produto');
+  }
+  const current = product.stockQuantity || 0;
+  const delta = type === 'ENTRADA' ? quantity : -quantity;
+  const next = Math.max(0, current + delta);
+
+  return prisma.$transaction(async (tx) => {
+    await tx.product.update({ where: { id: productId }, data: { stockQuantity: next } });
+    return tx.stockMovement.create({
+      data: { productId, type, quantity, note: note || null, createdById: userId },
+    });
+  });
+}
+
+async function listStockMovements(supplierCompanyId, { type } = {}) {
+  return prisma.stockMovement.findMany({
+    where: { product: { supplierId: supplierCompanyId }, ...(type ? { type } : {}) },
+    select: {
+      id: true, type: true, quantity: true, note: true, createdAt: true,
+      productId: true, product: { select: { name: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+  });
+}
+
+module.exports = {
+  listCatalog, getProduct, createProduct, updateProduct, deactivateProduct, setProductImage,
+  updateStock, listSupplierDocuments, createStockMovement, listStockMovements,
+};

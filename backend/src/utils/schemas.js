@@ -117,6 +117,14 @@ const createProductSchema = z.object({
 // Atualização: os mesmos campos, todos opcionais (não recria imagens/documentos).
 const updateProductSchema = createProductSchema.partial();
 
+// Movimento de inventário (entrada/saída).
+const stockMovementSchema = z.object({
+  productId: z.string().uuid(),
+  type: z.enum(['ENTRADA', 'SAIDA']),
+  quantity: z.coerce.number().int().positive(),
+  note: z.string().optional(),
+});
+
 // Atualização de inventário (Stock) — apenas os campos de estoque.
 const stockUpdateSchema = z.object({
   stockQuantity: optInt,
@@ -185,6 +193,7 @@ module.exports = {
   createProductSchema,
   updateProductSchema,
   stockUpdateSchema,
+  stockMovementSchema,
   createPoSchema,
   rejectPoSchema,
   receptionSchema,

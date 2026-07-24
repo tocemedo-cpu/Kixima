@@ -41,6 +41,16 @@ async function documents(req, res) {
   res.json(docs);
 }
 
+async function listMovements(req, res) {
+  const movements = await catalogService.listStockMovements(req.user.companyId, { type: req.query.type });
+  res.json(movements);
+}
+
+async function createMovement(req, res) {
+  const movement = await catalogService.createStockMovement(req.user.companyId, req.user.id, req.body);
+  res.status(201).json(movement);
+}
+
 async function deactivate(req, res) {
   const product = await catalogService.deactivateProduct(req.params.id, req.user.companyId);
   res.json(product);
@@ -54,4 +64,4 @@ async function uploadImage(req, res) {
   return res.json(product);
 }
 
-module.exports = { list, getOne, create, update, updateStock, documents, deactivate, uploadImage };
+module.exports = { list, getOne, create, update, updateStock, documents, listMovements, createMovement, deactivate, uploadImage };

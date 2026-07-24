@@ -175,9 +175,30 @@ model Product {
   poItems     PurchaseOrderItem[]
   images      ProductImage[]
   documents   ProductDocument[]
+  movements   StockMovement[]
 
   @@index([category])
   @@map("products")
+}
+
+enum StockMovementType {
+  ENTRADA
+  SAIDA
+}
+
+// Movimento de inventário (entrada/saída) que ajusta o stock do produto.
+model StockMovement {
+  id          String            @id @default(uuid())
+  productId   String            @map("product_id")
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type        StockMovementType
+  quantity    Int
+  note        String?
+  createdById String?           @map("created_by_id")
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  @@index([productId])
+  @@map("stock_movements")
 }
 
 // Galeria de imagens do produto (a principal também fica em Product.imageUrl).

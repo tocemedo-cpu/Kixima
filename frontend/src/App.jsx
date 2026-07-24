@@ -40,6 +40,7 @@ import SupplierDocuments from './pages/fornecedor/Documents';
 import CatalogInsights from './pages/fornecedor/CatalogInsights';
 import OrderHistory from './pages/fornecedor/OrderHistory';
 import Wallet from './pages/fornecedor/Wallet';
+import StockMovements from './pages/fornecedor/StockMovements';
 
 import FinanceiroHome from './pages/financeiro/Home';
 import PendingInvoices from './pages/financeiro/PendingInvoices';
@@ -123,6 +124,8 @@ export default function App() {
             <Route path="/fornecedor/catalogo/servicos" element={<CatalogInsights />} />
             <Route path="/fornecedor/catalogo/promocoes" element={<CatalogInsights />} />
             <Route path="/fornecedor/inventario/armazens" element={<CatalogInsights />} />
+            <Route path="/fornecedor/inventario/entradas" element={<StockMovements />} />
+            <Route path="/fornecedor/inventario/saidas" element={<StockMovements />} />
             <Route path="/fornecedor/pedidos/historico" element={<OrderHistory />} />
             <Route path="/fornecedor/financeiro/carteira" element={<Wallet />} />
             {/* Módulos do menu ERP ainda em preparação — evita 404 e mantém a navegação. */}
