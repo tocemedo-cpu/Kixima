@@ -170,6 +170,7 @@ model Product {
   // Reputação (marketplace) — média de avaliações e nº de avaliações.
   rating      Float?
   reviewCount Int      @default(0) @map("review_count")
+  viewCount   Int      @default(0) @map("view_count") // nº de visualizações por compradores
   imageUrl    String?  @map("image_url") // imagem principal (destaque no marketplace)
 
   createdAt   DateTime @default(now()) @map("created_at")

@@ -1,7 +1,8 @@
 // src/pages/fornecedor/Reports.jsx
-// Relatórios → Estatísticas. Agregados reais do fornecedor: catálogo, ordens
-// recebidas por estado, receita reconhecida e produtos mais vendidos.
+// Relatórios → Estatísticas. Painel de visão geral (KPIs + ordens por estado).
+// Os rankings de produtos vivem em telas próprias (mais vendidos / mais vistos).
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, StatCard } from '../../components/Common';
 import Badge from '../../components/Badge';
@@ -19,61 +20,47 @@ export default function Reports() {
   if (!stats) return <Loading />;
 
   const statusRows = Object.entries(stats.statusCounts || {}).sort((a, b) => b[1] - a[1]);
+  const totalOrders = stats.totalOrders || 0;
 
   return (
     <div>
-      <PageHeader title="Relatórios — Estatísticas" subtitle="Desempenho do seu catálogo e das ordens recebidas." />
+      <PageHeader title="Relatórios — Estatísticas" subtitle="Visão geral do desempenho da sua empresa na plataforma." />
 
-      <div className="grid-cols grid-3" style={{ marginBottom: 18 }}>
+      <div className="grid-cols grid-3" style={{ marginBottom: 16 }}>
         <StatCard label="Receita reconhecida" value={formatMoney(stats.revenue)} sub="Ordens já pagas" />
         <StatCard label="Ordens recebidas" value={stats.totalOrders} />
-        <StatCard label="Produtos ativos" value={stats.activeProducts} sub={`${stats.totalProducts} no total`} />
+        <StatCard label="Visualizações de produtos" value={stats.totalViews || 0} />
       </div>
       <div className="grid-cols grid-3" style={{ marginBottom: 18 }}>
+        <StatCard label="Produtos ativos" value={stats.activeProducts} sub={`${stats.totalProducts} no total`} />
         <StatCard label="Abaixo do estoque mínimo" value={stats.lowStock} sub={stats.lowStock ? 'Requer reposição' : 'Tudo acima do mínimo'} />
       </div>
 
-      <div className="grid-cols grid-2" style={{ alignItems: 'start' }}>
-        <div className="card">
-          <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}><strong>Ordens por estado</strong></div>
-          {statusRows.length === 0 ? (
-            <div className="card-pad"><p className="helptext" style={{ margin: 0 }}>Ainda sem ordens recebidas.</p></div>
-          ) : (
-            <table>
-              <tbody>
-                {statusRows.map(([status, count]) => (
-                  <tr key={status}>
-                    <td><Badge tone={PO_STATUS[status]?.tone}>{PO_STATUS[status]?.label || status}</Badge></td>
-                    <td style={{ textAlign: 'right', fontWeight: 700 }}>{count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        <div className="card">
-          <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}><strong>Produtos mais vendidos</strong></div>
-          {(!stats.topProducts || stats.topProducts.length === 0) ? (
-            <div className="card-pad"><p className="helptext" style={{ margin: 0 }}>Sem vendas registadas ainda.</p></div>
-          ) : (
-            <table>
-              <thead>
-                <tr><th>Produto</th><th style={{ textAlign: 'right' }}>Qtd.</th><th style={{ textAlign: 'right' }}>Total</th></tr>
-              </thead>
-              <tbody>
-                {stats.topProducts.map((p) => (
-                  <tr key={p.productId}>
-                    <td>{p.name}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700 }}>{p.quantity}</td>
-                    <td style={{ textAlign: 'right' }}>{formatMoney(p.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}><strong>Ordens por estado</strong></div>
+        {statusRows.length === 0 ? (
+          <div className="card-pad"><p className="helptext" style={{ margin: 0 }}>Ainda sem ordens recebidas.</p></div>
+        ) : (
+          <div className="card-pad" style={{ display: 'grid', gap: 10 }}>
+            {statusRows.map(([status, count]) => (
+              <div key={status} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 190 }}><Badge tone={PO_STATUS[status]?.tone}>{PO_STATUS[status]?.label || status}</Badge></div>
+                <div style={{ flex: 1, background: 'var(--paper-100)', borderRadius: 999, height: 10, overflow: 'hidden' }}>
+                  <div style={{ width: `${totalOrders ? (count / totalOrders) * 100 : 0}%`, height: '100%', background: 'var(--brand-grad)' }} />
+                </div>
+                <div style={{ width: 32, textAlign: 'right', fontWeight: 700 }}>{count}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      <p className="helptext">
+        Veja os rankings de produtos em{' '}
+        <Link to="/fornecedor/relatorios/mais-vendidos" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Produtos mais vendidos</Link>{' '}
+        e{' '}
+        <Link to="/fornecedor/relatorios/mais-vistos" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Produtos mais vistos</Link>.
+      </p>
     </div>
   );
 }

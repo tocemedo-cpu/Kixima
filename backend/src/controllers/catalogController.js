@@ -11,6 +11,10 @@ async function list(req, res) {
 
 async function getOne(req, res) {
   const product = await catalogService.getProduct(req.params.id);
+  // Conta a visualização quando é um comprador a ver (não o próprio fornecedor).
+  if (req.user.role === 'COMPRADOR' && product.supplierId !== req.user.companyId) {
+    catalogService.incrementView(product.id); // best-effort, não bloqueia a resposta
+  }
   res.json(product);
 }
 

@@ -37,6 +37,7 @@ import SupplierPayments from './pages/fornecedor/Payments';
 import SupplierCompanyProfile from './pages/fornecedor/CompanyProfile';
 import Inventory from './pages/fornecedor/Inventory';
 import Reports from './pages/fornecedor/Reports';
+import ProductRanking from './pages/fornecedor/ProductRanking';
 import SupplierDocuments from './pages/fornecedor/Documents';
 import CatalogInsights from './pages/fornecedor/CatalogInsights';
 import OrderHistory from './pages/fornecedor/OrderHistory';
@@ -118,7 +119,8 @@ export default function App() {
             <Route path="/fornecedor/perfil" element={<SupplierCompanyProfile />} />
             <Route path="/fornecedor/inventario/stock" element={<Inventory />} />
             <Route path="/fornecedor/relatorios/estatisticas" element={<Reports />} />
-            <Route path="/fornecedor/relatorios/mais-vendidos" element={<Reports />} />
+            <Route path="/fornecedor/relatorios/mais-vendidos" element={<ProductRanking />} />
+            <Route path="/fornecedor/relatorios/mais-vistos" element={<ProductRanking />} />
             <Route path="/fornecedor/documentacao/certificacoes" element={<SupplierDocuments />} />
             <Route path="/fornecedor/documentacao/licencas" element={<SupplierDocuments />} />
             <Route path="/fornecedor/documentacao/catalogos" element={<SupplierDocuments />} />

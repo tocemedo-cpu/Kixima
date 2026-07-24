@@ -138,6 +138,15 @@ async function updateStock(id, supplierCompanyId, data) {
   });
 }
 
+// Regista uma visualização do produto (compradores) — usado nos relatórios.
+async function incrementView(id) {
+  try {
+    await prisma.product.update({ where: { id }, data: { viewCount: { increment: 1 } } });
+  } catch {
+    /* produto inexistente — ignora (contador é best-effort) */
+  }
+}
+
 // Reúne todos os documentos do fornecedor: documentos técnicos dos produtos
 // (ficha técnica, certificado, catálogo, etc.) + documentos da empresa
 // (alvará, licença ANPG, certidão) para o módulo de Documentação.
@@ -195,5 +204,5 @@ async function listStockMovements(supplierCompanyId, { type } = {}) {
 
 module.exports = {
   listCatalog, getProduct, createProduct, updateProduct, deactivateProduct, setProductImage,
-  updateStock, listSupplierDocuments, createStockMovement, listStockMovements,
+  updateStock, listSupplierDocuments, createStockMovement, listStockMovements, incrementView,
 };

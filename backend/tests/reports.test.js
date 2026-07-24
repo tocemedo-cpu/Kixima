@@ -39,6 +39,18 @@ describe('Inventário e Relatórios', () => {
     expect(res.body).toHaveProperty('revenue');
     expect(res.body).toHaveProperty('statusCounts');
     expect(Array.isArray(res.body.topProducts)).toBe(true);
+    expect(Array.isArray(res.body.topViewed)).toBe(true);
+    expect(res.body).toHaveProperty('totalViews');
+  });
+
+  test('a visualização de um comprador conta em "mais vistos"', async () => {
+    const compradorToken = await login('comprador@petroangola.co.ao');
+    // O comprador abre a ficha de um produto do fornecedor.
+    await auth(compradorToken).get(`/api/catalog/${productId}`);
+    // Pequena espera: o incremento é best-effort (não bloqueia a resposta).
+    await new Promise((r) => setTimeout(r, 300));
+    const prod = await prisma.product.findUnique({ where: { id: productId } });
+    expect(prod.viewCount).toBeGreaterThanOrEqual(1);
   });
 
   test('um comprador não acede às estatísticas do fornecedor (403)', async () => {
