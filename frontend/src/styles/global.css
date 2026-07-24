@@ -1856,12 +1856,14 @@ tbody tr:hover {
 .navbar {
   grid-area: navbar;
   display: flex; align-items: center; gap: 18px;
-  background: #fff; border-bottom: 1px solid var(--line);
+  background: #0B0B0B; border-bottom: 1px solid rgba(255,255,255,0.08);
   padding: 0 20px; height: 62px;
   position: sticky; top: 0; z-index: 40;
 }
+/* Subtítulo do logótipo claro sobre o header preto (wordmark mantém-se vermelho). */
+.navbar .brand-sub { color: rgba(255,255,255,0.55); }
 .nav-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.nav-burger { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--ink-900); }
+.nav-burger { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: #fff; }
 .nav-logo { text-decoration: none; }
 .nav-search { flex: 1; max-width: 640px; margin: 0 auto; position: relative; display: flex; }
 .nav-search input {
@@ -1876,10 +1878,10 @@ tbody tr:hover {
 .nav-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .nav-icon {
   position: relative; width: 40px; height: 40px; border-radius: 10px; border: none;
-  background: var(--paper-050); color: var(--ink-900); cursor: pointer;
+  background: rgba(255,255,255,0.10); color: #fff; cursor: pointer;
   display: flex; align-items: center; justify-content: center; text-decoration: none;
 }
-.nav-icon:hover { background: var(--paper-100); }
+.nav-icon:hover { background: rgba(255,255,255,0.18); }
 .nav-badge {
   position: absolute; top: -4px; right: -4px; background: var(--brand-600); color: #fff;
   font-size: 10.5px; font-weight: 700; min-width: 18px; height: 18px; border-radius: 999px;
@@ -1890,16 +1892,16 @@ tbody tr:hover {
   display: flex; align-items: center; gap: 8px; background: none; border: none;
   cursor: pointer; padding: 4px 6px; border-radius: 10px;
 }
-.nav-user-btn:hover { background: var(--paper-050); }
+.nav-user-btn:hover { background: rgba(255,255,255,0.10); }
 .nav-avatar {
   width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
   background: linear-gradient(135deg, var(--brand-600), var(--magenta)); color: #fff;
   display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700;
 }
 .nav-user-meta { display: flex; flex-direction: column; line-height: 1.2; text-align: left; }
-.nav-user-meta strong { font-size: 13px; color: var(--ink-900); }
-.nav-user-meta span { font-size: 11px; color: var(--ink-400); }
-.nav-chevron { color: var(--ink-400); font-size: 12px; }
+.nav-user-meta strong { font-size: 13px; color: #fff; }
+.nav-user-meta span { font-size: 11px; color: rgba(255,255,255,0.55); }
+.nav-chevron { color: rgba(255,255,255,0.55); font-size: 12px; }
 .nav-dropdown {
   position: absolute; right: 0; top: calc(100% + 6px); background: #fff;
   border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);
