@@ -3,7 +3,7 @@ const catalogController = require('../controllers/catalogController');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 const { validate } = require('../utils/validate');
-const { createProductSchema, updateProductSchema } = require('../utils/schemas');
+const { createProductSchema, updateProductSchema, stockUpdateSchema } = require('../utils/schemas');
 const { upload, uploadProductMedia } = require('../config/upload');
 
 const router = express.Router();
@@ -27,6 +27,7 @@ router.get('/', catalogController.list);
 router.get('/:id', catalogController.getOne);
 router.post('/', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), productMedia, validate(createProductSchema), catalogController.create);
 router.put('/:id', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), validate(updateProductSchema), catalogController.update);
+router.patch('/:id/stock', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), validate(stockUpdateSchema), catalogController.updateStock);
 router.post('/:id/image', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), upload.single('image'), catalogController.uploadImage);
 router.delete('/:id', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogController.deactivate);
 

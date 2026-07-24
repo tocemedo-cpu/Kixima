@@ -31,6 +31,11 @@ async function update(req, res) {
   res.json(product);
 }
 
+async function updateStock(req, res) {
+  const product = await catalogService.updateStock(req.params.id, req.user.companyId, req.body);
+  res.json(product);
+}
+
 async function deactivate(req, res) {
   const product = await catalogService.deactivateProduct(req.params.id, req.user.companyId);
   res.json(product);
@@ -44,4 +49,4 @@ async function uploadImage(req, res) {
   return res.json(product);
 }
 
-module.exports = { list, getOne, create, update, deactivate, uploadImage };
+module.exports = { list, getOne, create, update, updateStock, deactivate, uploadImage };

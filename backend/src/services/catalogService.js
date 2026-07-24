@@ -125,4 +125,17 @@ async function setProductImage(id, supplierCompanyId, file) {
   return prisma.product.update({ where: { id }, data: { imageUrl } });
 }
 
-module.exports = { listCatalog, getProduct, createProduct, updateProduct, deactivateProduct, setProductImage };
+// Atualiza apenas os campos de inventário de um produto da própria empresa.
+async function updateStock(id, supplierCompanyId, data) {
+  const product = await getProduct(id);
+  if (product.supplierId !== supplierCompanyId) {
+    throw new ForbiddenError('Só pode gerir o stock de itens da sua própria empresa.');
+  }
+  const { stockQuantity, minStock, warehouse, availability } = data;
+  return prisma.product.update({
+    where: { id },
+    data: { stockQuantity, minStock, warehouse, availability },
+  });
+}
+
+module.exports = { listCatalog, getProduct, createProduct, updateProduct, deactivateProduct, setProductImage, updateStock };
