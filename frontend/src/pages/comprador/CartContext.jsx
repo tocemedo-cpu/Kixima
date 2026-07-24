@@ -1,10 +1,24 @@
 // src/pages/comprador/CartContext.jsx
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 const CartContext = createContext(null);
+const STORAGE_KEY = 'kixima_cart';
+
+function loadInitial() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState([]); // { product, quantity }
+  const [items, setItems] = useState(loadInitial); // { product, quantity }
+
+  // Persiste a cesta para sobreviver a recargas de página.
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch { /* ignora quota */ }
+  }, [items]);
 
   function addItem(product, quantity = 1) {
     setItems((prev) => {
