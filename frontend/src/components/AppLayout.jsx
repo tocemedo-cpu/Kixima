@@ -1,4 +1,6 @@
 // src/components/AppLayout.jsx
+// Shell do mockup: navbar full-width no topo, menu escuro numerado à esquerda,
+// conteúdo à direita. Aplicado a todas as personas.
 import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
@@ -7,6 +9,7 @@ import { SIDEBAR_MENUS } from '../data/sidebar';
 import { api } from '../api/client';
 import NotificationPanel from './NotificationPanel';
 import Sidebar from './Sidebar';
+import Navbar from './Navbar';
 import { useCart } from '../pages/comprador/CartContext';
 
 export default function AppLayout() {
@@ -14,7 +17,7 @@ export default function AppLayout() {
   const location = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [menuOpen, setMenuOpen] = useState(false); // drawer mobile
+  const [menuOpen, setMenuOpen] = useState(false);
   const { count: cartCount } = useCart();
 
   useEffect(() => {
@@ -23,7 +26,6 @@ export default function AppLayout() {
     return () => { cancelled = true; };
   }, [location.pathname]);
 
-  // Fecha o drawer mobile ao mudar de rota.
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   if (!user) return null;
@@ -33,41 +35,29 @@ export default function AppLayout() {
 
   return (
     <div className={`app-shell${menuOpen ? ' menu-open' : ''}`}>
-      <Sidebar
-        items={items}
+      <Navbar
         user={user}
         roleLabel={ROLE_LABELS[user.role]}
         cartCount={cartCount}
+        unread={unread}
+        onMenuToggle={() => setMenuOpen((v) => !v)}
+        onBell={() => setNotifOpen((v) => !v)}
         onLogout={logout}
-        onNavigate={() => setMenuOpen(false)}
       />
-      {/* Fundo escuro clicável quando o drawer mobile está aberto. */}
+
+      <Sidebar items={items} cartCount={cartCount} onLogout={logout} onNavigate={() => setMenuOpen(false)} />
       <div className="sb-scrim" onClick={() => setMenuOpen(false)} />
 
-      <div className="main-column">
-        <header className="topbar">
-          <button className="menu-btn" onClick={() => setMenuOpen((v) => !v)} aria-label="Abrir menu">☰</button>
-          <div className="topbar-title">{ROLE_LABELS[user.role]}</div>
-          <div className="topbar-actions">
-            <button className="bell-button" onClick={() => setNotifOpen((v) => !v)} aria-label="Notificações">
-              🔔
-              {unread > 0 ? <span className="bell-dot" /> : null}
-            </button>
-          </div>
-        </header>
+      <main className="content">
         {notifOpen ? (
           <NotificationPanel
             notifications={notifications}
             onClose={() => setNotifOpen(false)}
-            onRead={(id) =>
-              setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)))
-            }
+            onRead={(id) => setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)))}
           />
         ) : null}
-        <main className="content">
-          <Outlet />
-        </main>
-      </div>
+        <Outlet />
+      </main>
     </div>
   );
 }

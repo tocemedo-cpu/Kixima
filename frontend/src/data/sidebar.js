@@ -85,12 +85,19 @@ const CONFIG = {
 
 // Comprador — descobrir, encomendar e acompanhar (não gere catálogo próprio).
 const COMPRADOR = [
-  { label: 'Dashboard', icon: 'home', to: '/comprador', end: true },
-  { label: 'Marketplace', icon: 'catalog', to: '/comprador/catalogo' },
-  { label: 'Serviços', icon: 'inspection', to: '/comprador/servicos' },
-  { label: 'Cesta', icon: 'cart', to: '/comprador/cesta', badge: 'cart' },
+  { label: 'Home Marketplace', icon: 'home', to: '/comprador', end: true },
+  { label: 'Explorar / Pesquisa', icon: 'search', to: '/comprador/catalogo' },
+  {
+    label: 'Produtos / Serviços', icon: 'catalog', children: [
+      { label: 'Produtos', to: '/comprador/catalogo' },
+      { label: 'Serviços', to: '/comprador/servicos' },
+    ],
+  },
+  { label: 'Minha Cesta', icon: 'cart', to: '/comprador/cesta', badge: 'cart' },
   { label: 'Cotações', icon: 'invoice', to: '/comprador/cotacoes' },
   { label: 'Ordens de Compra', icon: 'orders', to: '/comprador/ordens' },
+  { label: 'Pagamento', icon: 'payment', to: '/comprador/ordens' },
+  { label: 'Acompanhar Entrega', icon: 'truck', to: '/comprador/ordens' },
   CONFIG,
   ...COMMON_TAIL,
 ];

@@ -4,7 +4,7 @@
 // backend, favoritos persistidos e avaliações reais. Skeleton + estados de
 // erro/vazio. Estética alinhada com o mockup aprovado.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import ProductCover from '../../components/ProductCover';
 import { Icon, Stars } from '../../components/icons';
@@ -22,8 +22,12 @@ const cache = new Map();
 
 export default function Services() {
   const navigate = useNavigate();
-  const [q, setQ] = useState('');
-  const [qDebounced, setQDebounced] = useState('');
+  const [searchParams] = useSearchParams();
+  const [q, setQ] = useState(searchParams.get('q') || '');
+  const [qDebounced, setQDebounced] = useState(searchParams.get('q') || '');
+
+  // Sincroniza a pesquisa com o ?q= da navbar global.
+  useEffect(() => { setQ(searchParams.get('q') || ''); }, [searchParams]);
   const [category, setCategory] = useState('');
   const [certs, setCerts] = useState([]);
   const [verified, setVerified] = useState(false);

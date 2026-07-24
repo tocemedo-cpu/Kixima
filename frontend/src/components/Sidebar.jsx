@@ -1,29 +1,23 @@
 // src/components/Sidebar.jsx
-// Sidebar ERP dinâmica: gera todo o menu a partir de um array (data/sidebar.js)
-// por map(), sem código repetido. Suporta links, accordions multinível e a ação
-// de sair. Fundo preto, item ativo vermelho, ícones/texto brancos, cantos
-// arredondados, transições suaves e scroll automático.
+// Menu lateral escuro e numerado (estilo do mockup). Gera-se a partir do array
+// data/sidebar.js. Os itens principais são numerados (1., 2., …); Ajuda e Sair
+// aparecem sem número no fundo. O logótipo e o utilizador vivem na navbar.
 import SidebarItem from './SidebarItem';
-import Logo from './Logo';
 
-function initials(name = '') {
-  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
-}
-
-export default function Sidebar({ items, user, roleLabel, cartCount = 0, onLogout, onNavigate }) {
+export default function Sidebar({ items, cartCount = 0, onLogout, onNavigate }) {
   const badgeFor = (item) => (item.badge === 'cart' && cartCount > 0 ? cartCount : null);
+  const isTail = (item) => item.action === 'logout' || item.to === '/ajuda';
+  const main = items.filter((i) => !isTail(i));
+  const tail = items.filter(isTail);
 
   return (
     <aside className="sb">
-      <div className="sb-brand">
-        <Logo size={20} mark={48} subtitle light />
-      </div>
-
       <nav className="sb-nav">
-        {items.map((item, i) => (
+        {main.map((item, i) => (
           <SidebarItem
-            key={item.to || `${item.label}-${i}`}
+            key={`${item.to || item.label}-${i}`}
             item={item}
+            num={i + 1}
             badge={badgeFor(item)}
             onLogout={onLogout}
             onNavigate={onNavigate}
@@ -31,12 +25,10 @@ export default function Sidebar({ items, user, roleLabel, cartCount = 0, onLogou
         ))}
       </nav>
 
-      <div className="sb-user">
-        <span className="sb-avatar">{initials(user?.name)}</span>
-        <span className="sb-user-meta">
-          <strong>{user?.name}</strong>
-          <span>{roleLabel}</span>
-        </span>
+      <div className="sb-tail">
+        {tail.map((item, i) => (
+          <SidebarItem key={item.to || item.label || i} item={item} onLogout={onLogout} onNavigate={onNavigate} />
+        ))}
       </div>
     </aside>
   );
