@@ -95,7 +95,7 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
   return po;
 }
 
-const COMPANY_FIELDS = { select: { id: true, name: true, taxId: true, contactEmail: true, contactPhone: true, address: true } };
+const COMPANY_FIELDS = { select: { id: true, name: true, taxId: true, contactEmail: true, contactPhone: true, address: true, logoUrl: true, city: true, province: true, country: true } };
 
 async function getPurchaseOrder(id) {
   const po = await prisma.purchaseOrder.findUnique({
@@ -105,9 +105,17 @@ async function getPurchaseOrder(id) {
       invoice: { include: { payment: true } },
       buyerCompany: COMPANY_FIELDS,
       supplierCompany: COMPANY_FIELDS,
+      createdBy: { select: { name: true } },
+      approvedBy: { select: { name: true } },
+      contract: { select: { reference: true } },
     },
   });
   if (!po) throw new NotFoundError('Ordem de compra');
+  // Nome de quem processou o pagamento (Payment só guarda o id).
+  if (po.invoice?.payment?.processedById) {
+    const u = await prisma.user.findUnique({ where: { id: po.invoice.payment.processedById }, select: { name: true } });
+    if (u) po.invoice.payment.processedByName = u.name;
+  }
   return po;
 }
 

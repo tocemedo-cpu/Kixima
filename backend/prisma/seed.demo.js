@@ -250,13 +250,22 @@ async function main() {
     });
     if (invoiceStatus) {
       invSeq += 1;
-      await prisma.invoice.create({
+      const invoice = await prisma.invoice.create({
         data: {
           reference: `FAT-2026-${pad(invSeq)}`, purchaseOrderId: po.id,
           amount: totalAmount, currency: 'AOA', status: invoiceStatus,
           issuedAt: ago(7), dueAt: ago(-3),
         },
       });
+      // Fatura paga -> regista o pagamento (mostra "PAGAMENTO CONFIRMADO" no documento).
+      if (invoiceStatus === 'PAGA') {
+        await prisma.payment.create({
+          data: {
+            invoiceId: invoice.id, amount: totalAmount, currency: 'AOA', status: 'PROCESSADO',
+            processedById: financeiro.id, reference: `PAY-2026-${pad(invSeq)}`, processedAt: ago(5),
+          },
+        });
+      }
     }
     return po;
   }
