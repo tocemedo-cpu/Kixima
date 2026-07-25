@@ -32,7 +32,6 @@ import Deliveries from './pages/comprador/Deliveries';
 import Receptions from './pages/comprador/Receptions';
 import Suppliers from './pages/comprador/Suppliers';
 import Activities from './pages/comprador/Activities';
-import BuyerProfile from './pages/comprador/Profile';
 
 import CompanyAdminHome from './pages/companyAdmin/Home';
 import Approvals from './pages/companyAdmin/Approvals';
@@ -124,7 +123,7 @@ export default function App() {
             <Route path="/comprador/recepcao" element={<Receptions />} />
             <Route path="/comprador/fornecedores" element={<Suppliers />} />
             <Route path="/comprador/atividades" element={<Activities />} />
-            <Route path="/comprador/perfil" element={<BuyerProfile />} />
+            <Route path="/comprador/perfil" element={<Profile />} />
           </Route>
 
           {/* Company Admin */}

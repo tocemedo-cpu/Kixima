@@ -5,6 +5,7 @@ const express = require('express');
 const { authenticate } = require('../middleware/auth');
 const { upload } = require('../config/upload');
 const storageService = require('../services/storageService');
+const profileService = require('../services/profileService');
 const prisma = require('../config/database');
 
 const router = express.Router();
@@ -14,6 +15,11 @@ const PUBLIC = { id: true, name: true, email: true, role: true, avatarUrl: true,
 
 router.get('/me', async (req, res) => {
   res.json(await prisma.user.findUnique({ where: { id: req.user.id }, select: PUBLIC }));
+});
+
+// Perfil pessoal — mesmo formato para todas as personas.
+router.get('/profile', async (req, res) => {
+  res.json(await profileService.getProfile({ userId: req.user.id, companyId: req.user.companyId }));
 });
 
 // Foto de perfil. O front envia a imagem no campo `image` (ficheiro escolhido
