@@ -38,6 +38,7 @@ router.use(authenticate);
 router.get('/users', requireRole('COMPANY_ADMIN'), companyController.listUsers);
 router.post('/invites', requireRole('COMPANY_ADMIN'), validate(createInviteSchema), companyController.createInvite);
 router.patch('/users/:id/activate', requireRole('COMPANY_ADMIN'), companyController.activateUser);
+router.patch('/users/:id/status', requireRole('COMPANY_ADMIN'), companyController.setUserStatus);
 router.delete('/users/:id', requireRole('COMPANY_ADMIN'), companyController.removeUser);
 // Criação direta de utilizador (Company Admin própria empresa ou Admin do Sistema).
 router.post('/users', requireRole('COMPANY_ADMIN', 'ADMIN_SISTEMA'), validate(createUserSchema), companyController.createUser);

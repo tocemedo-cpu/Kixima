@@ -113,6 +113,7 @@ const COMPRADOR = [
 const COMPANY_ADMIN = [
   { label: 'Dashboard', icon: 'home', to: '/empresa', end: true },
   { label: 'Usuários & Perfis', icon: 'users', to: '/empresa/utilizadores' },
+  { label: 'Permissões', icon: 'shield', to: '/empresa/permissoes' },
   { label: 'Perfil da Empresa', icon: 'building', to: '/empresa/organizacao' },
   { label: 'Documentos da Empresa', icon: 'contract', to: '/empresa/documentos' },
   { label: 'Aprovações de PO', icon: 'approvals', to: '/empresa/aprovacoes' },
@@ -142,8 +143,17 @@ const ADMIN_SISTEMA = [
   },
   { label: 'Gestão de Apólices', icon: 'policy', to: '/sistema/apolices' },
   { label: 'Contratos-Quadro', icon: 'contract', to: '/sistema/contratos' },
-  CONFIG,
-  ...COMMON_TAIL,
+  {
+    // No Admin do Sistema, o suporte e a ajuda vivem dentro das configurações.
+    label: 'Configurações e Suporte', icon: 'settings', children: [
+      { label: 'Perfil', to: '/perfil' },
+      { label: 'Segurança', to: '/seguranca' },
+      { label: 'Permissões', to: '/sistema/permissoes' },
+      { label: 'Gestão de Atividades', to: '/sistema/atividades' },
+      { label: 'Ajuda', to: '/ajuda' },
+    ],
+  },
+  { label: 'Sair', icon: 'logout', action: 'logout' },
 ];
 
 export const SIDEBAR_MENUS = { COMPRADOR, COMPANY_ADMIN, FORNECEDOR, FINANCEIRO, ADMIN_SISTEMA };

@@ -40,6 +40,7 @@ import CompanyProfile from './pages/companyAdmin/CompanyProfile';
 import Contracts from './pages/companyAdmin/Contracts';
 import Organization from './pages/companyAdmin/Organization';
 import CompanyDocuments from './pages/companyAdmin/CompanyDocuments';
+import CompanyPermissions from './pages/companyAdmin/Permissions';
 import CompanyReports from './pages/companyAdmin/Reports';
 import CompanyActivities from './pages/companyAdmin/Activities';
 import CompanySettings from './pages/companyAdmin/Settings';
@@ -65,6 +66,8 @@ import PendingInvoices from './pages/financeiro/PendingInvoices';
 import PaymentHistory from './pages/financeiro/PaymentHistory';
 
 import AdminHome from './pages/adminSistema/Home';
+import AdminPermissions from './pages/adminSistema/Permissions';
+import SystemActivities from './pages/adminSistema/SystemActivities';
 import DueDiligence from './pages/adminSistema/DueDiligence';
 import PolicyManagement from './pages/adminSistema/PolicyManagement';
 import AdminContracts from './pages/adminSistema/Contracts';
@@ -134,6 +137,7 @@ export default function App() {
             <Route path="/empresa/utilizadores" element={<Users />} />
             <Route path="/empresa/organizacao" element={<Organization />} />
             <Route path="/empresa/documentos" element={<CompanyDocuments />} />
+            <Route path="/empresa/permissoes" element={<CompanyPermissions />} />
             <Route path="/empresa/perfil" element={<CompanyProfile />} />
             <Route path="/empresa/contratos" element={<Contracts />} />
             <Route path="/empresa/relatorios" element={<CompanyReports />} />
@@ -186,6 +190,8 @@ export default function App() {
             <Route path="/sistema/apolices" element={<PolicyManagement />} />
             <Route path="/sistema/contratos" element={<AdminContracts />} />
             <Route path="/sistema/empresas" element={<Companies />} />
+            <Route path="/sistema/permissoes" element={<AdminPermissions />} />
+            <Route path="/sistema/atividades" element={<SystemActivities />} />
           </Route>
         </Route>
       </Route>

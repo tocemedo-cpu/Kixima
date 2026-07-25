@@ -75,6 +75,11 @@ async function removeUser(req, res) {
   res.json(result);
 }
 
+async function setUserStatus(req, res) {
+  const user = await companyService.setCompanyUserStatus(req.user.companyId, req.params.id, req.body.active, req.user.id);
+  res.json(user);
+}
+
 module.exports = {
   register,
   list,
@@ -88,4 +93,5 @@ module.exports = {
   acceptInvite,
   activateUser,
   removeUser,
+  setUserStatus,
 };

@@ -259,6 +259,15 @@ async function removeCompanyUser(companyId, userId) {
   return { id: userId };
 }
 
+// Bloquear/desbloquear um utilizador da própria empresa (Company Admin).
+async function setCompanyUserStatus(companyId, userId, active, actingUserId) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.companyId !== companyId) throw new NotFoundError('Utilizador');
+  if (userId === actingUserId) throw new BusinessRuleError('Não pode bloquear a própria conta.');
+  if (user.role === 'COMPANY_ADMIN') throw new BusinessRuleError('Não é possível bloquear o administrador da empresa.');
+  return prisma.user.update({ where: { id: userId }, data: { active: Boolean(active) }, select: USER_SELECT });
+}
+
 module.exports = {
   registerCompany,
   listCompanies,
@@ -271,4 +280,5 @@ module.exports = {
   listCompanyUsers,
   activateCompanyUser,
   removeCompanyUser,
+  setCompanyUserStatus,
 };
