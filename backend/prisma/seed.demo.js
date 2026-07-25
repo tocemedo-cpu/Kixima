@@ -52,6 +52,16 @@ async function main() {
     }),
   ]);
 
+  // Documentos de credenciamento da empresa (tela Documentos da Empresa — CA).
+  await prisma.companyDocument.createMany({
+    data: [
+      { companyId: client.id, type: 'CERTIDAO_COMERCIAL', fileUrl: '/api/uploads/demo-certidao.pdf', originalName: 'certidao-comercial.pdf' },
+      { companyId: client.id, type: 'ALVARA_COMERCIAL', fileUrl: '/api/uploads/demo-alvara.pdf', originalName: 'alvara-comercial.pdf' },
+      { companyId: supplier.id, type: 'CERTIDAO_COMERCIAL', fileUrl: '/api/uploads/demo-certidao2.pdf', originalName: 'certidao-kianda.pdf' },
+      { companyId: supplier.id, type: 'LICENCA_ANPG', fileUrl: '/api/uploads/demo-anpg.pdf', originalName: 'licenca-anpg.pdf' },
+    ],
+  });
+
   await prisma.supplierToKiximaPolicy.create({
     data: {
       companyId: supplier.id,

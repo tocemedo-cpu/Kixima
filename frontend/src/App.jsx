@@ -39,6 +39,7 @@ import Users from './pages/companyAdmin/Users';
 import CompanyProfile from './pages/companyAdmin/CompanyProfile';
 import Contracts from './pages/companyAdmin/Contracts';
 import Organization from './pages/companyAdmin/Organization';
+import CompanyDocuments from './pages/companyAdmin/CompanyDocuments';
 import CompanyReports from './pages/companyAdmin/Reports';
 import CompanyActivities from './pages/companyAdmin/Activities';
 import CompanySettings from './pages/companyAdmin/Settings';
@@ -48,7 +49,6 @@ import CatalogManage from './pages/fornecedor/CatalogManage';
 import OrdersReceived from './pages/fornecedor/OrdersReceived';
 import SupplierInvoices from './pages/fornecedor/Invoices';
 import SupplierPayments from './pages/fornecedor/Payments';
-import SupplierCompanyProfile from './pages/fornecedor/CompanyProfile';
 import Inventory from './pages/fornecedor/Inventory';
 import Reports from './pages/fornecedor/Reports';
 import ProductRanking from './pages/fornecedor/ProductRanking';
@@ -133,6 +133,7 @@ export default function App() {
             <Route path="/empresa/aprovacoes/:id" element={<OrderDetail />} />
             <Route path="/empresa/utilizadores" element={<Users />} />
             <Route path="/empresa/organizacao" element={<Organization />} />
+            <Route path="/empresa/documentos" element={<CompanyDocuments />} />
             <Route path="/empresa/perfil" element={<CompanyProfile />} />
             <Route path="/empresa/contratos" element={<Contracts />} />
             <Route path="/empresa/relatorios" element={<CompanyReports />} />
@@ -148,13 +149,11 @@ export default function App() {
             <Route path="/fornecedor/ordens/:id" element={<OrderDetail />} />
             <Route path="/fornecedor/faturas" element={<SupplierInvoices />} />
             <Route path="/fornecedor/pagamentos" element={<SupplierPayments />} />
-            <Route path="/fornecedor/perfil" element={<SupplierCompanyProfile />} />
             <Route path="/fornecedor/inventario/stock" element={<Inventory />} />
             <Route path="/fornecedor/relatorios/estatisticas" element={<Reports />} />
             <Route path="/fornecedor/relatorios/mais-vendidos" element={<ProductRanking />} />
             <Route path="/fornecedor/relatorios/mais-vistos" element={<ProductRanking />} />
             <Route path="/fornecedor/documentacao/certificacoes" element={<SupplierDocuments />} />
-            <Route path="/fornecedor/documentacao/licencas" element={<SupplierDocuments />} />
             <Route path="/fornecedor/documentacao/catalogos" element={<SupplierDocuments />} />
             <Route path="/fornecedor/documentacao/fichas" element={<SupplierDocuments />} />
             <Route path="/fornecedor/catalogo/categorias" element={<CatalogInsights />} />
@@ -178,7 +177,6 @@ export default function App() {
             <Route path="/financeiro" element={<FinanceiroHome />} />
             <Route path="/financeiro/faturas" element={<PendingInvoices />} />
             <Route path="/financeiro/historico" element={<PaymentHistory />} />
-            <Route path="/financeiro/perfil" element={<CompanyProfile />} />
           </Route>
 
           {/* Admin do Sistema KIXIMA */}

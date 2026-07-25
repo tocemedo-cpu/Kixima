@@ -15,7 +15,6 @@ const COMMON_TAIL = [
 // Estrutura ERP completa da visão do Fornecedor (SAP Ariba / Oracle-like).
 const FORNECEDOR = [
   { label: 'Dashboard', icon: 'home', to: '/fornecedor', end: true },
-  { label: 'Empresa', icon: 'building', to: '/fornecedor/perfil' },
   {
     label: 'Catálogo', icon: 'catalog', children: [
       { label: 'Produtos', to: '/fornecedor/catalogo' },
@@ -50,9 +49,10 @@ const FORNECEDOR = [
     ],
   },
   {
+    // Documentação de produto (o vendedor gere o catálogo). Os documentos da
+    // EMPRESA (licenças/alvarás) são geridos apenas pelo Company Admin.
     label: 'Documentação', icon: 'contract', children: [
-      { label: 'Certificações', to: '/fornecedor/documentacao/certificacoes' },
-      { label: 'Licenças', to: '/fornecedor/documentacao/licencas' },
+      { label: 'Certificados de Produto', to: '/fornecedor/documentacao/certificacoes' },
       { label: 'Catálogos PDF', to: '/fornecedor/documentacao/catalogos' },
       { label: 'Fichas Técnicas', to: '/fornecedor/documentacao/fichas' },
     ],
@@ -113,7 +113,8 @@ const COMPRADOR = [
 const COMPANY_ADMIN = [
   { label: 'Dashboard', icon: 'home', to: '/empresa', end: true },
   { label: 'Usuários & Perfis', icon: 'users', to: '/empresa/utilizadores' },
-  { label: 'Organização', icon: 'building', to: '/empresa/organizacao' },
+  { label: 'Perfil da Empresa', icon: 'building', to: '/empresa/organizacao' },
+  { label: 'Documentos da Empresa', icon: 'contract', to: '/empresa/documentos' },
   { label: 'Aprovações de PO', icon: 'approvals', to: '/empresa/aprovacoes' },
   { label: 'Contratos', icon: 'contract', to: '/empresa/contratos' },
   { label: 'Relatórios', icon: 'report', to: '/empresa/relatorios' },
@@ -127,7 +128,6 @@ const FINANCEIRO = [
   { label: 'Centro Financeiro', icon: 'wallet', to: '/financeiro', end: true },
   { label: 'Faturas', icon: 'invoice', to: '/financeiro/faturas' },
   { label: 'Pagamentos', icon: 'payment', to: '/financeiro/historico' },
-  { label: 'Perfil da Empresa', icon: 'building', to: '/financeiro/perfil' },
   ...COMMON_TAIL,
 ];
 
