@@ -3,9 +3,11 @@
 // e pedidos de suporte (tickets) do utilizador, ligados a /api/support.
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../../api/client';
+import { useAuth } from '../../auth/AuthContext';
 import { Icon } from '../../components/icons';
 import { Crumbs, Pill } from '../../components/BuyerUI';
 import { formatDateTime } from '../../domain';
+import HelpAdmin from './HelpAdmin';
 
 const POPULAR = ['Ordens de Compra', 'Faturação', 'Contratos', 'Pagamentos', 'Catálogo'];
 const TICKET_TONE = {
@@ -15,7 +17,14 @@ const TICKET_LABEL = {
   ABERTO: 'Aberto', EM_ANDAMENTO: 'Em Andamento', AGUARDANDO_RESPOSTA: 'Aguardando Resposta', RESOLVIDO: 'Resolvido', FECHADO: 'Fechado',
 };
 
+// O Administrador do Sistema vê o painel de administração; os restantes
+// utilizadores veem a página de pedir ajuda.
 export default function Help() {
+  const { user } = useAuth();
+  return user?.role === 'ADMIN_SISTEMA' ? <HelpAdmin /> : <HelpUser />;
+}
+
+function HelpUser() {
   const [ov, setOv] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [q, setQ] = useState('');

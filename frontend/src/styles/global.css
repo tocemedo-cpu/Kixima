@@ -2307,3 +2307,6 @@ tbody tr:hover {
 @media print {
   .pdoc-sheet { border: none; border-radius: 0; box-shadow: none; padding: 0; max-width: none; }
 }
+
+/* Ajuda & Suporte — admin: seletor de estado do ticket */
+.hs-status-sel { padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 12.5px; cursor: pointer; }

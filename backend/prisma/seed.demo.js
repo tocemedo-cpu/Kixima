@@ -288,13 +288,16 @@ async function main() {
     ],
   });
 
-  // Pedidos de suporte de demonstração (tela Ajuda & Suporte).
+  // Pedidos de suporte de demonstração (tela Ajuda & Suporte). De vários
+  // utilizadores/empresas, para o painel do Administrador do Sistema.
   await prisma.supportTicket.createMany({
     data: [
       { reference: 'SUP-2026-00001', userId: comprador.id, companyId: client.id, subject: 'Dúvida sobre call-off', category: 'Contratos', message: 'Como emito uma PO ao abrigo de contrato-quadro?', status: 'EM_ANDAMENTO', createdAt: ago(0) },
-      { reference: 'SUP-2026-00002', userId: comprador.id, companyId: client.id, subject: 'Problema ao anexar documentos', category: 'Documentos', message: 'O upload falha em PDF grande.', status: 'RESOLVIDO', createdAt: ago(2) },
-      { reference: 'SUP-2026-00003', userId: comprador.id, companyId: client.id, subject: 'Falha ao criar fatura', category: 'Faturação', message: 'Erro ao gerar fatura da PO.', status: 'AGUARDANDO_RESPOSTA', createdAt: ago(4) },
+      { reference: 'SUP-2026-00002', userId: fornecedorUser.id, companyId: supplier.id, subject: 'Problema ao anexar documentos', category: 'Documentos', message: 'O upload falha em PDF grande.', status: 'ABERTO', createdAt: ago(1) },
+      { reference: 'SUP-2026-00003', userId: financeiro.id, companyId: client.id, subject: 'Falha ao criar fatura', category: 'Faturação', message: 'Erro ao gerar fatura da PO.', status: 'AGUARDANDO_RESPOSTA', createdAt: ago(4) },
       { reference: 'SUP-2026-00004', userId: comprador.id, companyId: client.id, subject: 'Acesso ao relatório comercial', category: 'Conta & Acesso', message: 'Não consigo abrir o relatório.', status: 'FECHADO', createdAt: ago(6) },
+      { reference: 'SUP-2026-00005', userId: companyAdmin.id, companyId: client.id, subject: 'Adicionar novo utilizador', category: 'Conta & Acesso', message: 'O convite não chega ao email.', status: 'RESOLVIDO', createdAt: ago(3) },
+      { reference: 'SUP-2026-00006', userId: fornecedorUser.id, companyId: supplier.id, subject: 'Pagamento em atraso', category: 'Pagamentos', message: 'Fatura vencida ainda não paga.', status: 'ABERTO', createdAt: ago(2) },
     ],
   });
 

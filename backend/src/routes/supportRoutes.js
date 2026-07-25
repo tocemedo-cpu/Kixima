@@ -79,4 +79,58 @@ router.post('/tickets', async (req, res) => {
   res.status(201).json(ticket);
 });
 
+// -------------------------------------------------------------------------
+// Administração (só ADMIN_SISTEMA) — gerir pedidos de toda a plataforma.
+// -------------------------------------------------------------------------
+const STATUSES = ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO_RESPOSTA', 'RESOLVIDO', 'FECHADO'];
+
+router.get('/admin/overview', requireRole('ADMIN_SISTEMA'), async (req, res) => {
+  const [counts, images] = await Promise.all([
+    prisma.supportTicket.groupBy({ by: ['status'], _count: { _all: true } }),
+    prisma.supportCategoryImage.findMany(),
+  ]);
+  const by = Object.fromEntries(counts.map((c) => [c.status, c._count._all]));
+  const total = counts.reduce((s, c) => s + c._count._all, 0);
+  const imgByKey = Object.fromEntries(images.map((i) => [i.key, i.imageUrl]));
+  res.json({
+    categories: CATEGORIES.map((c) => ({ ...c, imageUrl: imgByKey[c.key] || null })),
+    channels: CHANNELS, hours: HOURS,
+    kpis: {
+      total,
+      abertos: by.ABERTO || 0,
+      emAndamento: by.EM_ANDAMENTO || 0,
+      aguardando: by.AGUARDANDO_RESPOSTA || 0,
+      resolvidos: by.RESOLVIDO || 0,
+      fechados: by.FECHADO || 0,
+    },
+  });
+});
+
+router.get('/admin/tickets', requireRole('ADMIN_SISTEMA'), async (req, res) => {
+  const where = {};
+  if (req.query.status && STATUSES.includes(req.query.status)) where.status = req.query.status;
+  const tickets = await prisma.supportTicket.findMany({ where, orderBy: { createdAt: 'desc' }, take: 100 });
+  // Junta o autor e a empresa (o modelo guarda apenas os ids).
+  const userIds = [...new Set(tickets.map((t) => t.userId))];
+  const companyIds = [...new Set(tickets.map((t) => t.companyId).filter(Boolean))];
+  const [users, companies] = await Promise.all([
+    prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true } }),
+    prisma.company.findMany({ where: { id: { in: companyIds } }, select: { id: true, name: true } }),
+  ]);
+  const uById = Object.fromEntries(users.map((u) => [u.id, u]));
+  const cById = Object.fromEntries(companies.map((c) => [c.id, c]));
+  res.json(tickets.map((t) => ({
+    ...t,
+    user: uById[t.userId] ? { name: uById[t.userId].name, email: uById[t.userId].email } : null,
+    company: t.companyId ? cById[t.companyId]?.name || null : null,
+  })));
+});
+
+router.patch('/tickets/:id', requireRole('ADMIN_SISTEMA'), async (req, res) => {
+  const status = String(req.body?.status || '');
+  if (!STATUSES.includes(status)) return res.status(400).json({ error: { code: 'INVALID', message: 'Estado inválido.' } });
+  const t = await prisma.supportTicket.update({ where: { id: req.params.id }, data: { status } });
+  res.json(t);
+});
+
 module.exports = router;

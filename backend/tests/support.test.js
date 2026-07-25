@@ -71,3 +71,29 @@ describe('Ajuda & Suporte — imagens das categorias (Admin do Sistema)', () => 
     expect(res.status).toBe(403);
   });
 });
+
+describe('Ajuda & Suporte — painel do Administrador do Sistema', () => {
+  test('admin vê KPIs e pedidos de toda a plataforma', async () => {
+    const ov = await auth(adminToken).get('/api/support/admin/overview');
+    expect(ov.status).toBe(200);
+    expect(ov.body.kpis).toHaveProperty('total');
+    const list = await auth(adminToken).get('/api/support/admin/tickets');
+    expect(list.status).toBe(200);
+    expect(list.body.length).toBeGreaterThan(0);
+    // Inclui pedidos de mais de um utilizador (não só do admin).
+    expect(new Set(list.body.map((t) => t.user?.email)).size).toBeGreaterThan(1);
+  });
+
+  test('admin altera o estado de um pedido', async () => {
+    const list = await auth(adminToken).get('/api/support/admin/tickets');
+    const id = list.body[0].id;
+    const res = await auth(adminToken).patch(`/api/support/tickets/${id}`).send({ status: 'RESOLVIDO' });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('RESOLVIDO');
+  });
+
+  test('um não-admin não acede ao painel de administração (403)', async () => {
+    expect((await auth(token).get('/api/support/admin/overview')).status).toBe(403);
+    expect((await auth(token).get('/api/support/admin/tickets')).status).toBe(403);
+  });
+});
