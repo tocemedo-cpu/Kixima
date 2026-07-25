@@ -3,12 +3,14 @@
 // informações da empresa. Ligado a /api/buyer/profile.
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
+import { useAuth } from '../../auth/AuthContext';
 import { Crumbs, PageHead, KpiRow, Pill } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import AvatarUploader from '../../components/AvatarUploader';
 import { PO_STATUS, ROLE_LABELS, formatMoney, formatDateTime } from '../../domain';
 
 export default function Profile() {
+  const { updateUser } = useAuth();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
@@ -16,7 +18,8 @@ export default function Profile() {
     api.get('/api/buyer/profile').then(setData).catch((e) => setError(e.message));
   }, []);
 
-  const setAvatar = (avatarUrl) => setData((d) => ({ ...d, user: { ...d.user, avatarUrl } }));
+  // Atualiza a página e o header (Navbar) com a nova foto.
+  const setAvatar = (avatarUrl) => { setData((d) => ({ ...d, user: { ...d.user, avatarUrl } })); updateUser({ avatarUrl }); };
 
   if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
   if (!data) return <div className="bz-empty">A carregar…</div>;

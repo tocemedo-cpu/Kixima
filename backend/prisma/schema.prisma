@@ -709,6 +709,16 @@ enum SupportStatus {
   FECHADO
 }
 
+// Imagem de uma categoria de ajuda. Só o Administrador do Sistema faz upload
+// e pode trocar estas fotos (tela Ajuda & Suporte).
+model SupportCategoryImage {
+  key       String   @id
+  imageUrl  String   @map("image_url")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("support_category_images")
+}
+
 model SupportTicket {
   id          String        @id @default(uuid())
   reference   String        @unique // ex: SUP-2026-00001

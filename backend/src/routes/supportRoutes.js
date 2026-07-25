@@ -3,6 +3,9 @@
 // suporte (tickets) do próprio utilizador, persistidos no banco.
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
+const { upload } = require('../config/upload');
+const storageService = require('../services/storageService');
 const prisma = require('../config/database');
 
 const router = express.Router();
@@ -28,10 +31,29 @@ const CHANNELS = [
 const HOURS = { label: 'Seg - Sex: 08:00 - 18:00', tz: 'GMT +1 (África/Luanda)', online: true };
 
 router.get('/overview', async (req, res) => {
-  const open = await prisma.supportTicket.count({
-    where: { userId: req.user.id, status: { in: ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO_RESPOSTA'] } },
+  const [open, images] = await Promise.all([
+    prisma.supportTicket.count({ where: { userId: req.user.id, status: { in: ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO_RESPOSTA'] } } }),
+    prisma.supportCategoryImage.findMany(),
+  ]);
+  const imgByKey = Object.fromEntries(images.map((i) => [i.key, i.imageUrl]));
+  const categories = CATEGORIES.map((c) => ({ ...c, imageUrl: imgByKey[c.key] || null }));
+  res.json({
+    categories, channels: CHANNELS, hours: HOURS, system: { operational: true },
+    openTickets: open, canManageImages: req.user.role === 'ADMIN_SISTEMA',
   });
-  res.json({ categories: CATEGORIES, channels: CHANNELS, hours: HOURS, system: { operational: true }, openTickets: open });
+});
+
+// Imagem de uma categoria — apenas o Administrador do Sistema pode carregar/trocar.
+router.post('/categories/:key/image', requireRole('ADMIN_SISTEMA'), upload.single('image'), async (req, res) => {
+  const { key } = req.params;
+  if (!CATEGORIES.some((c) => c.key === key)) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Categoria inválida.' } });
+  if (!req.file) return res.status(400).json({ error: { code: 'NO_FILE', message: 'Nenhuma imagem enviada.' } });
+  const imageUrl = await storageService.saveFile({
+    buffer: req.file.buffer, originalname: req.file.originalname || `${key}.jpg`,
+    mimetype: req.file.mimetype, keyHint: `support-${key}`, folder: 'support',
+  });
+  const row = await prisma.supportCategoryImage.upsert({ where: { key }, create: { key, imageUrl }, update: { imageUrl } });
+  res.json(row);
 });
 
 router.get('/tickets', async (req, res) => {

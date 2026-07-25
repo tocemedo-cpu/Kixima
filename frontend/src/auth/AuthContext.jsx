@@ -39,8 +39,12 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+  // Atualiza o utilizador em memória (ex.: após trocar a foto de perfil) para
+  // que o header e outras vistas reflitam a mudança imediatamente.
+  const updateUser = useCallback((patch) => setUser((u) => (u ? { ...u, ...patch } : u)), []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser: loadMe, updateUser }}>{children}</AuthContext.Provider>
   );
 }
 

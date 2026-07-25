@@ -1,7 +1,7 @@
 // src/pages/shared/Help.jsx
 // Ajuda & Suporte — base de conhecimento, canais de suporte, estado do sistema
 // e pedidos de suporte (tickets) do utilizador, ligados a /api/support.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../../api/client';
 import { Icon } from '../../components/icons';
 import { Crumbs, Pill } from '../../components/BuyerUI';
@@ -20,12 +20,22 @@ export default function Help() {
   const [tickets, setTickets] = useState([]);
   const [q, setQ] = useState('');
   const [modal, setModal] = useState(false);
+  const [uploadKey, setUploadKey] = useState(null);
+  const fileRef = useRef(null);
 
   function reload() {
     api.get('/api/support/overview').then(setOv).catch(() => {});
     api.get('/api/support/tickets').then(setTickets).catch(() => {});
   }
   useEffect(reload, []);
+
+  // Upload da imagem de uma categoria (apenas Administrador do Sistema).
+  function pickImage(key) { setUploadKey(key); fileRef.current?.click(); }
+  function onCategoryFile(e) {
+    const f = e.target.files?.[0];
+    if (f && uploadKey) api.upload(`/api/support/categories/${uploadKey}/image`, f, 'image').then(reload).catch(() => {});
+    e.target.value = '';
+  }
 
   return (
     <div>
@@ -76,11 +86,17 @@ export default function Help() {
           <div className="hs-cats">
             {(ov?.categories || []).map((c) => (
               <div className="hs-cat" key={c.key}>
-                <span className="hs-cat-ico"><Icon name={c.icon} size={18} /></span>
+                <span className={`hs-cat-ico${c.imageUrl ? ' has-img' : ''}`}>
+                  {c.imageUrl ? <img src={c.imageUrl} alt={c.title} /> : <Icon name={c.icon} size={18} />}
+                  {ov?.canManageImages ? (
+                    <button className="hs-cat-edit" title="Trocar imagem (Admin)" onClick={() => pickImage(c.key)}><Icon name="certification" size={12} /></button>
+                  ) : null}
+                </span>
                 <div><strong>{c.title}</strong><span className="bz-sub2">{c.desc}</span><span className="hs-cat-art">{c.articles} artigos</span></div>
               </div>
             ))}
           </div>
+          {ov?.canManageImages ? <input ref={fileRef} type="file" accept="image/*" hidden onChange={onCategoryFile} /> : null}
 
           {/* Ainda precisa de ajuda */}
           <div className="hs-cta">

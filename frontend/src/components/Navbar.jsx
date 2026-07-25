@@ -54,7 +54,7 @@ export default function Navbar({ user, roleLabel, cartCount = 0, unread = 0, onM
         </button>
         <div className="nav-user" ref={ref}>
           <button className="nav-user-btn" onClick={() => setMenu((v) => !v)}>
-            <span className="nav-avatar">{initials(user.name)}</span>
+            <span className="nav-avatar">{user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} /> : initials(user.name)}</span>
             <span className="nav-user-meta"><strong>{user.name}</strong><span>{roleLabel}</span></span>
             <span className="nav-chevron">▾</span>
           </button>

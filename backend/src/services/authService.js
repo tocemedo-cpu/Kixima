@@ -71,6 +71,7 @@ async function login({ email, password }) {
       role: user.role,
       companyId: user.companyId,
       companyName: user.company?.name ?? null,
+      avatarUrl: user.avatarUrl ?? null,
     },
   };
 }

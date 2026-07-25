@@ -33,6 +33,7 @@ async function authenticate(req, res, next) {
     approvalCap: user.approvalCap,
     name: user.name,
     email: user.email,
+    avatarUrl: user.avatarUrl,
   };
 
   next();

@@ -2,9 +2,14 @@
 // Ajuda & Suporte (overview + tickets) e foto de perfil (avatar).
 const { auth, prisma, login } = require('./helpers');
 
-let token;
-beforeAll(async () => { token = await login('comprador@petroangola.co.ao'); });
+let token, adminToken;
+beforeAll(async () => {
+  token = await login('comprador@petroangola.co.ao');
+  adminToken = await login('admin@kixima.co.ao');
+});
 afterAll(async () => { await prisma.$disconnect(); });
+
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 
 describe('Ajuda & Suporte', () => {
   test('overview devolve categorias, canais e contagem de tickets abertos', async () => {
@@ -42,5 +47,27 @@ describe('Perfil — foto', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('avatarUrl');
     expect(res.body).toHaveProperty('email');
+  });
+});
+
+describe('Ajuda & Suporte — imagens das categorias (Admin do Sistema)', () => {
+  test('overview indica se o utilizador pode gerir imagens', async () => {
+    const admin = await auth(adminToken).get('/api/support/overview');
+    expect(admin.body.canManageImages).toBe(true);
+    const comprador = await auth(token).get('/api/support/overview');
+    expect(comprador.body.canManageImages).toBe(false);
+  });
+
+  test('o Admin do Sistema faz upload da imagem de uma categoria', async () => {
+    const res = await auth(adminToken).post('/api/support/categories/ordens/image').attach('image', PNG, 'ordens.png');
+    expect(res.status).toBe(200);
+    expect(res.body.imageUrl).toBeTruthy();
+    const ov = await auth(token).get('/api/support/overview');
+    expect(ov.body.categories.find((c) => c.key === 'ordens').imageUrl).toBeTruthy();
+  });
+
+  test('um não-admin não pode trocar a imagem (403)', async () => {
+    const res = await auth(token).post('/api/support/categories/ordens/image').attach('image', PNG, 'x.png');
+    expect(res.status).toBe(403);
   });
 });
