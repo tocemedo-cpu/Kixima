@@ -23,6 +23,13 @@ const TABS = [
 
 function initials(n = '') { return n.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase(); }
 
+// Agrupa os slots de imagem por 'group', preservando a ordem de chegada.
+function groupsOf(slots = []) {
+  const map = new Map();
+  for (const s of slots) { if (!map.has(s.group)) map.set(s.group, []); map.get(s.group).push(s); }
+  return [...map.entries()];
+}
+
 export default function HelpAdmin() {
   const [ov, setOv] = useState(null);
   const [tickets, setTickets] = useState(null);
@@ -41,9 +48,10 @@ export default function HelpAdmin() {
   function pickImage(key) { setUploadKey(key); fileRef.current?.click(); }
   function onFile(e) {
     const f = e.target.files?.[0];
-    if (f && uploadKey) api.upload(`/api/support/categories/${uploadKey}/image`, f, 'image').then(() => { loadOverview(); flash('Imagem atualizada.'); }).catch(() => {});
+    if (f && uploadKey) api.upload(`/api/support/images/${uploadKey}`, f, 'image').then(() => { loadOverview(); flash('Imagem atualizada.'); }).catch(() => {});
     e.target.value = '';
   }
+  function removeImage(key) { api.del(`/api/support/images/${key}`).then(() => { loadOverview(); flash('Imagem removida.'); }).catch(() => {}); }
   async function setStatus(id, status) {
     try { await api.patch(`/api/support/tickets/${id}`, { status }); loadTickets(); loadOverview(); flash('Estado atualizado.'); }
     catch { flash('Não foi possível atualizar.'); }
@@ -66,24 +74,28 @@ export default function HelpAdmin() {
         { icon: 'approvals', tone: 'neutral', label: 'Fechados', value: k?.fechados ?? '—', sub: 'Arquivados' },
       ]} />
 
-      {/* Gestão das imagens da base de conhecimento */}
-      <h3 className="pf-h2">Categorias &amp; Imagens da Base de Conhecimento</h3>
-      <p className="bz-sub" style={{ marginTop: -6 }}>Só o Administrador do Sistema pode carregar/trocar estas imagens. Elas aparecem para todos os utilizadores.</p>
-      <div className="hs-cats" style={{ marginBottom: 24 }}>
-        {(ov?.categories || []).map((c) => (
-          <div className="hs-cat" key={c.key}>
-            <span className={`hs-cat-ico${c.imageUrl ? ' has-img' : ''}`}>
-              {c.imageUrl ? <img src={c.imageUrl} alt={c.title} /> : <Icon name={c.icon} size={18} />}
-              <button className="hs-cat-edit" title="Trocar imagem" onClick={() => pickImage(c.key)}><Icon name="certification" size={12} /></button>
-            </span>
-            <div>
-              <strong>{c.title}</strong>
-              <span className="bz-sub2">{c.articles} artigos</span>
-              <button className="pf-link" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 12 }} onClick={() => pickImage(c.key)}>{c.imageUrl ? 'Trocar imagem' : 'Carregar imagem'}</button>
-            </div>
+      {/* Gestão de TODAS as imagens da página de Ajuda */}
+      <h3 className="pf-h2">Imagens da Página de Ajuda</h3>
+      <p className="bz-sub" style={{ marginTop: -6 }}>Todos os locais de imagem da página são preenchidos por upload. Só o Administrador do Sistema pode carregá-las/trocá-las; elas aparecem para todos os utilizadores.</p>
+      {groupsOf(ov?.imageSlots).map(([group, slots]) => (
+        <div key={group} className="img-group">
+          <div className="img-group-title">{group}</div>
+          <div className="img-slots">
+            {slots.map((s) => (
+              <div className="img-slot" key={s.key}>
+                <div className="img-thumb">
+                  {s.imageUrl ? <img src={s.imageUrl} alt={s.label} /> : <span className="img-empty"><Icon name="report" size={18} /> Sem imagem</span>}
+                </div>
+                <div className="img-slot-name">{s.label}</div>
+                <div className="img-slot-actions">
+                  <button className="btn btn-ghost btn-sm" onClick={() => pickImage(s.key)}>{s.imageUrl ? 'Trocar' : 'Carregar'}</button>
+                  {s.imageUrl ? <button className="btn btn-ghost btn-sm" onClick={() => removeImage(s.key)}>Remover</button> : null}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
 
       {/* Pedidos de suporte de toda a plataforma */}

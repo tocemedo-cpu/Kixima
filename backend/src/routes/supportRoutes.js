@@ -30,23 +30,42 @@ const CHANNELS = [
 ];
 const HOURS = { label: 'Seg - Sex: 08:00 - 18:00', tz: 'GMT +1 (África/Luanda)', online: true };
 
+// Todos os locais de imagem da página de Ajuda (geridos pelo Admin do Sistema).
+const IMAGE_SLOTS = [
+  { key: 'hero', label: 'Ilustração principal', group: 'Destaque' },
+  { key: 'mascot', label: 'Ilustração "Ainda precisa de ajuda?"', group: 'Destaque' },
+  { key: 'quick_kb', label: 'Base de Conhecimento', group: 'Atalhos' },
+  { key: 'quick_videos', label: 'Vídeos Tutoriais', group: 'Atalhos' },
+  { key: 'quick_contact', label: 'Contato com Suporte', group: 'Atalhos' },
+  { key: 'quick_tickets', label: 'Tickets Abertos', group: 'Atalhos' },
+  ...CATEGORIES.map((c) => ({ key: c.key, label: c.title, group: 'Categorias' })),
+  ...CHANNELS.map((c) => ({ key: `channel_${c.key}`, label: c.label, group: 'Canais' })),
+];
+const SLOT_KEYS = new Set(IMAGE_SLOTS.map((s) => s.key));
+
+async function loadImageMap() {
+  const rows = await prisma.supportCategoryImage.findMany();
+  return Object.fromEntries(rows.map((i) => [i.key, i.imageUrl]));
+}
+
 router.get('/overview', async (req, res) => {
-  const [open, images] = await Promise.all([
+  const [open, imgByKey] = await Promise.all([
     prisma.supportTicket.count({ where: { userId: req.user.id, status: { in: ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO_RESPOSTA'] } } }),
-    prisma.supportCategoryImage.findMany(),
+    loadImageMap(),
   ]);
-  const imgByKey = Object.fromEntries(images.map((i) => [i.key, i.imageUrl]));
   const categories = CATEGORIES.map((c) => ({ ...c, imageUrl: imgByKey[c.key] || null }));
+  const channels = CHANNELS.map((c) => ({ ...c, imageUrl: imgByKey[`channel_${c.key}`] || null }));
   res.json({
-    categories, channels: CHANNELS, hours: HOURS, system: { operational: true },
+    categories, channels, hours: HOURS, system: { operational: true },
+    images: imgByKey, // hero, mascot, quick_*, channel_*, categorias
     openTickets: open, canManageImages: req.user.role === 'ADMIN_SISTEMA',
   });
 });
 
-// Imagem de uma categoria — apenas o Administrador do Sistema pode carregar/trocar.
-router.post('/categories/:key/image', requireRole('ADMIN_SISTEMA'), upload.single('image'), async (req, res) => {
+// Upload da imagem de um local (slot) da página de Ajuda — só o Admin do Sistema.
+async function uploadSlotImage(req, res) {
   const { key } = req.params;
-  if (!CATEGORIES.some((c) => c.key === key)) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Categoria inválida.' } });
+  if (!SLOT_KEYS.has(key)) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Local de imagem inválido.' } });
   if (!req.file) return res.status(400).json({ error: { code: 'NO_FILE', message: 'Nenhuma imagem enviada.' } });
   const imageUrl = await storageService.saveFile({
     buffer: req.file.buffer, originalname: req.file.originalname || `${key}.jpg`,
@@ -54,7 +73,14 @@ router.post('/categories/:key/image', requireRole('ADMIN_SISTEMA'), upload.singl
   });
   const row = await prisma.supportCategoryImage.upsert({ where: { key }, create: { key, imageUrl }, update: { imageUrl } });
   res.json(row);
+}
+router.post('/images/:key', requireRole('ADMIN_SISTEMA'), upload.single('image'), uploadSlotImage);
+router.delete('/images/:key', requireRole('ADMIN_SISTEMA'), async (req, res) => {
+  await prisma.supportCategoryImage.deleteMany({ where: { key: req.params.key } });
+  res.json({ key: req.params.key });
 });
+// Compatibilidade com o endpoint anterior (categorias).
+router.post('/categories/:key/image', requireRole('ADMIN_SISTEMA'), upload.single('image'), uploadSlotImage);
 
 router.get('/tickets', async (req, res) => {
   const tickets = await prisma.supportTicket.findMany({
@@ -85,16 +111,17 @@ router.post('/tickets', async (req, res) => {
 const STATUSES = ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO_RESPOSTA', 'RESOLVIDO', 'FECHADO'];
 
 router.get('/admin/overview', requireRole('ADMIN_SISTEMA'), async (req, res) => {
-  const [counts, images] = await Promise.all([
+  const [counts, imgByKey] = await Promise.all([
     prisma.supportTicket.groupBy({ by: ['status'], _count: { _all: true } }),
-    prisma.supportCategoryImage.findMany(),
+    loadImageMap(),
   ]);
   const by = Object.fromEntries(counts.map((c) => [c.status, c._count._all]));
   const total = counts.reduce((s, c) => s + c._count._all, 0);
-  const imgByKey = Object.fromEntries(images.map((i) => [i.key, i.imageUrl]));
   res.json({
     categories: CATEGORIES.map((c) => ({ ...c, imageUrl: imgByKey[c.key] || null })),
     channels: CHANNELS, hours: HOURS,
+    // Todos os locais de imagem da página, agrupados, com a imagem atual.
+    imageSlots: IMAGE_SLOTS.map((s) => ({ ...s, imageUrl: imgByKey[s.key] || null })),
     kpis: {
       total,
       abertos: by.ABERTO || 0,

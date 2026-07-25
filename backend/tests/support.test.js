@@ -96,4 +96,18 @@ describe('Ajuda & Suporte — painel do Administrador do Sistema', () => {
     expect((await auth(token).get('/api/support/admin/overview')).status).toBe(403);
     expect((await auth(token).get('/api/support/admin/tickets')).status).toBe(403);
   });
+
+  test('admin gere todos os locais de imagem (hero, atalhos, canais…)', async () => {
+    const ov = await auth(adminToken).get('/api/support/admin/overview');
+    expect(ov.body.imageSlots.length).toBeGreaterThanOrEqual(18);
+    const groups = new Set(ov.body.imageSlots.map((s) => s.group));
+    expect(groups.has('Destaque') && groups.has('Atalhos') && groups.has('Canais')).toBe(true);
+    // upload num slot não-categoria (ex.: hero)
+    const up = await auth(adminToken).post('/api/support/images/hero').attach('image', PNG, 'hero.png');
+    expect(up.status).toBe(200);
+    const user = await auth(token).get('/api/support/overview');
+    expect(user.body.images.hero).toBeTruthy();
+    // slot inválido -> 404
+    expect((await auth(adminToken).post('/api/support/images/inexistente').attach('image', PNG, 'x.png')).status).toBe(404);
+  });
 });

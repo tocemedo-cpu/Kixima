@@ -61,7 +61,7 @@ function HelpUser() {
         <div>
           {/* Pesquisa */}
           <div className="bz-panel hs-search">
-            <div className="hs-search-ico"><Icon name="help" size={40} /></div>
+            <div className={`hs-search-ico${ov?.images?.hero ? ' has-img' : ''}`}>{ov?.images?.hero ? <img src={ov.images.hero} alt="" /> : <Icon name="help" size={40} />}</div>
             <div style={{ flex: 1 }}>
               <h2 className="hs-h2">Como podemos ajudá-lo hoje?</h2>
               <p className="bz-sub">Pesquise na nossa base de conhecimento ou faça uma pergunta à equipa de suporte.</p>
@@ -78,16 +78,19 @@ function HelpUser() {
           {/* Atalhos */}
           <div className="hs-quick">
             {[
-              { i: 'catalog', t: 'Base de Conhecimento', s: 'Artigos, guias e FAQs' },
-              { i: 'chart', t: 'Vídeos Tutoriais', s: 'Tutoriais passo a passo' },
-              { i: 'help', t: 'Contato com Suporte', s: 'Fale com a nossa equipa' },
-              { i: 'invoice', t: 'Tickets Abertos', s: 'Acompanhe seus pedidos', badge: ov?.openTickets },
-            ].map((c) => (
-              <div className="hs-quickcard" key={c.t}>
-                <span className="hs-quick-ico"><Icon name={c.i} size={18} />{c.badge ? <span className="hs-badge">{c.badge}</span> : null}</span>
-                <div><strong>{c.t}</strong><span className="bz-sub2">{c.s}</span></div>
-              </div>
-            ))}
+              { k: 'quick_kb', i: 'catalog', t: 'Base de Conhecimento', s: 'Artigos, guias e FAQs' },
+              { k: 'quick_videos', i: 'chart', t: 'Vídeos Tutoriais', s: 'Tutoriais passo a passo' },
+              { k: 'quick_contact', i: 'help', t: 'Contato com Suporte', s: 'Fale com a nossa equipa' },
+              { k: 'quick_tickets', i: 'invoice', t: 'Tickets Abertos', s: 'Acompanhe seus pedidos', badge: ov?.openTickets },
+            ].map((c) => {
+              const img = ov?.images?.[c.k];
+              return (
+                <div className="hs-quickcard" key={c.t}>
+                  <span className={`hs-quick-ico${img ? ' has-img' : ''}`}>{img ? <img src={img} alt="" /> : <Icon name={c.i} size={18} />}{c.badge ? <span className="hs-badge">{c.badge}</span> : null}</span>
+                  <div><strong>{c.t}</strong><span className="bz-sub2">{c.s}</span></div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Categorias */}
@@ -109,6 +112,7 @@ function HelpUser() {
 
           {/* Ainda precisa de ajuda */}
           <div className="hs-cta">
+            {ov?.images?.mascot ? <img className="hs-mascot" src={ov.images.mascot} alt="" /> : null}
             <div>
               <h3>Ainda precisa de ajuda?</h3>
               <p className="bz-sub">A nossa equipa está pronta para ajudar.</p>
@@ -144,7 +148,7 @@ function HelpUser() {
             <h3>Canais de Suporte</h3>
             {(ov?.channels || []).map((c) => (
               <div className="hs-channel" key={c.key}>
-                <span className="hs-channel-ico"><Icon name={c.icon} size={16} /></span>
+                <span className={`hs-channel-ico${c.imageUrl ? ' has-img' : ''}`}>{c.imageUrl ? <img src={c.imageUrl} alt="" /> : <Icon name={c.icon} size={16} />}</span>
                 <div><strong>{c.label}</strong><span className="bz-sub2">{c.value}</span> <a className="pf-link" href="#">{c.action}</a></div>
               </div>
             ))}
