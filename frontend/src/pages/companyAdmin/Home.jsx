@@ -1,54 +1,76 @@
 // src/pages/companyAdmin/Home.jsx
+// Dashboard do Company Admin — visão geral da empresa em tempo real, ligada a
+// /api/company-admin/dashboard. Mantém o fluxo do KIXIMA (aprovar POs, equipa,
+// contratos) e apresenta KPIs, volume de operações e atividade recente reais.
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../auth/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
-import { PageHeader, StatCard, Loading, ErrorBanner } from '../../components/Common';
-import { POLICY_STATUS, formatDate } from '../../domain';
-import Badge from '../../components/Badge';
+import { Crumbs, PageHead, KpiRow, Pill } from '../../components/BuyerUI';
+import { Icon } from '../../components/icons';
+import { PO_STATUS, formatMoney, formatDateTime } from '../../domain';
 
 export default function CompanyAdminHome() {
-  const { user } = useAuth();
-  const [orders, setOrders] = useState(null);
-  const [policies, setPolicies] = useState(null);
+  const nav = useNavigate();
+  const [d, setD] = useState(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/api/purchase-orders'),
-      api.get(`/api/policies/company/${user.companyId}`),
-    ])
-      .then(([o, p]) => {
-        setOrders(o);
-        setPolicies(p);
-      })
-      .catch((e) => setError(e.message));
-  }, [user.companyId]);
+  useEffect(() => { api.get('/api/company-admin/dashboard').then(setD).catch((e) => setError(e.message)); }, []);
 
-  if (error) return <ErrorBanner message={error} />;
-  if (!orders || !policies) return <Loading />;
+  if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
+  if (!d) return <div className="bz-empty">A carregar…</div>;
 
-  const pendentes = orders.filter((o) => o.status === 'AGUARDANDO_APROVACAO');
-  const clientPolicy = policies.kiximaToClient?.[0];
-
+  const max = Math.max(1, ...d.volume.map((v) => v.value));
   return (
     <div>
-      <PageHeader title="Visão geral da empresa" subtitle="POs pendentes de aprovação, utilizadores e apólice ativa." />
+      <Crumbs trail={['Dashboard']} />
+      <PageHead title="Dashboard" subtitle="Visão geral da sua empresa em tempo real." />
 
-      <div className="grid-cols grid-3" style={{ marginBottom: 24 }}>
-        <StatCard label="POs a aprovar" value={pendentes.length} sub="Ponto único de aprovação" />
-        <StatCard label="POs totais" value={orders.length} />
-        <StatCard
-          label="Apólice KIXIMA→Cliente"
-          value={clientPolicy ? <Badge tone={POLICY_STATUS[clientPolicy.status]?.tone}>{POLICY_STATUS[clientPolicy.status]?.label}</Badge> : '—'}
-          sub={clientPolicy ? `Válida até ${formatDate(clientPolicy.validUntil)}` : 'Nenhuma apólice registada'}
-        />
+      <KpiRow cards={[
+        { icon: 'orders', tone: 'info', label: 'Ordens de Compra', value: d.kpis.pedidos, sub: 'Total da empresa' },
+        { icon: 'truck', tone: 'pending', label: 'Em Execução', value: d.kpis.emExecucao, sub: 'A decorrer' },
+        { icon: 'payment', tone: 'success', label: 'Volume de Negócios', value: formatMoney(d.kpis.volumeNegocios), sub: 'Valor total' },
+        { icon: 'approvals', tone: 'danger', label: 'POs a Aprovar', value: d.kpis.aprovarPO, sub: 'Requerem a sua ação' },
+      ]} />
+
+      <div className="bz-layout">
+        <div className="bz-panel">
+          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>Volume de Operações</h3><span className="bz-muted">Últimos 6 meses</span></div>
+          <div className="ca-bars">
+            {d.volume.map((v) => (
+              <div className="ca-bar" key={v.label}>
+                <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((v.value / max) * 100)}%` }} title={formatMoney(v.value)} /></div>
+                <span className="bz-muted">{v.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bz-panel">
+          <div className="bz-head" style={{ marginBottom: 6 }}><h3 style={{ margin: 0 }}>Atividade Recente</h3><a className="pf-link" href="/empresa/atividades">Ver todas</a></div>
+          {d.recent.map((r) => (
+            <div className="hs-ticket" key={r.reference}>
+              <div><strong>PO {r.reference}</strong><span className="bz-sub2">{r.party}</span></div>
+              <div className="hs-ticket-meta"><Pill tone={PO_STATUS[r.status]?.tone}>{PO_STATUS[r.status]?.label || r.status}</Pill><span className="bz-sub2">{formatDateTime(r.at)}</span></div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {pendentes.length > 0 && (
-        <div className="banner banner-error" style={{ background: 'var(--amber-100)', color: 'var(--amber-600)', border: '1px solid rgba(201,135,31,.25)' }}>
-          Tem {pendentes.length} PO(s) aguardando a sua aprovação.
+      <h3 className="pf-h2">Resumo Geral</h3>
+      <KpiRow cards={[
+        { icon: 'users', tone: 'info', label: 'Usuários Ativos', value: d.resumo.usuariosAtivos, sub: 'Na empresa' },
+        { icon: 'contract', tone: 'success', label: 'Contratos Ativos', value: d.resumo.contratosAtivos, sub: `de ${d.resumo.totalContratos}` },
+        { icon: 'reception', tone: 'pending', label: 'Ordens Concluídas', value: d.resumo.concluidas, sub: 'Recebidas' },
+        { icon: 'shield', tone: 'success', label: 'Compliance', value: `${d.resumo.compliance}%`, sub: 'Conformidade' },
+      ]} />
+
+      <div className="bz-panel ca-quick">
+        <strong>Ações Rápidas</strong>
+        <div className="ca-quick-row">
+          <button className="btn btn-ghost btn-sm" onClick={() => nav('/empresa/utilizadores')}><Icon name="users" size={14} /> Novo Usuário</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => nav('/empresa/aprovacoes')}><Icon name="approvals" size={14} /> Aprovar POs</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => nav('/empresa/relatorios')}><Icon name="report" size={14} /> Relatório Executivo</button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

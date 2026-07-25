@@ -58,6 +58,7 @@ model Company {
   city        String?
   province    String?
   country     String?       @default("Angola")
+  settings    Json?         // preferências da empresa (tela Configurações do Company Admin)
 
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")

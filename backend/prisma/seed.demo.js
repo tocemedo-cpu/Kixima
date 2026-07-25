@@ -270,6 +270,15 @@ async function main() {
   await makeOrder({ status: 'RECEBIDA_COM_DIVERGENCIA', accepted: true, dispatched: true, delivered: true, received: true, receptionStatus: 'Com Divergência', invoiceStatus: 'PAGA', lines: [['Transporte de Carga Industrial', 2]] });
   await makeOrder({ status: 'REJEITADA', lines: [['Engenharia de Detalhe (Oil & Gas)', 1]] });
 
+  // Contratos-quadro de demonstração (Company Admin: Contratos/Dashboard).
+  await prisma.contract.createMany({
+    data: [
+      { reference: 'CTR-2026-0001', clientCompanyId: client.id, supplierCompanyId: supplier.id, categoriesCovered: ['Inspeção & Ensaios'], totalValue: 15300000, usedValue: 4200000, currency: 'AOA', billingPeriodicity: 'TRIMESTRAL', paymentTermDays: 30, status: 'ATIVO', validFrom: ago(120), validUntil: ago(-240) },
+      { reference: 'CTR-2026-0002', clientCompanyId: client.id, supplierCompanyId: supplier.id, categoriesCovered: ['Equipamentos'], totalValue: 8750000, usedValue: 8750000, currency: 'AOA', billingPeriodicity: 'SEMESTRAL', paymentTermDays: 45, status: 'ATIVO', validFrom: ago(90), validUntil: ago(-25) },
+      { reference: 'CTR-2026-0003', clientCompanyId: client.id, supplierCompanyId: supplier.id, categoriesCovered: ['Logística & Transporte'], totalValue: 6800000, usedValue: 6800000, currency: 'AOA', billingPeriodicity: 'TRIMESTRAL', paymentTermDays: 30, status: 'EXPIRADO', validFrom: ago(400), validUntil: ago(30) },
+    ],
+  });
+
   // Pedidos de suporte de demonstração (tela Ajuda & Suporte).
   await prisma.supportTicket.createMany({
     data: [

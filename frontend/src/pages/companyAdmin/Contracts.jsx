@@ -1,83 +1,93 @@
 // src/pages/companyAdmin/Contracts.jsx
-import { useEffect, useState } from 'react';
+// Contratos — contratos-quadro (call-off) da empresa, ligados a /api/contracts.
+// KPIs, tabela e resumo por estado. Estética do mockup.
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
-import DataTable from '../../components/DataTable';
-import Badge from '../../components/Badge';
-import { formatDate, formatMoney } from '../../domain';
-
-const CONTRACT_STATUS = {
-  ATIVO: { label: 'Ativo', tone: 'success' },
-  EXPIRADO: { label: 'Expirado', tone: 'danger' },
-  ENCERRADO: { label: 'Encerrado', tone: 'neutral' },
-};
+import { Crumbs, PageHead, KpiRow, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
+import { CONTRACT_STATUS, BILLING_PERIODICITY, formatMoney, formatDate } from '../../domain';
 
 export default function Contracts() {
-  const [contracts, setContracts] = useState(null);
+  const nav = useNavigate();
+  const { user } = useAuth();
+  const [rows, setRows] = useState(null);
+  const [q, setQ] = useState('');
   const [error, setError] = useState('');
-  const [expanded, setExpanded] = useState(null);
 
-  useEffect(() => {
-    api.get('/api/contracts').then(setContracts).catch((e) => setError(e.message));
-  }, []);
+  useEffect(() => { api.get('/api/contracts').then(setRows).catch((e) => setError(e.message)); }, []);
 
-  if (error) return <ErrorBanner message={error} />;
-  if (!contracts) return <Loading />;
+  const counterpart = (c) => (c.clientCompanyId === user.companyId ? c.supplierCompany : c.clientCompany);
+  const in30 = Date.now() + 30 * 864e5;
+
+  const kpis = useMemo(() => {
+    const r = rows || [];
+    return {
+      total: r.length,
+      ativos: r.filter((c) => c.status === 'ATIVO').length,
+      aVencer: r.filter((c) => c.status === 'ATIVO' && new Date(c.validUntil).getTime() <= in30).length,
+      vencidos: r.filter((c) => c.status === 'EXPIRADO').length,
+      valor: r.reduce((s, c) => s + Number(c.totalValue || 0), 0),
+    };
+  }, [rows]);
+
+  const list = (rows || []).filter((c) => !q || c.reference.toLowerCase().includes(q.toLowerCase()) || counterpart(c)?.name?.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <div>
-      <PageHeader title="Contratos" subtitle="Contratos-quadro ativos com fornecedores e as respetivas call-offs." />
+      <Crumbs trail={['Contratos']} />
+      <PageHead title="Contratos" subtitle="Gerencie todos os contratos ativos e históricos da sua empresa." />
 
-      <div className="card">
-        <DataTable
-          rows={contracts}
-          rowKey="id"
-          onRowClick={(row) => setExpanded(expanded === row.id ? null : row.id)}
-          emptyTitle="Sem contratos-quadro"
-          emptyBody="Contratos-quadro são criados pelo Admin do Sistema KIXIMA ou pelo Company Admin."
-          columns={[
-            { key: 'reference', header: 'Referência', render: (r) => <span className="mono">{r.reference}</span> },
-            { key: 'value', header: 'Valor / Saldo usado', render: (r) => `${formatMoney(r.usedValue, r.currency)} / ${formatMoney(r.totalValue, r.currency)}` },
-            { key: 'periodicity', header: 'Periodicidade', render: (r) => (r.billingPeriodicity === 'TRIMESTRAL' ? 'Trimestral' : 'Semestral') },
-            { key: 'validity', header: 'Vigência', render: (r) => `${formatDate(r.validFrom)} — ${formatDate(r.validUntil)}` },
-            { key: 'status', header: 'Estado', render: (r) => <Badge tone={CONTRACT_STATUS[r.status]?.tone}>{CONTRACT_STATUS[r.status]?.label}</Badge> },
-          ]}
-        />
+      <KpiRow cards={[
+        { icon: 'contract', tone: 'info', label: 'Total de Contratos', value: kpis.total, sub: 'Todos os contratos' },
+        { icon: 'certification', tone: 'success', label: 'Ativos', value: kpis.ativos, sub: 'Contratos ativos' },
+        { icon: 'history', tone: 'pending', label: 'A Vencer (30 dias)', value: kpis.aVencer, sub: 'Próximos do vencimento' },
+        { icon: 'approvals', tone: 'danger', label: 'Vencidos', value: kpis.vencidos, sub: 'Contratos vencidos' },
+        { icon: 'payment', tone: 'neutral', label: 'Valor Total', value: formatMoney(kpis.valor), sub: 'Valor dos contratos' },
+      ]} />
+
+      <div className="bz-layout">
+        <div>
+          <Toolbar placeholder="Buscar por contrato, cliente ou projeto…" q={q} onQ={setQ} />
+          {error ? <div className="empty-state"><p>{error}</p></div> : (
+            <div className="bz-card bz-tablewrap">
+              <table className="bz-table">
+                <thead><tr><th>Nº do Contrato</th><th>Contraparte</th><th>Âmbito</th><th className="r">Valor</th><th>Vigência</th><th>Periodicidade</th><th>Status</th></tr></thead>
+                <tbody>
+                  {!rows ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>
+                    : list.length === 0 ? <tr><td colSpan={7}><EmptyRow>Sem contratos.</EmptyRow></td></tr>
+                    : list.map((c) => (
+                      <tr key={c.id}>
+                        <td><span className="bz-mono">{c.reference}</span></td>
+                        <td>{counterpart(c)?.name || '—'}</td>
+                        <td>{(c.categoriesCovered || []).join(', ') || '—'}</td>
+                        <td className="r"><strong>{formatMoney(c.totalValue, c.currency)}</strong><span className="bz-sub2">usado {formatMoney(c.usedValue, c.currency)}</span></td>
+                        <td>{formatDate(c.validFrom)}<span className="bz-sub2">até {formatDate(c.validUntil)}</span></td>
+                        <td>{BILLING_PERIODICITY[c.billingPeriodicity] || c.billingPeriodicity}</td>
+                        <td><Pill tone={CONTRACT_STATUS[c.status]?.tone}>{CONTRACT_STATUS[c.status]?.label || c.status}</Pill></td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="bz-side">
+          <div className="bz-panel">
+            <h3>Resumo por Status</h3>
+            <div className="bz-panel-row"><span>Ativos</span><strong style={{ color: '#16884f' }}>{kpis.ativos}</strong></div>
+            <div className="bz-panel-row"><span>A Vencer</span><strong style={{ color: '#b9740f' }}>{kpis.aVencer}</strong></div>
+            <div className="bz-panel-row"><span>Vencidos</span><strong style={{ color: '#c0392b' }}>{kpis.vencidos}</strong></div>
+          </div>
+          <div className="bz-panel">
+            <h3>Próximos a Vencer</h3>
+            {(rows || []).filter((c) => c.status === 'ATIVO').sort((a, b) => new Date(a.validUntil) - new Date(b.validUntil)).slice(0, 5).map((c) => (
+              <div className="bz-panel-row" key={c.id}><span className="bz-mono">{c.reference}</span><span className="bz-sub2">{formatDate(c.validUntil)}</span></div>
+            ))}
+          </div>
+        </div>
       </div>
-
-      {expanded && (
-        <ContractCallOffs contractId={expanded} />
-      )}
-    </div>
-  );
-}
-
-function ContractCallOffs({ contractId }) {
-  const [contract, setContract] = useState(null);
-
-  useEffect(() => {
-    api.get(`/api/contracts/${contractId}`).then(setContract).catch(() => {});
-  }, [contractId]);
-
-  if (!contract) return null;
-
-  return (
-    <div className="card" style={{ marginTop: 16 }}>
-      <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}>
-        <strong>Call-offs do contrato {contract.reference}</strong>
-      </div>
-      <DataTable
-        rows={contract.callOffs}
-        rowKey="id"
-        emptyTitle="Sem call-offs ainda"
-        emptyBody="Cada PO emitida ao abrigo deste contrato aparece aqui automaticamente."
-        columns={[
-          { key: 'reference', header: 'PO', render: (r) => <span className="mono">{r.reference}</span> },
-          { key: 'total', header: 'Valor', render: (r) => formatMoney(r.totalAmount, r.currency) },
-          { key: 'status', header: 'Estado', render: (r) => r.status },
-          { key: 'invoice', header: 'Faturação', render: (r) => (r.paidAt ? <Badge tone="success">Faturado</Badge> : <Badge tone="pending">Por faturar</Badge>) },
-        ]}
-      />
     </div>
   );
 }

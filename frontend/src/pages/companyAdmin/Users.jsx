@@ -1,27 +1,18 @@
 // src/pages/companyAdmin/Users.jsx
-// Utilizadores & Perfis. O Company Admin gera links de convite por perfil,
-// partilha-os com a equipa (Comprador, Vendedor, Financeiro) e aceita os
-// cadastros submetidos. O Vendedor só existe em empresas fornecedoras.
+// Usuários & Perfis — o Company Admin convida a equipa por link (Comprador,
+// Vendedor, Financeiro), aceita os cadastros e gere o estado dos utilizadores.
+// Estética do mockup; lógica de convite/ativar/remover preservada.
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
-import Badge from '../../components/Badge';
+import { Crumbs, PageHead, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
+import { Icon } from '../../components/icons';
+import { formatDateTime } from '../../domain';
 
-// Perfis convidáveis por tipo de empresa (espelha o backend). Rótulos no
-// contexto da equipa: FORNECEDOR aparece como "Vendedor".
 const ROLE_OPTIONS = {
-  CLIENTE: [
-    { value: 'COMPRADOR', label: 'Comprador' },
-    { value: 'FINANCEIRO', label: 'Financeiro' },
-  ],
-  FORNECEDOR: [
-    { value: 'COMPRADOR', label: 'Comprador' },
-    { value: 'FORNECEDOR', label: 'Vendedor' },
-    { value: 'FINANCEIRO', label: 'Financeiro' },
-  ],
+  CLIENTE: [{ value: 'COMPRADOR', label: 'Comprador' }, { value: 'FINANCEIRO', label: 'Financeiro' }],
+  FORNECEDOR: [{ value: 'COMPRADOR', label: 'Comprador' }, { value: 'FORNECEDOR', label: 'Vendedor' }, { value: 'FINANCEIRO', label: 'Financeiro' }],
 };
-
 function roleLabel(role, companyType) {
   if (role === 'COMPANY_ADMIN') return 'Company Admin';
   if (role === 'FORNECEDOR') return companyType === 'FORNECEDOR' ? 'Vendedor' : 'Fornecedor';
@@ -29,182 +20,136 @@ function roleLabel(role, companyType) {
   if (role === 'FINANCEIRO') return 'Financeiro';
   return role;
 }
+const ROLE_TONE = { COMPANY_ADMIN: 'danger', COMPRADOR: 'info', FORNECEDOR: 'success', FINANCEIRO: 'pending' };
+const PERFIS = [
+  { icon: 'cart', t: 'Comprador', d: 'Cria pedidos, solicita cotações e acompanha compras.' },
+  { icon: 'suppliers', t: 'Vendedor', d: 'Envia propostas, negocia e acompanha oportunidades.' },
+  { icon: 'payment', t: 'Financeiro', d: 'Gerencia pagamentos, faturas e reconciliações.' },
+  { icon: 'approvals', t: 'Company Admin', d: 'Aprova processos, contratos e gere a equipa.' },
+];
+
+function initials(n = '') { return n.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase(); }
 
 export default function Users() {
   const { user } = useAuth();
   const [company, setCompany] = useState(null);
   const [users, setUsers] = useState(null);
+  const [q, setQ] = useState('');
   const [role, setRole] = useState('COMPRADOR');
-  const [invite, setInvite] = useState(null); // { url, role }
+  const [invite, setInvite] = useState(null);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState('');
   const [busy, setBusy] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [modal, setModal] = useState(false);
 
-  function loadUsers() {
-    api.get('/api/companies/users').then(setUsers).catch((e) => setError(e.message));
-  }
-
+  function loadUsers() { api.get('/api/companies/users').then(setUsers).catch((e) => setError(e.message)); }
   useEffect(() => {
-    if (user.companyId) {
-      api.get(`/api/companies/${user.companyId}`).then(setCompany).catch((e) => setError(e.message));
-    }
+    if (user.companyId) api.get(`/api/companies/${user.companyId}`).then(setCompany).catch(() => {});
     loadUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.companyId]);
 
   const options = company ? ROLE_OPTIONS[company.type] || [] : [];
+  const companyType = company?.type;
+  const flash = (m) => { setToast(m); setTimeout(() => setToast(''), 3500); };
 
   async function generateInvite(e) {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setInvite(null);
-    setCopied(false);
-    setBusy(true);
-    try {
-      const res = await api.post('/api/companies/invites', { role });
-      const url = `${window.location.origin}/convite/${res.token}`;
-      setInvite({ url, role: res.role });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
+    e.preventDefault(); setError(''); setInvite(null); setBusy(true);
+    try { const res = await api.post('/api/companies/invites', { role }); setInvite({ url: `${window.location.origin}/convite/${res.token}`, role: res.role }); }
+    catch (err) { setError(err.message); } finally { setBusy(false); }
   }
+  async function accept(id, name) { try { await api.patch(`/api/companies/users/${id}/activate`); flash(`Cadastro de ${name} aceite.`); loadUsers(); } catch (e) { setError(e.message); } }
+  async function reject(id, name) { try { await api.del(`/api/companies/users/${id}`); flash(`Cadastro de ${name} removido.`); loadUsers(); } catch (e) { setError(e.message); } }
 
-  async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(invite.url);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
-
-  async function accept(id, name) {
-    setError('');
-    setSuccess('');
-    try {
-      await api.patch(`/api/companies/users/${id}/activate`);
-      setSuccess(`Cadastro de ${name} aceite. A conta está ativa.`);
-      loadUsers();
-    } catch (err) {
-      setError(err.message);
-    }
-  }
-
-  async function reject(id, name) {
-    setError('');
-    setSuccess('');
-    try {
-      await api.del(`/api/companies/users/${id}`);
-      setSuccess(`Cadastro de ${name} recusado.`);
-      loadUsers();
-    } catch (err) {
-      setError(err.message);
-    }
-  }
-
-  const companyType = company?.type;
   const pending = (users || []).filter((u) => !u.active);
-  const activeUsers = (users || []).filter((u) => u.active);
+  const list = (users || []).filter((u) => !q || u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <div>
-      <PageHeader
-        title="Utilizadores & Perfis"
-        subtitle="Convide a sua equipa por link (Comprador, Vendedor, Financeiro) e aceite os cadastros."
-      />
+      {toast ? <div className="svc-toast">{toast}</div> : null}
+      <Crumbs trail={['Usuários & Perfis']} />
+      <PageHead title="Usuários & Perfis" subtitle="Gerencie os usuários, perfis e permissões da empresa."
+        actions={<button className="btn btn-accent" onClick={() => { setModal(true); setInvite(null); }}>+ Novo Usuário</button>} />
 
-      <ErrorBanner message={error} />
-      <SuccessBanner message={success} />
+      {error ? <div className="empty-state" style={{ padding: 14 }}><p>{error}</p></div> : null}
 
-      <div className="card card-pad" style={{ maxWidth: 560, marginBottom: 18 }}>
-        <h3 style={{ marginTop: 0 }}>Convidar utilizador</h3>
-        <p className="helptext" style={{ marginTop: 0 }}>
-          Escolha o perfil, gere o link e partilhe-o com a pessoa. Ela cria a própria conta e o
-          cadastro fica pendente da sua aprovação.
-        </p>
-        <form onSubmit={generateInvite} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div className="field" style={{ margin: 0, minWidth: 200 }}>
-            <label>Perfil a convidar</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
-              {options.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+      {pending.length > 0 && (
+        <div className="bz-card bz-tablewrap" style={{ marginBottom: 16 }}>
+          <div className="ca-panel-title">Cadastros pendentes ({pending.length})</div>
+          <table className="bz-table">
+            <tbody>
+              {pending.map((u) => (
+                <tr key={u.id}>
+                  <td><div className="bz-supplier"><span className="bz-supplier-logo">{initials(u.name)}</span><div><strong>{u.name}</strong><span className="bz-supplier-loc">{u.email}</span></div></div></td>
+                  <td><Pill tone={ROLE_TONE[u.role]}>{roleLabel(u.role, companyType)}</Pill></td>
+                  <td className="r">
+                    <div className="bz-actions" style={{ justifyContent: 'flex-end' }}>
+                      <button className="btn btn-accent btn-sm" onClick={() => accept(u.id, u.name)}>Aceitar</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => reject(u.id, u.name)}>Recusar</button>
+                    </div>
+                  </td>
+                </tr>
               ))}
-            </select>
-          </div>
-          <button className="btn btn-accent" disabled={busy || !options.length} type="submit">
-            {busy ? 'A gerar…' : 'Gerar link de convite'}
-          </button>
-        </form>
+            </tbody>
+          </table>
+        </div>
+      )}
 
-        {invite ? (
-          <div className="card-pad" style={{ marginTop: 14, background: 'var(--surface-2, #f6f7f9)', borderRadius: 10 }}>
-            <div style={{ fontSize: 12.5, color: 'var(--ink-600)', marginBottom: 6 }}>
-              Link de convite ({roleLabel(invite.role, companyType)}) — válido 7 dias:
-            </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <input readOnly value={invite.url} onFocus={(e) => e.target.select()} style={{ flex: 1, minWidth: 220 }} />
-              <button type="button" className="btn btn-ghost" onClick={copyLink}>
-                {copied ? '✓ Copiado' : 'Copiar'}
-              </button>
-            </div>
-          </div>
-        ) : null}
+      <Toolbar placeholder="Buscar usuário…" q={q} onQ={setQ} />
+      <div className="bz-card bz-tablewrap">
+        <table className="bz-table">
+          <thead><tr><th>Usuário</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Registado</th><th></th></tr></thead>
+          <tbody>
+            {!users ? <tr><td colSpan={6}><EmptyRow>A carregar…</EmptyRow></td></tr>
+              : list.length === 0 ? <tr><td colSpan={6}><EmptyRow>Sem utilizadores.</EmptyRow></td></tr>
+              : list.map((u) => (
+                <tr key={u.id}>
+                  <td><div className="bz-supplier"><span className="bz-supplier-logo">{initials(u.name)}</span><strong>{u.name}</strong></div></td>
+                  <td className="bz-muted">{u.email}</td>
+                  <td><Pill tone={ROLE_TONE[u.role]}>{roleLabel(u.role, companyType)}</Pill></td>
+                  <td><Pill tone={u.active ? 'success' : 'pending'}>{u.active ? 'Ativo' : 'Pendente'}</Pill></td>
+                  <td className="bz-muted">{u.createdAt ? formatDateTime(u.createdAt) : '—'}</td>
+                  <td>
+                    <div className="bz-actions">
+                      {u.role !== 'COMPANY_ADMIN' ? <button className="bz-iconbtn" title="Remover" onClick={() => reject(u.id, u.name)}><Icon name="approvals" size={14} /></button> : null}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
       </div>
 
-      {!users ? (
-        <Loading />
-      ) : (
-        <>
-          {pending.length > 0 && (
-            <div className="card" style={{ marginBottom: 18 }}>
-              <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}>
-                <strong>Cadastros pendentes ({pending.length})</strong>
-              </div>
-              {pending.map((u) => (
-                <div key={u.id} className="card-pad" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', gap: 10 }}>
-                  <div>
-                    <strong>{u.name}</strong>
-                    <div style={{ fontSize: 12.5, color: 'var(--ink-600)', marginTop: 2 }}>
-                      {u.email} · {roleLabel(u.role, companyType)}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn-accent" onClick={() => accept(u.id, u.name)}>Aceitar</button>
-                    <button className="btn btn-danger" onClick={() => reject(u.id, u.name)}>Recusar</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="card">
-            <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}>
-              <strong>Equipa ativa ({activeUsers.length})</strong>
-            </div>
-            {activeUsers.length === 0 ? (
-              <div className="card-pad"><p className="helptext" style={{ margin: 0 }}>Ainda sem utilizadores ativos.</p></div>
-            ) : (
-              activeUsers.map((u) => (
-                <div key={u.id} className="card-pad" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', gap: 10 }}>
-                  <div>
-                    <strong>{u.name}</strong>
-                    <div style={{ fontSize: 12.5, color: 'var(--ink-600)', marginTop: 2 }}>{u.email}</div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <Badge tone="info">{roleLabel(u.role, companyType)}</Badge>
-                    {u.role !== 'COMPANY_ADMIN' && (
-                      <button className="btn btn-ghost" onClick={() => reject(u.id, u.name)}>Remover</button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
+      <h3 className="pf-h2">Perfis e Permissões</h3>
+      <p className="bz-sub" style={{ marginTop: -6 }}>Defina os níveis de acesso e permissões que cada perfil terá na plataforma.</p>
+      <div className="hs-quick">
+        {PERFIS.map((p) => (
+          <div className="hs-quickcard" key={p.t}>
+            <span className="hs-quick-ico"><Icon name={p.icon} size={18} /></span>
+            <div><strong>{p.t}</strong><span className="bz-sub2">{p.d}</span></div>
           </div>
-        </>
+        ))}
+      </div>
+
+      {modal && (
+        <div className="av-modal" onClick={() => setModal(false)}>
+          <form className="hs-form" onClick={(e) => e.stopPropagation()} onSubmit={generateInvite}>
+            <h3>Novo Usuário — convite por link</h3>
+            <p className="bz-sub">Escolha o perfil, gere o link e partilhe-o. A pessoa cria a conta e o cadastro fica pendente da sua aprovação.</p>
+            <label className="field"><span>Perfil a convidar</span>
+              <select value={role} onChange={(e) => setRole(e.target.value)}>{options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
+            </label>
+            {invite ? (
+              <div className="ca-invite">
+                <span className="bz-sub2">Link de convite ({roleLabel(invite.role, companyType)}) — válido 7 dias:</span>
+                <div className="ca-invite-row"><input readOnly value={invite.url} onFocus={(e) => e.target.select()} /><button type="button" className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard?.writeText(invite.url); flash('Link copiado.'); }}>Copiar</button></div>
+              </div>
+            ) : null}
+            <div className="hs-form-actions">
+              <button type="button" className="btn btn-ghost" onClick={() => setModal(false)}>Fechar</button>
+              <button type="submit" className="btn btn-accent" disabled={busy || !options.length}>{busy ? 'A gerar…' : 'Gerar link'}</button>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );

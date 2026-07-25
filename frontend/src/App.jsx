@@ -39,6 +39,10 @@ import Approvals from './pages/companyAdmin/Approvals';
 import Users from './pages/companyAdmin/Users';
 import CompanyProfile from './pages/companyAdmin/CompanyProfile';
 import Contracts from './pages/companyAdmin/Contracts';
+import Organization from './pages/companyAdmin/Organization';
+import CompanyReports from './pages/companyAdmin/Reports';
+import CompanyActivities from './pages/companyAdmin/Activities';
+import CompanySettings from './pages/companyAdmin/Settings';
 
 import FornecedorHome from './pages/fornecedor/Home';
 import CatalogManage from './pages/fornecedor/CatalogManage';
@@ -129,8 +133,12 @@ export default function App() {
             <Route path="/empresa/aprovacoes" element={<Approvals />} />
             <Route path="/empresa/aprovacoes/:id" element={<OrderDetail />} />
             <Route path="/empresa/utilizadores" element={<Users />} />
+            <Route path="/empresa/organizacao" element={<Organization />} />
             <Route path="/empresa/perfil" element={<CompanyProfile />} />
             <Route path="/empresa/contratos" element={<Contracts />} />
+            <Route path="/empresa/relatorios" element={<CompanyReports />} />
+            <Route path="/empresa/atividades" element={<CompanyActivities />} />
+            <Route path="/empresa/configuracoes" element={<CompanySettings />} />
           </Route>
 
           {/* Fornecedor */}

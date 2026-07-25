@@ -109,18 +109,16 @@ const COMPRADOR = [
   ...COMMON_TAIL,
 ];
 
-// Company Admin — aprova POs, gere equipa e a empresa.
+// Company Admin — aprova POs, gere equipa, a organização e os contratos.
 const COMPANY_ADMIN = [
   { label: 'Dashboard', icon: 'home', to: '/empresa', end: true },
+  { label: 'Usuários & Perfis', icon: 'users', to: '/empresa/utilizadores' },
+  { label: 'Organização', icon: 'building', to: '/empresa/organizacao' },
   { label: 'Aprovações de PO', icon: 'approvals', to: '/empresa/aprovacoes' },
-  { label: 'Utilizadores & Perfis', icon: 'users', to: '/empresa/utilizadores' },
-  {
-    label: 'Empresa', icon: 'building', children: [
-      { label: 'Perfil da Empresa', to: '/empresa/perfil' },
-      { label: 'Contratos', to: '/empresa/contratos' },
-    ],
-  },
-  CONFIG,
+  { label: 'Contratos', icon: 'contract', to: '/empresa/contratos' },
+  { label: 'Relatórios', icon: 'report', to: '/empresa/relatorios' },
+  { label: 'Atividades', icon: 'activities', to: '/empresa/atividades' },
+  { label: 'Configurações', icon: 'settings', to: '/empresa/configuracoes' },
   ...COMMON_TAIL,
 ];
 
