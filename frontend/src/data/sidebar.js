@@ -95,10 +95,14 @@ const COMPRADOR = [
   },
   { label: 'Minha Cesta', icon: 'cart', to: '/comprador/cesta', badge: 'cart' },
   { label: 'Checkout', icon: 'checkout', to: '/comprador/checkout' },
-  { label: 'Ordens de Compra', icon: 'orders', to: '/comprador/ordens' },
+  {
+    label: 'Ordens de Compra', icon: 'orders', children: [
+      { label: 'Todas as Ordens', to: '/comprador/ordens' },
+      { label: 'Acompanhar Entrega', to: '/comprador/entregas' },
+      { label: 'Recepção', to: '/comprador/recepcao' },
+    ],
+  },
   { label: 'Pagamento', icon: 'payment', to: '/comprador/pagamentos' },
-  { label: 'Acompanhar Entrega', icon: 'truck', to: '/comprador/entregas' },
-  { label: 'Recepção', icon: 'reception', to: '/comprador/recepcao' },
   { label: 'Fornecedores', icon: 'suppliers', to: '/comprador/fornecedores' },
   { label: 'Atividades', icon: 'activities', to: '/comprador/atividades' },
   { label: 'Perfil', icon: 'profile', to: '/comprador/perfil' },
