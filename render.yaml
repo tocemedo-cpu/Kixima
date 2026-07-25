@@ -12,7 +12,7 @@
 #   4. Deploy. O build compila o frontend e `prisma db push` cria as tabelas.
 #
 # Para popular dados de exemplo uma vez (opcional), na Shell do serviço:
-#   cd backend && npm run seed
+#   cd backend && npm run seed:demo
 services:
   - type: web
     name: kixima

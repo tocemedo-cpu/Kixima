@@ -50,9 +50,9 @@ Quando ficar "Live", abre o URL do serviço (algo como `https://kixima.onrender.
 ### 5. (Opcional) Dados de exemplo
 No serviço → **Shell**:
 ```bash
-cd backend && npm run seed
+cd backend && npm run seed:demo
 ```
-Isto cria as 5 personas de demonstração (password `Kixima@123`) e um catálogo base.
+Isto cria as 5 personas de demonstração + catálogo, ordens, faturas e documentos (password `Kixima@123`) e um catálogo base.
 
 ## Variáveis de ambiente (já no `render.yaml`, exceto o segredo)
 | Variável | Valor | Notas |
