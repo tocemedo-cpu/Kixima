@@ -29,6 +29,7 @@ const buyerRoutes = require('./routes/buyerRoutes');
 const userRoutes = require('./routes/userRoutes');
 const supportRoutes = require('./routes/supportRoutes');
 const companyAdminRoutes = require('./routes/companyAdminRoutes');
+const financeiroRoutes = require('./routes/financeiroRoutes');
 
 const app = express();
 
@@ -65,6 +66,7 @@ app.use('/api/buyer', buyerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/company-admin', companyAdminRoutes);
+app.use('/api/financeiro', financeiroRoutes);
 
 // Servir o frontend compilado (deploy de serviço único). Define FRONTEND_DIST
 // com o caminho para frontend/dist; a app serve os ficheiros estáticos e faz

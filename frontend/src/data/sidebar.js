@@ -124,11 +124,10 @@ const COMPANY_ADMIN = [
 
 // Financeiro — paga faturas dentro do SLA e acompanha o histórico.
 const FINANCEIRO = [
-  { label: 'Dashboard', icon: 'home', to: '/financeiro', end: true },
-  { label: 'Faturas Pendentes', icon: 'invoice', to: '/financeiro/faturas' },
-  { label: 'Histórico de Pagamentos', icon: 'history', to: '/financeiro/historico' },
+  { label: 'Centro Financeiro', icon: 'wallet', to: '/financeiro', end: true },
+  { label: 'Faturas', icon: 'invoice', to: '/financeiro/faturas' },
+  { label: 'Pagamentos', icon: 'payment', to: '/financeiro/historico' },
   { label: 'Perfil da Empresa', icon: 'building', to: '/financeiro/perfil' },
-  CONFIG,
   ...COMMON_TAIL,
 ];
 
