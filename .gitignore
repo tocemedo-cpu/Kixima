@@ -4,6 +4,10 @@ node_modules/
 # Build
 dist/
 build/
+# Exceção: o frontend compilado é versionado para o deploy de serviço único
+# funcionar mesmo quando o passo de build não compila o frontend.
+!frontend/dist/
+!frontend/dist/**
 
 # Ambiente / segredos
 .env
