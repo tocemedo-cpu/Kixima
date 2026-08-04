@@ -4,11 +4,11 @@ import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { ROLE_HOME } from '../../domain';
 import AuthHero from '../../components/AuthHero';
-import { useI18n, LANGS } from '../../i18n';
+import { useI18n } from '../../i18n';
 
 export default function LoginPage() {
   const { user, login } = useAuth();
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,11 +37,6 @@ export default function LoginPage() {
 
       <div className="login-panel">
         <div className="login-card">
-          <div className="login-langs">
-            {LANGS.map((l) => (
-              <button key={l.code} type="button" className={`login-lang${l.code === lang ? ' on' : ''}`} onClick={() => setLang(l.code)}>{l.flag} {l.label}</button>
-            ))}
-          </div>
           <h2>{t('Entrar')}</h2>
           <p>{t('Aceda com a sua conta KIXIMA.')}</p>
 

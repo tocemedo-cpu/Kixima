@@ -5,6 +5,7 @@
 // código. Sem Base64, sem imagens remotas, sem placeholders.
 //   Fundo:    /images/login-background.jpg
 //   Logótipo: /images/kixima-logo.png
+import Logo from './Logo';
 import { Icon } from './icons';
 import { useI18n } from '../i18n';
 
@@ -21,7 +22,7 @@ export default function AuthHero() {
   return (
     <div className="login-hero auth-hero">
       <div className="auth-hero-top">
-        <img className="auth-hero-logo" src="/images/kixima-logo.png" alt="KIXIMA" />
+        <Logo size={30} mark={64} subtitle light />
       </div>
 
       <div className="auth-hero-mid">

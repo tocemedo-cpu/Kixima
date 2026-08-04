@@ -3,7 +3,7 @@
 // em português; `t('Ordens de Compra')` devolve a tradução no idioma ativo, ou
 // o texto original se ainda não estiver traduzido (fallback seguro). O idioma
 // escolhido persiste em localStorage.
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 import { EN2, FR2 } from './content';
 
 export const LANGS = [
@@ -70,22 +70,21 @@ const STORAGE_KEY = 'kixima_lang';
 const I18nContext = createContext(null);
 
 export function I18nProvider({ children }) {
-  const [lang, setLangState] = useState(() => {
-    try { return localStorage.getItem(STORAGE_KEY) || 'pt'; } catch { return 'pt'; }
-  });
+  // Plataforma apenas em Português — sem seletor de idioma. O t() mantém-se para
+  // não alterar os componentes, devolvendo sempre o texto em PT (a própria chave).
+  const lang = 'pt';
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* ignora */ }
     document.documentElement.lang = lang;
-  }, [lang]);
+  }, []);
 
   const t = useCallback((key, vars) => {
-    let s = (lang !== 'pt' && DICT[lang] && DICT[lang][key]) || key;
+    let s = key;
     if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, v);
     return s;
-  }, [lang]);
+  }, []);
 
-  const value = useMemo(() => ({ lang, setLang: setLangState, t }), [lang, t]);
+  const value = useMemo(() => ({ lang, setLang: () => {}, t }), [t]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

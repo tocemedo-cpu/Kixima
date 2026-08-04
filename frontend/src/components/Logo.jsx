@@ -47,7 +47,7 @@ export default function Logo({ size = 22, subtitle = false, light = false, mark 
       <span className="brand-mark" style={{ width: box, height: box }} aria-hidden="true">
         {imgOk ? (
           <img
-            src="/kixima-logo.png"
+            src="/images/kixima-logo.png"
             alt="KIXIMA"
             style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
             onError={() => setImgOk(false)}
