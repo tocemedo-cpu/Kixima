@@ -8,10 +8,12 @@ import { useAuth } from '../../auth/AuthContext';
 import { Crumbs, PageHead, KpiRow, Pill } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import AvatarUploader from '../../components/AvatarUploader';
+import { useI18n } from '../../i18n';
 import { PO_STATUS, ROLE_LABELS, formatMoney, formatDateTime } from '../../domain';
 
 export default function Profile() {
   const { updateUser } = useAuth();
+  const { t } = useI18n();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
@@ -36,7 +38,7 @@ export default function Profile() {
           <AvatarUploader name={user.name} avatarUrl={user.avatarUrl} onChange={setAvatar} size={68} />
           <div>
             <div className="pf-name">{user.name} <Pill tone="success">Ativo</Pill></div>
-            <div className="pf-role">{ROLE_LABELS[user.role] || user.role}</div>
+            <div className="pf-role">{t(ROLE_LABELS[user.role] || user.role)}</div>
             <div className="pf-company">{company?.name || 'Administração KIXIMA'}</div>
           </div>
         </div>

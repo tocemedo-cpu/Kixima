@@ -4,6 +4,7 @@
 // o texto original se ainda não estiver traduzido (fallback seguro). O idioma
 // escolhido persiste em localStorage.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { EN2, FR2 } from './content';
 
 export const LANGS = [
   { code: 'pt', label: 'Português', flag: '🇵🇹' },
@@ -63,7 +64,7 @@ const FR = {
   'Registe-a aqui': 'Inscrivez-la ici',
 };
 
-const DICT = { en: EN, fr: FR };
+const DICT = { en: { ...EN2, ...EN }, fr: { ...FR2, ...FR } };
 const STORAGE_KEY = 'kixima_lang';
 
 const I18nContext = createContext(null);
