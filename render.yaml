@@ -1,7 +1,8 @@
-# KIXIMA — Blueprint de deploy (Render) — serviço único.
+# KIXIMA — Blueprint de deploy (Render) — serviço único via Docker.
 # O backend serve a API em /api e o frontend compilado (SPA) na mesma origem,
-# por isso não há CORS nem proxy. A base de dados é o teu Supabase (define
-# DATABASE_URL no dashboard do serviço — é um segredo, não vai no repositório).
+# por isso não há CORS nem proxy. Usa o Dockerfile da RAIZ, que compila o
+# frontend e o backend na mesma imagem (o frontend/dist entra no contentor).
+# A base de dados é o teu Supabase (define DATABASE_URL no dashboard — é segredo).
 #
 # Como usar:
 #   1. Sobe este repositório para o GitHub.
@@ -9,28 +10,20 @@
 #   3. No serviço criado, em Environment, define DATABASE_URL com a connection
 #      string do POOLER do Supabase (Session mode, porta 5432, ?sslmode=require).
 #      JWT_SECRET é gerado automaticamente.
-#   4. Deploy. O build compila o frontend e `prisma db push` cria as tabelas.
+#   4. Deploy. A imagem Docker compila o frontend e `prisma db push` cria as tabelas.
 #
 # Para popular dados de exemplo uma vez (opcional), na Shell do serviço:
-#   cd backend && npm run seed:demo
+#   npm run seed:demo   (o workdir da imagem é /app = backend)
 services:
   - type: web
     name: kixima
-    runtime: node
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: free
     region: frankfurt
-    buildCommand: >-
-      cd frontend && npm ci && npm run build &&
-      cd ../backend && npm ci && npx prisma generate
-    startCommand: >-
-      cd backend && npx prisma db push --skip-generate &&
-      node src/server.js
     healthCheckPath: /health
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: FRONTEND_DIST
-        value: ../frontend/dist
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN

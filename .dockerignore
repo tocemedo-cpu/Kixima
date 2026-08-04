@@ -1,0 +1,11 @@
+# Não enviar para o contexto de build do Docker (mais rápido e evita conflitos).
+**/node_modules
+**/.git
+**/dist
+**/build
+**/coverage
+**/*.log
+**/.env
+**/.env.*
+mockups
+fin_mockups
