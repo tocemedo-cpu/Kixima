@@ -6,6 +6,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatDateTime } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const TABS = [
   { key: 'TODOS', label: 'Todas' }, { key: 'CONCLUIDA', label: 'Concluídas' },
@@ -17,6 +18,7 @@ const ST = {
 };
 
 export default function Activities() {
+  const { t } = useI18n();
   const [tab, setTab] = useState('TODOS');
   const [q, setQ] = useState('');
   const [data, setData] = useState(null);
@@ -46,7 +48,7 @@ export default function Activities() {
       {error ? <div className="empty-state"><p>{error}</p></div> : (
         <div className="bz-card bz-tablewrap">
           <table className="bz-table">
-            <thead><tr><th>Atividade</th><th>Tipo</th><th>Módulo</th><th>Relacionado a</th><th>Responsável</th><th>Data/Hora</th><th>Status</th></tr></thead>
+            <thead><tr><th>{t('Atividade')}</th><th>{t('Tipo')}</th><th>{t('Módulo')}</th><th>{t('Relacionado a')}</th><th>{t('Responsável')}</th><th>{t('Data/Hora')}</th><th>{t('Status')}</th></tr></thead>
             <tbody>
               {!data ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>
                 : items.length === 0 ? <tr><td colSpan={7}><EmptyRow>Sem atividades.</EmptyRow></td></tr>

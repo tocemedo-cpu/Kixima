@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
+import { useI18n } from '../../i18n';
 
 const TOGGLES = [
   { key: 'aprovacaoObrigatoria', t: 'Modo de Aprovação Obrigatória', d: 'Exigir aprovação para POs antes do envio.' },
@@ -15,6 +16,7 @@ const TOGGLES = [
 ];
 
 export default function Settings() {
+  const { t } = useI18n();
   const [s, setS] = useState(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState('');
@@ -29,7 +31,7 @@ export default function Settings() {
     catch (e) { setError(e.message); } finally { setBusy(false); }
   }
 
-  if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
+  if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
   if (!s) return <div className="bz-empty">A carregar…</div>;
 
   return (
@@ -39,7 +41,7 @@ export default function Settings() {
       <PageHead title="Configurações" subtitle="Personalize e configure a plataforma de acordo com as necessidades da sua empresa."
         actions={<button className="btn btn-accent" onClick={save} disabled={busy}>{busy ? 'A guardar…' : 'Salvar Alterações'}</button>} />
 
-      <h3 className="pf-h2">Preferências do Sistema</h3>
+      <h3 className="pf-h2">{t('Preferências do Sistema')}</h3>
       <div className="set-grid">
         {TOGGLES.map((x) => (
           <div className="set-row" key={x.key}>

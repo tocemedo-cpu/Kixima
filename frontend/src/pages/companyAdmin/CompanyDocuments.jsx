@@ -7,6 +7,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Pill, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const DOC_LABELS = {
   CERTIDAO_COMERCIAL: 'Certidão Comercial',
@@ -15,6 +16,7 @@ const DOC_LABELS = {
 };
 
 export default function CompanyDocuments() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [company, setCompany] = useState(null);
   const [error, setError] = useState('');
@@ -23,7 +25,7 @@ export default function CompanyDocuments() {
     if (user.companyId) api.get(`/api/companies/${user.companyId}`).then(setCompany).catch((e) => setError(e.message));
   }, [user.companyId]);
 
-  if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
+  if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
   if (!company) return <div className="bz-empty">A carregar…</div>;
 
   const docs = company.documents || [];
@@ -43,7 +45,7 @@ export default function CompanyDocuments() {
       <div className="bz-card bz-tablewrap" style={{ marginBottom: 18 }}>
         <div className="ca-panel-title">Documentos de Credenciamento</div>
         <table className="bz-table">
-          <thead><tr><th>Tipo</th><th>Ficheiro</th><th>Submetido em</th><th></th></tr></thead>
+          <thead><tr><th>{t('Tipo')}</th><th>{t('Ficheiro')}</th><th>{t('Submetido em')}</th><th></th></tr></thead>
           <tbody>
             {docs.length === 0 ? <tr><td colSpan={4}><EmptyRow>Sem documentos submetidos.</EmptyRow></td></tr>
               : docs.map((d) => (
@@ -61,7 +63,7 @@ export default function CompanyDocuments() {
       <div className="bz-card bz-tablewrap">
         <div className="ca-panel-title">Apólices de Seguro</div>
         <table className="bz-table">
-          <thead><tr><th>Nº da Apólice</th><th>Seguradora</th><th>Validade</th><th>Estado</th></tr></thead>
+          <thead><tr><th>{t('Nº da Apólice')}</th><th>{t('Seguradora')}</th><th>{t('Validade')}</th><th>{t('Estado')}</th></tr></thead>
           <tbody>
             {policies.length === 0 ? <tr><td colSpan={4}><EmptyRow>Sem apólices registadas.</EmptyRow></td></tr>
               : policies.map((p) => (

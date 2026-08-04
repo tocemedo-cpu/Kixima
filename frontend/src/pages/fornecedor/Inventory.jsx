@@ -7,11 +7,13 @@ import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner, StatCard } from '../../components/Common';
 import Badge from '../../components/Badge';
+import { useI18n } from '../../i18n';
 
 const AVAILABILITY = ['Em stock', 'Sob encomenda', 'Esgotado'];
 const isLow = (p) => p.stockQuantity != null && p.minStock != null && p.stockQuantity <= p.minStock;
 
 export default function Inventory() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [products, setProducts] = useState(null);
   const [error, setError] = useState('');
@@ -75,7 +77,7 @@ export default function Inventory() {
 
       {products.length === 0 ? (
         <div className="empty-state">
-          <h3>Sem produtos</h3>
+          <h3>{t('Sem produtos')}</h3>
           <p>Publique itens no catálogo para gerir o respetivo stock.</p>
         </div>
       ) : (
@@ -83,7 +85,7 @@ export default function Inventory() {
           <table>
             <thead>
               <tr>
-                <th>Produto</th><th>Armazém</th><th>Stock</th><th>Mínimo</th><th>Disponibilidade</th><th></th>
+                <th>{t('Produto')}</th><th>{t('Armazém')}</th><th>{t('Stock')}</th><th>{t('Mínimo')}</th><th>{t('Disponibilidade')}</th><th></th>
               </tr>
             </thead>
             <tbody>

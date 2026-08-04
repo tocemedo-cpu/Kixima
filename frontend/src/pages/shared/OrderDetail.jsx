@@ -7,6 +7,7 @@ import { Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
 import Badge from '../../components/Badge';
 import PaymentSlaRing from '../../components/PaymentSlaRing';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const BACK_BY_ROLE = {
   COMPRADOR: '/comprador/ordens',
@@ -17,6 +18,7 @@ const BACK_BY_ROLE = {
 };
 
 export default function OrderDetail() {
+  const { t } = useI18n();
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -101,7 +103,7 @@ export default function OrderDetail() {
           <strong style={{ fontSize: 13.5 }}>Itens</strong>
           <table style={{ marginTop: 10 }}>
             <thead>
-              <tr><th>Produto</th><th>Qtd.</th><th>Preço unit.</th><th>Total</th></tr>
+              <tr><th>{t('Produto')}</th><th>{t('Qtd.')}</th><th>{t('Preço unit.')}</th><th>{t('Total')}</th></tr>
             </thead>
             <tbody>
               {po.items.map((item) => (

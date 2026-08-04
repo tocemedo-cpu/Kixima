@@ -8,6 +8,7 @@ import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { formatDate, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const STATUS = {
   ABERTA: { label: 'Aberta', tone: 'pending' },
@@ -16,6 +17,7 @@ const STATUS = {
 };
 
 export default function SupplierQuotes() {
+  const { t } = useI18n();
   const { pathname } = useLocation();
   const isInbox = pathname.endsWith('/solicitacoes');
   const [quotes, setQuotes] = useState(null);
@@ -40,7 +42,7 @@ export default function SupplierQuotes() {
       <SuccessBanner message={success} />
 
       {list.length === 0 ? (
-        <div className="empty-state"><h3>Nada por aqui</h3><p>{isInbox ? 'Sem solicitações por responder.' : 'Ainda não respondeu a cotações.'}</p></div>
+        <div className="empty-state"><h3>{t('Nada por aqui')}</h3><p>{isInbox ? 'Sem solicitações por responder.' : 'Ainda não respondeu a cotações.'}</p></div>
       ) : (
         list.map((q) => (
           <QuoteCard key={q.id} quote={q} respondable={isInbox} onDone={(msg) => { setSuccess(msg); load(); }} onError={setError} />

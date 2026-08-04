@@ -6,13 +6,15 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, EmptyRow, Pill } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function Reports() {
+  const { t } = useI18n();
   const [d, setD] = useState(null);
   const [error, setError] = useState('');
   useEffect(() => { api.get('/api/company-admin/reports').then(setD).catch((e) => setError(e.message)); }, []);
 
-  if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
+  if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
   if (!d) return <div className="bz-empty">A carregar…</div>;
   const max = Math.max(1, ...d.series.map((s) => Math.max(s.receitas, s.despesas)));
 
@@ -30,7 +32,7 @@ export default function Reports() {
 
       <div className="bz-layout">
         <div className="bz-panel">
-          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>Visão Geral de Indicadores</h3><span className="bz-muted">Últimos 6 meses</span></div>
+          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>{t('Visão Geral de Indicadores')}</h3><span className="bz-muted">Últimos 6 meses</span></div>
           <div className="rp-legend"><span><i style={{ background: '#16a066' }} /> Receitas</span><span><i style={{ background: '#d94f4f' }} /> Despesas</span></div>
           <div className="ca-bars">
             {d.series.map((s) => (
@@ -47,7 +49,7 @@ export default function Reports() {
 
         <div className="bz-side">
           <div className="bz-panel">
-            <h3>Relatórios Disponíveis</h3>
+            <h3>{t('Relatórios Disponíveis')}</h3>
             {d.catalog.map((r) => (
               <div className="hs-ticket" key={r.key}>
                 <div><strong>{r.name}</strong><span className="bz-sub2">{r.desc}</span></div>

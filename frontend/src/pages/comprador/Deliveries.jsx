@@ -7,6 +7,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const TABS = [
   { key: 'TODAS', label: 'Todas' }, { key: 'EM_TRANSITO', label: 'Em Trânsito' },
@@ -17,6 +18,7 @@ const STAGE_TONE = { EM_TRANSITO: 'info', EM_PREPARACAO: 'pending', ENTREGUE: 's
 const BAR_COLOR = { EM_TRANSITO: '#2f6fd6', EM_PREPARACAO: '#d98a1f', ENTREGUE: '#16a066', CANCELADA: '#d94f4f' };
 
 export default function Deliveries() {
+  const { t } = useI18n();
   const nav = useNavigate();
   const [tab, setTab] = useState('TODAS');
   const [q, setQ] = useState('');
@@ -49,8 +51,8 @@ export default function Deliveries() {
         <div className="bz-card bz-tablewrap">
           <table className="bz-table">
             <thead><tr>
-              <th>Nº da PO</th><th>Fornecedor</th><th>Data de Emissão</th><th>Status</th>
-              <th>Localização</th><th>Progresso</th><th></th>
+              <th>{t('Nº da PO')}</th><th>{t('Fornecedor')}</th><th>{t('Data de Emissão')}</th><th>{t('Status')}</th>
+              <th>{t('Localização')}</th><th>{t('Progresso')}</th><th></th>
             </tr></thead>
             <tbody>
               {!data ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>

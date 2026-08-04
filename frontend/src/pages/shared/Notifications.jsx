@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import { formatDateTime } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function Notifications() {
+  const { t } = useI18n();
   const [notifications, setNotifications] = useState(null);
   const [error, setError] = useState('');
 
@@ -32,7 +34,7 @@ export default function Notifications() {
 
       {notifications.length === 0 ? (
         <div className="empty-state">
-          <h3>Sem notificações por agora</h3>
+          <h3>{t('Sem notificações por agora')}</h3>
           <p>Assim que houver algo relevante para si, aparece aqui.</p>
         </div>
       ) : (

@@ -7,6 +7,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const TABS = [
   { key: 'TODOS', label: 'Todos' }, { key: 'A_RECEBER', label: 'A Receber' },
@@ -19,6 +20,7 @@ const ST = {
 };
 
 export default function Receptions() {
+  const { t } = useI18n();
   const nav = useNavigate();
   const [tab, setTab] = useState('TODOS');
   const [q, setQ] = useState('');
@@ -51,8 +53,8 @@ export default function Receptions() {
         <div className="bz-card bz-tablewrap">
           <table className="bz-table">
             <thead><tr>
-              <th>Nº da PO</th><th>Fornecedor</th><th>Item / Descrição</th><th>Qtd.</th>
-              <th>Data de Recebimento</th><th>Status</th><th></th>
+              <th>{t('Nº da PO')}</th><th>{t('Fornecedor')}</th><th>{t('Item / Descrição')}</th><th>{t('Qtd.')}</th>
+              <th>{t('Data de Recebimento')}</th><th>{t('Status')}</th><th></th>
             </tr></thead>
             <tbody>
               {!data ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>

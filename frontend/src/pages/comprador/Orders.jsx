@@ -7,6 +7,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { PO_STATUS, formatMoney, formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const TABS = [
   { key: '', label: 'Todas as Ordens' }, { key: 'ANDAMENTO', label: 'Em Andamento' },
@@ -14,6 +15,7 @@ const TABS = [
 ];
 
 export default function Orders() {
+  const { t } = useI18n();
   const nav = useNavigate();
   const [tab, setTab] = useState('');
   const [q, setQ] = useState('');
@@ -47,8 +49,8 @@ export default function Orders() {
         <div className="bz-card bz-tablewrap">
           <table className="bz-table">
             <thead><tr>
-              <th>Nº da PO</th><th>Fornecedor</th><th>Data de Emissão</th><th>Entrega Prevista</th>
-              <th>Itens</th><th className="r">Valor Total</th><th>Estado</th><th></th>
+              <th>{t('Nº da PO')}</th><th>{t('Fornecedor')}</th><th>{t('Data de Emissão')}</th><th>{t('Entrega Prevista')}</th>
+              <th>{t('Itens')}</th><th className="r">{t('Valor Total')}</th><th>{t('Estado')}</th><th></th>
             </tr></thead>
             <tbody>
               {!data ? <tr><td colSpan={8}><EmptyRow>A carregar…</EmptyRow></td></tr>

@@ -7,15 +7,17 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Pill } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { INVOICE_STATUS, formatMoney, formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function FinanceiroHome() {
+  const { t } = useI18n();
   const nav = useNavigate();
   const [d, setD] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => { api.get('/api/financeiro/overview').then(setD).catch((e) => setError(e.message)); }, []);
 
-  if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
+  if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
   if (!d) return <div className="bz-empty">A carregar…</div>;
   const max = Math.max(1, ...d.series.map((s) => Math.max(s.faturas, s.pagamentos)));
 
@@ -33,7 +35,7 @@ export default function FinanceiroHome() {
 
       <div className="bz-layout">
         <div className="bz-panel">
-          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>Visão Geral Financeira</h3><span className="bz-muted">Últimos 6 meses</span></div>
+          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>{t('Visão Geral Financeira')}</h3><span className="bz-muted">Últimos 6 meses</span></div>
           <div className="rp-legend"><span><i style={{ background: '#2f6fd6' }} /> Faturas</span><span><i style={{ background: '#16a066' }} /> Pagamentos</span></div>
           <div className="ca-bars">
             {d.series.map((s) => (
@@ -48,7 +50,7 @@ export default function FinanceiroHome() {
           </div>
         </div>
         <div className="bz-panel">
-          <div className="bz-head" style={{ marginBottom: 6 }}><h3 style={{ margin: 0 }}>Faturas a Pagar</h3><a className="pf-link" href="/financeiro/faturas">Ver todas</a></div>
+          <div className="bz-head" style={{ marginBottom: 6 }}><h3 style={{ margin: 0 }}>{t('Faturas a Pagar')}</h3><a className="pf-link" href="/financeiro/faturas">Ver todas</a></div>
           {d.pendentes.length === 0 ? <p className="bz-sub">Sem faturas pendentes.</p> : d.pendentes.map((i) => (
             <div className="hs-ticket" key={i.id}>
               <div><strong>{i.supplier}</strong><span className="bz-sub2 bz-mono">{i.reference}</span></div>

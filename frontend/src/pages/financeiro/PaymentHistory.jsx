@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
 import { INVOICE_STATUS, formatMoney, formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const TABS = [
   { key: '', label: 'Todos' }, { key: 'PENDENTE', label: 'Pendentes' },
@@ -12,6 +13,7 @@ const TABS = [
 ];
 
 export default function PaymentHistory() {
+  const { t } = useI18n();
   const [tab, setTab] = useState('');
   const [q, setQ] = useState('');
   const [data, setData] = useState(null);
@@ -41,7 +43,7 @@ export default function PaymentHistory() {
       {error ? <div className="empty-state"><p>{error}</p></div> : (
         <div className="bz-card bz-tablewrap">
           <table className="bz-table">
-            <thead><tr><th>Nº da Fatura</th><th>Fornecedor</th><th>PO</th><th className="r">Valor</th><th>Vencimento</th><th>Pago em</th><th>Status</th></tr></thead>
+            <thead><tr><th>{t('Nº da Fatura')}</th><th>{t('Fornecedor')}</th><th>{t('PO')}</th><th className="r">{t('Valor')}</th><th>{t('Vencimento')}</th><th>{t('Pago em')}</th><th>{t('Status')}</th></tr></thead>
             <tbody>
               {!data ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>
                 : items.length === 0 ? <tr><td colSpan={7}><EmptyRow>Sem pagamentos.</EmptyRow></td></tr>

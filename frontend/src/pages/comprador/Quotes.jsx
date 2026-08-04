@@ -5,6 +5,7 @@ import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { formatDate, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const STATUS = {
   ABERTA: { label: 'Aguardando resposta', tone: 'pending' },
@@ -13,6 +14,7 @@ const STATUS = {
 };
 
 export default function Quotes() {
+  const { t } = useI18n();
   const [catalog, setCatalog] = useState(null);
   const [quotes, setQuotes] = useState(null);
   const [error, setError] = useState('');
@@ -95,7 +97,7 @@ export default function Quotes() {
       )}
 
       {quotes.length === 0 ? (
-        <div className="empty-state"><h3>Sem cotações</h3><p>Peça uma cotação para começar.</p></div>
+        <div className="empty-state"><h3>{t('Sem cotações')}</h3><p>Peça uma cotação para começar.</p></div>
       ) : (
         quotes.map((q) => (
           <div key={q.id} className="card card-pad" style={{ marginBottom: 14 }}>

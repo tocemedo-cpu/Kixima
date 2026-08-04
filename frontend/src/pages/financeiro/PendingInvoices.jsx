@@ -6,8 +6,10 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { INVOICE_STATUS, formatMoney, formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function PendingInvoices() {
+  const { t } = useI18n();
   const [data, setData] = useState(null);
   const [q, setQ] = useState('');
   const [error, setError] = useState('');
@@ -45,7 +47,7 @@ export default function PendingInvoices() {
 
       <div className="bz-card bz-tablewrap">
         <table className="bz-table">
-          <thead><tr><th>Nº da Fatura</th><th>Fornecedor</th><th>PO</th><th className="r">Valor</th><th>Emissão</th><th>Vencimento</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>{t('Nº da Fatura')}</th><th>{t('Fornecedor')}</th><th>{t('PO')}</th><th className="r">{t('Valor')}</th><th>{t('Emissão')}</th><th>{t('Vencimento')}</th><th>{t('Status')}</th><th></th></tr></thead>
           <tbody>
             {!data ? <tr><td colSpan={8}><EmptyRow>A carregar…</EmptyRow></td></tr>
               : items.length === 0 ? <tr><td colSpan={8}><EmptyRow>Sem faturas pendentes.</EmptyRow></td></tr>

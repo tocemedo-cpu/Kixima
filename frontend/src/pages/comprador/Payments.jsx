@@ -7,6 +7,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { INVOICE_STATUS, formatMoney, formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const TABS = [
   { key: '', label: 'Todos' }, { key: 'ABERTO', label: 'Em Aberto' },
@@ -14,6 +15,7 @@ const TABS = [
 ];
 
 export default function Payments() {
+  const { t } = useI18n();
   const nav = useNavigate();
   const [tab, setTab] = useState('');
   const [q, setQ] = useState('');
@@ -47,9 +49,9 @@ export default function Payments() {
             <div className="bz-card bz-tablewrap">
               <table className="bz-table">
                 <thead><tr>
-                  <th>Nº da PO</th><th>Fornecedor</th><th>Vencimento</th>
-                  <th className="r">Valor da PO</th><th className="r">Valor Pago</th><th className="r">Em Aberto</th>
-                  <th>Estado</th><th></th>
+                  <th>{t('Nº da PO')}</th><th>{t('Fornecedor')}</th><th>{t('Vencimento')}</th>
+                  <th className="r">{t('Valor da PO')}</th><th className="r">{t('Valor Pago')}</th><th className="r">{t('Em Aberto')}</th>
+                  <th>{t('Estado')}</th><th></th>
                 </tr></thead>
                 <tbody>
                   {!data ? <tr><td colSpan={8}><EmptyRow>A carregar…</EmptyRow></td></tr>
@@ -78,14 +80,14 @@ export default function Payments() {
 
         <div className="bz-side">
           <div className="bz-panel">
-            <h3>Resumo Financeiro</h3>
+            <h3>{t('Resumo Financeiro')}</h3>
             <div className="bz-panel-row"><span>Valor Total das PO</span><strong>{k ? formatMoney(k.totalPO) : '—'}</strong></div>
             <div className="bz-panel-row"><span>Total Pago</span><strong>{k ? formatMoney(k.concluidos) : '—'}</strong></div>
             <div className="bz-panel-row"><span>Total em Aberto</span><strong style={{ color: '#c0392b' }}>{k ? formatMoney(k.aPagar) : '—'}</strong></div>
             <div className="bz-panel-row"><span>Total Atrasado</span><strong style={{ color: '#c0392b' }}>{k ? formatMoney(k.atrasados) : '—'}</strong></div>
           </div>
           <div className="bz-panel">
-            <h3>Precisa de Ajuda?</h3>
+            <h3>{t('Precisa de Ajuda?')}</h3>
             <p className="bz-sub">Fale com a nossa equipa de suporte para qualquer questão sobre pagamentos.</p>
             <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => nav('/ajuda')}><Icon name="help" size={14} /> Contactar Suporte</button>
           </div>

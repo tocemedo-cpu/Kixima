@@ -8,6 +8,7 @@ import { Icon } from '../../components/icons';
 import { Crumbs, Pill } from '../../components/BuyerUI';
 import { formatDateTime } from '../../domain';
 import HelpAdmin from './HelpAdmin';
+import { useI18n } from '../../i18n';
 
 const POPULAR = ['Ordens de Compra', 'Faturação', 'Contratos', 'Pagamentos', 'Catálogo'];
 const TICKET_TONE = {
@@ -20,11 +21,13 @@ const TICKET_LABEL = {
 // O Administrador do Sistema vê o painel de administração; os restantes
 // utilizadores veem a página de pedir ajuda.
 export default function Help() {
+  const { t } = useI18n();
   const { user } = useAuth();
   return user?.role === 'ADMIN_SISTEMA' ? <HelpAdmin /> : <HelpUser />;
 }
 
 function HelpUser() {
+  const { t } = useI18n();
   const [ov, setOv] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [q, setQ] = useState('');
@@ -94,7 +97,7 @@ function HelpUser() {
           </div>
 
           {/* Categorias */}
-          <h3 className="pf-h2">Categorias de Ajuda</h3>
+          <h3 className="pf-h2">{t('Categorias de Ajuda')}</h3>
           <div className="hs-cats">
             {(ov?.categories || []).map((c) => (
               <div className="hs-cat" key={c.key}>
@@ -114,7 +117,7 @@ function HelpUser() {
           <div className="hs-cta">
             {ov?.images?.mascot ? <img className="hs-mascot" src={ov.images.mascot} alt="" /> : null}
             <div>
-              <h3>Ainda precisa de ajuda?</h3>
+              <h3>{t('Ainda precisa de ajuda?')}</h3>
               <p className="bz-sub">A nossa equipa está pronta para ajudar.</p>
               <div className="hs-cta-feats">
                 <span><Icon name="truck" size={14} /> Resposta rápida — &lt; 2h</span>
@@ -135,7 +138,7 @@ function HelpUser() {
           </div>
 
           <div className="bz-panel">
-            <h3>Meus Pedidos Recentes</h3>
+            <h3>{t('Meus Pedidos Recentes')}</h3>
             {tickets.length === 0 ? <p className="bz-sub">Sem pedidos ainda.</p> : tickets.slice(0, 5).map((t) => (
               <div className="hs-ticket" key={t.id}>
                 <div><strong>{t.subject}</strong><span className="bz-sub2 bz-mono">#{t.reference}</span></div>
@@ -145,7 +148,7 @@ function HelpUser() {
           </div>
 
           <div className="bz-panel">
-            <h3>Canais de Suporte</h3>
+            <h3>{t('Canais de Suporte')}</h3>
             {(ov?.channels || []).map((c) => (
               <div className="hs-channel" key={c.key}>
                 <span className={`hs-channel-ico${c.imageUrl ? ' has-img' : ''}`}>{c.imageUrl ? <img src={c.imageUrl} alt="" /> : <Icon name={c.icon} size={16} />}</span>
@@ -155,7 +158,7 @@ function HelpUser() {
           </div>
 
           <div className="bz-panel">
-            <h3>Status do Sistema</h3>
+            <h3>{t('Status do Sistema')}</h3>
             <div className="hs-status"><Icon name="shield" size={16} /><div style={{ flex: 1 }}><strong>Todos os sistemas operacionais</strong><span className="bz-sub2">Atualizado agora</span></div>{ov?.system?.operational ? <Pill tone="success">Operacional</Pill> : <Pill tone="danger">Incidente</Pill>}</div>
           </div>
         </div>
@@ -167,6 +170,7 @@ function HelpUser() {
 }
 
 function NewTicket({ onClose, onCreated, categories }) {
+  const { t } = useI18n();
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState(categories[0]?.title || 'Geral');
   const [message, setMessage] = useState('');
@@ -181,7 +185,7 @@ function NewTicket({ onClose, onCreated, categories }) {
   return (
     <div className="av-modal" onClick={onClose}>
       <form className="hs-form" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
-        <h3>Novo Pedido de Suporte</h3>
+        <h3>{t('Novo Pedido de Suporte')}</h3>
         {error ? <p className="av-error" style={{ maxWidth: 'none' }}>{error}</p> : null}
         <label className="field"><span>Assunto</span><input value={subject} onChange={(e) => setSubject(e.target.value)} required placeholder="Resumo do problema" /></label>
         <label className="field"><span>Categoria</span>

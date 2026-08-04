@@ -8,6 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Icon, Stars } from '../../components/icons';
 import { formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const SORTS = [
   ['relevantes', 'Mais relevantes'], ['recentes', 'Mais recentes'], ['avaliacao', 'Melhor avaliação'],
@@ -17,6 +18,7 @@ const KIND_LABEL = { SERVICO: 'Serviço', PRODUTO: 'Produto' };
 const cache = new Map();
 
 export default function Explore() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [sp] = useSearchParams();
   const [q, setQ] = useState(sp.get('q') || '');
@@ -180,11 +182,11 @@ export default function Explore() {
 
         <div>
           {error ? (
-            <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p><button className="btn btn-accent" onClick={load}>Tentar de novo</button></div>
+            <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p><button className="btn btn-accent" onClick={load}>Tentar de novo</button></div>
           ) : loading ? (
             <div className="svc-grid">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="svc-card svc-skel" />)}</div>
           ) : total === 0 ? (
-            <div className="empty-state"><h3>Nenhum resultado</h3><p>Ajuste a pesquisa ou os filtros.</p></div>
+            <div className="empty-state"><h3>{t('Nenhum resultado')}</h3><p>Ajuste a pesquisa ou os filtros.</p></div>
           ) : (
             <>
               <div className="svc-grid">

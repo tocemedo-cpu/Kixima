@@ -7,6 +7,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatDateTime } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const TABS = [
   { key: '', label: 'Todas' }, { key: 'PENDENTES', label: 'Pendentes' },
@@ -22,6 +23,7 @@ const PRIO = { ALTA: '#d94f4f', MEDIA: '#d98a1f', BAIXA: '#16a066' };
 const ICON = { APROVAR: 'approvals', PAGAR: 'payment', RECEBER: 'reception', ENTREGA: 'truck', DIVERGENCIA: 'shield', CONCLUIDA: 'certification' };
 
 export default function Activities() {
+  const { t } = useI18n();
   const nav = useNavigate();
   const [tab, setTab] = useState('');
   const [q, setQ] = useState('');
@@ -57,8 +59,8 @@ export default function Activities() {
         <div className="bz-card bz-tablewrap">
           <table className="bz-table">
             <thead><tr>
-              <th>Tipo</th><th>Título / Descrição</th><th>Relacionado a</th><th>Fornecedor</th>
-              <th>Prioridade</th><th>Status</th><th></th>
+              <th>{t('Tipo')}</th><th>{t('Título / Descrição')}</th><th>{t('Relacionado a')}</th><th>{t('Fornecedor')}</th>
+              <th>{t('Prioridade')}</th><th>{t('Status')}</th><th></th>
             </tr></thead>
             <tbody>
               {!data ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>

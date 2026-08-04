@@ -7,8 +7,10 @@ import { Crumbs, PageHead } from '../../components/BuyerUI';
 import { Icon, Stars } from '../../components/icons';
 import { IVA_RATE, KIXIMA_FEE_RATE, formatMoney } from '../../domain';
 import { useCart } from './CartContext';
+import { useI18n } from '../../i18n';
 
 export default function Cart() {
+  const { t } = useI18n();
   const { items, updateQuantity, removeItem, clear } = useCart();
   const nav = useNavigate();
   const [toast, setToast] = useState('');
@@ -32,7 +34,7 @@ export default function Cart() {
     return (
       <div>
         <Crumbs trail={['Home', 'Minha Cesta']} />
-        <div className="empty-state"><h3>A sua cesta está vazia</h3><p>Explore o catálogo e adicione produtos ou serviços.</p>
+        <div className="empty-state"><h3>{t('A sua cesta está vazia')}</h3><p>Explore o catálogo e adicione produtos ou serviços.</p>
           <button className="btn btn-accent" onClick={() => nav('/comprador/catalogo')}>Explorar catálogo</button></div>
       </div>
     );
@@ -52,7 +54,7 @@ export default function Cart() {
       <div className="bz-layout">
         <div className="bz-card bz-tablewrap">
           <table className="bz-table">
-            <thead><tr><th>Produto / Serviço</th><th>Fornecedor</th><th className="r">Preço Unitário</th><th>Qtd.</th><th className="r">Subtotal</th><th></th></tr></thead>
+            <thead><tr><th>{t('Produto / Serviço')}</th><th>{t('Fornecedor')}</th><th className="r">{t('Preço Unitário')}</th><th>{t('Qtd.')}</th><th className="r">{t('Subtotal')}</th><th></th></tr></thead>
             <tbody>
               {items.map((it) => (
                 <tr key={it.product.id}>
@@ -82,7 +84,7 @@ export default function Cart() {
 
         <div className="bz-side">
           <div className="bz-panel">
-            <h3>Resumo da Cesta</h3>
+            <h3>{t('Resumo da Cesta')}</h3>
             <div className="bz-panel-row"><span>Subtotal ({items.length} itens)</span><strong>{formatMoney(subtotal)}</strong></div>
             <div className="bz-panel-row"><span>Impostos (IVA 14%)</span><strong>{formatMoney(iva)}</strong></div>
             <div className="bz-panel-row"><span>Taxa KIXIMA (1,5%)</span><strong>{formatMoney(fee)}</strong></div>

@@ -8,6 +8,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Loading, ErrorBanner } from '../../components/Common';
 import { PO_STATUS, INVOICE_STATUS } from '../../domain';
+import { useI18n } from '../../i18n';
 
 // Formatação de valores igual ao modelo: 5.100.000,00 AOA (ponto de milhar,
 // vírgula decimal, moeda como sufixo).
@@ -49,6 +50,7 @@ function Sign({ label, name, date }) {
 }
 
 export default function PrintableDocument({ kind }) {
+  const { t } = useI18n();
   const { id } = useParams();
   const navigate = useNavigate();
   const [po, setPo] = useState(null);
@@ -152,7 +154,7 @@ export default function PrintableDocument({ kind }) {
         {/* Itens */}
         <table className="pdoc-table">
           <thead>
-            <tr><th>#</th><th>DESCRIÇÃO</th><th>CATEGORIA</th><th className="r">QTD</th><th className="r">PREÇO UNIT.</th><th className="r">TOTAL</th></tr>
+            <tr><th>{t('#')}</th><th>{t('DESCRIÇÃO')}</th><th>{t('CATEGORIA')}</th><th className="r">{t('QTD')}</th><th className="r">{t('PREÇO UNIT.')}</th><th className="r">{t('TOTAL')}</th></tr>
           </thead>
           <tbody>
             {po.items.map((it, i) => (

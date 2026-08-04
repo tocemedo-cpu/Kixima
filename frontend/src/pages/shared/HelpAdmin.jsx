@@ -7,6 +7,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatDateTime } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const ST = {
   ABERTO: { tone: 'info', label: 'Aberto' },
@@ -31,6 +32,7 @@ function groupsOf(slots = []) {
 }
 
 export default function HelpAdmin() {
+  const { t } = useI18n();
   const [ov, setOv] = useState(null);
   const [tickets, setTickets] = useState(null);
   const [tab, setTab] = useState('');
@@ -75,7 +77,7 @@ export default function HelpAdmin() {
       ]} />
 
       {/* Gestão de TODAS as imagens da página de Ajuda */}
-      <h3 className="pf-h2">Imagens da Página de Ajuda</h3>
+      <h3 className="pf-h2">{t('Imagens da Página de Ajuda')}</h3>
       <p className="bz-sub" style={{ marginTop: -6 }}>Todos os locais de imagem da página são preenchidos por upload. Só o Administrador do Sistema pode carregá-las/trocá-las; elas aparecem para todos os utilizadores.</p>
       {groupsOf(ov?.imageSlots).map(([group, slots]) => (
         <div key={group} className="img-group">
@@ -99,13 +101,13 @@ export default function HelpAdmin() {
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
 
       {/* Pedidos de suporte de toda a plataforma */}
-      <h3 className="pf-h2">Pedidos de Suporte</h3>
+      <h3 className="pf-h2">{t('Pedidos de Suporte')}</h3>
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
       <Toolbar placeholder="Pesquisar por referência, assunto ou utilizador…" q={q} onQ={setQ} />
 
       <div className="bz-card bz-tablewrap">
         <table className="bz-table">
-          <thead><tr><th>Referência</th><th>Utilizador</th><th>Empresa</th><th>Assunto</th><th>Categoria</th><th>Data</th><th>Estado</th></tr></thead>
+          <thead><tr><th>{t('Referência')}</th><th>{t('Utilizador')}</th><th>{t('Empresa')}</th><th>{t('Assunto')}</th><th>{t('Categoria')}</th><th>{t('Data')}</th><th>{t('Estado')}</th></tr></thead>
           <tbody>
             {!tickets ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>
               : items.length === 0 ? <tr><td colSpan={7}><EmptyRow>Sem pedidos.</EmptyRow></td></tr>

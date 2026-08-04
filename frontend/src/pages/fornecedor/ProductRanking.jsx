@@ -6,8 +6,10 @@ import { useLocation } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import { formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function ProductRanking() {
+  const { t } = useI18n();
   const { pathname } = useLocation();
   const isViewed = pathname.endsWith('/mais-vistos');
   const [stats, setStats] = useState(null);
@@ -33,7 +35,7 @@ export default function ProductRanking() {
 
       {rows.length === 0 ? (
         <div className="empty-state">
-          <h3>Sem dados ainda</h3>
+          <h3>{t('Sem dados ainda')}</h3>
           <p>{isViewed
             ? 'As visualizações contam quando os compradores abrem a ficha dos seus produtos no marketplace.'
             : 'As vendas contam a partir das ordens de compra recebidas.'}</p>

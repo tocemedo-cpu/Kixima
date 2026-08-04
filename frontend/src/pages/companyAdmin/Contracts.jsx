@@ -7,8 +7,10 @@ import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { CONTRACT_STATUS, BILLING_PERIODICITY, formatMoney, formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function Contracts() {
+  const { t } = useI18n();
   const nav = useNavigate();
   const { user } = useAuth();
   const [rows, setRows] = useState(null);
@@ -52,7 +54,7 @@ export default function Contracts() {
           {error ? <div className="empty-state"><p>{error}</p></div> : (
             <div className="bz-card bz-tablewrap">
               <table className="bz-table">
-                <thead><tr><th>Nº do Contrato</th><th>Contraparte</th><th>Âmbito</th><th className="r">Valor</th><th>Vigência</th><th>Periodicidade</th><th>Status</th></tr></thead>
+                <thead><tr><th>{t('Nº do Contrato')}</th><th>{t('Contraparte')}</th><th>{t('Âmbito')}</th><th className="r">{t('Valor')}</th><th>{t('Vigência')}</th><th>{t('Periodicidade')}</th><th>{t('Status')}</th></tr></thead>
                 <tbody>
                   {!rows ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>
                     : list.length === 0 ? <tr><td colSpan={7}><EmptyRow>Sem contratos.</EmptyRow></td></tr>
@@ -75,13 +77,13 @@ export default function Contracts() {
 
         <div className="bz-side">
           <div className="bz-panel">
-            <h3>Resumo por Status</h3>
+            <h3>{t('Resumo por Status')}</h3>
             <div className="bz-panel-row"><span>Ativos</span><strong style={{ color: '#16884f' }}>{kpis.ativos}</strong></div>
             <div className="bz-panel-row"><span>A Vencer</span><strong style={{ color: '#b9740f' }}>{kpis.aVencer}</strong></div>
             <div className="bz-panel-row"><span>Vencidos</span><strong style={{ color: '#c0392b' }}>{kpis.vencidos}</strong></div>
           </div>
           <div className="bz-panel">
-            <h3>Próximos a Vencer</h3>
+            <h3>{t('Próximos a Vencer')}</h3>
             {(rows || []).filter((c) => c.status === 'ATIVO').sort((a, b) => new Date(a.validUntil) - new Date(b.validUntil)).slice(0, 5).map((c) => (
               <div className="bz-panel-row" key={c.id}><span className="bz-mono">{c.reference}</span><span className="bz-sub2">{formatDate(c.validUntil)}</span></div>
             ))}

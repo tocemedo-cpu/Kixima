@@ -10,6 +10,7 @@ import { Loading, ErrorBanner } from '../../components/Common';
 import { Icon, Stars, categoryVisual } from '../../components/icons';
 import ProductCover from '../../components/ProductCover';
 import { formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 function greeting() {
   const h = new Date().getHours();
@@ -26,6 +27,7 @@ function initials(name = '') {
 }
 
 export default function Home() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [d, setD] = useState(null);
@@ -91,7 +93,7 @@ export default function Home() {
 
         <section className="protect-card">
           <span className="protect-shield"><Icon name="policy" size={40} /></span>
-          <h3>COMPRAS PROTEGIDAS KIXIMA</h3>
+          <h3>{t('COMPRAS PROTEGIDAS KIXIMA')}</h3>
           <p>Todas as transações são protegidas pela KIXIMA com fornecedores verificados e seguros de execução.</p>
           <Link to="/ajuda" className="protect-link">Saiba mais →</Link>
         </section>

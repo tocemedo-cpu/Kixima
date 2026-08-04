@@ -6,13 +6,15 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, Pill } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function Organization() {
+  const { t } = useI18n();
   const [d, setD] = useState(null);
   const [error, setError] = useState('');
   useEffect(() => { api.get('/api/company-admin/organizacao').then(setD).catch((e) => setError(e.message)); }, []);
 
-  if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
+  if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
   if (!d) return <div className="bz-empty">A carregar…</div>;
   const c = d.company;
   const typeLabel = c.type === 'FORNECEDOR' ? 'Prestadora de Serviços' : 'Empresa Cliente';
@@ -24,7 +26,7 @@ export default function Organization() {
 
       <div className="bz-layout">
         <div className="bz-panel">
-          <h3>Dados Gerais</h3>
+          <h3>{t('Dados Gerais')}</h3>
           <table className="bz-table">
             <tbody>
               {[
@@ -42,7 +44,7 @@ export default function Organization() {
 
         <div className="bz-side">
           <div className="bz-panel">
-            <h3>Informações de Contacto</h3>
+            <h3>{t('Informações de Contacto')}</h3>
             <div className="pf-info"><Icon name="policy" size={15} /> <span>{c.contactEmail}</span></div>
             <div className="pf-info"><Icon name="building" size={15} /> <span>{c.contactPhone || '—'}</span></div>
             <div className="pf-info"><Icon name="offshore" size={15} /> <span>{c.address || [c.city, c.country].filter(Boolean).join(', ') || 'Angola'}</span></div>
@@ -50,7 +52,7 @@ export default function Organization() {
         </div>
       </div>
 
-      <h3 className="pf-h2">Resumo da Organização</h3>
+      <h3 className="pf-h2">{t('Resumo da Organização')}</h3>
       <div className="hs-quick">
         {[
           { icon: 'users', t: d.summary.users, s: 'Usuários' },

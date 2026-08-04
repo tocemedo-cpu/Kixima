@@ -22,7 +22,7 @@ export default function Profile() {
   // Atualiza a página e o header (Navbar) com a nova foto.
   const setAvatar = (avatarUrl) => { setData((d) => ({ ...d, user: { ...d.user, avatarUrl } })); updateUser({ avatarUrl }); };
 
-  if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
+  if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
   if (!data) return <div className="bz-empty">A carregar…</div>;
 
   const { user, company, cards, recent } = data;
@@ -44,7 +44,7 @@ export default function Profile() {
         </div>
 
         <div className="bz-panel">
-          <h3>Contacto</h3>
+          <h3>{t('Contacto')}</h3>
           <div className="pf-info"><Icon name="policy" size={15} /> <span>{user.email}</span></div>
           <div className="pf-info"><Icon name="building" size={15} /> <span>{company?.contactPhone || '—'}</span></div>
           <div className="pf-info"><Icon name="offshore" size={15} /> <span>{[company?.city, company?.country].filter(Boolean).join(', ') || 'Angola'}</span></div>
@@ -52,7 +52,7 @@ export default function Profile() {
         </div>
 
         <div className="bz-panel">
-          <h3>Segurança da Conta</h3>
+          <h3>{t('Segurança da Conta')}</h3>
           <div className="bz-panel-row"><span>Palavra-passe</span><a className="pf-link" href="/seguranca">Alterar</a></div>
           <div className="bz-panel-row"><span>Autenticação em duas etapas</span><span className="bz-muted">Configurar</span></div>
           <div className="bz-panel-row"><span>Conta criada</span><strong>{formatDateTime(user.createdAt)}</strong></div>
@@ -64,7 +64,7 @@ export default function Profile() {
 
       <div className="bz-layout">
         <div className="bz-panel">
-          <h3>Atividade Recente</h3>
+          <h3>{t('Atividade Recente')}</h3>
           {(!recent || recent.length === 0) ? <p className="bz-sub">Sem atividade recente.</p> : (
             <table className="bz-table" style={{ marginTop: 4 }}>
               <tbody>

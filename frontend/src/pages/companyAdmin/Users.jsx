@@ -8,6 +8,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatDateTime } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const ROLE_OPTIONS = {
   CLIENTE: [{ value: 'COMPRADOR', label: 'Comprador' }, { value: 'FINANCEIRO', label: 'Financeiro' }],
@@ -31,6 +32,7 @@ const PERFIS = [
 function initials(n = '') { return n.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase(); }
 
 export default function Users() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [company, setCompany] = useState(null);
   const [users, setUsers] = useState(null);
@@ -97,7 +99,7 @@ export default function Users() {
       <Toolbar placeholder="Buscar usuário…" q={q} onQ={setQ} />
       <div className="bz-card bz-tablewrap">
         <table className="bz-table">
-          <thead><tr><th>Usuário</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Registado</th><th></th></tr></thead>
+          <thead><tr><th>{t('Usuário')}</th><th>{t('E-mail')}</th><th>{t('Perfil')}</th><th>{t('Status')}</th><th>{t('Registado')}</th><th></th></tr></thead>
           <tbody>
             {!users ? <tr><td colSpan={6}><EmptyRow>A carregar…</EmptyRow></td></tr>
               : list.length === 0 ? <tr><td colSpan={6}><EmptyRow>Sem utilizadores.</EmptyRow></td></tr>
@@ -119,7 +121,7 @@ export default function Users() {
         </table>
       </div>
 
-      <h3 className="pf-h2">Perfis e Permissões</h3>
+      <h3 className="pf-h2">{t('Perfis e Permissões')}</h3>
       <p className="bz-sub" style={{ marginTop: -6 }}>Defina os níveis de acesso e permissões que cada perfil terá na plataforma.</p>
       <div className="hs-quick">
         {PERFIS.map((p) => (
@@ -133,7 +135,7 @@ export default function Users() {
       {modal && (
         <div className="av-modal" onClick={() => setModal(false)}>
           <form className="hs-form" onClick={(e) => e.stopPropagation()} onSubmit={generateInvite}>
-            <h3>Novo Usuário — convite por link</h3>
+            <h3>{t('Novo Usuário — convite por link')}</h3>
             <p className="bz-sub">Escolha o perfil, gere o link e partilhe-o. A pessoa cria a conta e o cadastro fica pendente da sua aprovação.</p>
             <label className="field"><span>Perfil a convidar</span>
               <select value={role} onChange={(e) => setRole(e.target.value)}>{options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select>

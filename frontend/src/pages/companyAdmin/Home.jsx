@@ -8,15 +8,17 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Pill } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { PO_STATUS, formatMoney, formatDateTime } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function CompanyAdminHome() {
+  const { t } = useI18n();
   const nav = useNavigate();
   const [d, setD] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => { api.get('/api/company-admin/dashboard').then(setD).catch((e) => setError(e.message)); }, []);
 
-  if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
+  if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
   if (!d) return <div className="bz-empty">A carregar…</div>;
 
   const max = Math.max(1, ...d.volume.map((v) => v.value));
@@ -34,7 +36,7 @@ export default function CompanyAdminHome() {
 
       <div className="bz-layout">
         <div className="bz-panel">
-          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>Volume de Operações</h3><span className="bz-muted">Últimos 6 meses</span></div>
+          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>{t('Volume de Operações')}</h3><span className="bz-muted">Últimos 6 meses</span></div>
           <div className="ca-bars">
             {d.volume.map((v) => (
               <div className="ca-bar" key={v.label}>
@@ -45,7 +47,7 @@ export default function CompanyAdminHome() {
           </div>
         </div>
         <div className="bz-panel">
-          <div className="bz-head" style={{ marginBottom: 6 }}><h3 style={{ margin: 0 }}>Atividade Recente</h3><a className="pf-link" href="/empresa/atividades">Ver todas</a></div>
+          <div className="bz-head" style={{ marginBottom: 6 }}><h3 style={{ margin: 0 }}>{t('Atividade Recente')}</h3><a className="pf-link" href="/empresa/atividades">Ver todas</a></div>
           {d.recent.map((r) => (
             <div className="hs-ticket" key={r.reference}>
               <div><strong>PO {r.reference}</strong><span className="bz-sub2">{r.party}</span></div>
@@ -55,7 +57,7 @@ export default function CompanyAdminHome() {
         </div>
       </div>
 
-      <h3 className="pf-h2">Resumo Geral</h3>
+      <h3 className="pf-h2">{t('Resumo Geral')}</h3>
       <KpiRow cards={[
         { icon: 'users', tone: 'info', label: 'Usuários Ativos', value: d.resumo.usuariosAtivos, sub: 'Na empresa' },
         { icon: 'contract', tone: 'success', label: 'Contratos Ativos', value: d.resumo.contratosAtivos, sub: `de ${d.resumo.totalContratos}` },

@@ -7,8 +7,10 @@ import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
 import { formatDateTime } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function StockMovements() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { pathname } = useLocation();
   const isEntrada = pathname.endsWith('/entradas');
@@ -90,7 +92,7 @@ export default function StockMovements() {
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
           <table>
-            <thead><tr><th>Data</th><th>Produto</th><th style={{ textAlign: 'right' }}>Qtd.</th><th>Nota</th></tr></thead>
+            <thead><tr><th>{t('Data')}</th><th>{t('Produto')}</th><th style={{ textAlign: 'right' }}>{t('Qtd.')}</th><th>{t('Nota')}</th></tr></thead>
             <tbody>
               {movements.map((m) => (
                 <tr key={m.id}>

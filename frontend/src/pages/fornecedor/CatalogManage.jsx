@@ -9,6 +9,7 @@ import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../component
 import { formatMoney } from '../../domain';
 import ProductCover from '../../components/ProductCover';
 import { Icon } from '../../components/icons';
+import { useI18n } from '../../i18n';
 
 const CATEGORIES = [
   'Válvulas', 'Hidráulica', 'Inspeção & Ensaios', 'Logística & Transporte',
@@ -62,6 +63,7 @@ const SPEC_FIELDS = [
 ];
 
 export default function CatalogManage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [products, setProducts] = useState(null);
   const [error, setError] = useState('');
@@ -347,7 +349,7 @@ export default function CatalogManage() {
         <Loading />
       ) : products.length === 0 ? (
         <div className="empty-state">
-          <h3>Ainda não publicou nenhum item</h3>
+          <h3>{t('Ainda não publicou nenhum item')}</h3>
           <p>Adicione produtos ou serviços para começar a receber ordens de compra.</p>
         </div>
       ) : (

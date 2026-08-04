@@ -4,8 +4,10 @@ import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { POLICY_STATUS, formatDate, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function PolicyManagement() {
+  const { t } = useI18n();
   const [clients, setClients] = useState(null);
   const [suppliers, setSuppliers] = useState(null);
   const [error, setError] = useState('');
@@ -48,7 +50,7 @@ export default function PolicyManagement() {
     <div>
       <PageHeader title="Gestão de Apólices" subtitle="Emita apólices KIXIMA→Cliente e decida sobre apólices Fornecedor→KIXIMA." />
 
-      <h3 style={{ fontSize: 15, marginBottom: 12 }}>Apólices KIXIMA→Cliente</h3>
+      <h3 style={{ fontSize: 15, marginBottom: 12 }}>{t('Apólices KIXIMA→Cliente')}</h3>
       {clients.length === 0 ? (
         <p className="helptext" style={{ marginBottom: 20 }}>Nenhuma empresa cliente aprovada ainda.</p>
       ) : (
@@ -59,7 +61,7 @@ export default function PolicyManagement() {
         </div>
       )}
 
-      <h3 style={{ fontSize: 15, marginBottom: 12 }}>Apólices Fornecedor→KIXIMA submetidas</h3>
+      <h3 style={{ fontSize: 15, marginBottom: 12 }}>{t('Apólices Fornecedor→KIXIMA submetidas')}</h3>
       {suppliers.length === 0 ? (
         <p className="helptext">Nenhuma apólice de fornecedor submetida por rever.</p>
       ) : (

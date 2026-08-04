@@ -6,11 +6,13 @@ import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, StatCard } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const RECEIVED = new Set(['PAGA', 'EM_EXECUCAO', 'ENTREGUE', 'RECEBIDA_CONFORME', 'RECEBIDA_COM_DIVERGENCIA', 'CONCLUIDA']);
 const PENDING = new Set(['ACEITE_FORNECEDOR', 'AGUARDANDO_PAGAMENTO']);
 
 export default function Wallet() {
+  const { t } = useI18n();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState('');
 
@@ -45,7 +47,7 @@ export default function Wallet() {
           <div className="card-pad"><p className="helptext" style={{ margin: 0 }}>Ainda sem pagamentos recebidos.</p></div>
         ) : (
           <table>
-            <thead><tr><th>Referência</th><th>Cliente</th><th>Estado</th><th style={{ textAlign: 'right' }}>Valor</th></tr></thead>
+            <thead><tr><th>{t('Referência')}</th><th>{t('Cliente')}</th><th>{t('Estado')}</th><th style={{ textAlign: 'right' }}>{t('Valor')}</th></tr></thead>
             <tbody>
               {recentPaid.map((o) => (
                 <tr key={o.id}>

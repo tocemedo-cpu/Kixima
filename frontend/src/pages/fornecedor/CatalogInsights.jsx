@@ -8,6 +8,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import { formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 // Categorias tratadas como "serviço" (não têm stock físico).
 const SERVICE_CATEGORIES = new Set([
@@ -19,6 +20,7 @@ const TITLES = {
 };
 
 export default function CatalogInsights() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { pathname } = useLocation();
   const seg = pathname.split('/').filter(Boolean).pop();
@@ -72,7 +74,7 @@ function renderView(seg, g, title) {
     return (
       <div className="card" style={{ overflowX: 'auto' }}>
         <table>
-          <thead><tr><th>Produto</th><th>Categoria</th><th style={{ textAlign: 'right' }}>Preço</th></tr></thead>
+          <thead><tr><th>{t('Produto')}</th><th>{t('Categoria')}</th><th style={{ textAlign: 'right' }}>{t('Preço')}</th></tr></thead>
           <tbody>
             {rows.map((p) => (
               <tr key={p.id}>

@@ -7,6 +7,7 @@ import { useLocation } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import { Icon } from '../../components/icons';
+import { useI18n } from '../../i18n';
 
 const PRODUCT_DOC_LABELS = {
   FICHA_TECNICA: 'Ficha Técnica', DATASHEET: 'Datasheet', MANUAL: 'Manual',
@@ -25,6 +26,7 @@ const VIEWS = {
 };
 
 export default function Documents() {
+  const { t } = useI18n();
   const { pathname } = useLocation();
   const seg = pathname.split('/').filter(Boolean).pop();
   const view = VIEWS[seg] || { title: 'Documentação', kind: 'all' };
@@ -57,7 +59,7 @@ export default function Documents() {
       {empty ? (
         <div className="empty-state">
           <div style={{ color: 'var(--brand-600)', marginBottom: 10 }}><Icon name="contract" size={30} /></div>
-          <h3>Sem documentos nesta secção</h3>
+          <h3>{t('Sem documentos nesta secção')}</h3>
           <p>Anexe documentos ao publicar/editar produtos (aba Documentos) ou no cadastro da empresa.</p>
         </div>
       ) : (

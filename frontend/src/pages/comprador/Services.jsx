@@ -9,6 +9,7 @@ import { api } from '../../api/client';
 import ProductCover from '../../components/ProductCover';
 import { Icon, Stars } from '../../components/icons';
 import { formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const SORTS = [
   ['relevantes', 'Mais Relevantes'], ['recentes', 'Mais recentes'], ['avaliacao', 'Melhor avaliação'],
@@ -21,6 +22,7 @@ const EXEC = [['', 'Todos'], ['7', 'Até 7 dias'], ['30', '7 - 30 dias'], ['90',
 const cache = new Map();
 
 export default function Services() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [q, setQ] = useState(searchParams.get('q') || '');
@@ -177,13 +179,13 @@ export default function Services() {
         <div>
           {error ? (
             <div className="empty-state">
-              <h3>Não foi possível carregar</h3><p>{error}</p>
+              <h3>{t('Não foi possível carregar')}</h3><p>{error}</p>
               <button className="btn btn-accent" onClick={load}>Tentar de novo</button>
             </div>
           ) : loading ? (
             <div className="svc-grid">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="svc-card svc-skel" />)}</div>
           ) : total === 0 ? (
-            <div className="empty-state"><h3>Nenhum serviço encontrado</h3><p>Ajuste a pesquisa ou os filtros.</p></div>
+            <div className="empty-state"><h3>{t('Nenhum serviço encontrado')}</h3><p>Ajuste a pesquisa ou os filtros.</p></div>
           ) : (
             <>
               <div className="svc-grid">

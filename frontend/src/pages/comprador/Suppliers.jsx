@@ -6,6 +6,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
 import { Icon, Stars } from '../../components/icons';
 import { formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const TABS = [
   { key: '', label: 'Todos' }, { key: 'ATIVOS', label: 'Ativos' },
@@ -13,6 +14,7 @@ const TABS = [
 ];
 
 export default function Suppliers() {
+  const { t } = useI18n();
   const [tab, setTab] = useState('');
   const [q, setQ] = useState('');
   const [data, setData] = useState(null);
@@ -48,8 +50,8 @@ export default function Suppliers() {
             <div className="bz-card bz-tablewrap">
               <table className="bz-table">
                 <thead><tr>
-                  <th>Fornecedor</th><th>Categoria</th><th>Cidade / País</th><th>Status</th>
-                  <th>Avaliação</th><th>Última Transação</th>
+                  <th>{t('Fornecedor')}</th><th>{t('Categoria')}</th><th>{t('Cidade / País')}</th><th>{t('Status')}</th>
+                  <th>{t('Avaliação')}</th><th>{t('Última Transação')}</th>
                 </tr></thead>
                 <tbody>
                   {!data ? <tr><td colSpan={6}><EmptyRow>A carregar…</EmptyRow></td></tr>
@@ -77,7 +79,7 @@ export default function Suppliers() {
 
         <div className="bz-side">
           <div className="bz-panel">
-            <h3>Top Fornecedores</h3>
+            <h3>{t('Top Fornecedores')}</h3>
             {top.length === 0 ? <p className="bz-sub">Sem dados.</p> : top.map((s, i) => (
               <div className="bz-panel-row" key={s.id}>
                 <span>{i + 1}. {s.name}</span>
@@ -86,7 +88,7 @@ export default function Suppliers() {
             ))}
           </div>
           <div className="bz-panel">
-            <h3>Ações Rápidas</h3>
+            <h3>{t('Ações Rápidas')}</h3>
             <button className="bz-qa"><Icon name="suppliers" size={14} /> Convidar Fornecedor</button>
             <button className="bz-qa"><Icon name="report" size={14} /> Relatório de Fornecedores</button>
           </div>

@@ -8,8 +8,10 @@ import { Crumbs, PageHead } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { IVA_RATE, KIXIMA_FEE_RATE, formatMoney } from '../../domain';
 import { useCart } from './CartContext';
+import { useI18n } from '../../i18n';
 
 export default function Checkout() {
+  const { t } = useI18n();
   const { items, removeItem } = useCart();
   const nav = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -65,7 +67,7 @@ export default function Checkout() {
     return (
       <div>
         <Crumbs trail={['Home', 'Minha Cesta', 'Checkout']} />
-        <div className="empty-state"><h3>A sua cesta está vazia</h3><p>Adicione itens antes de finalizar a compra.</p>
+        <div className="empty-state"><h3>{t('A sua cesta está vazia')}</h3><p>Adicione itens antes de finalizar a compra.</p>
           <button className="btn btn-accent" onClick={() => nav('/comprador/catalogo')}>Explorar catálogo</button></div>
       </div>
     );
@@ -107,7 +109,7 @@ export default function Checkout() {
 
         <div className="bz-side">
           <div className="bz-panel">
-            <h3>Resumo do Checkout</h3>
+            <h3>{t('Resumo do Checkout')}</h3>
             <div className="bz-muted" style={{ marginBottom: 6 }}>Resumo por Fornecedor</div>
             {groups.map((g) => {
               const gt = g.items.reduce((s, i) => s + Number(i.product.unitPrice) * i.quantity, 0);

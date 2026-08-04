@@ -6,10 +6,12 @@ import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const CLOSED = new Set(['CONCLUIDA', 'RECEBIDA_CONFORME', 'RECEBIDA_COM_DIVERGENCIA']);
 
 export default function OrderHistory() {
+  const { t } = useI18n();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -27,11 +29,11 @@ export default function OrderHistory() {
     <div>
       <PageHeader title="Pedidos — Histórico" subtitle="Ordens de compra já concluídas ou recebidas." />
       {closed.length === 0 ? (
-        <div className="empty-state"><h3>Sem histórico</h3><p>Ordens concluídas aparecem aqui.</p></div>
+        <div className="empty-state"><h3>{t('Sem histórico')}</h3><p>Ordens concluídas aparecem aqui.</p></div>
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
           <table>
-            <thead><tr><th>Referência</th><th>Cliente</th><th>Data</th><th>Estado</th><th style={{ textAlign: 'right' }}>Valor</th></tr></thead>
+            <thead><tr><th>{t('Referência')}</th><th>{t('Cliente')}</th><th>{t('Data')}</th><th>{t('Estado')}</th><th style={{ textAlign: 'right' }}>{t('Valor')}</th></tr></thead>
             <tbody>
               {closed.map((o) => (
                 <tr key={o.id} className="row-link" onClick={() => navigate(`/fornecedor/ordens/${o.id}`)}>

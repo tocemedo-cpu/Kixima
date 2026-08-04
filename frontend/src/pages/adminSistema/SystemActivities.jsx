@@ -7,6 +7,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatDateTime } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const TYPE_ICON = {
   'Ordem de Compra': 'orders', Empresa: 'building', Utilizador: 'users',
@@ -18,6 +19,7 @@ const TYPE_TONE = {
 };
 
 export default function SystemActivities() {
+  const { t } = useI18n();
   const [data, setData] = useState(null);
   const [tab, setTab] = useState('');
   const [q, setQ] = useState('');
@@ -51,7 +53,7 @@ export default function SystemActivities() {
       {error ? <div className="empty-state"><p>{error}</p></div> : (
         <div className="bz-card bz-tablewrap">
           <table className="bz-table">
-            <thead><tr><th>Tipo</th><th>Descrição</th><th>Módulo</th><th>Quando</th></tr></thead>
+            <thead><tr><th>{t('Tipo')}</th><th>{t('Descrição')}</th><th>{t('Módulo')}</th><th>{t('Quando')}</th></tr></thead>
             <tbody>
               {!data ? <tr><td colSpan={4}><EmptyRow>A carregar…</EmptyRow></td></tr>
                 : items.length === 0 ? <tr><td colSpan={4}><EmptyRow>Sem atividades.</EmptyRow></td></tr>

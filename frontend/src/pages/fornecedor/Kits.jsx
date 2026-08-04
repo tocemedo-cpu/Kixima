@@ -5,8 +5,10 @@ import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
 import { formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function Kits() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [products, setProducts] = useState(null);
   const [kits, setKits] = useState(null);
@@ -101,7 +103,7 @@ export default function Kits() {
       )}
 
       {kits.length === 0 ? (
-        <div className="empty-state"><h3>Sem kits</h3><p>Crie pacotes de produtos para facilitar a venda conjunta.</p></div>
+        <div className="empty-state"><h3>{t('Sem kits')}</h3><p>Crie pacotes de produtos para facilitar a venda conjunta.</p></div>
       ) : (
         <div className="grid-cols grid-2">
           {kits.map((kit) => (

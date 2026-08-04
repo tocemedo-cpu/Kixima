@@ -5,6 +5,7 @@ import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../component
 import Badge from '../../components/Badge';
 import { Icon } from '../../components/icons';
 import { COMPANY_STATUS, POLICY_STATUS, formatDate, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const DOC_LABELS = {
   CERTIDAO_COMERCIAL: 'Certidão Comercial',
@@ -13,6 +14,7 @@ const DOC_LABELS = {
 };
 
 export default function DueDiligence() {
+  const { t } = useI18n();
   const [companies, setCompanies] = useState(null);
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState(null);
@@ -32,7 +34,7 @@ export default function DueDiligence() {
 
       {companies.length === 0 ? (
         <div className="empty-state">
-          <h3>Nenhum cadastro pendente</h3>
+          <h3>{t('Nenhum cadastro pendente')}</h3>
           <p>Novos registos de empresa aparecem aqui para revisão.</p>
         </div>
       ) : (

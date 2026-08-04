@@ -12,8 +12,10 @@ import CategoryArt from '../../components/CategoryArt';
 import ProductCover from '../../components/ProductCover';
 import MarketHero from '../../components/MarketHero';
 import MarketAside from '../../components/MarketAside';
+import { useI18n } from '../../i18n';
 
 export default function Catalog() {
+  const { t } = useI18n();
   const [products, setProducts] = useState(null);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -106,7 +108,7 @@ export default function Catalog() {
 
           {filtered.length === 0 ? (
             <div className="empty-state">
-              <h3>Nenhum item encontrado</h3>
+              <h3>{t('Nenhum item encontrado')}</h3>
               <p>Tente outro termo de pesquisa ou limpe o filtro de categoria.</p>
             </div>
           ) : (
