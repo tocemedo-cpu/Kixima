@@ -70,16 +70,41 @@ app.use('/api/company-admin', companyAdminRoutes);
 app.use('/api/financeiro', financeiroRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Servir o frontend compilado (deploy de serviço único). Define FRONTEND_DIST
-// com o caminho para frontend/dist; a app serve os ficheiros estáticos e faz
-// fallback de SPA para o index.html em qualquer rota que não comece por /api.
-const frontendDist = process.env.FRONTEND_DIST && path.resolve(process.env.FRONTEND_DIST);
+// Servir o frontend compilado (deploy de serviço único). Em produção a app
+// serve a API em /api e o SPA na mesma origem. O caminho pode vir de
+// FRONTEND_DIST; se não estiver definido, tentamos localizar frontend/dist
+// automaticamente (relativo a este ficheiro), para que o serviço funcione mesmo
+// quando a variável não foi configurada no painel do Render.
+const fs = require('fs');
+
+function resolveFrontendDist() {
+  const candidates = [];
+  if (process.env.FRONTEND_DIST) candidates.push(path.resolve(process.env.FRONTEND_DIST));
+  // backend/src -> ../../frontend/dist (monorepo) e variações comuns de deploy.
+  candidates.push(path.resolve(__dirname, '../../frontend/dist'));
+  candidates.push(path.resolve(__dirname, '../frontend/dist'));
+  candidates.push(path.resolve(process.cwd(), 'frontend/dist'));
+  candidates.push(path.resolve(process.cwd(), '../frontend/dist'));
+  for (const dir of candidates) {
+    if (dir && fs.existsSync(path.join(dir, 'index.html'))) return dir;
+  }
+  return null;
+}
+
+const frontendDist = resolveFrontendDist();
 if (frontendDist) {
   app.use(express.static(frontendDist));
   app.get(/^(?!\/api\/).*/, (req, res, next) => {
     if (req.method !== 'GET') return next();
     return res.sendFile(path.join(frontendDist, 'index.html'));
   });
+  if (!config.isTest) console.log(`[kixima] A servir o frontend (SPA) a partir de: ${frontendDist}`);
+} else if (!config.isTest) {
+  console.warn(
+    '[kixima] Frontend compilado não encontrado — apenas a API responde. ' +
+    'Garante que o build compila o frontend (cd frontend && npm ci && npm run build) ' +
+    'e/ou define FRONTEND_DIST com o caminho para frontend/dist.',
+  );
 }
 
 app.use(notFoundHandler);
