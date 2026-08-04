@@ -758,6 +758,66 @@ tbody tr:hover {
     linear-gradient(160deg, var(--navy-950), var(--navy-900) 55%, #1c1f28);
 }
 
+/* --- Hero de autenticação (Login + Cadastro) — mockup da plataforma ------ */
+.auth-hero {
+  position: relative;
+  overflow: hidden;
+  gap: 28px;
+  /* pôr-do-sol: céu escuro em cima -> laranja no horizonte -> água escura */
+  background: linear-gradient(180deg, #0a1622 0%, #17263a 34%, #7d3b12 60%, #e5711d 72%, #b8480f 80%, #0b0f16 100%);
+}
+.auth-hero-bg { position: absolute; inset: 0; z-index: 0; }
+.auth-hero-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.auth-hero-rig { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* véu escuro para o texto ser sempre legível sobre a imagem/degradê */
+.auth-hero-scrim {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 14% 16%, rgba(225,29,42,0.28), transparent 44%),
+    linear-gradient(180deg, rgba(6,10,16,0.72) 0%, rgba(6,10,16,0.32) 40%, rgba(6,10,16,0.55) 78%, rgba(6,10,16,0.9) 100%);
+}
+.auth-hero > * { position: relative; z-index: 1; }
+.auth-hero-top { }
+.auth-hero-mid { margin-top: auto; }
+.auth-hero-title {
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1.1;
+  font-weight: 700;
+  max-width: 520px;
+  margin: 0 0 18px;
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(0,0,0,0.45);
+}
+.auth-hero-title .accent { color: #fff; }
+.auth-hero-sub {
+  color: rgba(255,255,255,0.9);
+  max-width: 480px;
+  font-size: 15px;
+  line-height: 1.6;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.4);
+}
+.auth-hero-feats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  padding-top: 26px;
+  border-top: 1px solid rgba(255,255,255,0.14);
+}
+.auth-feat { display: flex; flex-direction: column; gap: 8px; }
+.auth-feat-ico { color: var(--gold-400, #f5c451); }
+.auth-feat-label { font-size: 13px; font-weight: 600; line-height: 1.3; color: #fff; }
+/* barra tricolor no fundo (vermelho / dourado / navy) */
+.auth-hero::after {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: 0; height: 6px; z-index: 2;
+  background: linear-gradient(90deg, var(--brand-600, #e11d2a) 0 34%, var(--gold-400, #f5c451) 34% 67%, var(--navy-900, #17263a) 67% 100%);
+}
+@media (max-width: 860px) {
+  .auth-hero-feats { grid-template-columns: repeat(2, 1fr); }
+  .auth-hero-title { font-size: 30px; }
+}
+
 .login-hero-title {
   font-family: var(--font-display);
   font-size: 40px;

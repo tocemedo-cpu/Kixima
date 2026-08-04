@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { ROLE_HOME } from '../../domain';
-import Logo from '../../components/Logo';
+import AuthHero from '../../components/AuthHero';
 import { useI18n, LANGS } from '../../i18n';
 
 export default function LoginPage() {
@@ -33,25 +33,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-screen">
-      <div className="login-hero">
-        <Logo size={30} mark={72} subtitle light />
-        <div>
-          <h1 className="login-hero-title">
-            O fornecedor recebe em <span className="accent">7 dias</span>. Antes mesmo de entregar.
-          </h1>
-          <p className="login-hero-body">
-            E-market com pagamento garantido para o setor petrolífero e de gás em Angola. Due
-            diligence, garantia de pagamento e apólice de seguro — para que o comprador nunca
-            precise de confiar às cegas, e o fornecedor nunca precise de esperar 90 dias.
-          </p>
-          <div className="login-hero-flow">
-            {['Cesta', 'PO emitida', 'Aprovação', 'Aceitação', 'Fatura', 'Pagamento ≤ 7 dias', 'Execução', 'Receção'].map((step) => (
-              <span key={step} className="login-hero-step">{step}</span>
-            ))}
-          </div>
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--navy-100)' }}>Angola / África — setor Oil &amp; Gas</div>
-      </div>
+      <AuthHero />
 
       <div className="login-panel">
         <div className="login-card">

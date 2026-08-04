@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
-import Logo from '../../components/Logo';
+import AuthHero from '../../components/AuthHero';
 
 const EMPTY_FORM = {
   type: 'CLIENTE',
@@ -90,18 +90,7 @@ export default function Register() {
 
   return (
     <div className="login-screen">
-      <div className="login-hero">
-        <Logo size={30} mark={72} subtitle light />
-        <div>
-          <h1 className="login-hero-title">Due diligence uma vez. Confiança em cada transação.</h1>
-          <p className="login-hero-body">
-            Registe a sua empresa como Cliente (operadora) ou Fornecedora, crie a conta de
-            administrador e anexe os documentos de credenciamento. A equipa KIXIMA verifica e
-            aprova o acesso.
-          </p>
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--navy-100)' }}>Angola / África — setor Oil &amp; Gas</div>
-      </div>
+      <AuthHero />
 
       <div className="login-panel">
         <div className="login-card" style={{ maxWidth: 440 }}>

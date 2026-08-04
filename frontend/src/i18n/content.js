@@ -148,6 +148,11 @@ export const EN2 = {
   'Adicionar à Cesta': 'Add to Cart', 'Adicionar à comparação': 'Add to comparison', 'Anterior': 'Previous', 'Próximo': 'Next',
   'Página {a} de {b}': 'Page {a} of {b}', 'Produtos por página': 'Products per page', 'Comparar Produtos': 'Compare Products',
   'Marca': 'Brand', 'Prazo de Entrega': 'Delivery Time', 'dias': 'days', 'Limpar comparação': 'Clear comparison',
+  // Hero de autenticação (Login + Cadastro)
+  'Due diligence uma vez.': 'Due diligence once.', 'Confiança em cada transação.': 'Trust in every transaction.',
+  'Conectamos operadoras, fornecedores e prestadores de serviços num ecossistema seguro, transparente e auditável.': 'We connect operators, suppliers and service providers in a secure, transparent and auditable ecosystem.',
+  'Transparência total': 'Full transparency', 'Conformidade garantida': 'Guaranteed compliance',
+  'Processos eficientes': 'Efficient processes', 'Rede qualificada e verificada': 'Qualified, verified network',
 };
 
 export const FR2 = {
@@ -287,4 +292,9 @@ export const FR2 = {
   'Adicionar à Cesta': 'Ajouter au panier', 'Adicionar à comparação': 'Ajouter à la comparaison', 'Anterior': 'Précédent', 'Próximo': 'Suivant',
   'Página {a} de {b}': 'Page {a} sur {b}', 'Produtos por página': 'Produits par page', 'Comparar Produtos': 'Comparer les produits',
   'Marca': 'Marque', 'Prazo de Entrega': 'Délai de livraison', 'dias': 'jours', 'Limpar comparação': 'Effacer la comparaison',
+  // Hero de autenticação (Login + Cadastro)
+  'Due diligence uma vez.': 'Due diligence une fois.', 'Confiança em cada transação.': 'La confiance à chaque transaction.',
+  'Conectamos operadoras, fornecedores e prestadores de serviços num ecossistema seguro, transparente e auditável.': 'Nous connectons opérateurs, fournisseurs et prestataires dans un écosystème sûr, transparent et auditable.',
+  'Transparência total': 'Transparence totale', 'Conformidade garantida': 'Conformité garantie',
+  'Processos eficientes': 'Processus efficaces', 'Rede qualificada e verificada': 'Réseau qualifié et vérifié',
 };
