@@ -4,9 +4,11 @@ import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { ROLE_HOME } from '../../domain';
 import Logo from '../../components/Logo';
+import { useI18n, LANGS } from '../../i18n';
 
 export default function LoginPage() {
   const { user, login } = useAuth();
+  const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,27 +55,32 @@ export default function LoginPage() {
 
       <div className="login-panel">
         <div className="login-card">
-          <h2>Entrar</h2>
-          <p>Aceda com a sua conta KIXIMA.</p>
+          <div className="login-langs">
+            {LANGS.map((l) => (
+              <button key={l.code} type="button" className={`login-lang${l.code === lang ? ' on' : ''}`} onClick={() => setLang(l.code)}>{l.flag} {l.label}</button>
+            ))}
+          </div>
+          <h2>{t('Entrar')}</h2>
+          <p>{t('Aceda com a sua conta KIXIMA.')}</p>
 
           <form onSubmit={handleSubmit}>
             <div className="field">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">{t('Email')}</label>
               <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@empresa.co.ao" />
             </div>
             <div className="field">
-              <label htmlFor="password">Palavra-passe</label>
+              <label htmlFor="password">{t('Palavra-passe')}</label>
               <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
             {error ? <p className="error-text" style={{ marginBottom: 12 }}>{error}</p> : null}
             <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%' }}>
-              {submitting ? 'A entrar…' : 'Entrar'}
+              {submitting ? t('A entrar…') : t('Entrar')}
             </button>
           </form>
 
           <p className="helptext" style={{ marginTop: 16 }}>
-            A sua empresa ainda não está na KIXIMA?{' '}
-            <Link to="/cadastro" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Registe-a aqui</Link>.
+            {t('A sua empresa ainda não está na KIXIMA?')}{' '}
+            <Link to="/cadastro" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Registe-a aqui')}</Link>.
           </p>
         </div>
       </div>

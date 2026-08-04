@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Icon } from './icons';
 import SidebarSubItem from './SidebarSubItem';
+import { useI18n } from '../i18n';
 
 // Uma rota "pertence" ao módulo se for igual a um `to` de um filho ou começar por ele.
 function moduleIsActive(children, pathname) {
@@ -15,6 +16,7 @@ function moduleIsActive(children, pathname) {
 
 export default function SidebarItem({ item, badge, num, onLogout, onNavigate }) {
   const { pathname } = useLocation();
+  const { t } = useI18n();
   const numEl = num ? <span className="sb-num">{num}.</span> : null;
 
   // Ação (Sair).
@@ -22,7 +24,7 @@ export default function SidebarItem({ item, badge, num, onLogout, onNavigate }) 
     return (
       <button type="button" className="sb-item sb-action" onClick={onLogout}>
         <Icon name={item.icon} size={18} className="sb-ico" />
-        <span>{item.label}</span>
+        <span>{t(item.label)}</span>
       </button>
     );
   }
@@ -42,13 +44,14 @@ export default function SidebarItem({ item, badge, num, onLogout, onNavigate }) 
     >
       {numEl}
       <Icon name={item.icon} size={18} className="sb-ico" />
-      <span>{item.label}</span>
+      <span>{t(item.label)}</span>
       {badge ? <span className="sb-badge">{badge}</span> : null}
     </NavLink>
   );
 }
 
 function AccordionItem({ item, pathname, num, onNavigate }) {
+  const { t } = useI18n();
   const active = moduleIsActive(item.children, pathname);
   // Abre por defeito quando a rota atual pertence ao módulo; o utilizador pode
   // depois abrir/fechar manualmente.
@@ -69,7 +72,7 @@ function AccordionItem({ item, pathname, num, onNavigate }) {
       >
         {num ? <span className="sb-num">{num}.</span> : null}
         <Icon name={item.icon} size={18} className="sb-ico" />
-        <span>{item.label}</span>
+        <span>{t(item.label)}</span>
         <Icon name="chevron" size={15} className={`sb-arrow${open ? ' sb-arrow-open' : ''}`} />
       </button>
 
