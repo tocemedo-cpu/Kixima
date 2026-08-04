@@ -24,7 +24,7 @@ async function listCatalog({ category, search, supplierId, excludeSupplierId } =
         ? { name: { contains: search, mode: 'insensitive' } }
         : {}),
     },
-    include: { supplier: { select: { id: true, name: true, status: true } } },
+    include: { supplier: { select: { id: true, name: true, status: true, verified: true, logoUrl: true, city: true, country: true } } },
     orderBy: { createdAt: 'desc' },
   });
 }

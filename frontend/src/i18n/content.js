@@ -136,6 +136,18 @@ export const EN2 = {
   'Sem documentos nesta secção': 'No documents in this section', 'Sem histórico': 'No history', 'Sem kits': 'No kits',
   'Sem notificações por agora': 'No notifications for now', 'Sem produtos': 'No products', 'Status do Sistema': 'System Status',
   'Visão Geral Financeira': 'Financial Overview', 'Visão Geral de Indicadores': 'Indicators Overview', 'Volume de Operações': 'Operations Volume',
+  // Tela Produtos (catálogo do comprador) — filtros, ordenação, comparação
+  'Comparar': 'Compare', 'Pesquisar produtos por nome, categoria, marca, modelo…': 'Search products by name, category, brand, model…',
+  'Faixa de Preço': 'Price Range', 'Máximo': 'Maximum', 'Em Stock': 'In Stock', 'Por Encomenda': 'On Order',
+  'Fornecedor Verificado': 'Verified Supplier', 'Apenas Fornecedores Verificados': 'Verified Suppliers Only',
+  'Avaliação do Produto': 'Product Rating', 'Limpar Filtros': 'Clear Filters', 'Ordenar por': 'Sort by',
+  'Mais Relevantes': 'Most Relevant', 'Preço: menor primeiro': 'Price: low to high', 'Preço: maior primeiro': 'Price: high to low',
+  'Melhor Avaliados': 'Best Rated', 'Mais Recentes': 'Most Recent', 'Grelha': 'Grid', 'Lista': 'List',
+  'A mostrar {a} - {b} de {n} produtos': 'Showing {a} - {b} of {n} products', 'Ajuste a pesquisa ou os filtros.': 'Adjust your search or filters.',
+  'avaliações': 'reviews', 'Sem avaliações': 'No reviews', 'Verificado': 'Verified', 'Adicionado ✓': 'Added ✓',
+  'Adicionar à Cesta': 'Add to Cart', 'Adicionar à comparação': 'Add to comparison', 'Anterior': 'Previous', 'Próximo': 'Next',
+  'Página {a} de {b}': 'Page {a} of {b}', 'Produtos por página': 'Products per page', 'Comparar Produtos': 'Compare Products',
+  'Marca': 'Brand', 'Prazo de Entrega': 'Delivery Time', 'dias': 'days', 'Limpar comparação': 'Clear comparison',
 };
 
 export const FR2 = {
@@ -263,4 +275,16 @@ export const FR2 = {
   'Sem documentos nesta secção': 'Aucun document dans cette section', 'Sem histórico': 'Aucun historique', 'Sem kits': 'Aucun kit',
   'Sem notificações por agora': 'Aucune notification pour l’instant', 'Sem produtos': 'Aucun produit', 'Status do Sistema': 'Statut du système',
   'Visão Geral Financeira': 'Vue d’ensemble financière', 'Visão Geral de Indicadores': 'Vue d’ensemble des indicateurs', 'Volume de Operações': 'Volume d’opérations',
+  // Tela Produtos (catálogo do comprador) — filtros, ordenação, comparação
+  'Comparar': 'Comparer', 'Pesquisar produtos por nome, categoria, marca, modelo…': 'Rechercher des produits par nom, catégorie, marque, modèle…',
+  'Faixa de Preço': 'Fourchette de prix', 'Máximo': 'Maximum', 'Em Stock': 'En stock', 'Por Encomenda': 'Sur commande',
+  'Fornecedor Verificado': 'Fournisseur vérifié', 'Apenas Fornecedores Verificados': 'Uniquement fournisseurs vérifiés',
+  'Avaliação do Produto': 'Évaluation du produit', 'Limpar Filtros': 'Effacer les filtres', 'Ordenar por': 'Trier par',
+  'Mais Relevantes': 'Les plus pertinents', 'Preço: menor primeiro': 'Prix : croissant', 'Preço: maior primeiro': 'Prix : décroissant',
+  'Melhor Avaliados': 'Les mieux notés', 'Mais Recentes': 'Les plus récents', 'Grelha': 'Grille', 'Lista': 'Liste',
+  'A mostrar {a} - {b} de {n} produtos': 'Affichage {a} - {b} sur {n} produits', 'Ajuste a pesquisa ou os filtros.': 'Ajustez la recherche ou les filtres.',
+  'avaliações': 'avis', 'Sem avaliações': 'Aucun avis', 'Verificado': 'Vérifié', 'Adicionado ✓': 'Ajouté ✓',
+  'Adicionar à Cesta': 'Ajouter au panier', 'Adicionar à comparação': 'Ajouter à la comparaison', 'Anterior': 'Précédent', 'Próximo': 'Suivant',
+  'Página {a} de {b}': 'Page {a} sur {b}', 'Produtos por página': 'Produits par page', 'Comparar Produtos': 'Comparer les produits',
+  'Marca': 'Marque', 'Prazo de Entrega': 'Délai de livraison', 'dias': 'jours', 'Limpar comparação': 'Effacer la comparaison',
 };

@@ -6,19 +6,33 @@ import { useState } from 'react';
 
 let idc = 0;
 
+// Emblema KIXIMA — gota com a silhueta de uma plataforma petrolífera offshore.
+// É totalmente SVG (sem depender de nenhum ficheiro), por isso a marca aparece
+// sempre. Se colocares o logótipo oficial em public/kixima-logo.png, ele é usado
+// em vez deste emblema.
 function FlameFallback({ size }) {
-  const gid = `kx-flame-${(idc += 1)}`;
+  const gid = `kx-drop-${(idc += 1)}`;
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+    <svg viewBox="0 0 48 48" width={size} height={size} aria-hidden="true">
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#f5a623" />
-          <stop offset="0.45" stopColor="#e11d2a" />
-          <stop offset="1" stopColor="#f5327c" />
+          <stop offset="0" stopColor="#ff5a3c" />
+          <stop offset="0.55" stopColor="#e11d2a" />
+          <stop offset="1" stopColor="#b3121d" />
         </linearGradient>
       </defs>
-      <path fill={`url(#${gid})`} d="M12 2s-1.2 2.7-3.4 5C6.4 9.3 5 11.3 5 14a7 7 0 0 0 14 0c0-3.4-2.1-5.7-3.4-7.1C13.9 5 12 2 12 2z" />
-      <path fill="#fff" opacity="0.85" d="M12.7 10.6c.8 1 1.9 2 1.9 3.6a2.6 2.6 0 0 1-5.2.1c0-1 .5-1.9 1.1-2.5.2.6.7 1 1.3 1.2-.3-1 .3-1.9.9-2.4z" />
+      {/* Gota */}
+      <path fill={`url(#${gid})`} d="M24 3C24 3 8 20 8 31a16 16 0 0 0 32 0C40 20 24 3 24 3z" />
+      {/* Plataforma offshore (torre + convés) em branco */}
+      <g fill="#fff">
+        <rect x="14.5" y="30.5" width="19" height="2.4" rx="1" />
+        <rect x="17" y="24" width="1.8" height="7" transform="skewX(-8)" />
+        <rect x="29" y="24" width="1.8" height="7" transform="skewX(8)" />
+        <path d="M24 14l5.5 10h-11z" opacity="0.95" />
+        <rect x="23.1" y="10.5" width="1.8" height="5" rx="0.9" />
+        <rect x="20.5" y="33.6" width="1.6" height="4" rx="0.8" opacity="0.85" />
+        <rect x="25.9" y="33.6" width="1.6" height="4" rx="0.8" opacity="0.85" />
+      </g>
     </svg>
   );
 }
