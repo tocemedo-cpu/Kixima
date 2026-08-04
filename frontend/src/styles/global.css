@@ -763,21 +763,24 @@ tbody tr:hover {
   position: relative;
   overflow: hidden;
   gap: 28px;
-  /* pôr-do-sol: céu escuro em cima -> laranja no horizonte -> água escura */
-  background: linear-gradient(180deg, #0a1622 0%, #17263a 34%, #7d3b12 60%, #e5711d 72%, #b8480f 80%, #0b0f16 100%);
+  /* Imagem de fundo carregada de ficheiro LOCAL (public/images/). */
+  background-image: url('/images/login-background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
-.auth-hero-bg { position: absolute; inset: 0; z-index: 0; }
-.auth-hero-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.auth-hero-rig { position: absolute; inset: 0; width: 100%; height: 100%; }
-/* véu escuro para o texto ser sempre legível sobre a imagem/degradê */
-.auth-hero-scrim {
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(circle at 14% 16%, rgba(225,29,42,0.28), transparent 44%),
-    linear-gradient(180deg, rgba(6,10,16,0.72) 0%, rgba(6,10,16,0.32) 40%, rgba(6,10,16,0.55) 78%, rgba(6,10,16,0.9) 100%);
+/* Overlay preto com gradiente (~70% de opacidade) para leitura do texto. */
+.auth-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.66) 45%, rgba(0, 0, 0, 0.75) 100%);
 }
 .auth-hero > * { position: relative; z-index: 1; }
 .auth-hero-top { }
+/* Logótipo carregado de ficheiro LOCAL — mesmo tamanho e posição atuais. */
+.auth-hero-logo { height: 64px; width: auto; display: block; }
 .auth-hero-mid { margin-top: auto; }
 .auth-hero-title {
   font-family: var(--font-display);
