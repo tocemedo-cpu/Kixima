@@ -80,18 +80,26 @@ const fs = require('fs');
 function resolveFrontendDist() {
   const candidates = [];
   if (process.env.FRONTEND_DIST) candidates.push(path.resolve(process.env.FRONTEND_DIST));
-  // backend/src -> ../../frontend/dist (monorepo) e variações comuns de deploy.
-  candidates.push(path.resolve(__dirname, '../../frontend/dist'));
-  candidates.push(path.resolve(__dirname, '../frontend/dist'));
-  candidates.push(path.resolve(process.cwd(), 'frontend/dist'));
-  candidates.push(path.resolve(process.cwd(), '../frontend/dist'));
-  for (const dir of candidates) {
-    if (dir && fs.existsSync(path.join(dir, 'index.html'))) return dir;
+  // Sobe alguns níveis a partir deste ficheiro e do cwd à procura de
+  // frontend/dist — cobre qualquer layout de deploy (Root Directory, etc.).
+  const roots = [__dirname, process.cwd()];
+  for (const r of roots) {
+    for (let up = 0; up <= 4; up++) {
+      const base = path.resolve(r, '../'.repeat(up) || './');
+      candidates.push(path.join(base, 'frontend', 'dist'));
+      candidates.push(path.join(base, 'dist'));
+    }
   }
-  return null;
+  const checked = [];
+  for (const dir of candidates) {
+    const ok = dir && fs.existsSync(path.join(dir, 'index.html'));
+    checked.push(`${ok ? '✓' : '✗'} ${dir}`);
+    if (ok) return { dir, checked };
+  }
+  return { dir: null, checked };
 }
 
-const frontendDist = resolveFrontendDist();
+const { dir: frontendDist, checked: distChecked } = resolveFrontendDist();
 if (frontendDist) {
   app.use(express.static(frontendDist));
   app.get(/^(?!\/api\/).*/, (req, res, next) => {
@@ -101,9 +109,11 @@ if (frontendDist) {
   if (!config.isTest) console.log(`[kixima] A servir o frontend (SPA) a partir de: ${frontendDist}`);
 } else if (!config.isTest) {
   console.warn(
-    '[kixima] Frontend compilado não encontrado — apenas a API responde. ' +
-    'Garante que o build compila o frontend (cd frontend && npm ci && npm run build) ' +
-    'e/ou define FRONTEND_DIST com o caminho para frontend/dist.',
+    '[kixima] Frontend compilado não encontrado — apenas a API responde.\n' +
+    `[kixima] __dirname = ${__dirname}\n` +
+    `[kixima] process.cwd() = ${process.cwd()}\n` +
+    `[kixima] FRONTEND_DIST = ${process.env.FRONTEND_DIST || '(não definido)'}\n` +
+    '[kixima] Caminhos verificados:\n' + distChecked.map((c) => '           ' + c).join('\n'),
   );
 }
 
