@@ -29,6 +29,7 @@ function shapeInvoice(inv) {
   return {
     id: inv.id, reference: inv.reference, supplier: supplierOf(inv),
     poReference: inv.purchaseOrder?.reference || inv.contract?.reference || null,
+    poId: inv.purchaseOrderId || inv.purchaseOrder?.id || null,
     amount: num(inv.amount), currency: inv.currency, status: inv.status,
     issuedAt: inv.issuedAt, dueAt: inv.dueAt,
     paidAt: inv.payment?.processedAt || null,

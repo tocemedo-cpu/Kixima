@@ -62,7 +62,14 @@ export default function PendingInvoices() {
                     <td>{formatDate(i.issuedAt)}</td>
                     <td style={{ color: overdue ? '#c0392b' : undefined }}>{formatDate(i.dueAt)}</td>
                     <td><Pill tone={overdue ? 'danger' : 'pending'}>{overdue ? 'Vencida' : 'Pendente'}</Pill></td>
-                    <td><button className="btn btn-accent btn-sm" disabled={paying === i.id} onClick={() => pay(i)}>{paying === i.id ? 'A pagar…' : 'Pagar'}</button></td>
+                    <td className="r" style={{ whiteSpace: 'nowrap' }}>
+                      {i.poId ? (
+                        <button className="btn btn-ghost btn-sm" title="Ver fatura" onClick={() => window.open(`/documento/fatura/${i.poId}`, '_blank')}>
+                          <Icon name="report" size={14} /> Ver
+                        </button>
+                      ) : null}
+                      <button className="btn btn-accent btn-sm" style={{ marginLeft: 6 }} disabled={paying === i.id} onClick={() => pay(i)}>{paying === i.id ? 'A pagar…' : 'Pagar'}</button>
+                    </td>
                   </tr>
                 );
               })}

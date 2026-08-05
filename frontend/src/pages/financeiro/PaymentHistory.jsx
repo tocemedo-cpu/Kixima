@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
+import { Icon } from '../../components/icons';
 import { INVOICE_STATUS, formatMoney, formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
 
@@ -43,10 +44,10 @@ export default function PaymentHistory() {
       {error ? <div className="empty-state"><p>{error}</p></div> : (
         <div className="bz-card bz-tablewrap">
           <table className="bz-table">
-            <thead><tr><th>{t('Nº da Fatura')}</th><th>{t('Fornecedor')}</th><th>{t('PO')}</th><th className="r">{t('Valor')}</th><th>{t('Vencimento')}</th><th>{t('Pago em')}</th><th>{t('Status')}</th></tr></thead>
+            <thead><tr><th>{t('Nº da Fatura')}</th><th>{t('Fornecedor')}</th><th>{t('PO')}</th><th className="r">{t('Valor')}</th><th>{t('Vencimento')}</th><th>{t('Pago em')}</th><th>{t('Status')}</th><th></th></tr></thead>
             <tbody>
-              {!data ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>
-                : items.length === 0 ? <tr><td colSpan={7}><EmptyRow>Sem pagamentos.</EmptyRow></td></tr>
+              {!data ? <tr><td colSpan={8}><EmptyRow>A carregar…</EmptyRow></td></tr>
+                : items.length === 0 ? <tr><td colSpan={8}><EmptyRow>Sem pagamentos.</EmptyRow></td></tr>
                 : items.map((i) => {
                   const overdue = i.status === 'PENDENTE' && new Date(i.dueAt).getTime() < now;
                   return (
@@ -58,6 +59,14 @@ export default function PaymentHistory() {
                       <td>{formatDate(i.dueAt)}</td>
                       <td className="bz-muted">{i.paidAt ? formatDate(i.paidAt) : '—'}</td>
                       <td><Pill tone={i.status === 'PAGA' ? 'success' : overdue ? 'danger' : 'pending'}>{overdue ? 'Vencida' : (INVOICE_STATUS[i.status]?.label || i.status)}</Pill></td>
+                      <td className="r" style={{ whiteSpace: 'nowrap' }}>
+                        {i.poId ? (
+                          <>
+                            <button className="btn btn-ghost btn-sm" title="Ver fatura" onClick={() => window.open(`/documento/fatura/${i.poId}`, '_blank')}><Icon name="report" size={14} /> Fatura</button>
+                            <button className="btn btn-ghost btn-sm" style={{ marginLeft: 6 }} title="Ver ordem de compra" onClick={() => window.open(`/documento/po/${i.poId}`, '_blank')}><Icon name="report" size={14} /> PO</button>
+                          </>
+                        ) : <span className="bz-muted">—</span>}
+                      </td>
                     </tr>
                   );
                 })}

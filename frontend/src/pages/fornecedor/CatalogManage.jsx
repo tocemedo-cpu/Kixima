@@ -11,10 +11,28 @@ import ProductCover from '../../components/ProductCover';
 import { Icon } from '../../components/icons';
 import { useI18n } from '../../i18n';
 
-const CATEGORIES = [
-  'Válvulas', 'Hidráulica', 'Inspeção & Ensaios', 'Logística & Transporte',
-  'Engenharia', 'Equipamentos', 'Formação & Certificação', 'Materiais', 'Offshore', 'Consultoria',
-];
+// Taxonomia Oil & Gas — categoria → subcategorias. Cobre o espetro do setor
+// (upstream/midstream/downstream, produtos e serviços). "Outros" + subcategoria
+// em texto livre acomodam itens fora da lista, mantendo a diversidade.
+const TAXONOMY = {
+  'Perfuração & Poço': ['Brocas & Bits', 'Drill Pipe & Tubulares', 'BOP & Controlo de Poço', 'Ferramentas de Fundo', 'Cimentação', 'Fluidos & Lamas'],
+  'Válvulas & Controlo de Fluxo': ['Esfera', 'Gaveta', 'Globo', 'Borboleta', 'Retenção', 'Segurança & Alívio', 'Atuadores'],
+  'Tubulação & Acessórios': ['Tubos & Pipe', 'Flanges', 'Conexões & Fittings', 'Juntas & Vedações', 'Suportes & Fixação'],
+  'Instrumentação & Automação': ['Sensores & Transmissores', 'Manómetros', 'Medidores de Caudal', 'Controlo & SCADA', 'Calibração'],
+  'Equipamentos Rotativos': ['Bombas', 'Compressores', 'Turbinas', 'Motores', 'Geradores'],
+  'Equipamentos Estáticos': ['Vasos de Pressão', 'Permutadores de Calor', 'Tanques & Reservatórios', 'Separadores', 'Filtros'],
+  'Elétrica & Energia': ['Cabos & Condutores', 'Quadros & Painéis', 'Transformadores', 'Iluminação (Ex)', 'Baterias & UPS'],
+  'EPI & Segurança': ['Proteção Individual', 'Deteção de Gás', 'Combate a Incêndio', 'Resgate & Salvamento', 'Sinalização'],
+  'Químicos & Consumíveis': ['Químicos de Processo', 'Lubrificantes', 'Consumíveis de Soldadura', 'Limpeza & Manutenção', 'Revestimentos & Tintas'],
+  'Offshore & Subsea': ['Equipamento Subsea', 'Umbilicais & Risers', 'ROV & Ferramentas', 'Amarração', 'Apoio Marítimo'],
+  'Materiais & Estruturas': ['Aço & Perfis', 'Estruturas Metálicas', 'Chapas', 'Fixadores', 'Isolamento'],
+  'Inspeção, Ensaios & Certificação': ['END / NDT', 'Inspeção de Soldadura', 'Certificação', 'Metrologia', 'Auditoria'],
+  'Engenharia & Manutenção': ['Projeto & Engenharia', 'Manutenção', 'Comissionamento', 'Construção & Montagem', 'Consultoria'],
+  'Logística & Movimentação': ['Transporte', 'Elevação & Rigging', 'Contentores', 'Armazenagem', 'Desalfandegamento'],
+  'Formação & Certificação': ['HSE', 'Técnica', 'Operacional', 'Certificação de Pessoal'],
+  'Outros': [],
+};
+const CATEGORIES = Object.keys(TAXONOMY);
 const CURRENCIES = ['AOA', 'USD', 'EUR'];
 const AVAILABILITY = ['Em stock', 'Sob encomenda', 'Esgotado'];
 
@@ -30,7 +48,7 @@ const TABS = ['Produto', 'Preço & Disponibilidade', 'Imagens & Documentos'];
 // Apenas os campos essenciais/importantes para publicar um item no marketplace.
 const EMPTY_FORM = {
   // Produto
-  name: '', category: '', brand: '', description: '', measurementUnit: '',
+  name: '', category: '', subcategory: '', brand: '', description: '', measurementUnit: '',
   // Preço & disponibilidade
   currency: 'AOA', unitPrice: '', promoPrice: '',
   availability: 'Em stock', stockQuantity: '', leadTimeDays: '',
@@ -172,22 +190,37 @@ export default function CatalogManage() {
               <div className="grid-cols grid-2">
                 <div className="field">
                   <label>Categoria <span className="req">*</span></label>
-                  <input list="cat-list" value={form.category} onChange={(e) => update('category', e.target.value)} placeholder="Ex.: Válvulas, Inspeção & Ensaios…" />
-                  <datalist id="cat-list">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
+                  <select value={form.category} onChange={(e) => { update('category', e.target.value); update('subcategory', ''); }}>
+                    <option value="">Selecione…</option>
+                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
+                <div className="field">
+                  <label>Subcategoria</label>
+                  <input
+                    list="subcat-list"
+                    value={form.subcategory}
+                    onChange={(e) => update('subcategory', e.target.value)}
+                    placeholder={form.category ? 'Selecione ou escreva…' : 'Escolha a categoria primeiro'}
+                    disabled={!form.category}
+                  />
+                  <datalist id="subcat-list">{(TAXONOMY[form.category] || []).map((s) => <option key={s} value={s} />)}</datalist>
+                </div>
+              </div>
+              <div className="grid-cols grid-2">
                 <div className="field">
                   <label>Marca</label>
                   <input value={form.brand} onChange={(e) => update('brand', e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>Unidade de Medida</label>
+                  <input value={form.measurementUnit} onChange={(e) => update('measurementUnit', e.target.value)} placeholder="Ex.: un, m, kg, caixa" />
                 </div>
               </div>
               <div className="field">
                 <label>Descrição Curta <span className="req">*</span></label>
                 <textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} />
                 <small className="helptext">Aparece nos cartões do marketplace.</small>
-              </div>
-              <div className="field" style={{ maxWidth: 260 }}>
-                <label>Unidade de Medida</label>
-                <input value={form.measurementUnit} onChange={(e) => update('measurementUnit', e.target.value)} placeholder="Ex.: un, m, kg, caixa" />
               </div>
             </div>
 
