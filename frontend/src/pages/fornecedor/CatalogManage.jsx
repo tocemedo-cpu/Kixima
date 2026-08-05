@@ -1,7 +1,7 @@
 // src/pages/fornecedor/CatalogManage.jsx
-// Gestão do catálogo do Vendedor. Cadastro completo do produto num formulário
-// com 7 abas: Identificação, Descrição, Especificações, Preço, Estoque,
-// Imagens (upload múltiplo + arrastar/soltar + pré-visualização) e Documentos.
+// Gestão do catálogo do Vendedor. Cadastro do produto num formulário enxuto de
+// 3 abas — apenas o essencial: Produto (nome, categoria, marca, descrição,
+// unidade), Preço & Disponibilidade e Imagens & Documentos.
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
@@ -18,49 +18,23 @@ const CATEGORIES = [
 const CURRENCIES = ['AOA', 'USD', 'EUR'];
 const AVAILABILITY = ['Em stock', 'Sob encomenda', 'Esgotado'];
 
+// Documentos relevantes para o setor (compliance). Opcionais.
 const DOC_TYPES = [
   ['FICHA_TECNICA', 'Ficha Técnica'],
-  ['DATASHEET', 'Datasheet'],
-  ['MANUAL', 'Manual'],
-  ['CATALOGO', 'Catálogo PDF'],
   ['CERTIFICADO', 'Certificados'],
-  ['DESENHO_TECNICO', 'Desenhos Técnicos'],
+  ['CATALOGO', 'Catálogo PDF'],
 ];
 
-const TABS = ['Identificação', 'Descrição', 'Especificações', 'Preço', 'Estoque', 'Imagens', 'Documentos'];
+const TABS = ['Produto', 'Preço & Disponibilidade', 'Imagens & Documentos'];
 
+// Apenas os campos essenciais/importantes para publicar um item no marketplace.
 const EMPTY_FORM = {
-  // Identificação
-  name: '', sku: '', manufacturerCode: '', category: '', subcategory: '',
-  brand: '', manufacturer: '', model: '', countryOfOrigin: '',
-  // Descrição
-  description: '', fullDescription: '', applications: '', benefits: '', keywords: '',
-  // Especificações
-  material: '', weight: '', height: '', width: '', length: '', pressure: '',
-  temperature: '', power: '', voltage: '', measurementUnit: '',
-  // Preço
-  currency: 'AOA', unitPrice: '', promoPrice: '', minQuantity: '', maxQuantity: '',
-  // Estoque
-  stockQuantity: '', warehouse: '', leadTimeDays: '', availability: 'Em stock', minStock: '',
+  // Produto
+  name: '', category: '', brand: '', description: '', measurementUnit: '',
+  // Preço & disponibilidade
+  currency: 'AOA', unitPrice: '', promoPrice: '',
+  availability: 'Em stock', stockQuantity: '', leadTimeDays: '',
 };
-
-// Campos de texto por aba (chave, rótulo). unitPrice/moeda/estoque têm render próprio.
-const IDENT_FIELDS = [
-  ['sku', 'SKU'], ['manufacturerCode', 'Código do Fabricante'], ['subcategory', 'Subcategoria'],
-  ['brand', 'Marca'], ['manufacturer', 'Fabricante'], ['model', 'Modelo'], ['countryOfOrigin', 'País de Origem'],
-];
-const DESC_FIELDS = [
-  ['description', 'Descrição Curta', 'Aparece nos cartões do marketplace.'],
-  ['fullDescription', 'Descrição Completa'],
-  ['applications', 'Aplicações'],
-  ['benefits', 'Benefícios'],
-  ['keywords', 'Palavras-chave', 'Separe por vírgulas.'],
-];
-const SPEC_FIELDS = [
-  ['material', 'Material'], ['weight', 'Peso'], ['height', 'Altura'], ['width', 'Largura'],
-  ['length', 'Comprimento'], ['pressure', 'Pressão'], ['temperature', 'Temperatura'],
-  ['power', 'Potência'], ['voltage', 'Tensão'], ['measurementUnit', 'Unidade de Medida'],
-];
 
 export default function CatalogManage() {
   const { t } = useI18n();
@@ -125,10 +99,11 @@ export default function CatalogManage() {
     e.preventDefault();
     setError('');
     setSuccess('');
-    // Validação mínima (name/category/unitPrice) com salto para a aba certa.
+    // Validação dos campos obrigatórios com salto para a aba certa.
     if (!form.name.trim()) { setTab(0); setError('Indique o nome do produto.'); return; }
     if (!form.category.trim()) { setTab(0); setError('Indique a categoria.'); return; }
-    if (!form.unitPrice) { setTab(3); setError('Indique o preço unitário.'); return; }
+    if (!form.description.trim()) { setTab(0); setError('Escreva uma descrição curta (aparece nos cartões).'); return; }
+    if (!form.unitPrice) { setTab(1); setError('Indique o preço unitário.'); return; }
 
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => { if (v !== '' && v != null) fd.append(k, v); });
@@ -170,7 +145,7 @@ export default function CatalogManage() {
     <div>
       <PageHeader
         title="Catálogo de Produtos e Serviços"
-        subtitle="Cadastre a ficha completa dos seus itens — identificação, especificações, preço, estoque, imagens e documentos."
+        subtitle="Publique os seus itens com o essencial — produto, preço e disponibilidade, imagens e documentos."
         action={<button className="btn btn-accent" onClick={() => { setShowForm((v) => !v); if (showForm) resetForm(); }}>{showForm ? 'Cancelar' : '+ Novo item'}</button>}
       />
 
@@ -188,53 +163,36 @@ export default function CatalogManage() {
           </div>
 
           <form onSubmit={handleSubmit} className="prod-form">
-            {/* ABA 1 — Identificação */}
+            {/* ABA 1 — Produto */}
             <div className="tab-panel" style={{ display: tab === 0 ? 'block' : 'none' }}>
               <div className="field">
                 <label>Nome do Produto <span className="req">*</span></label>
                 <input value={form.name} onChange={(e) => update('name', e.target.value)} />
               </div>
-              <div className="field">
-                <label>Categoria <span className="req">*</span></label>
-                <input list="cat-list" value={form.category} onChange={(e) => update('category', e.target.value)} placeholder="Ex.: Válvulas, Inspeção & Ensaios…" />
-                <datalist id="cat-list">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
-              </div>
               <div className="grid-cols grid-2">
-                {IDENT_FIELDS.map(([k, label]) => (
-                  <div className="field" key={k}>
-                    <label>{label}</label>
-                    <input value={form[k]} onChange={(e) => update(k, e.target.value)} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ABA 2 — Descrição */}
-            <div className="tab-panel" style={{ display: tab === 1 ? 'block' : 'none' }}>
-              {DESC_FIELDS.map(([k, label, help]) => (
-                <div className="field" key={k}>
-                  <label>{label}</label>
-                  <textarea rows={k === 'fullDescription' ? 4 : 2} value={form[k]} onChange={(e) => update(k, e.target.value)} />
-                  {help ? <small className="helptext">{help}</small> : null}
+                <div className="field">
+                  <label>Categoria <span className="req">*</span></label>
+                  <input list="cat-list" value={form.category} onChange={(e) => update('category', e.target.value)} placeholder="Ex.: Válvulas, Inspeção & Ensaios…" />
+                  <datalist id="cat-list">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
                 </div>
-              ))}
-            </div>
-
-            {/* ABA 3 — Especificações Técnicas */}
-            <div className="tab-panel" style={{ display: tab === 2 ? 'block' : 'none' }}>
-              <p className="helptext" style={{ marginTop: 0 }}>Preencha apenas o que se aplica ao item (texto livre, ex.: “100 bar”, “-20°C a 120°C”).</p>
-              <div className="grid-cols grid-2">
-                {SPEC_FIELDS.map(([k, label]) => (
-                  <div className="field" key={k}>
-                    <label>{label}</label>
-                    <input value={form[k]} onChange={(e) => update(k, e.target.value)} />
-                  </div>
-                ))}
+                <div className="field">
+                  <label>Marca</label>
+                  <input value={form.brand} onChange={(e) => update('brand', e.target.value)} />
+                </div>
+              </div>
+              <div className="field">
+                <label>Descrição Curta <span className="req">*</span></label>
+                <textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} />
+                <small className="helptext">Aparece nos cartões do marketplace.</small>
+              </div>
+              <div className="field" style={{ maxWidth: 260 }}>
+                <label>Unidade de Medida</label>
+                <input value={form.measurementUnit} onChange={(e) => update('measurementUnit', e.target.value)} placeholder="Ex.: un, m, kg, caixa" />
               </div>
             </div>
 
-            {/* ABA 4 — Preço */}
-            <div className="tab-panel" style={{ display: tab === 3 ? 'block' : 'none' }}>
+            {/* ABA 2 — Preço & Disponibilidade */}
+            <div className="tab-panel" style={{ display: tab === 1 ? 'block' : 'none' }}>
               <div className="grid-cols grid-2">
                 <div className="field">
                   <label>Moeda</label>
@@ -251,46 +209,24 @@ export default function CatalogManage() {
                   <input type="number" min="0" step="0.01" value={form.promoPrice} onChange={(e) => update('promoPrice', e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>Quantidade Mínima</label>
-                  <input type="number" min="0" value={form.minQuantity} onChange={(e) => update('minQuantity', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>Quantidade Máxima</label>
-                  <input type="number" min="0" value={form.maxQuantity} onChange={(e) => update('maxQuantity', e.target.value)} />
-                </div>
-              </div>
-            </div>
-
-            {/* ABA 5 — Estoque */}
-            <div className="tab-panel" style={{ display: tab === 4 ? 'block' : 'none' }}>
-              <div className="grid-cols grid-2">
-                <div className="field">
-                  <label>Quantidade</label>
-                  <input type="number" min="0" value={form.stockQuantity} onChange={(e) => update('stockQuantity', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>Armazém</label>
-                  <input value={form.warehouse} onChange={(e) => update('warehouse', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>Tempo de Entrega (dias)</label>
-                  <input type="number" min="0" value={form.leadTimeDays} onChange={(e) => update('leadTimeDays', e.target.value)} />
-                </div>
-                <div className="field">
                   <label>Disponibilidade</label>
                   <select value={form.availability} onChange={(e) => update('availability', e.target.value)}>
                     {AVAILABILITY.map((a) => <option key={a} value={a}>{a}</option>)}
                   </select>
                 </div>
                 <div className="field">
-                  <label>Estoque Mínimo</label>
-                  <input type="number" min="0" value={form.minStock} onChange={(e) => update('minStock', e.target.value)} />
+                  <label>Quantidade em Stock</label>
+                  <input type="number" min="0" value={form.stockQuantity} onChange={(e) => update('stockQuantity', e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>Prazo de Entrega (dias)</label>
+                  <input type="number" min="0" value={form.leadTimeDays} onChange={(e) => update('leadTimeDays', e.target.value)} />
                 </div>
               </div>
             </div>
 
-            {/* ABA 6 — Imagens */}
-            <div className="tab-panel" style={{ display: tab === 5 ? 'block' : 'none' }}>
+            {/* ABA 3 — Imagens & Documentos */}
+            <div className="tab-panel" style={{ display: tab === 2 ? 'block' : 'none' }}>
               <label className="reg-section" style={{ display: 'block' }}>Imagem Principal</label>
               <Dropzone onFiles={addMainImage} hint="Arraste a imagem principal ou clique para escolher">
                 {mainImage ? <img src={mainImage.preview} alt="principal" className="dz-thumb" /> : null}
@@ -308,11 +244,9 @@ export default function CatalogManage() {
                   ))}
                 </div>
               )}
-            </div>
 
-            {/* ABA 7 — Documentos */}
-            <div className="tab-panel" style={{ display: tab === 6 ? 'block' : 'none' }}>
-              <p className="helptext" style={{ marginTop: 0 }}>PDF ou imagem, até 15 MB cada. Pode anexar vários por tipo.</p>
+              <label className="reg-section" style={{ display: 'block', marginTop: 16 }}>Documentos</label>
+              <p className="helptext" style={{ marginTop: 0 }}>PDF ou imagem, até 15 MB cada. Opcional — pode anexar vários por tipo.</p>
               {DOC_TYPES.map(([type, label]) => (
                 <div className="field" key={type}>
                   <label>{label}</label>
