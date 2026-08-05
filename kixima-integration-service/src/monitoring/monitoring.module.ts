@@ -3,11 +3,12 @@ import { BullModule } from '@nestjs/bullmq';
 import { AdaptersModule } from '@app/adapters/adapters.module';
 import { QUEUES } from '@app/common/constants';
 import { MonitoringController } from './monitoring.controller';
+import { DashboardController } from './dashboard.controller';
 import { MetricsService } from './metrics.service';
 
 @Module({
   imports: [BullModule.registerQueue({ name: QUEUES.SYNC }), AdaptersModule],
-  controllers: [MonitoringController],
+  controllers: [MonitoringController, DashboardController],
   providers: [MetricsService],
   exports: [MetricsService],
 })

@@ -2,7 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ErpSystem } from '@prisma/client';
 import { ErpAdapter } from './erp-adapter.interface';
-import { ErpSyncContext, ErpSyncResult } from '@app/common/types/erp.types';
+import { SapMapper } from './mappers/erp.mappers';
+import {
+  ErpSyncContext,
+  ErpSyncResult,
+  GoodsReceivedPayload,
+  InvoiceIssuedPayload,
+  PaymentCompletedPayload,
+  PurchaseOrderApprovedPayload,
+} from '@app/common/types/erp.types';
 
 /**
  * SAP S/4HANA — integração via OData V2/V4.
@@ -51,7 +59,7 @@ export class SapAdapter extends ErpAdapter {
     const started = Date.now();
     try {
       const csrf = await this.fetchCsrf('/API_PURCHASEORDER_PROCESS_SRV');
-      const res = await this.http.post('/API_PURCHASEORDER_PROCESS_SRV/A_PurchaseOrder', payload, {
+      const res = await this.http.post('/API_PURCHASEORDER_PROCESS_SRV/A_PurchaseOrder', SapMapper.purchaseOrder(payload as PurchaseOrderApprovedPayload), {
         headers: { 'x-csrf-token': csrf.token, Cookie: csrf.cookie, 'Content-Type': 'application/json' },
       });
       const externalId =
@@ -66,7 +74,7 @@ export class SapAdapter extends ErpAdapter {
     const started = Date.now();
     try {
       const csrf = await this.fetchCsrf('/API_SUPPLIERINVOICE_PROCESS_SRV');
-      const res = await this.http.post('/API_SUPPLIERINVOICE_PROCESS_SRV/A_SupplierInvoice', payload, {
+      const res = await this.http.post('/API_SUPPLIERINVOICE_PROCESS_SRV/A_SupplierInvoice', SapMapper.supplierInvoice(payload as InvoiceIssuedPayload), {
         headers: { 'x-csrf-token': csrf.token, Cookie: csrf.cookie, 'Content-Type': 'application/json' },
       });
       const externalId = (res.data?.d?.SupplierInvoice as string | undefined) ?? null;
@@ -80,7 +88,7 @@ export class SapAdapter extends ErpAdapter {
     const started = Date.now();
     try {
       const csrf = await this.fetchCsrf('/API_MATERIAL_DOCUMENT_SRV');
-      const res = await this.http.post('/API_MATERIAL_DOCUMENT_SRV/A_MaterialDocumentHeader', payload, {
+      const res = await this.http.post('/API_MATERIAL_DOCUMENT_SRV/A_MaterialDocumentHeader', SapMapper.materialDocument(payload as GoodsReceivedPayload), {
         headers: { 'x-csrf-token': csrf.token, Cookie: csrf.cookie, 'Content-Type': 'application/json' },
       });
       const externalId = (res.data?.d?.MaterialDocument as string | undefined) ?? null;
@@ -93,7 +101,7 @@ export class SapAdapter extends ErpAdapter {
   async pushPayment(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
     const started = Date.now();
     try {
-      const res = await this.http.post('/API_PAYMENTREQUEST_SRV/PaymentRequest', payload, {
+      const res = await this.http.post('/API_PAYMENTREQUEST_SRV/PaymentRequest', SapMapper.paymentRequest(payload as PaymentCompletedPayload), {
         headers: { 'Content-Type': 'application/json' },
       });
       const externalId = (res.data?.d?.PaymentRequest as string | undefined) ?? null;

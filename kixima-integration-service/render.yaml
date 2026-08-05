@@ -1,0 +1,73 @@
+# =====================================================================
+# KIXIMA Integration Service — Blueprint de deploy no Render (via GitHub).
+#
+# Este é o blueprint do MICROSERVIÇO, independente do Kixima. NÃO substitui
+# nem altera o render.yaml da raiz (o do backend principal). Duas formas de usar:
+#
+#   A) Serviço próprio (recomendado): Render → New → Web Service → ligar ao repo
+#      → Root Directory = "kixima-integration-service" → Runtime = Docker.
+#      Depois adicione o Postgres e o Redis (Key Value) e as variáveis abaixo.
+#
+#   B) Blueprint dedicado: aponte um novo Blueprint para este ficheiro
+#      (mantendo o do Kixima intacto).
+#
+# O RabbitMQ NÃO é criado pelo Render — use um broker existente/gerido
+# (ex.: CloudAMQP) e defina RABBITMQ_URL.
+# =====================================================================
+
+databases:
+  - name: kixima-integration-db
+    databaseName: kixima_integration
+    user: integration
+    plan: free
+    region: frankfurt
+
+services:
+  # Redis para o BullMQ (tipo "Key Value" no Render).
+  - type: keyvalue
+    name: kixima-integration-redis
+    plan: free
+    region: frankfurt
+    ipAllowList: []
+
+  - type: web
+    name: kixima-integration-service
+    runtime: docker
+    repo: https://github.com/tocemedo-cpu/Kixima
+    branch: claude/kixima-app-work-gmz6jk
+    rootDir: kixima-integration-service
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4100"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kixima-integration-db
+          property: connectionString
+      - key: REDIS_HOST
+        fromService:
+          type: keyvalue
+          name: kixima-integration-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: keyvalue
+          name: kixima-integration-redis
+          property: port
+      - key: RABBITMQ_EXCHANGE
+        value: kixima.events
+      # Segredos — definir no dashboard (sync:false não os grava no repositório).
+      - key: RABBITMQ_URL
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: KIXIMA_CALLBACK_URL
+        sync: false
+      - key: KIXIMA_CALLBACK_SECRET
+        sync: false

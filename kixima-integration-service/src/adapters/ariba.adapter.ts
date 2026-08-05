@@ -3,7 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { XMLBuilder, XMLParser } from 'fast-xml-parser';
 import { ErpSystem } from '@prisma/client';
 import { ErpAdapter } from './erp-adapter.interface';
-import { ErpSyncContext, ErpSyncResult } from '@app/common/types/erp.types';
+import { AribaMapper } from './mappers/erp.mappers';
+import {
+  ErpSyncContext,
+  ErpSyncResult,
+  GoodsReceivedPayload,
+  InvoiceIssuedPayload,
+  PaymentCompletedPayload,
+  PurchaseOrderApprovedPayload,
+} from '@app/common/types/erp.types';
 
 /**
  * SAP Ariba — integração via cXML (documentos XML sobre HTTP POST).
@@ -78,18 +86,18 @@ export class AribaAdapter extends ErpAdapter {
   }
 
   pushPurchaseOrder(payload: unknown, ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.send(ctx.eventId, { OrderRequest: payload as Record<string, unknown> }, 'PURCHASE_ORDER');
+    return this.send(ctx.eventId, { OrderRequest: AribaMapper.orderRequest(payload as PurchaseOrderApprovedPayload) }, 'PURCHASE_ORDER');
   }
 
   pushInvoice(payload: unknown, ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.send(ctx.eventId, { InvoiceDetailRequest: payload as Record<string, unknown> }, 'INVOICE');
+    return this.send(ctx.eventId, { InvoiceDetailRequest: AribaMapper.invoiceDetailRequest(payload as InvoiceIssuedPayload) }, 'INVOICE');
   }
 
   pushGoodsReceipt(payload: unknown, ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.send(ctx.eventId, { ReceiptRequest: payload as Record<string, unknown> }, 'GOODS_RECEIPT');
+    return this.send(ctx.eventId, { ReceiptRequest: AribaMapper.receiptRequest(payload as GoodsReceivedPayload) }, 'GOODS_RECEIPT');
   }
 
   pushPayment(payload: unknown, ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.send(ctx.eventId, { PaymentRemittanceRequest: payload as Record<string, unknown> }, 'PAYMENT');
+    return this.send(ctx.eventId, { PaymentRemittanceRequest: AribaMapper.paymentRemittanceRequest(payload as PaymentCompletedPayload) }, 'PAYMENT');
   }
 }

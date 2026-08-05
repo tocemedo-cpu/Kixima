@@ -95,11 +95,36 @@ docker compose -f docker-compose.integration.yml up --build
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | GET | `/health` | Saúde do serviço + estado de cada adapter ERP |
+| GET | `/dashboard` | **Painel visual** de monitorização (HTML) |
 | GET | `/monitoring/overview` | Contadores de eventos, filas e DLQ |
 | GET | `/monitoring/dead-letters` | Lista de eventos em Dead Letter |
 | POST | `/monitoring/dead-letters/:id/replay` | Reprocessa um evento da DLQ |
 | GET | `/metrics` | Métricas Prometheus |
 | POST | `/webhooks/erp/:erp` | Webhook de entrada de um ERP |
+
+## Migrações Prisma
+
+Migrações versionadas em `prisma/migrations/`. No arranque, o contentor corre
+`prisma migrate deploy` (com `db push` como recurso). Em desenvolvimento, para
+criar uma nova migração: `npm run prisma:migrate -- --name <nome>`.
+
+## Deploy no Render (via GitHub)
+
+Serviço **independente** do Kixima — o `render.yaml` da raiz do Kixima **não é
+alterado**. Duas opções (ver `render.yaml` deste microserviço):
+
+1. **Web Service próprio** (recomendado): Render → **New → Web Service** → ligar
+   ao repo → **Root Directory** = `kixima-integration-service` → **Runtime** =
+   Docker. Adicione um **Postgres** e um **Key Value (Redis)** e defina as
+   variáveis: `DATABASE_URL`, `REDIS_HOST`, `REDIS_PORT`, `RABBITMQ_URL`,
+   `RABBITMQ_EXCHANGE=kixima.events`, `ENCRYPTION_KEY` (32 bytes hex),
+   `KIXIMA_CALLBACK_URL`, `KIXIMA_CALLBACK_SECRET`.
+2. **Blueprint dedicado**: aponte um novo Blueprint para
+   `kixima-integration-service/render.yaml` (mantendo o do Kixima intacto).
+
+> O RabbitMQ não é fornecido pelo Render — use um broker existente/gerido
+> (ex.: CloudAMQP) e configure `RABBITMQ_URL`. A base de dados é **exclusiva**
+> do microserviço (nunca o banco do Kixima).
 
 ## Segurança
 

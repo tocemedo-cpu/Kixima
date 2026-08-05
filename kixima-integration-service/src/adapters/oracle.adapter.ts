@@ -2,7 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ErpSystem } from '@prisma/client';
 import { ErpAdapter } from './erp-adapter.interface';
-import { ErpSyncContext, ErpSyncResult } from '@app/common/types/erp.types';
+import { OracleMapper } from './mappers/erp.mappers';
+import {
+  ErpSyncContext,
+  ErpSyncResult,
+  GoodsReceivedPayload,
+  InvoiceIssuedPayload,
+  PaymentCompletedPayload,
+  PurchaseOrderApprovedPayload,
+} from '@app/common/types/erp.types';
 
 /**
  * Oracle ERP Cloud — integração via REST (Financials Cloud, Basic Auth).
@@ -52,18 +60,18 @@ export class OracleAdapter extends ErpAdapter {
   }
 
   pushPurchaseOrder(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.post('purchaseOrders', payload, 'PURCHASE_ORDER');
+    return this.post('purchaseOrders', OracleMapper.purchaseOrder(payload as PurchaseOrderApprovedPayload), 'PURCHASE_ORDER');
   }
 
   pushInvoice(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.post('invoices', payload, 'INVOICE');
+    return this.post('invoices', OracleMapper.invoice(payload as InvoiceIssuedPayload), 'INVOICE');
   }
 
   pushGoodsReceipt(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.post('receivingReceiptRequests', payload, 'GOODS_RECEIPT');
+    return this.post('receivingReceiptRequests', OracleMapper.receivingReceipt(payload as GoodsReceivedPayload), 'GOODS_RECEIPT');
   }
 
   pushPayment(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.post('payablesPayments', payload, 'PAYMENT');
+    return this.post('payablesPayments', OracleMapper.payment(payload as PaymentCompletedPayload), 'PAYMENT');
   }
 }

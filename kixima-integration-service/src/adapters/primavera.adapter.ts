@@ -2,7 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ErpSystem } from '@prisma/client';
 import { ErpAdapter } from './erp-adapter.interface';
-import { ErpSyncContext, ErpSyncResult } from '@app/common/types/erp.types';
+import { PrimaveraMapper } from './mappers/erp.mappers';
+import {
+  ErpSyncContext,
+  ErpSyncResult,
+  GoodsReceivedPayload,
+  InvoiceIssuedPayload,
+  PaymentCompletedPayload,
+  PurchaseOrderApprovedPayload,
+} from '@app/common/types/erp.types';
 
 /**
  * Primavera ERP — integração via REST (API key + empresa).
@@ -48,18 +56,18 @@ export class PrimaveraAdapter extends ErpAdapter {
   }
 
   pushPurchaseOrder(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.post('purchaseOrders', payload, 'PURCHASE_ORDER');
+    return this.post('purchaseOrders', PrimaveraMapper.purchaseOrder(payload as PurchaseOrderApprovedPayload), 'PURCHASE_ORDER');
   }
 
   pushInvoice(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.post('supplierInvoices', payload, 'INVOICE');
+    return this.post('supplierInvoices', PrimaveraMapper.invoice(payload as InvoiceIssuedPayload), 'INVOICE');
   }
 
   pushGoodsReceipt(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.post('goodsReceipts', payload, 'GOODS_RECEIPT');
+    return this.post('goodsReceipts', PrimaveraMapper.goodsReceipt(payload as GoodsReceivedPayload), 'GOODS_RECEIPT');
   }
 
   pushPayment(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
-    return this.post('payments', payload, 'PAYMENT');
+    return this.post('payments', PrimaveraMapper.payment(payload as PaymentCompletedPayload), 'PAYMENT');
   }
 }
