@@ -7,10 +7,13 @@ const config = require('./config/env');
 const logger = require('./config/logger');
 const prisma = require('./config/database');
 const { schedulePolicyExpiryJob } = require('./jobs/policyExpiryJob');
+const eventBus = require('./services/eventBus');
 
 const server = app.listen(config.port, () => {
   logger.info(`KIXIMA API a correr em ${config.appUrl} (${config.env})`);
   schedulePolicyExpiryJob();
+  // Regista nos logs se a integração ERP (RabbitMQ) está ativa.
+  eventBus.init();
 });
 
 async function shutdown(signal) {

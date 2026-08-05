@@ -78,6 +78,28 @@ async function publish(routingKey, payload, opts = {}) {
   }
 }
 
+/**
+ * Testa a ligação ao RabbitMQ no arranque e regista o estado nos logs, para se
+ * ver imediatamente (sem executar nenhuma ação) se a integração está ligada.
+ */
+async function init() {
+  if (!amqp) {
+    logger.warn('eventBus: dependência amqplib ausente — integração ERP DESATIVADA');
+    return;
+  }
+  if (!URL) {
+    logger.warn('eventBus: RABBITMQ_URL não definido — integração ERP DESATIVADA (o Kixima funciona normalmente)');
+    return;
+  }
+  try {
+    const ch = await getChannel();
+    if (ch) logger.info('eventBus: integração ERP ATIVA — ligado ao RabbitMQ', { exchange: EXCHANGE });
+    else logger.warn('eventBus: não foi possível ligar ao RabbitMQ no arranque (tentará novamente ao publicar)');
+  } catch (err) {
+    logger.warn('eventBus: erro ao ligar ao RabbitMQ no arranque', { error: err.message });
+  }
+}
+
 const num = (d) => Number(d ?? 0);
 
 // --- Construtores de payload (formato canónico consumido pela integração) ----
@@ -140,6 +162,7 @@ function paymentCompleted(payment, invoice) {
 
 module.exports = {
   publish,
+  init,
   EXCHANGE,
   payloads: { purchaseOrderApproved, invoiceIssued, goodsReceived, paymentCompleted },
 };
