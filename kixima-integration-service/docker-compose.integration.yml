@@ -1,0 +1,79 @@
+# =====================================================================
+# KIXIMA Integration Service — compose ISOLADO do microserviço.
+# Traz a base de dados PRÓPRIA (Postgres :5433), o Redis (BullMQ) e o serviço.
+# O RabbitMQ é ASSUMIDO como já existente (fornecido por RABBITMQ_URL); um
+# broker opcional para desenvolvimento isolado está comentado no fim.
+# Este ficheiro NÃO altera o docker-compose do Kixima.
+# =====================================================================
+version: "3.9"
+
+name: kixima-integration
+
+services:
+  integration-db:
+    image: postgres:16-alpine
+    container_name: kixima-integration-db
+    environment:
+      POSTGRES_USER: integration
+      POSTGRES_PASSWORD: integration
+      POSTGRES_DB: kixima_integration
+    ports:
+      - "5433:5432"
+    volumes:
+      - integration_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U integration -d kixima_integration"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  integration-redis:
+    image: redis:7-alpine
+    container_name: kixima-integration-redis
+    ports:
+      - "6380:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - integration_redis_data:/data
+
+  integration-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kixima-integration-service
+    depends_on:
+      integration-db:
+        condition: service_healthy
+      integration-redis:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 4100
+      DATABASE_URL: postgresql://integration:integration@integration-db:5432/kixima_integration?schema=public
+      REDIS_HOST: integration-redis
+      REDIS_PORT: 6379
+      # RabbitMQ EXISTENTE — aponte para o broker partilhado.
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@host.docker.internal:5672}
+      RABBITMQ_EXCHANGE: kixima.events
+      # Chave de exemplo (32 bytes hex) — substitua em produção.
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+      KIXIMA_CALLBACK_URL: ${KIXIMA_CALLBACK_URL:-}
+      KIXIMA_CALLBACK_SECRET: ${KIXIMA_CALLBACK_SECRET:-change-me}
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+    ports:
+      - "4100:4100"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # --- Broker OPCIONAL apenas para desenvolvimento isolado ---
+  # Descomente se NÃO tiver um RabbitMQ partilhado disponível.
+  # integration-rabbitmq:
+  #   image: rabbitmq:3.13-management-alpine
+  #   container_name: kixima-integration-rabbitmq
+  #   ports:
+  #     - "5673:5672"
+  #     - "15673:15672"
+
+volumes:
+  integration_db_data:
+  integration_redis_data:
