@@ -39,3 +39,13 @@ services:
       # Define no dashboard (segredo): a connection string do Supabase (pooler).
       - key: DATABASE_URL
         sync: false
+      # --- Integração ERP (OPCIONAL) ---------------------------------------
+      # Se definidos, o backend publica eventos de negócio no RabbitMQ para o
+      # microserviço kixima-integration-service consumir. Se vazios, a
+      # publicação é simplesmente ignorada (nada muda no fluxo do Kixima).
+      - key: RABBITMQ_EXCHANGE
+        value: kixima.events
+      - key: RABBITMQ_URL
+        sync: false
+      - key: KIXIMA_CALLBACK_SECRET
+        sync: false

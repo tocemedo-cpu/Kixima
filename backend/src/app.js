@@ -31,6 +31,7 @@ const supportRoutes = require('./routes/supportRoutes');
 const companyAdminRoutes = require('./routes/companyAdminRoutes');
 const financeiroRoutes = require('./routes/financeiroRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const integrationRoutes = require('./routes/integrationRoutes');
 
 const app = express();
 
@@ -38,7 +39,9 @@ const app = express();
 // ser servidas ao frontend (dev noutra porta) sem bloqueio do helmet.
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors());
-app.use(express.json());
+// Guarda o corpo bruto (rawBody) para verificação de assinatura HMAC dos
+// callbacks de integração; não altera o comportamento normal do parser.
+app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 // Imagens de produtos no modo de armazenamento 'local' (em S3 são servidas
 // diretamente pelo URL público do bucket).
@@ -69,6 +72,7 @@ app.use('/api/support', supportRoutes);
 app.use('/api/company-admin', companyAdminRoutes);
 app.use('/api/financeiro', financeiroRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/integration', integrationRoutes);
 
 // Servir o frontend compilado (deploy de serviço único). Em produção a app
 // serve a API em /api e o SPA na mesma origem. O caminho pode vir de

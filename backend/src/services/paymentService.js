@@ -7,6 +7,7 @@ const { v4: uuid } = require('uuid');
 const prisma = require('../config/database');
 const { NotFoundError, ConflictError, ForbiddenError } = require('../utils/errors');
 const notificationService = require('./notificationService');
+const eventBus = require('./eventBus');
 
 async function listPendingInvoices(buyerCompanyId) {
   return prisma.invoice.findMany({
@@ -85,6 +86,11 @@ async function processPayment(invoiceId, processedById, buyerCompanyId) {
     const po = await prisma.purchaseOrder.findUnique({ where: { id: invoice.purchaseOrderId } });
     await notificationService.events.pagamentoProcessado(payment, po);
   }
+
+  // Evento para a integração ERP (pagamento concluído) — não-bloqueante.
+  await eventBus.publish('payment.completed', eventBus.payloads.paymentCompleted(payment, invoice), {
+    eventId: `payment-completed:${payment.id}`,
+  });
 
   return payment;
 }

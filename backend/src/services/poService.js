@@ -18,6 +18,7 @@ const { NotFoundError, BusinessRuleError, ForbiddenError, ConflictError } = requ
 const { nextReference } = require('../utils/reference');
 const notificationService = require('./notificationService');
 const contractService = require('./contractService');
+const eventBus = require('./eventBus');
 
 // --- 1. Checkout: criação da PO ---------------------------------------------
 
@@ -151,6 +152,11 @@ async function approvePurchaseOrder(id, approverId) {
 
   await notificationService.events.poAprovadaOuRejeitada(updated);
   await notificationService.events.poRecebidaPeloFornecedor(updated);
+
+  // Evento para a integração ERP (não-bloqueante).
+  await eventBus.publish('purchase_order.approved', eventBus.payloads.purchaseOrderApproved(po, updated.approvedAt), {
+    eventId: `po-approved:${po.id}`,
+  });
   return updated;
 }
 
@@ -225,6 +231,11 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
   });
 
   await notificationService.events.faturaGerada(invoice, updated);
+
+  // Evento para a integração ERP (não-bloqueante).
+  await eventBus.publish('invoice.issued', eventBus.payloads.invoiceIssued(invoice, po), {
+    eventId: `invoice-issued:${invoice.id}`,
+  });
   return updated;
 }
 
@@ -298,6 +309,11 @@ async function confirmReception(id, buyerCompanyId, { conforme, notes }) {
       receivedAt: new Date(),
       receptionStatus,
     },
+  });
+
+  // Evento para a integração ERP (receção de mercadoria) — não-bloqueante.
+  await eventBus.publish('goods.received', eventBus.payloads.goodsReceived(po, updated.receivedAt), {
+    eventId: `goods-received:${po.id}`,
   });
 
   if (!conforme) {
