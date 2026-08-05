@@ -31,6 +31,7 @@ async function getChannel() {
       conn.on('close', () => { channelPromise = null; });
       const ch = await conn.createConfirmChannel();
       await ch.assertExchange(EXCHANGE, 'topic', { durable: true });
+      logger.info('eventBus: ligado ao RabbitMQ', { exchange: EXCHANGE });
       return ch;
     })().catch((err) => {
       logger.warn('eventBus: falha a ligar ao RabbitMQ — publicação desativada', { error: err.message });
@@ -51,7 +52,12 @@ async function getChannel() {
 async function publish(routingKey, payload, opts = {}) {
   try {
     const ch = await getChannel();
-    if (!ch) return false;
+    if (!ch) {
+      if (!amqp) logger.warn('eventBus: dependência amqplib ausente — evento NÃO publicado', { routingKey });
+      else if (!URL) logger.warn('eventBus: RABBITMQ_URL não definido — evento NÃO publicado', { routingKey });
+      else logger.warn('eventBus: sem canal (broker indisponível) — evento NÃO publicado', { routingKey });
+      return false;
+    }
     const eventId = opts.eventId || randomUUID();
     const envelope = {
       eventId,
