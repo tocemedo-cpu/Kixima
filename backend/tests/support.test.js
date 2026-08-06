@@ -99,9 +99,9 @@ describe('Ajuda & Suporte — painel do Administrador do Sistema', () => {
 
   test('admin gere todos os locais de imagem (hero, atalhos, canais…)', async () => {
     const ov = await auth(adminToken).get('/api/support/admin/overview');
-    expect(ov.body.imageSlots.length).toBeGreaterThanOrEqual(18);
+    expect(ov.body.imageSlots.length).toBeGreaterThanOrEqual(15);
     const groups = new Set(ov.body.imageSlots.map((s) => s.group));
-    expect(groups.has('Destaque') && groups.has('Atalhos') && groups.has('Canais')).toBe(true);
+    expect(groups.has('Destaque') && groups.has('Atalhos') && groups.has('Categorias') && groups.has('Canais')).toBe(true);
     // upload num slot não-categoria (ex.: hero)
     const up = await auth(adminToken).post('/api/support/images/hero').attach('image', PNG, 'hero.png');
     expect(up.status).toBe(200);

@@ -18,28 +18,6 @@ const TICKET_LABEL = {
   ABERTO: 'Aberto', EM_ANDAMENTO: 'Em Andamento', AGUARDANDO_RESPOSTA: 'Aguardando Resposta', RESOLVIDO: 'Resolvido', FECHADO: 'Fechado',
 };
 
-// Artigos da base de conhecimento (conteúdo demonstrativo, servido localmente).
-const ARTICLES = [
-  { title: 'Como criar uma Ordem de Compra', cat: 'Ordens de Compra', min: 4 },
-  { title: 'Aprovar e acompanhar Ordens de Compra', cat: 'Ordens de Compra', min: 3 },
-  { title: 'Emitir e visualizar faturas', cat: 'Faturação', min: 5 },
-  { title: 'Faturação garantida: como funciona', cat: 'Faturação', min: 6 },
-  { title: 'Gerir contratos e aditamentos', cat: 'Contratos', min: 4 },
-  { title: 'Registar e conciliar pagamentos', cat: 'Pagamentos', min: 5 },
-  { title: 'Pesquisar e comparar no catálogo', cat: 'Catálogo', min: 3 },
-  { title: 'Publicar produtos no catálogo', cat: 'Catálogo', min: 7 },
-  { title: 'Configurar a integração ERP', cat: 'Integrações', min: 8 },
-  { title: 'Gerir utilizadores e permissões', cat: 'Conta', min: 4 },
-];
-
-// Vídeos tutoriais (conteúdo demonstrativo).
-const VIDEOS = [
-  { title: 'Primeiros passos na KIXIMA', dur: '5:12', cat: 'Introdução' },
-  { title: 'Fluxo completo de uma Ordem de Compra', dur: '8:40', cat: 'Ordens de Compra' },
-  { title: 'Faturação garantida na prática', dur: '6:25', cat: 'Faturação' },
-  { title: 'Gerir o seu catálogo de produtos', dur: '7:03', cat: 'Catálogo' },
-];
-
 // O Administrador do Sistema vê o painel de administração; os restantes
 // utilizadores veem a página de pedir ajuda.
 export default function Help() {
@@ -55,7 +33,6 @@ function HelpUser() {
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');      // termo efetivamente pesquisado
   const [modal, setModal] = useState(false);
-  const [videos, setVideos] = useState(false); // modal de vídeos tutoriais
   const [kbCat, setKbCat] = useState(null);    // categoria aberta na base de conhecimento
   const [showTickets, setShowTickets] = useState(false); // ver todos os pedidos
   const [uploadKey, setUploadKey] = useState(null);
@@ -78,25 +55,25 @@ function HelpUser() {
     e.target.value = '';
   }
 
-  // Pesquisa: filtra artigos e categorias pelo termo introduzido.
+  // Pesquisa: filtra as perguntas frequentes reais e as categorias.
   function runSearch(term) { setQuery((term ?? q).trim()); }
   const cats = ov?.categories || [];
   const ql = query.toLowerCase();
-  const foundArticles = query
-    ? ARTICLES.filter((a) => `${a.title} ${a.cat}`.toLowerCase().includes(ql))
-    : [];
+  // Todas as perguntas frequentes reais, planificadas com a respetiva categoria.
+  const allFaq = cats.flatMap((c) => (c.faq || []).map((f) => ({ ...f, cat: c.title })));
+  const foundFaq = query ? allFaq.filter((f) => `${f.q} ${f.a} ${f.cat}`.toLowerCase().includes(ql)) : [];
   const visibleCats = query
-    ? cats.filter((c) => `${c.title} ${c.desc || ''}`.toLowerCase().includes(ql))
+    ? cats.filter((c) => `${c.title} ${c.desc || ''} ${(c.faq || []).map((f) => f.q).join(' ')}`.toLowerCase().includes(ql))
     : cats;
 
   function scrollTo(ref) { ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 
-  // Atalhos: cada cartão executa uma ação concreta.
+  // Atalhos: apenas ações que existem de facto na plataforma.
+  const faqCount = ov?.faqCount ?? allFaq.length;
   const quick = [
-    { k: 'quick_kb', i: 'catalog', t: 'Base de Conhecimento', s: 'Artigos, guias e FAQs', act: () => scrollTo(catsRef) },
-    { k: 'quick_videos', i: 'chart', t: 'Vídeos Tutoriais', s: 'Tutoriais passo a passo', act: () => setVideos(true) },
-    { k: 'quick_contact', i: 'help', t: 'Contato com Suporte', s: 'Fale com a nossa equipa', act: () => setModal(true) },
-    { k: 'quick_tickets', i: 'invoice', t: 'Tickets Abertos', s: 'Acompanhe seus pedidos', badge: ov?.openTickets, act: () => scrollTo(ticketsRef) },
+    { k: 'quick_kb', i: 'catalog', t: 'Perguntas Frequentes', s: `${faqCount} respostas disponíveis`, act: () => scrollTo(catsRef) },
+    { k: 'quick_contact', i: 'help', t: 'Contato com Suporte', s: 'Abra um pedido de suporte', act: () => setModal(true) },
+    { k: 'quick_tickets', i: 'invoice', t: 'Tickets Abertos', s: 'Acompanhe os seus pedidos', badge: ov?.openTickets, act: () => scrollTo(ticketsRef) },
   ];
 
   return (
@@ -119,7 +96,7 @@ function HelpUser() {
               <h2 className="hs-h2">Como podemos ajudá-lo hoje?</h2>
               <p className="bz-sub">Pesquise na nossa base de conhecimento ou faça uma pergunta à equipa de suporte.</p>
               <form className="hs-searchbar" onSubmit={(e) => { e.preventDefault(); runSearch(); }}>
-                <div className="bz-search"><Icon name="search" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar artigos, tutoriais, guias e documentos…" /></div>
+                <div className="bz-search"><Icon name="search" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar nas perguntas frequentes…" /></div>
                 <button type="submit" className="btn btn-accent">Buscar</button>
               </form>
               <div className="hs-popular"><span>Sugestões populares:</span>
@@ -128,20 +105,20 @@ function HelpUser() {
             </div>
           </div>
 
-          {/* Resultados da pesquisa */}
+          {/* Resultados da pesquisa (perguntas frequentes reais) */}
           {query ? (
             <div className="bz-panel hs-results">
               <div className="hs-results-head">
                 <strong>Resultados para “{query}”</strong>
                 <button className="pf-link" onClick={() => { setQuery(''); setQ(''); }}>Limpar pesquisa ✕</button>
               </div>
-              {foundArticles.length === 0 && visibleCats.length === 0 ? (
+              {foundFaq.length === 0 && visibleCats.length === 0 ? (
                 <p className="bz-sub">Nenhum resultado encontrado. <button className="pf-link" onClick={() => setModal(true)}>Abrir um pedido de suporte</button>.</p>
               ) : (
                 <ul className="hs-artlist">
-                  {foundArticles.map((a) => (
-                    <li key={a.title}><button className="hs-artitem" onClick={() => setKbCat(a.cat)}>
-                      <Icon name="catalog" size={16} /><span><strong>{a.title}</strong><em>{a.cat} · {a.min} min de leitura</em></span>
+                  {foundFaq.map((f) => (
+                    <li key={f.q}><button className="hs-artitem" onClick={() => setKbCat(f.cat)}>
+                      <Icon name="help" size={16} /><span><strong>{f.q}</strong><em>{f.cat}</em></span>
                     </button></li>
                   ))}
                 </ul>
@@ -162,9 +139,9 @@ function HelpUser() {
             })}
           </div>
 
-          {/* Categorias */}
+          {/* Perguntas Frequentes (por categoria) */}
           <div className="hs-sec-head" ref={catsRef}>
-            <h3 className="pf-h2" style={{ margin: 0 }}>{t('Categorias de Ajuda')}</h3>
+            <h3 className="pf-h2" style={{ margin: 0 }}>{t('Perguntas Frequentes')}</h3>
             {query ? <button className="pf-link" onClick={() => { setQuery(''); setQ(''); }}>Ver todas as categorias →</button> : null}
           </div>
           <div className="hs-cats">
@@ -178,7 +155,7 @@ function HelpUser() {
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); pickImage(c.key); } }}><Icon name="certification" size={12} /></span>
                   ) : null}
                 </span>
-                <div><strong>{c.title}</strong><span className="bz-sub2">{c.desc}</span><span className="hs-cat-art">{c.articles} artigos</span></div>
+                <div><strong>{c.title}</strong><span className="bz-sub2">{c.desc}</span><span className="hs-cat-art">{c.count} {c.count === 1 ? 'pergunta' : 'perguntas'}</span></div>
               </button>
             ))}
             {query && visibleCats.length === 0 ? <p className="bz-sub">Nenhuma categoria corresponde à pesquisa.</p> : null}
@@ -244,8 +221,7 @@ function HelpUser() {
       </div>
 
       {modal && <NewTicket onClose={() => setModal(false)} onCreated={() => { setModal(false); reload(); }} categories={cats} />}
-      {videos && <VideosModal onClose={() => setVideos(false)} />}
-      {kbCat && <KbModal category={kbCat} onClose={() => setKbCat(null)} onTicket={() => { setKbCat(null); setModal(true); }} />}
+      {kbCat && <KbModal category={kbCat} faq={allFaq.filter((f) => f.cat === kbCat)} onClose={() => setKbCat(null)} onTicket={() => { setKbCat(null); setModal(true); }} />}
       {showTickets && <AllTickets tickets={tickets} onClose={() => setShowTickets(false)} />}
     </div>
   );
@@ -259,43 +235,23 @@ function channelHref(c) {
   return '#';
 }
 
-// Modal de vídeos tutoriais (conteúdo demonstrativo).
-function VideosModal({ onClose }) {
-  const { t } = useI18n();
+// Modal da base de conhecimento — perguntas frequentes reais da categoria.
+function KbModal({ category, faq, onClose, onTicket }) {
   return (
     <div className="av-modal" onClick={onClose}>
       <div className="hs-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="hs-modal-head"><h3>{t('Vídeos Tutoriais')}</h3><button className="hs-modal-x" onClick={onClose} aria-label="Fechar">✕</button></div>
-        <div className="hs-videos">
-          {VIDEOS.map((v) => (
-            <div className="hs-video" key={v.title}>
-              <div className="hs-video-thumb"><Icon name="chart" size={26} /><span className="hs-video-dur">{v.dur}</span></div>
-              <div><strong>{v.title}</strong><span className="bz-sub2">{v.cat}</span></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Modal da base de conhecimento — lista de artigos da categoria selecionada.
-function KbModal({ category, onClose, onTicket }) {
-  const items = ARTICLES.filter((a) => a.cat === category);
-  return (
-    <div className="av-modal" onClick={onClose}>
-      <div className="hs-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="hs-modal-head"><h3><Icon name="catalog" size={18} /> {category}</h3><button className="hs-modal-x" onClick={onClose} aria-label="Fechar">✕</button></div>
-        {items.length === 0 ? (
-          <p className="bz-sub">Ainda não há artigos nesta categoria. <button className="pf-link" onClick={onTicket}>Fale com o suporte</button>.</p>
+        <div className="hs-modal-head"><h3><Icon name="help" size={18} /> {category}</h3><button className="hs-modal-x" onClick={onClose} aria-label="Fechar">✕</button></div>
+        {(!faq || faq.length === 0) ? (
+          <p className="bz-sub">Ainda não há perguntas nesta categoria. <button className="pf-link" onClick={onTicket}>Fale com o suporte</button>.</p>
         ) : (
-          <ul className="hs-artlist">
-            {items.map((a) => (
-              <li key={a.title}><div className="hs-artitem hs-artitem-static">
-                <Icon name="catalog" size={16} /><span><strong>{a.title}</strong><em>{a.min} min de leitura</em></span>
-              </div></li>
+          <div className="hs-faq">
+            {faq.map((f) => (
+              <details className="hs-faq-item" key={f.q}>
+                <summary><Icon name="help" size={16} /> {f.q}</summary>
+                <p>{f.a}</p>
+              </details>
             ))}
-          </ul>
+          </div>
         )}
         <div className="hs-form-actions"><button className="btn btn-ghost" onClick={onClose}>Fechar</button><button className="btn btn-accent" onClick={onTicket}>Ainda preciso de ajuda</button></div>
       </div>

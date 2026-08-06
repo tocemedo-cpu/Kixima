@@ -11,16 +11,54 @@ const prisma = require('../config/database');
 const router = express.Router();
 router.use(authenticate);
 
-// Categorias da base de conhecimento e canais — conteúdo institucional.
+// Base de conhecimento (Perguntas Frequentes) — conteúdo real e visível na
+// página. Cada categoria contém apenas as perguntas que existem de facto; a
+// contagem apresentada é derivada de `faq.length`, nunca inventada.
 const CATEGORIES = [
-  { key: 'ordens', title: 'Ordens de Compra', desc: 'Guias e soluções', articles: 24, icon: 'orders' },
-  { key: 'faturacao', title: 'Faturação', desc: 'Faturas, notas e impostos', articles: 18, icon: 'invoice' },
-  { key: 'pagamentos', title: 'Pagamentos', desc: 'Pagamentos e reembolsos', articles: 16, icon: 'payment' },
-  { key: 'contratos', title: 'Contratos', desc: 'Contratos e limites', articles: 20, icon: 'contract' },
-  { key: 'catalogo', title: 'Catálogo', desc: 'Produtos e serviços', articles: 14, icon: 'catalog' },
-  { key: 'desempenho', title: 'Desempenho', desc: 'Avaliações e KPIs', articles: 12, icon: 'chart' },
-  { key: 'documentos', title: 'Documentos', desc: 'Upload e gestão', articles: 15, icon: 'contract' },
-  { key: 'conta', title: 'Conta & Acesso', desc: 'Utilizadores e permissões', articles: 13, icon: 'users' },
+  {
+    key: 'ordens', title: 'Ordens de Compra', desc: 'Criar, aprovar e acompanhar', icon: 'orders',
+    faq: [
+      { q: 'Como crio uma ordem de compra?', a: 'No menu Pedidos, selecione os produtos a partir do Catálogo, defina as quantidades e submeta a ordem para aprovação.' },
+      { q: 'Como acompanho o estado de uma ordem?', a: 'Em Pedidos, cada ordem mostra o seu estado atual (pendente, aprovada, recebida). Abra a ordem para ver o detalhe de cada linha.' },
+      { q: 'Posso visualizar a ordem antes de a imprimir?', a: 'Sim. Abra a ordem em Pedidos para a pré-visualizar por completo e só depois imprimir ou exportar.' },
+    ],
+  },
+  {
+    key: 'faturacao', title: 'Faturação', desc: 'Faturas e faturação garantida', icon: 'invoice',
+    faq: [
+      { q: 'O que é a faturação garantida?', a: 'A KIXIMA assegura o pagamento ao fornecedor depois de a receção da mercadoria ser confirmada, reduzindo o risco de crédito da transação.' },
+      { q: 'Como visualizo uma fatura antes de imprimir?', a: 'Em Financeiro › Faturas, abra a fatura para a pré-visualizar antes de imprimir ou exportar.' },
+      { q: 'Quem emite as faturas?', a: 'O fornecedor emite a fatura associada a uma ordem de compra já recebida.' },
+    ],
+  },
+  {
+    key: 'pagamentos', title: 'Pagamentos', desc: 'Registo e histórico', icon: 'payment',
+    faq: [
+      { q: 'Como registo um pagamento?', a: 'O perfil Financeiro regista o pagamento a partir da fatura correspondente, em Financeiro › Pagamentos.' },
+      { q: 'Onde consulto o histórico de pagamentos?', a: 'Em Financeiro › Pagamentos encontra todos os movimentos, com o estado e a data de cada um.' },
+    ],
+  },
+  {
+    key: 'contratos', title: 'Contratos', desc: 'Contratos e limites', icon: 'contract',
+    faq: [
+      { q: 'Como funcionam os limites de um contrato?', a: 'Cada contrato define limites que balizam as ordens de compra permitidas dentro do seu âmbito.' },
+      { q: 'Onde consulto os meus contratos?', a: 'No menu Documentação encontra os contratos disponíveis para o seu perfil.' },
+    ],
+  },
+  {
+    key: 'catalogo', title: 'Catálogo', desc: 'Pesquisar e publicar', icon: 'catalog',
+    faq: [
+      { q: 'Como pesquiso no catálogo?', a: 'Em Catálogo, utilize a pesquisa e os filtros por categoria para encontrar produtos e serviços.' },
+      { q: 'Como publico um produto? (fornecedor)', a: 'Em Catálogo, use a opção de novo produto e preencha os campos obrigatórios do produto.' },
+    ],
+  },
+  {
+    key: 'conta', title: 'Conta & Acesso', desc: 'Utilizadores e permissões', icon: 'users',
+    faq: [
+      { q: 'Como altero a minha palavra-passe?', a: 'Aceda a Configurações › Conta para atualizar a sua palavra-passe.' },
+      { q: 'Quem gere os utilizadores da empresa?', a: 'O administrador da empresa gere os utilizadores e as respetivas permissões de acesso.' },
+    ],
+  },
 ];
 const CHANNELS = [
   { key: 'chat', label: 'Chat Online', value: 'Converse connosco', action: 'Iniciar chat', icon: 'help' },
@@ -34,8 +72,7 @@ const HOURS = { label: 'Seg - Sex: 08:00 - 18:00', tz: 'GMT +1 (África/Luanda)'
 const IMAGE_SLOTS = [
   { key: 'hero', label: 'Ilustração principal', group: 'Destaque' },
   { key: 'mascot', label: 'Ilustração "Ainda precisa de ajuda?"', group: 'Destaque' },
-  { key: 'quick_kb', label: 'Base de Conhecimento', group: 'Atalhos' },
-  { key: 'quick_videos', label: 'Vídeos Tutoriais', group: 'Atalhos' },
+  { key: 'quick_kb', label: 'Perguntas Frequentes', group: 'Atalhos' },
   { key: 'quick_contact', label: 'Contato com Suporte', group: 'Atalhos' },
   { key: 'quick_tickets', label: 'Tickets Abertos', group: 'Atalhos' },
   ...CATEGORIES.map((c) => ({ key: c.key, label: c.title, group: 'Categorias' })),
@@ -53,10 +90,12 @@ router.get('/overview', async (req, res) => {
     prisma.supportTicket.count({ where: { userId: req.user.id, status: { in: ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO_RESPOSTA'] } } }),
     loadImageMap(),
   ]);
-  const categories = CATEGORIES.map((c) => ({ ...c, imageUrl: imgByKey[c.key] || null }));
+  // A contagem apresentada deriva do número real de perguntas da categoria.
+  const categories = CATEGORIES.map((c) => ({ ...c, count: c.faq.length, imageUrl: imgByKey[c.key] || null }));
   const channels = CHANNELS.map((c) => ({ ...c, imageUrl: imgByKey[`channel_${c.key}`] || null }));
   res.json({
     categories, channels, hours: HOURS, system: { operational: true },
+    faqCount: CATEGORIES.reduce((n, c) => n + c.faq.length, 0),
     images: imgByKey, // hero, mascot, quick_*, channel_*, categorias
     openTickets: open, canManageImages: req.user.role === 'ADMIN_SISTEMA',
   });
@@ -118,7 +157,7 @@ router.get('/admin/overview', requireRole('ADMIN_SISTEMA'), async (req, res) => 
   const by = Object.fromEntries(counts.map((c) => [c.status, c._count._all]));
   const total = counts.reduce((s, c) => s + c._count._all, 0);
   res.json({
-    categories: CATEGORIES.map((c) => ({ ...c, imageUrl: imgByKey[c.key] || null })),
+    categories: CATEGORIES.map((c) => ({ ...c, count: c.faq.length, imageUrl: imgByKey[c.key] || null })),
     channels: CHANNELS, hours: HOURS,
     // Todos os locais de imagem da página, agrupados, com a imagem atual.
     imageSlots: IMAGE_SLOTS.map((s) => ({ ...s, imageUrl: imgByKey[s.key] || null })),
