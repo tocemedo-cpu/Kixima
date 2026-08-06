@@ -9,6 +9,7 @@ import { CryptoModule } from '@app/crypto/crypto.module';
 import { AuditModule } from '@app/audit/audit.module';
 import { ProducersModule } from '@app/producers/producers.module';
 import { AdaptersModule } from '@app/adapters/adapters.module';
+import { CredentialsModule } from '@app/credentials/credentials.module';
 import { RetryModule } from '@app/retry/retry.module';
 import { WebhooksModule } from '@app/webhooks/webhooks.module';
 import { SyncModule } from '@app/sync/sync.module';
@@ -50,6 +51,7 @@ import { MonitoringModule } from '@app/monitoring/monitoring.module';
     // Domínio
     ProducersModule,
     AdaptersModule,
+    CredentialsModule,
     RetryModule,
     WebhooksModule,
     SyncModule,

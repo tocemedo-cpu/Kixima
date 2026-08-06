@@ -35,9 +35,6 @@ export abstract class ErpAdapter {
     this.http = axios.create({ baseURL, timeout: 30_000, ...defaults });
   }
 
-  /** Indica se o adapter está ativo (credenciais/flag). */
-  abstract isEnabled(): boolean;
-
   /** Verificação de saúde da ligação ao ERP. */
   abstract healthCheck(): Promise<boolean>;
 

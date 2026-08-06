@@ -1,5 +1,3 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { XMLBuilder, XMLParser } from 'fast-xml-parser';
 import { ErpSystem } from '@prisma/client';
 import { ErpAdapter } from './erp-adapter.interface';
@@ -14,35 +12,22 @@ import {
 } from '@app/common/types/erp.types';
 
 /**
- * SAP Ariba — integração via cXML (documentos XML sobre HTTP POST).
- * Constrói o envelope cXML com credenciais partilhadas (SharedSecret).
+ * SAP Ariba — cXML. Config de UM tenant: { baseUrl, sharedSecret, networkId }
  */
-@Injectable()
 export class AribaAdapter extends ErpAdapter {
   readonly system = ErpSystem.SAP_ARIBA;
-  private readonly enabled: boolean;
   private readonly sharedSecret: string;
   private readonly networkId: string;
   private readonly builder = new XMLBuilder({ ignoreAttributes: false, format: true });
   private readonly parser = new XMLParser({ ignoreAttributes: false });
 
-  constructor(config: ConfigService) {
-    const baseURL = config.get<string>('ARIBA_BASE_URL') ?? '';
-    super(baseURL, { headers: { 'Content-Type': 'text/xml; charset=utf-8' } });
-    this.sharedSecret = config.get<string>('ARIBA_SHARED_SECRET') ?? '';
-    this.networkId = config.get<string>('ARIBA_NETWORK_ID') ?? '';
-    this.enabled = (config.get<string>('ARIBA_ENABLED') ?? 'false') === 'true';
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
+  constructor(config: Record<string, string>) {
+    super(config.baseUrl ?? '', { headers: { 'Content-Type': 'text/xml; charset=utf-8' } });
+    this.sharedSecret = config.sharedSecret ?? '';
+    this.networkId = config.networkId ?? '';
   }
 
   async healthCheck(): Promise<boolean> {
-    return this.enabled && this.baseURLConfigured();
-  }
-
-  private baseURLConfigured(): boolean {
     return Boolean(this.http.defaults.baseURL);
   }
 
@@ -52,7 +37,7 @@ export class AribaAdapter extends ErpAdapter {
       '?xml': { '@_version': '1.0', '@_encoding': 'UTF-8' },
       cXML: {
         '@_payloadID': payloadId,
-        '@_timestamp': new Date(0).toISOString(), // timestamp injetado a montante (determinístico)
+        '@_timestamp': new Date(0).toISOString(),
         Header: {
           Sender: {
             Credential: { '@_domain': 'NetworkID', Identity: this.networkId, SharedSecret: this.sharedSecret },

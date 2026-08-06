@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
-import { AdaptersModule } from '@app/adapters/adapters.module';
+import { CredentialsModule } from '@app/credentials/credentials.module';
 import { RetryModule } from '@app/retry/retry.module';
 import { WebhooksModule } from '@app/webhooks/webhooks.module';
 import { QUEUES } from '@app/common/constants';
@@ -10,7 +10,7 @@ import { SyncProcessor } from './sync.processor';
 @Module({
   imports: [
     BullModule.registerQueue({ name: QUEUES.SYNC }),
-    AdaptersModule,
+    CredentialsModule,
     RetryModule,
     WebhooksModule,
   ],

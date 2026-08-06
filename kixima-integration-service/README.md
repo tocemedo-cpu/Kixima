@@ -102,6 +102,44 @@ docker compose -f docker-compose.integration.yml up --build
 | GET | `/metrics` | Métricas Prometheus |
 | POST | `/webhooks/erp/:erp` | Webhook de entrada de um ERP |
 
+## Multi-tenant multi-ERP (credenciais)
+
+O Kixima é multi-tenant: cada operadora/cliente pode ter o **seu** ERP com as
+**suas** credenciais. Por isso as credenciais são **por tenant**, guardadas
+**cifradas (AES-256-GCM)** na base de dados e resolvidas em runtime pelo
+`tenantId` que vem no evento. Um `tenantId` especial **`*`** define uma
+configuração **global** (fallback para tenants sem config própria).
+
+Gestão via API protegida por `Authorization: Bearer $INTEGRATION_ADMIN_TOKEN`:
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/credentials/erp-systems` | ERPs suportados |
+| GET | `/credentials/tenants/:tenantId` | credenciais do tenant (mascaradas) |
+| PUT | `/credentials/tenants/:tenantId/:erp` | criar/atualizar (`{ enabled, config }`) |
+| DELETE | `/credentials/tenants/:tenantId/:erp` | remover |
+
+`erp` ∈ `SAP_S4HANA | PRIMAVERA | ORACLE_ERP_CLOUD | SAP_ARIBA`. Campos de `config`:
+
+- **SAP_S4HANA**: `baseUrl, username, password, client`
+- **PRIMAVERA**: `baseUrl, apiKey, company`
+- **ORACLE_ERP_CLOUD**: `baseUrl, username, password`
+- **SAP_ARIBA**: `baseUrl, sharedSecret, networkId`
+
+Exemplo — ativar SAP para um tenant:
+
+```bash
+curl -X PUT https://SEU-MICROSERVICO.onrender.com/credentials/tenants/<companyId>/SAP_S4HANA \
+  -H "Authorization: Bearer $INTEGRATION_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "enabled": true, "config": {
+        "baseUrl": "https://sap.cliente.com/sap/opu/odata/sap",
+        "username": "KIXIMA", "password": "•••", "client": "100" } }'
+```
+
+O `tenantId` corresponde ao **id da empresa (operadora/cliente)** do Kixima, que
+viaja no envelope do evento (`purchase_order.approved`, etc.).
+
 ## Migrações Prisma
 
 Migrações versionadas em `prisma/migrations/`. No arranque, o contentor corre

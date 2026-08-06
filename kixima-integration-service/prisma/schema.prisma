@@ -89,6 +89,7 @@ model IntegrationEvent {
   eventId     String      @unique @map("event_id") // = messageId do broker
   eventType   EventType   @map("event_type")
   routingKey  String      @map("routing_key")
+  tenantId    String?     @map("tenant_id") // operadora/cliente dono da transação
   source      String      @default("kixima")
   payload     Json
   headers     Json?
@@ -200,15 +201,20 @@ model DeadLetter {
 }
 
 // ---------------------------------------------------------------------
-// Credenciais de ERP guardadas cifradas (AES-256-GCM).
+// Credenciais de ERP POR TENANT, guardadas cifradas (AES-256-GCM).
+// tenantId = id/NIF da operadora/cliente do Kixima. O valor especial '*'
+// define uma configuração GLOBAL aplicada a todos os tenants sem config própria.
 // ---------------------------------------------------------------------
 model ErpCredential {
   id        String    @id @default(uuid())
-  erp       ErpSystem @unique
+  tenantId  String    @map("tenant_id")
+  erp       ErpSystem
   enabled   Boolean   @default(false)
   configEnc String    @map("config_enc") // JSON cifrado (baseUrl, user, secret…)
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
+  @@unique([tenantId, erp])
+  @@index([tenantId])
   @@map("erp_credentials")
 }

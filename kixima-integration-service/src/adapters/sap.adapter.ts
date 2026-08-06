@@ -1,5 +1,3 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ErpSystem } from '@prisma/client';
 import { ErpAdapter } from './erp-adapter.interface';
 import { SapMapper } from './mappers/erp.mappers';
@@ -13,28 +11,17 @@ import {
 } from '@app/common/types/erp.types';
 
 /**
- * SAP S/4HANA — integração via OData V2/V4.
- * Autenticação básica + fetch de CSRF token para operações de escrita.
+ * SAP S/4HANA — OData V2/V4. Instanciado com a configuração de UM tenant:
+ *   { baseUrl, username, password, client }
  */
-@Injectable()
 export class SapAdapter extends ErpAdapter {
   readonly system = ErpSystem.SAP_S4HANA;
-  private readonly enabled: boolean;
 
-  constructor(config: ConfigService) {
-    const baseURL = config.get<string>('SAP_BASE_URL') ?? '';
-    const username = config.get<string>('SAP_USERNAME') ?? '';
-    const password = config.get<string>('SAP_PASSWORD') ?? '';
-    const client = config.get<string>('SAP_CLIENT') ?? '';
-    super(baseURL, {
-      auth: username ? { username, password } : undefined,
-      headers: { Accept: 'application/json', 'sap-client': client },
+  constructor(config: Record<string, string>) {
+    super(config.baseUrl ?? '', {
+      auth: config.username ? { username: config.username, password: config.password ?? '' } : undefined,
+      headers: { Accept: 'application/json', 'sap-client': config.client ?? '' },
     });
-    this.enabled = (config.get<string>('SAP_ENABLED') ?? 'false') === 'true';
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
   }
 
   async healthCheck(): Promise<boolean> {
@@ -46,7 +33,6 @@ export class SapAdapter extends ErpAdapter {
     }
   }
 
-  /** Obtém o token CSRF exigido pelo SAP para POST/PUT. */
   private async fetchCsrf(path: string): Promise<{ token: string; cookie: string }> {
     const res = await this.http.get(path, { headers: { 'x-csrf-token': 'Fetch' } });
     return {

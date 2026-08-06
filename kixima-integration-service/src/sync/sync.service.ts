@@ -50,6 +50,7 @@ export class SyncService {
         eventId: envelope.eventId,
         eventType: envelope.eventType,
         routingKey: envelope.routingKey,
+        tenantId: envelope.tenantId ?? null,
         source: envelope.source,
         payload: envelope.payload as Prisma.InputJsonValue,
         headers: envelope.headers ? (envelope.headers as Prisma.InputJsonValue) : Prisma.JsonNull,

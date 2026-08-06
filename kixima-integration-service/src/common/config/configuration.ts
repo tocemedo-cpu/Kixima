@@ -27,6 +27,7 @@ export interface AppConfig {
   redis: { host: string; port: number; password?: string };
   bullmq: { prefix: string; attempts: number; backoffMs: number };
   encryptionKey: string;
+  adminToken: string;
   callback: { url: string; secret: string; timeoutMs: number };
   otel: { enabled: boolean; endpoint: string; serviceName: string };
 }
@@ -56,6 +57,7 @@ export default (): AppConfig => ({
     backoffMs: int(process.env.RETRY_BACKOFF_MS, 5000),
   },
   encryptionKey: process.env.ENCRYPTION_KEY ?? '',
+  adminToken: process.env.INTEGRATION_ADMIN_TOKEN ?? '',
   callback: {
     url: process.env.KIXIMA_CALLBACK_URL ?? '',
     secret: process.env.KIXIMA_CALLBACK_SECRET ?? '',

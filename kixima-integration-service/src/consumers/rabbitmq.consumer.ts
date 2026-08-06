@@ -72,6 +72,7 @@ export class RabbitmqConsumer implements OnModuleInit {
         eventId: (msg.properties.messageId as string) || (content.eventId as string) || uuidv4(),
         routingKey,
         eventType,
+        tenantId: (content.tenantId as string) ?? null,
         source: (content.source as string) ?? 'kixima',
         occurredAt: (content.occurredAt as string) ?? new Date().toISOString(),
         headers: (msg.properties.headers as Record<string, unknown>) ?? undefined,

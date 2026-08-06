@@ -1,12 +1,8 @@
 import { Module } from '@nestjs/common';
-import { SapAdapter } from './sap.adapter';
-import { PrimaveraAdapter } from './primavera.adapter';
-import { OracleAdapter } from './oracle.adapter';
-import { AribaAdapter } from './ariba.adapter';
-import { AdapterRegistry } from './adapter.registry';
+import { AdapterFactory } from './adapter.factory';
 
 @Module({
-  providers: [SapAdapter, PrimaveraAdapter, OracleAdapter, AribaAdapter, AdapterRegistry],
-  exports: [AdapterRegistry],
+  providers: [AdapterFactory],
+  exports: [AdapterFactory],
 })
 export class AdaptersModule {}

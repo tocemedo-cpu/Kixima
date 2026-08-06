@@ -5,7 +5,7 @@ import { EventStatus, SyncStatus } from '@prisma/client';
 import { PrismaService } from '@app/common/prisma/prisma.service';
 import { CryptoService } from '@app/crypto/crypto.service';
 import { AuditService } from '@app/audit/audit.service';
-import { AdapterRegistry } from '@app/adapters/adapter.registry';
+import { CredentialsService } from '@app/credentials/credentials.service';
 import { ErpAdapterError } from '@app/adapters/erp-adapter.interface';
 import { DeadLetterService } from '@app/retry/dead-letter.service';
 import { WebhookProducer } from '@app/webhooks/webhook.producer';
@@ -30,7 +30,7 @@ export class SyncProcessor extends WorkerHost {
     private readonly prisma: PrismaService,
     private readonly crypto: CryptoService,
     private readonly audit: AuditService,
-    private readonly registry: AdapterRegistry,
+    private readonly credentials: CredentialsService,
     private readonly deadLetter: DeadLetterService,
     private readonly webhooks: WebhookProducer,
   ) {
@@ -51,11 +51,14 @@ export class SyncProcessor extends WorkerHost {
     });
 
     const entityType = eventTypeToEntity(event.eventType);
-    const adapters = this.registry.enabled();
-    if (adapters.length === 0) {
-      await this.audit.warn('sync.no_adapters', 'Sem adapters ERP ativos — evento marcado como concluído (no-op).', {
-        integrationEventId: event.id,
-      });
+    // Resolve os ERPs ativos PARA ESTE TENANT (config própria + global '*').
+    const resolved = await this.credentials.resolveEnabledAdapters(event.tenantId);
+    if (resolved.length === 0) {
+      await this.audit.warn(
+        'sync.no_adapters',
+        `Sem ERP ativo para o tenant "${event.tenantId ?? '—'}" — evento concluído (no-op).`,
+        { integrationEventId: event.id },
+      );
       await this.prisma.integrationEvent.update({
         where: { id: event.id },
         data: { status: EventStatus.COMPLETED, processedAt: new Date() },
@@ -65,7 +68,7 @@ export class SyncProcessor extends WorkerHost {
 
     const failures: ErpAdapterError[] = [];
 
-    for (const adapter of adapters) {
+    for (const { adapter } of resolved) {
       const started = Date.now();
       try {
         const result = await adapter.sync(entityType, event.payload, {

@@ -14,6 +14,8 @@ export interface EventEnvelope<T = Record<string, unknown>> {
   routingKey: string;
   /** Tipo de evento normalizado. */
   eventType: EventType;
+  /** Tenant (operadora/cliente) dono da transação — chave das credenciais ERP. */
+  tenantId?: string | null;
   /** Origem lógica do evento. */
   source: string;
   /** Momento em que o evento ocorreu (ISO 8601). */

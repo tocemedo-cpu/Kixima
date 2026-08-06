@@ -90,6 +90,7 @@ async function processPayment(invoiceId, processedById, buyerCompanyId) {
   // Evento para a integração ERP (pagamento concluído) — não-bloqueante.
   await eventBus.publish('payment.completed', eventBus.payloads.paymentCompleted(payment, invoice), {
     eventId: `payment-completed:${payment.id}`,
+    tenantId: invoice.purchaseOrder?.buyerCompanyId ?? invoice.contract?.clientCompanyId ?? null,
   });
 
   return payment;

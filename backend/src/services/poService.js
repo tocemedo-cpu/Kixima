@@ -156,6 +156,7 @@ async function approvePurchaseOrder(id, approverId) {
   // Evento para a integração ERP (não-bloqueante).
   await eventBus.publish('purchase_order.approved', eventBus.payloads.purchaseOrderApproved(po, updated.approvedAt), {
     eventId: `po-approved:${po.id}`,
+    tenantId: po.buyerCompanyId,
   });
   return updated;
 }
@@ -235,6 +236,7 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
   // Evento para a integração ERP (não-bloqueante).
   await eventBus.publish('invoice.issued', eventBus.payloads.invoiceIssued(invoice, po), {
     eventId: `invoice-issued:${invoice.id}`,
+    tenantId: po.buyerCompanyId,
   });
   return updated;
 }
@@ -314,6 +316,7 @@ async function confirmReception(id, buyerCompanyId, { conforme, notes }) {
   // Evento para a integração ERP (receção de mercadoria) — não-bloqueante.
   await eventBus.publish('goods.received', eventBus.payloads.goodsReceived(po, updated.receivedAt), {
     eventId: `goods-received:${po.id}`,
+    tenantId: po.buyerCompanyId,
   });
 
   if (!conforme) {

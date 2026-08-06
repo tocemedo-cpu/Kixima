@@ -1,5 +1,3 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ErpSystem } from '@prisma/client';
 import { ErpAdapter } from './erp-adapter.interface';
 import { OracleMapper } from './mappers/erp.mappers';
@@ -13,26 +11,17 @@ import {
 } from '@app/common/types/erp.types';
 
 /**
- * Oracle ERP Cloud — integração via REST (Financials Cloud, Basic Auth).
+ * Oracle ERP Cloud — REST (Financials Cloud). Config de UM tenant:
+ *   { baseUrl, username, password }
  */
-@Injectable()
 export class OracleAdapter extends ErpAdapter {
   readonly system = ErpSystem.ORACLE_ERP_CLOUD;
-  private readonly enabled: boolean;
 
-  constructor(config: ConfigService) {
-    const baseURL = config.get<string>('ORACLE_BASE_URL') ?? '';
-    const username = config.get<string>('ORACLE_USERNAME') ?? '';
-    const password = config.get<string>('ORACLE_PASSWORD') ?? '';
-    super(baseURL, {
-      auth: username ? { username, password } : undefined,
+  constructor(config: Record<string, string>) {
+    super(config.baseUrl ?? '', {
+      auth: config.username ? { username: config.username, password: config.password ?? '' } : undefined,
       headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     });
-    this.enabled = (config.get<string>('ORACLE_ENABLED') ?? 'false') === 'true';
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
   }
 
   async healthCheck(): Promise<boolean> {

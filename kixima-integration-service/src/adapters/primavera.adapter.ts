@@ -1,5 +1,3 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ErpSystem } from '@prisma/client';
 import { ErpAdapter } from './erp-adapter.interface';
 import { PrimaveraMapper } from './mappers/erp.mappers';
@@ -13,26 +11,17 @@ import {
 } from '@app/common/types/erp.types';
 
 /**
- * Primavera ERP — integração via REST (API key + empresa).
+ * Primavera ERP — REST. Config de UM tenant: { baseUrl, apiKey, company }
  */
-@Injectable()
 export class PrimaveraAdapter extends ErpAdapter {
   readonly system = ErpSystem.PRIMAVERA;
-  private readonly enabled: boolean;
   private readonly company: string;
 
-  constructor(config: ConfigService) {
-    const baseURL = config.get<string>('PRIMAVERA_BASE_URL') ?? '';
-    const apiKey = config.get<string>('PRIMAVERA_API_KEY') ?? '';
-    super(baseURL, {
-      headers: { Accept: 'application/json', Authorization: apiKey ? `Bearer ${apiKey}` : '' },
+  constructor(config: Record<string, string>) {
+    super(config.baseUrl ?? '', {
+      headers: { Accept: 'application/json', Authorization: config.apiKey ? `Bearer ${config.apiKey}` : '' },
     });
-    this.company = config.get<string>('PRIMAVERA_COMPANY') ?? '';
-    this.enabled = (config.get<string>('PRIMAVERA_ENABLED') ?? 'false') === 'true';
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
+    this.company = config.company ?? '';
   }
 
   async healthCheck(): Promise<boolean> {

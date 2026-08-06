@@ -61,6 +61,7 @@ async function publish(routingKey, payload, opts = {}) {
     const eventId = opts.eventId || randomUUID();
     const envelope = {
       eventId,
+      tenantId: opts.tenantId ?? null, // operadora/cliente dono da transação
       source: 'kixima',
       occurredAt: new Date().toISOString(),
       payload,

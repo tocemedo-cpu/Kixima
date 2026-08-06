@@ -3,7 +3,8 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { EventStatus } from '@prisma/client';
 import { PrismaService } from '@app/common/prisma/prisma.service';
-import { AdapterRegistry } from '@app/adapters/adapter.registry';
+import { AdapterFactory } from '@app/adapters/adapter.factory';
+import { CredentialsService } from '@app/credentials/credentials.service';
 import { MetricsService } from './metrics.service';
 import { QUEUES } from '@app/common/constants';
 
@@ -15,21 +16,20 @@ import { QUEUES } from '@app/common/constants';
 export class MonitoringController {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly registry: AdapterRegistry,
+    private readonly factory: AdapterFactory,
+    private readonly credentials: CredentialsService,
     private readonly metrics: MetricsService,
     @InjectQueue(QUEUES.SYNC) private readonly syncQueue: Queue,
   ) {}
 
   @Get('health')
   async health(): Promise<Record<string, unknown>> {
-    const adapters = await Promise.all(
-      this.registry.all().map(async (a) => ({
-        erp: a.system,
-        enabled: a.isEnabled(),
-        healthy: a.isEnabled() ? await a.healthCheck().catch(() => false) : null,
-      })),
-    );
-    return { status: 'ok', service: 'kixima-integration-service', adapters };
+    const configured = await this.credentials.countByErp();
+    const adapters = this.factory.supported().map((erp) => ({
+      erp,
+      tenantsEnabled: configured[erp] ?? 0, // nº de tenants com este ERP ativo
+    }));
+    return { status: 'ok', service: 'kixima-integration-service', multiTenant: true, adapters };
   }
 
   @Get('monitoring/overview')
