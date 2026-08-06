@@ -24,8 +24,15 @@ async function dispatchEmail(to, subject, body, { html } = {}) {
       const nodemailer = require('nodemailer');
       const { host, port, user, password } = config.email.smtp;
       const transport = nodemailer.createTransport({
-        host, port, secure: port === 465,
+        host, port,
+        secure: port === 465,        // 465 = TLS direto; 587 = STARTTLS
+        requireTLS: port === 587,
         auth: user ? { user, pass: password } : undefined,
+        // Falha rápido se o SMTP estiver indisponível — não bloqueia o pedido
+        // (o erro é apanhado abaixo e o convite é criado na mesma).
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
       });
       await transport.sendMail({ from: config.email.from, to, subject, text: body, html });
       logger.info('Email enviado (SMTP)', { to, subject });

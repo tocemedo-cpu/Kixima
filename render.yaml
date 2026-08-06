@@ -32,15 +32,16 @@ services:
         value: "7"
       - key: POLICY_EXPIRY_ALERT_DAYS
         value: "30"
-      # Email: "console" apenas regista no log. Para enviar convites de
-      # funcionário por email, defina "smtp" e configure as variáveis SMTP_*.
+      # Email: envio real por SMTP (Brevo). O host/porta não são segredos; o
+      # login e a chave SMTP definem-se no dashboard do Render (sync:false).
+      # EMAIL_FROM tem de ser um remetente verificado na conta Brevo.
       - key: EMAIL_PROVIDER
-        value: console
-      - key: EMAIL_FROM
-        value: notificacoes@kixima.co.ao
+        value: smtp
       - key: SMTP_HOST
-        sync: false
+        value: smtp-relay.brevo.com
       - key: SMTP_PORT
+        value: "587"
+      - key: EMAIL_FROM
         sync: false
       - key: SMTP_USER
         sync: false
