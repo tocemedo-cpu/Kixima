@@ -52,8 +52,21 @@ async function listUsers(req, res) {
 }
 
 async function createInvite(req, res) {
-  const invite = await companyService.createInvite(req.user.companyId, req.body.role);
+  const { role, name, email } = req.body;
+  const invite = await companyService.createInvite(req.user.companyId, role, { name, email }, req.user.id);
   res.status(201).json(invite);
+}
+
+async function listInvites(req, res) {
+  res.json(await companyService.listInvites(req.user.companyId));
+}
+
+async function resendInvite(req, res) {
+  res.json(await companyService.resendInvite(req.user.companyId, req.params.id));
+}
+
+async function cancelInvite(req, res) {
+  res.json(await companyService.cancelInvite(req.user.companyId, req.params.id));
 }
 
 async function resolveInvite(req, res) {
@@ -113,6 +126,9 @@ module.exports = {
   createUser,
   listUsers,
   createInvite,
+  listInvites,
+  resendInvite,
+  cancelInvite,
   resolveInvite,
   acceptInvite,
   activateUser,

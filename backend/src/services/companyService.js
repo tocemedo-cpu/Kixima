@@ -7,6 +7,7 @@ const { NotFoundError, BusinessRuleError, ConflictError } = require('../utils/er
 const notificationService = require('./notificationService');
 const storageService = require('./storageService');
 const authService = require('./authService');
+const config = require('../config/env');
 
 // Perfis que o Company Admin pode convidar, por tipo de empresa. Além do próprio
 // Company Admin (criado no cadastro), a equipa é composta por Comprador,
@@ -196,40 +197,170 @@ async function setBudgetLimit(companyId, { periodMonthly, currency }) {
 // Convites de utilizadores (self-service com aprovação do Company Admin)
 // ---------------------------------------------------------------------------
 
-// Cria um convite (link assinado) para um perfil da própria empresa.
-async function createInvite(companyId, role) {
+const INVITE_TTL_DAYS = 7;
+const INVITE_SELECT = {
+  id: true, name: true, email: true, role: true, status: true,
+  expiresAt: true, acceptedAt: true, createdAt: true,
+};
+
+// Constrói o email de convite (assunto + corpo texto/HTML) para o funcionário.
+function buildInviteEmail({ name, companyName, link }) {
+  const subject = 'Convite para acessar a plataforma Kixima';
+  const text = [
+    `Olá ${name},`, '',
+    `A empresa ${companyName} convidou você para acessar a plataforma Kixima.`, '',
+    'Clique no link abaixo para completar o seu cadastro:', link, '',
+    `Este link é válido por ${INVITE_TTL_DAYS} dias.`, '',
+    'Equipe Kixima.',
+  ].join('\n');
+  const html = `
+    <div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;line-height:1.5">
+      <p>Olá <strong>${name}</strong>,</p>
+      <p>A empresa <strong>${companyName}</strong> convidou você para acessar a plataforma Kixima.</p>
+      <p>Clique no botão abaixo para completar o seu cadastro:</p>
+      <p style="margin:22px 0">
+        <a href="${link}" style="background:#c1121f;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">Completar Cadastro</a>
+      </p>
+      <p style="font-size:13px;color:#666">Este link é válido por ${INVITE_TTL_DAYS} dias.</p>
+      <p>Equipe Kixima.</p>
+    </div>`;
+  return { subject, text, html };
+}
+
+// Envia (ou reenvia) o email de convite com o link único.
+async function sendInviteEmail(invite, company) {
+  const base = (config.appUrl || '').replace(/\/$/, '');
+  const link = `${base}/convite/${invite.token}`;
+  const { subject, text, html } = buildInviteEmail({ name: invite.name, companyName: company.name, link });
+  await notificationService.sendEmail(invite.email, subject, text, { html });
+  return link;
+}
+
+// Cria um convite de funcionário: gera o link único, persiste o convite e
+// envia automaticamente o email ao funcionário — sem o admin copiar nada.
+async function createInvite(companyId, role, { name, email }, createdById = null) {
   const company = await prisma.company.findUnique({ where: { id: companyId } });
   if (!company) throw new NotFoundError('Empresa');
   const allowed = INVITABLE_ROLES[company.type] || [];
   if (!allowed.includes(role)) {
     throw new BusinessRuleError('Este perfil não pode ser convidado para este tipo de empresa.');
   }
-  const token = authService.signInvite({ companyId, role });
-  return { token, role, companyName: company.name };
+  const normEmail = String(email).trim().toLowerCase();
+  if (await prisma.user.findUnique({ where: { email: normEmail } })) {
+    throw new ConflictError('Já existe uma conta com este email.');
+  }
+  const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+  // Cria primeiro (obtém id), assina o token com o id e guarda-o.
+  const created = await prisma.employeeInvite.create({
+    data: { companyId, name: String(name).trim(), email: normEmail, role, token: 'pending', status: 'PENDENTE', expiresAt, createdById },
+  });
+  const token = authService.signInvite({ companyId, role, inviteId: created.id });
+  const invite = await prisma.employeeInvite.update({ where: { id: created.id }, data: { token } });
+  await sendInviteEmail(invite, company);
+  return { ...pickInvite(invite), companyName: company.name };
 }
 
-// Resolve um convite (público) — mostra ao convidado a empresa e o perfil.
+// Lista os convites da empresa, marcando como EXPIRADO os pendentes vencidos.
+async function listInvites(companyId) {
+  const invites = await prisma.employeeInvite.findMany({
+    where: { companyId }, orderBy: { createdAt: 'desc' },
+  });
+  return invites.map((i) => pickInvite(applyExpiry(i)));
+}
+
+// Reenvia o convite: renova token/validade (volta a PENDENTE) e reenvia o email.
+async function resendInvite(companyId, inviteId) {
+  const invite = await getOwnedInvite(companyId, inviteId);
+  if (invite.status === 'ACEITO') throw new BusinessRuleError('Este convite já foi aceite.');
+  const company = await prisma.company.findUnique({ where: { id: companyId } });
+  const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+  const token = authService.signInvite({ companyId, role: invite.role, inviteId });
+  const updated = await prisma.employeeInvite.update({
+    where: { id: inviteId }, data: { token, status: 'PENDENTE', expiresAt, acceptedAt: null },
+  });
+  await sendInviteEmail(updated, company);
+  return pickInvite(updated);
+}
+
+// Cancela um convite pendente (impede a sua aceitação).
+async function cancelInvite(companyId, inviteId) {
+  const invite = await getOwnedInvite(companyId, inviteId);
+  if (invite.status === 'ACEITO') throw new BusinessRuleError('Este convite já foi aceite.');
+  const updated = await prisma.employeeInvite.update({ where: { id: inviteId }, data: { status: 'CANCELADO' } });
+  return pickInvite(updated);
+}
+
+async function getOwnedInvite(companyId, inviteId) {
+  const invite = await prisma.employeeInvite.findUnique({ where: { id: inviteId } });
+  if (!invite || invite.companyId !== companyId) throw new NotFoundError('Convite');
+  return invite;
+}
+
+function applyExpiry(invite) {
+  if (invite.status === 'PENDENTE' && invite.expiresAt && invite.expiresAt.getTime() < Date.now()) {
+    return { ...invite, status: 'EXPIRADO' };
+  }
+  return invite;
+}
+
+function pickInvite(i) {
+  return {
+    id: i.id, name: i.name, email: i.email, role: i.role, status: i.status,
+    expiresAt: i.expiresAt, acceptedAt: i.acceptedAt, createdAt: i.createdAt,
+  };
+}
+
+// Resolve um convite (público) — mostra ao convidado a empresa, o perfil e os
+// dados já preenchidos pelo administrador (nome/email).
 async function resolveInvite(token) {
-  const { companyId, role } = authService.verifyInvite(token);
+  const { companyId, role, inviteId } = authService.verifyInvite(token);
   const company = await prisma.company.findUnique({ where: { id: companyId } });
   if (!company) throw new NotFoundError('Empresa');
-  return { companyName: company.name, companyType: company.type, role };
+  let name = null; let email = null;
+  if (inviteId) {
+    const invite = await getInviteForToken(inviteId, companyId);
+    name = invite.name; email = invite.email;
+  }
+  return { companyName: company.name, companyType: company.type, role, name, email };
 }
 
-// Aceitação de convite (público): o convidado preenche o próprio cadastro. A
-// conta fica inativa até o Company Admin aceitar.
+// Valida o convite persistido associado ao token (estado e validade).
+async function getInviteForToken(inviteId, companyId) {
+  const invite = await prisma.employeeInvite.findUnique({ where: { id: inviteId } });
+  if (!invite || invite.companyId !== companyId) throw new NotFoundError('Convite');
+  if (invite.status === 'CANCELADO') throw new BusinessRuleError('Este convite foi cancelado.');
+  if (invite.status === 'ACEITO') throw new BusinessRuleError('Este convite já foi aceite.');
+  if (invite.expiresAt && invite.expiresAt.getTime() < Date.now()) throw new BusinessRuleError('Este convite expirou.');
+  return invite;
+}
+
+// Aceitação de convite (público): o convidado define a senha. A conta fica
+// inativa até o Company Admin aceitar. Compatível com convites antigos (sem
+// registo persistido), em que o nome/email vêm do formulário.
 async function acceptInvite(token, { name, email, password }) {
-  const { companyId, role } = authService.verifyInvite(token);
+  const { companyId, role, inviteId } = authService.verifyInvite(token);
   const company = await prisma.company.findUnique({ where: { id: companyId } });
   if (!company) throw new NotFoundError('Empresa');
-  if (await prisma.user.findUnique({ where: { email } })) {
+
+  let finalName = name; let finalEmail = email; let invite = null;
+  if (inviteId) {
+    invite = await getInviteForToken(inviteId, companyId);
+    finalName = invite.name;             // nome/email definidos pelo admin
+    finalEmail = invite.email;
+  }
+  finalEmail = String(finalEmail || '').trim().toLowerCase();
+  if (!finalName || !finalEmail) throw new BusinessRuleError('Dados do convite incompletos.');
+  if (await prisma.user.findUnique({ where: { email: finalEmail } })) {
     throw new ConflictError('Já existe uma conta com este email.');
   }
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: { name, email, passwordHash, role, companyId, active: false },
+    data: { name: finalName, email: finalEmail, passwordHash, role, companyId, active: false },
     select: USER_SELECT,
   });
+  if (invite) {
+    await prisma.employeeInvite.update({ where: { id: invite.id }, data: { status: 'ACEITO', acceptedAt: new Date() } });
+  }
   return user;
 }
 
@@ -275,6 +406,9 @@ module.exports = {
   decideCompanyStatus,
   setBudgetLimit,
   createInvite,
+  listInvites,
+  resendInvite,
+  cancelInvite,
   resolveInvite,
   acceptInvite,
   listCompanyUsers,

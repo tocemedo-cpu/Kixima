@@ -32,8 +32,20 @@ services:
         value: "7"
       - key: POLICY_EXPIRY_ALERT_DAYS
         value: "30"
+      # Email: "console" apenas regista no log. Para enviar convites de
+      # funcionário por email, defina "smtp" e configure as variáveis SMTP_*.
       - key: EMAIL_PROVIDER
         value: console
+      - key: EMAIL_FROM
+        value: notificacoes@kixima.co.ao
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
       - key: LOG_LEVEL
         value: info
       # Define no dashboard (segredo): a connection string do Supabase (pooler).

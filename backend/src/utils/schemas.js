@@ -49,15 +49,19 @@ const createUserSchema = z.object({
   approvalCap: z.number().positive().optional(),
 });
 
-// Convite de utilizador emitido pelo Company Admin (Vendedor = FORNECEDOR).
+// Convite de funcionário emitido pelo Company Admin (Vendedor = FORNECEDOR). O
+// nome e o email são obrigatórios: o link é gerado e enviado automaticamente.
 const createInviteSchema = z.object({
   role: z.enum(['COMPRADOR', 'FORNECEDOR', 'FINANCEIRO']),
+  name: z.string().min(2, 'Indique o nome do funcionário.'),
+  email: z.string().email('Indique um email válido.'),
 });
 
-// Aceitação de convite: o convidado preenche o próprio cadastro.
+// Aceitação de convite: o convidado define a senha. Nome/email são opcionais
+// (vêm do convite); mantidos para compatibilidade com links antigos.
 const acceptInviteSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
+  name: z.string().min(2).optional(),
+  email: z.string().email().optional(),
   password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.'),
 });
 

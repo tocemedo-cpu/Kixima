@@ -22,6 +22,8 @@ function roleLabel(role, companyType) {
   return role;
 }
 const ROLE_TONE = { COMPANY_ADMIN: 'danger', COMPRADOR: 'info', FORNECEDOR: 'success', FINANCEIRO: 'pending' };
+const INVITE_TONE = { PENDENTE: 'pending', ACEITO: 'success', EXPIRADO: 'neutral', CANCELADO: 'danger' };
+const INVITE_LABEL = { PENDENTE: 'Pendente', ACEITO: 'Aceito', EXPIRADO: 'Expirado', CANCELADO: 'Cancelado' };
 const PERFIS = [
   { icon: 'cart', t: 'Comprador', d: 'Cria pedidos, solicita cotações e acompanha compras.' },
   { icon: 'suppliers', t: 'Vendedor', d: 'Envia propostas, negocia e acompanha oportunidades.' },
@@ -38,27 +40,41 @@ export default function Users() {
   const [users, setUsers] = useState(null);
   const [q, setQ] = useState('');
   const [role, setRole] = useState('COMPRADOR');
-  const [invite, setInvite] = useState(null);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [invites, setInvites] = useState([]);
   const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
   const [toast, setToast] = useState('');
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState(false);
 
   function loadUsers() { api.get('/api/companies/users').then(setUsers).catch((e) => setError(e.message)); }
+  function loadInvites() { api.get('/api/companies/invites').then(setInvites).catch(() => {}); }
   useEffect(() => {
     if (user.companyId) api.get(`/api/companies/${user.companyId}`).then(setCompany).catch(() => {});
     loadUsers();
+    loadInvites();
   }, [user.companyId]);
 
   const options = company ? ROLE_OPTIONS[company.type] || [] : [];
   const companyType = company?.type;
   const flash = (m) => { setToast(m); setTimeout(() => setToast(''), 3500); };
 
-  async function generateInvite(e) {
-    e.preventDefault(); setError(''); setInvite(null); setBusy(true);
-    try { const res = await api.post('/api/companies/invites', { role }); setInvite({ url: `${window.location.origin}/convite/${res.token}`, role: res.role }); }
-    catch (err) { setError(err.message); } finally { setBusy(false); }
+  function openInviteModal() { setModal(true); setFormError(''); setName(''); setEmail(''); setRole(options[0]?.value || 'COMPRADOR'); }
+
+  // Envia o convite automaticamente: gera o link e envia por email ao funcionário.
+  async function sendInvite(e) {
+    e.preventDefault(); setFormError(''); setBusy(true);
+    try {
+      await api.post('/api/companies/invites', { role, name, email });
+      setModal(false);
+      flash('Convite enviado com sucesso para o email do funcionário.');
+      loadInvites();
+    } catch (err) { setFormError(err.message); } finally { setBusy(false); }
   }
+  async function resendInvite(id, to) { try { await api.post(`/api/companies/invites/${id}/resend`); flash(`Convite reenviado para ${to}.`); loadInvites(); } catch (e) { setError(e.message); } }
+  async function cancelInvite(id) { try { await api.post(`/api/companies/invites/${id}/cancel`); flash('Convite cancelado.'); loadInvites(); } catch (e) { setError(e.message); } }
   async function accept(id, name) { try { await api.patch(`/api/companies/users/${id}/activate`); flash(`Cadastro de ${name} aceite.`); loadUsers(); } catch (e) { setError(e.message); } }
   async function reject(id, name) { try { await api.del(`/api/companies/users/${id}`); flash(`Cadastro de ${name} removido.`); loadUsers(); } catch (e) { setError(e.message); } }
 
@@ -70,7 +86,7 @@ export default function Users() {
       {toast ? <div className="svc-toast">{toast}</div> : null}
       <Crumbs trail={['Usuários & Perfis']} />
       <PageHead title="Usuários & Perfis" subtitle="Gerencie os usuários, perfis e permissões da empresa."
-        actions={<button className="btn btn-accent" onClick={() => { setModal(true); setInvite(null); }}>+ Novo Usuário</button>} />
+        actions={<button className="btn btn-accent" onClick={openInviteModal}>+ Novo Usuário</button>} />
 
       {error ? <div className="empty-state" style={{ padding: 14 }}><p>{error}</p></div> : null}
 
@@ -88,6 +104,34 @@ export default function Users() {
                       <button className="btn btn-accent btn-sm" onClick={() => accept(u.id, u.name)}>Aceitar</button>
                       <button className="btn btn-ghost btn-sm" onClick={() => reject(u.id, u.name)}>Recusar</button>
                     </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {invites.length > 0 && (
+        <div className="bz-card bz-tablewrap" style={{ marginBottom: 16 }}>
+          <div className="ca-panel-title">Convites enviados ({invites.length})</div>
+          <table className="bz-table">
+            <thead><tr><th>{t('Funcionário')}</th><th>{t('E-mail')}</th><th>{t('Perfil')}</th><th>{t('Status')}</th><th>{t('Enviado')}</th><th></th></tr></thead>
+            <tbody>
+              {invites.map((iv) => (
+                <tr key={iv.id}>
+                  <td><div className="bz-supplier"><span className="bz-supplier-logo">{initials(iv.name)}</span><strong>{iv.name}</strong></div></td>
+                  <td className="bz-muted">{iv.email}</td>
+                  <td><Pill tone={ROLE_TONE[iv.role]}>{roleLabel(iv.role, companyType)}</Pill></td>
+                  <td><Pill tone={INVITE_TONE[iv.status]}>{INVITE_LABEL[iv.status]}</Pill></td>
+                  <td className="bz-muted">{iv.createdAt ? formatDateTime(iv.createdAt) : '—'}</td>
+                  <td className="r">
+                    {iv.status !== 'ACEITO' ? (
+                      <div className="bz-actions" style={{ justifyContent: 'flex-end' }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => resendInvite(iv.id, iv.email)}>Reenviar</button>
+                        {iv.status !== 'CANCELADO' ? <button className="btn btn-ghost btn-sm" onClick={() => cancelInvite(iv.id)}>Cancelar</button> : null}
+                      </div>
+                    ) : null}
                   </td>
                 </tr>
               ))}
@@ -134,21 +178,22 @@ export default function Users() {
 
       {modal && (
         <div className="av-modal" onClick={() => setModal(false)}>
-          <form className="hs-form" onClick={(e) => e.stopPropagation()} onSubmit={generateInvite}>
-            <h3>{t('Novo Usuário — convite por link')}</h3>
-            <p className="bz-sub">Escolha o perfil, gere o link e partilhe-o. A pessoa cria a conta e o cadastro fica pendente da sua aprovação.</p>
-            <label className="field"><span>Perfil a convidar</span>
+          <form className="hs-form" onClick={(e) => e.stopPropagation()} onSubmit={sendInvite}>
+            <h3>{t('Adicionar funcionário')}</h3>
+            <p className="bz-sub">Informe o nome, o email e o perfil. O sistema gera o link único e envia o convite automaticamente para o email do funcionário.</p>
+            <label className="field"><span>Nome do funcionário</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Nome completo" />
+            </label>
+            <label className="field"><span>Email do funcionário</span>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="funcionario@empresa.co.ao" />
+            </label>
+            <label className="field"><span>Perfil</span>
               <select value={role} onChange={(e) => setRole(e.target.value)}>{options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
             </label>
-            {invite ? (
-              <div className="ca-invite">
-                <span className="bz-sub2">Link de convite ({roleLabel(invite.role, companyType)}) — válido 7 dias:</span>
-                <div className="ca-invite-row"><input readOnly value={invite.url} onFocus={(e) => e.target.select()} /><button type="button" className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard?.writeText(invite.url); flash('Link copiado.'); }}>Copiar</button></div>
-              </div>
-            ) : null}
+            {formError ? <p className="av-error" style={{ maxWidth: 'none' }}>{formError}</p> : null}
             <div className="hs-form-actions">
-              <button type="button" className="btn btn-ghost" onClick={() => setModal(false)}>Fechar</button>
-              <button type="submit" className="btn btn-accent" disabled={busy || !options.length}>{busy ? 'A gerar…' : 'Gerar link'}</button>
+              <button type="button" className="btn btn-ghost" onClick={() => setModal(false)}>Cancelar</button>
+              <button type="submit" className="btn btn-accent" disabled={busy || !options.length}>{busy ? 'A enviar…' : 'Salvar e enviar convite'}</button>
             </div>
           </form>
         </div>

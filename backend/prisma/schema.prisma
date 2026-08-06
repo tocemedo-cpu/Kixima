@@ -81,8 +81,41 @@ model Company {
   quotesAsSupplier   QuoteRequest[]         @relation("SupplierQuotes")
   erpConfig          CompanyErpConfig?
   erpConfigAudits    CompanyErpConfigAudit[]
+  employeeInvites    EmployeeInvite[]
 
   @@map("companies")
+}
+
+// ---------------------------------------------------------------------------
+// Convite de funcionário emitido pelo Company Admin. Persiste o convite para
+// permitir estado (Pendente/Aceito/Expirado/Cancelado), reenvio e cancelamento.
+// O envio do link é automático (email); reutiliza o token assinado existente.
+// ---------------------------------------------------------------------------
+enum InviteStatus {
+  PENDENTE
+  ACEITO
+  EXPIRADO
+  CANCELADO
+}
+
+model EmployeeInvite {
+  id         String       @id @default(uuid())
+  companyId  String       @map("company_id")
+  company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name       String
+  email      String
+  role       PersonaRole
+  token      String       @unique
+  status     InviteStatus @default(PENDENTE)
+  expiresAt  DateTime     @map("expires_at")
+  acceptedAt DateTime?    @map("accepted_at")
+  createdById String?     @map("created_by_id")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@index([email])
+  @@map("employee_invites")
 }
 
 // ---------------------------------------------------------------------------

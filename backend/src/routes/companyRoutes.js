@@ -37,7 +37,10 @@ router.use(authenticate);
 // Utilizadores & Perfis da própria empresa (gerido pelo Company Admin).
 // Antes de /:id para não colidir com o parâmetro.
 router.get('/users', requireRole('COMPANY_ADMIN'), companyController.listUsers);
+router.get('/invites', requireRole('COMPANY_ADMIN'), companyController.listInvites);
 router.post('/invites', requireRole('COMPANY_ADMIN'), validate(createInviteSchema), companyController.createInvite);
+router.post('/invites/:id/resend', requireRole('COMPANY_ADMIN'), companyController.resendInvite);
+router.post('/invites/:id/cancel', requireRole('COMPANY_ADMIN'), companyController.cancelInvite);
 router.patch('/users/:id/activate', requireRole('COMPANY_ADMIN'), companyController.activateUser);
 router.patch('/users/:id/status', requireRole('COMPANY_ADMIN'), companyController.setUserStatus);
 router.delete('/users/:id', requireRole('COMPANY_ADMIN'), companyController.removeUser);

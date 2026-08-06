@@ -11,13 +11,35 @@ const logger = require('../config/logger');
 // sem tocar no resto do código.
 const config = require('../config/env');
 
-async function dispatchEmail(to, subject, body) {
+async function dispatchEmail(to, subject, body, { html } = {}) {
   if (config.email.provider === 'console' || !to) {
     logger.info('Email (modo console)', { to, subject, body });
     return;
   }
-  // TODO: integrar provider SMTP real usando config.email.smtp
+  if (config.email.provider === 'smtp') {
+    // Envio real por SMTP. O nodemailer é carregado de forma preguiçosa para
+    // não impor a dependência quando o provider é "console" (default).
+    try {
+      // eslint-disable-next-line global-require
+      const nodemailer = require('nodemailer');
+      const { host, port, user, password } = config.email.smtp;
+      const transport = nodemailer.createTransport({
+        host, port, secure: port === 465,
+        auth: user ? { user, pass: password } : undefined,
+      });
+      await transport.sendMail({ from: config.email.from, to, subject, text: body, html });
+      logger.info('Email enviado (SMTP)', { to, subject });
+      return;
+    } catch (err) {
+      logger.error('Falha no envio de email (SMTP) — a registar no log', { to, subject, error: err.message });
+    }
+  }
   logger.info('Email enviado', { to, subject });
+}
+
+// Envio genérico de email, reutilizável por outras áreas (ex.: convites).
+async function sendEmail(to, subject, body, opts) {
+  return dispatchEmail(to, subject, body, opts);
 }
 
 async function notifyUser({ userId, type, title, message, channel = 'IN_APP', relatedEntityType, relatedEntityId, emailTo }) {
@@ -190,4 +212,4 @@ const events = {
     }),
 };
 
-module.exports = { notifyUser, notifyUsersByRole, notifyCompanyContact, events };
+module.exports = { notifyUser, notifyUsersByRole, notifyCompanyContact, sendEmail, events };

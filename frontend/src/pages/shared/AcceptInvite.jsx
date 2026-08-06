@@ -26,7 +26,11 @@ export default function AcceptInvite() {
 
   useEffect(() => {
     api.get(`/api/companies/invite/${token}`)
-      .then(setInvite)
+      .then((inv) => {
+        setInvite(inv);
+        // Convite novo já traz nome/email definidos pelo admin — pré-preenche.
+        setForm((f) => ({ ...f, name: inv.name || f.name, email: inv.email || f.email }));
+      })
       .catch((e) => setLoadError(e.message));
   }, [token]);
 
@@ -93,11 +97,11 @@ export default function AcceptInvite() {
               <form onSubmit={handleSubmit}>
                 <div className="field">
                   <label>Nome completo</label>
-                  <input required value={form.name} onChange={(e) => update('name', e.target.value)} />
+                  <input required value={form.name} onChange={(e) => update('name', e.target.value)} readOnly={!!invite.email} />
                 </div>
                 <div className="field">
                   <label>Email (login)</label>
-                  <input type="email" required value={form.email} onChange={(e) => update('email', e.target.value)} />
+                  <input type="email" required value={form.email} onChange={(e) => update('email', e.target.value)} readOnly={!!invite.email} />
                 </div>
                 <div className="field">
                   <label>Senha (mín. 8)</label>

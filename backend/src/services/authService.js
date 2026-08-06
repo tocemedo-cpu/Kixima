@@ -23,8 +23,10 @@ function signToken(user) {
 // preenche o próprio cadastro e o admin aprova depois.
 const INVITE_TTL = '7d';
 
-function signInvite({ companyId, role }) {
-  return jwt.sign({ t: 'invite', companyId, role }, config.auth.jwtSecret, { expiresIn: INVITE_TTL });
+function signInvite({ companyId, role, inviteId }) {
+  const payload = { t: 'invite', companyId, role };
+  if (inviteId) payload.iid = inviteId;
+  return jwt.sign(payload, config.auth.jwtSecret, { expiresIn: INVITE_TTL });
 }
 
 function verifyInvite(token) {
@@ -37,7 +39,7 @@ function verifyInvite(token) {
   if (payload.t !== 'invite' || !payload.companyId || !payload.role) {
     throw new UnauthorizedError('Convite inválido.');
   }
-  return { companyId: payload.companyId, role: payload.role };
+  return { companyId: payload.companyId, role: payload.role, inviteId: payload.iid || null };
 }
 
 async function login({ email, password }) {
