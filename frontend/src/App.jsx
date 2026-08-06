@@ -72,6 +72,7 @@ import DueDiligence from './pages/adminSistema/DueDiligence';
 import PolicyManagement from './pages/adminSistema/PolicyManagement';
 import AdminContracts from './pages/adminSistema/Contracts';
 import Companies from './pages/adminSistema/Companies';
+import ErpIntegrations from './pages/adminSistema/ErpIntegrations';
 
 function Landing() {
   const { user, loading } = useAuth();
@@ -188,6 +189,7 @@ export default function App() {
             <Route path="/sistema" element={<AdminHome />} />
             <Route path="/sistema/due-diligence" element={<DueDiligence />} />
             <Route path="/sistema/apolices" element={<PolicyManagement />} />
+            <Route path="/sistema/integracoes-erp" element={<ErpIntegrations />} />
             <Route path="/sistema/contratos" element={<AdminContracts />} />
             <Route path="/sistema/empresas" element={<Companies />} />
             <Route path="/sistema/permissoes" element={<AdminPermissions />} />

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { ErpSystem } from '@prisma/client';
 import { AdminTokenGuard } from './admin-token.guard';
 import { CredentialsService, TenantCredentialView } from './credentials.service';
@@ -42,6 +42,13 @@ export class CredentialsController {
   ): Promise<{ ok: true }> {
     await this.credentials.upsert(tenantId, erp, body.enabled ?? true, body.config ?? {});
     return { ok: true };
+  }
+
+  /** Testa a ligação ao ERP de um tenant (usa a config guardada). */
+  @Post('tenants/:tenantId/:erp/test')
+  @HttpCode(200)
+  test(@Param('tenantId') tenantId: string, @Param('erp') erp: ErpSystem): Promise<{ ok: boolean; message: string }> {
+    return this.credentials.testConnection(tenantId, erp);
   }
 
   /** Remove a config de um ERP de um tenant. */

@@ -49,3 +49,12 @@ services:
         sync: false
       - key: KIXIMA_CALLBACK_SECRET
         sync: false
+      # --- Configuração ERP por empresa (Admin do Sistema) -----------------
+      # ERP_CONFIG_ENCRYPTION_KEY: 32 bytes hex (cifra AES-256-GCM das credenciais).
+      # INTEGRATION_URL/TOKEN: sincroniza a config com o kixima-integration-service.
+      - key: ERP_CONFIG_ENCRYPTION_KEY
+        sync: false
+      - key: INTEGRATION_URL
+        sync: false
+      - key: INTEGRATION_ADMIN_TOKEN
+        sync: false

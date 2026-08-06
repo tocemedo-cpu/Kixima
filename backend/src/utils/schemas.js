@@ -234,11 +234,17 @@ const createContractSchema = z.object({
   validUntil: z.coerce.date(),
 });
 
+const erpConfigSchema = z.object({
+  erp: z.enum(['MANUAL', 'PRIMAVERA', 'SAP_S4HANA', 'ORACLE_ERP_CLOUD', 'SAP_ARIBA']),
+  config: z.record(z.string()).optional().default({}),
+});
+
 module.exports = {
   loginSchema,
   changePasswordSchema,
   registerCompanySchema,
   decideCompanySchema,
+  erpConfigSchema,
   createUserSchema,
   createInviteSchema,
   acceptInviteSchema,

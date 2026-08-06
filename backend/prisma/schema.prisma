@@ -79,8 +79,54 @@ model Company {
   kits               Kit[]                  @relation("SupplierKits")
   quotesAsBuyer      QuoteRequest[]         @relation("BuyerQuotes")
   quotesAsSupplier   QuoteRequest[]         @relation("SupplierQuotes")
+  erpConfig          CompanyErpConfig?
+  erpConfigAudits    CompanyErpConfigAudit[]
 
   @@map("companies")
+}
+
+// ---------------------------------------------------------------------------
+// Configuração ERP por empresa (pós-aprovação). Liga-se à empresa existente,
+// não a recria. As credenciais ficam cifradas (AES-256-GCM) em configEnc.
+// A execução real da integração é feita pelo kixima-integration-service.
+// ---------------------------------------------------------------------------
+enum CompanyErpSystem {
+  MANUAL // "Sem ERP" — comportamento normal do Kixima
+  PRIMAVERA
+  SAP_S4HANA
+  ORACLE_ERP_CLOUD
+  SAP_ARIBA
+}
+
+model CompanyErpConfig {
+  id              String           @id @default(uuid())
+  companyId       String           @unique @map("company_id")
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  erp             CompanyErpSystem @default(MANUAL)
+  configEnc       String?          @map("config_enc") // credenciais cifradas (null quando MANUAL)
+  lastTestAt      DateTime?        @map("last_test_at")
+  lastTestOk      Boolean?         @map("last_test_ok")
+  lastTestMessage String?          @map("last_test_message")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@map("company_erp_configs")
+}
+
+model CompanyErpConfigAudit {
+  id          String            @id @default(uuid())
+  companyId   String            @map("company_id")
+  company     Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  action      String // SET | TEST | REMOVE
+  fromErp     CompanyErpSystem? @map("from_erp")
+  toErp       CompanyErpSystem? @map("to_erp")
+  actorUserId String?           @map("actor_user_id")
+  actorName   String?           @map("actor_name")
+  result      String?
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@map("company_erp_config_audits")
 }
 
 // Documento de credenciamento submetido no cadastro de uma empresa.

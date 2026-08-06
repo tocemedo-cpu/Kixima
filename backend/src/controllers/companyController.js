@@ -1,5 +1,6 @@
 const companyService = require('../services/companyService');
 const authService = require('../services/authService');
+const erpConfigService = require('../services/erpConfigService');
 
 const DOCUMENT_TYPES = ['CERTIDAO_COMERCIAL', 'ALVARA_COMERCIAL', 'LICENCA_ANPG'];
 
@@ -80,11 +81,34 @@ async function setUserStatus(req, res) {
   res.json(user);
 }
 
+// --- Configuração ERP (Administrador do Sistema KIXIMA) ---------------------
+
+async function getErpConfig(req, res) {
+  res.json(await erpConfigService.getConfig(req.params.id));
+}
+
+async function setErpConfig(req, res) {
+  const result = await erpConfigService.setConfig(req.params.id, req.body, req.user);
+  res.json(result);
+}
+
+async function testErpConnection(req, res) {
+  res.json(await erpConfigService.testConnection(req.params.id, req.user));
+}
+
+async function listErpAudits(req, res) {
+  res.json(await erpConfigService.listAudits(req.params.id));
+}
+
 module.exports = {
   register,
   list,
   getOne,
   decide,
+  getErpConfig,
+  setErpConfig,
+  testErpConnection,
+  listErpAudits,
   setBudgetLimit,
   createUser,
   listUsers,

@@ -89,6 +89,20 @@ export class CredentialsService {
     return out;
   }
 
+  /** Testa a ligação ao ERP de um tenant usando a config guardada. */
+  async testConnection(tenantId: string, erp: ErpSystem): Promise<{ ok: boolean; message: string }> {
+    const row = await this.prisma.erpCredential.findUnique({ where: { tenantId_erp: { tenantId, erp } } });
+    if (!row) return { ok: false, message: 'Sem configuração guardada para este ERP/tenant.' };
+    try {
+      const config = this.crypto.decryptJson<ErpConnectionConfig>(row.configEnc);
+      const adapter = this.factory.create(erp, config);
+      const ok = await adapter.healthCheck();
+      return { ok, message: ok ? 'Ligação estabelecida com sucesso.' : 'O ERP respondeu com falha na verificação.' };
+    } catch (err) {
+      return { ok: false, message: (err as Error).message };
+    }
+  }
+
   async countByErp(): Promise<Record<string, number>> {
     const rows = await this.prisma.erpCredential.groupBy({ by: ['erp'], where: { enabled: true }, _count: { _all: true } });
     const out: Record<string, number> = {};

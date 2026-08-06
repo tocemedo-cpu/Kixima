@@ -11,6 +11,7 @@ const {
   budgetLimitSchema,
   createInviteSchema,
   acceptInviteSchema,
+  erpConfigSchema,
 } = require('../utils/schemas');
 
 const router = express.Router();
@@ -45,6 +46,14 @@ router.post('/users', requireRole('COMPANY_ADMIN', 'ADMIN_SISTEMA'), validate(cr
 
 // Admin do Sistema KIXIMA: due diligence.
 router.get('/', requireRole('ADMIN_SISTEMA'), companyController.list);
+
+// Configuração ERP por empresa — APENAS o Administrador do Sistema KIXIMA.
+// (Antes de /:id para os segmentos específicos não colidirem com o parâmetro.)
+router.get('/:id/erp-config', requireRole('ADMIN_SISTEMA'), companyController.getErpConfig);
+router.put('/:id/erp-config', requireRole('ADMIN_SISTEMA'), validate(erpConfigSchema), companyController.setErpConfig);
+router.post('/:id/erp-config/test', requireRole('ADMIN_SISTEMA'), companyController.testErpConnection);
+router.get('/:id/erp-config/audits', requireRole('ADMIN_SISTEMA'), companyController.listErpAudits);
+
 router.get('/:id', companyController.getOne);
 router.patch('/:id/decision', requireRole('ADMIN_SISTEMA'), validate(decideCompanySchema), companyController.decide);
 router.put('/:id/budget-limit', requireRole('COMPANY_ADMIN', 'ADMIN_SISTEMA'), validate(budgetLimitSchema), companyController.setBudgetLimit);

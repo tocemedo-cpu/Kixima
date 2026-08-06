@@ -142,6 +142,7 @@ const ADMIN_SISTEMA = [
     ],
   },
   { label: 'Gestão de Apólices', icon: 'policy', to: '/sistema/apolices' },
+  { label: 'Integrações ERP', icon: 'offshore', to: '/sistema/integracoes-erp' },
   { label: 'Contratos-Quadro', icon: 'contract', to: '/sistema/contratos' },
   {
     // No Admin do Sistema, o suporte e a ajuda vivem dentro das configurações.
