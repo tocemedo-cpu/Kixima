@@ -41,8 +41,10 @@ services:
         value: smtp-relay.brevo.com
       - key: SMTP_PORT
         value: "587"
+      # Remetente. TEM de ser um remetente verificado na conta Brevo.
       - key: EMAIL_FROM
-        sync: false
+        value: "Kixima <tocemedo@gmail.com>"
+      # Login e chave SMTP do Brevo — segredos, definidos no dashboard.
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASSWORD
