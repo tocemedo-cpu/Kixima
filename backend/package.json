@@ -10,6 +10,7 @@
     "test": "cross-env NODE_ENV=test jest",
     "seed": "cross-env NODE_ENV=development node -r dotenv/config prisma/seed.js",
     "seed:demo": "cross-env NODE_ENV=development node -r dotenv/config prisma/seed.demo.js",
+    "seed:catalog": "node -r dotenv/config prisma/seed.catalog.js",
     "prisma:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:reset": "prisma db push --force-reset",
