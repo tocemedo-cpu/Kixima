@@ -22,6 +22,20 @@ function errorHandler(err, req, res, next) {
     });
   }
 
+  // Erros de upload (multer) — ex.: ficheiro demasiado grande. Devolve uma
+  // mensagem clara (413/400) em vez de um 500 genérico, para o utilizador saber
+  // o que corrigir.
+  if (err.name === 'MulterError') {
+    const map = {
+      LIMIT_FILE_SIZE: [413, 'O ficheiro é demasiado grande. Reduza o tamanho da imagem e tente novamente.'],
+      LIMIT_FILE_COUNT: [400, 'Enviou ficheiros a mais.'],
+      LIMIT_UNEXPECTED_FILE: [400, 'Campo de ficheiro inesperado no envio.'],
+    };
+    const [status, message] = map[err.code] || [400, 'Falha no envio do ficheiro.'];
+    logger.warn(`Upload rejeitado: ${err.code}`, { path: req.path });
+    return res.status(status).json({ error: { code: err.code, message } });
+  }
+
   // Erros do Prisma (constraint violations, etc.)
   if (err.code === 'P2002') {
     return res.status(409).json({

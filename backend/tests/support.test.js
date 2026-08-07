@@ -110,4 +110,25 @@ describe('Ajuda & Suporte — painel do Administrador do Sistema', () => {
     // slot inválido -> 404
     expect((await auth(adminToken).post('/api/support/images/inexistente').attach('image', PNG, 'x.png')).status).toBe(404);
   });
+
+  test('imagem em formato não suportado (ex.: HEIC) devolve erro claro (422)', async () => {
+    const heic = Buffer.from('0000001c66747970686569630000', 'hex');
+    const res = await auth(adminToken).post('/api/support/images/hero').attach('image', heic, { filename: 'foto.heic', contentType: 'image/heic' });
+    expect(res.status).toBe(422);
+    expect(res.body.error.message).toMatch(/HEIC|não é suportado/i);
+  });
+
+  test('imagem grande dentro do limite (8 MB) é aceite', async () => {
+    const big = Buffer.concat([PNG, Buffer.alloc(8 * 1024 * 1024)]);
+    const res = await auth(adminToken).post('/api/support/images/hero').attach('image', big, { filename: 'grande.png', contentType: 'image/png' });
+    expect(res.status).toBe(200);
+    expect(res.body.imageUrl).toBeTruthy();
+  });
+
+  test('imagem acima do limite devolve 413 claro (não 500)', async () => {
+    const huge = Buffer.concat([PNG, Buffer.alloc(13 * 1024 * 1024)]);
+    const res = await auth(adminToken).post('/api/support/images/hero').attach('image', huge, { filename: 'enorme.png', contentType: 'image/png' });
+    expect(res.status).toBe(413);
+    expect(res.body.error.message).toMatch(/demasiado grande/i);
+  });
 });

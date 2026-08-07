@@ -46,14 +46,35 @@ export default function HelpAdmin() {
   useEffect(loadOverview, []);
   useEffect(loadTickets, [tab]);
 
-  function flash(m) { setToast(m); setTimeout(() => setToast(''), 3000); }
+  function flash(m) { setToast(m); setTimeout(() => setToast(''), 4000); }
   function pickImage(key) { setUploadKey(key); fileRef.current?.click(); }
   function onFile(e) {
     const f = e.target.files?.[0];
-    if (f && uploadKey) api.upload(`/api/support/images/${uploadKey}`, f, 'image').then(() => { loadOverview(); flash('Imagem atualizada.'); }).catch(() => {});
+    if (f && uploadKey) {
+      // Validação no cliente para dar feedback imediato (o servidor também valida).
+      const MAX = 12 * 1024 * 1024;
+      if (!/^image\/(png|jpe?g|webp|gif)$/.test(f.type)) {
+        flash(/heic|heif/i.test(f.type) || /\.hei[cf]$/i.test(f.name)
+          ? 'Formato HEIC/HEIF (foto de iPhone) não é suportado. Converta para JPG ou PNG.'
+          : 'Formato não suportado. Use PNG, JPG, WEBP ou GIF.');
+        e.target.value = ''; return;
+      }
+      if (f.size > MAX) {
+        flash(`Imagem demasiado grande (${(f.size / 1048576).toFixed(1)} MB). O máximo é 12 MB.`);
+        e.target.value = ''; return;
+      }
+      flash('A carregar imagem…');
+      api.upload(`/api/support/images/${uploadKey}`, f, 'image')
+        .then(() => { loadOverview(); flash('Imagem atualizada.'); })
+        .catch((err) => flash(err.message || 'Não foi possível carregar a imagem.'));
+    }
     e.target.value = '';
   }
-  function removeImage(key) { api.del(`/api/support/images/${key}`).then(() => { loadOverview(); flash('Imagem removida.'); }).catch(() => {}); }
+  function removeImage(key) {
+    api.del(`/api/support/images/${key}`)
+      .then(() => { loadOverview(); flash('Imagem removida.'); })
+      .catch((err) => flash(err.message || 'Não foi possível remover a imagem.'));
+  }
   async function setStatus(id, status) {
     try { await api.patch(`/api/support/tickets/${id}`, { status }); loadTickets(); loadOverview(); flash('Estado atualizado.'); }
     catch { flash('Não foi possível atualizar.'); }
