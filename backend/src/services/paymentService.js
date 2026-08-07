@@ -8,6 +8,7 @@ const prisma = require('../config/database');
 const { NotFoundError, ConflictError, ForbiddenError } = require('../utils/errors');
 const notificationService = require('./notificationService');
 const eventBus = require('./eventBus');
+const platformFeeService = require('./platformFeeService');
 
 async function listPendingInvoices(buyerCompanyId) {
   return prisma.invoice.findMany({
@@ -77,6 +78,12 @@ async function processPayment(invoiceId, processedById, buyerCompanyId) {
         where: { id: { in: invoice.consolidatedPoIds } },
         data: { paidAt: new Date() },
       });
+    }
+
+    // Taxa da plataforma (KIXIMA) — à parte da PO/Fatura, cobrada ao fornecedor.
+    const supplierCompanyId = invoice.purchaseOrder?.supplierCompanyId ?? invoice.contract?.supplierCompanyId;
+    if (supplierCompanyId) {
+      await platformFeeService.createForInvoice(tx, { invoice, companyId: supplierCompanyId });
     }
 
     return [createdPayment];

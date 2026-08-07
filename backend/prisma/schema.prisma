@@ -60,6 +60,11 @@ model Company {
   country     String?       @default("Angola")
   settings    Json?         // preferências da empresa (tela Configurações do Company Admin)
 
+  // Dados bancários do fornecedor (para pagamento; aparecem na fatura/PDF).
+  bankName    String?       @map("bank_name")
+  iban        String?
+  swift       String?
+
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   approvedAt  DateTime?     @map("approved_at")
@@ -82,8 +87,38 @@ model Company {
   erpConfig          CompanyErpConfig?
   erpConfigAudits    CompanyErpConfigAudit[]
   employeeInvites    EmployeeInvite[]
+  platformFees       PlatformFee[]
 
   @@map("companies")
+}
+
+// ---------------------------------------------------------------------------
+// Taxa da plataforma (comissão KIXIMA). Fica À PARTE da PO/Fatura (nenhum dos
+// documentos a mostra) — é gerada na transação do pagamento e cobrada à
+// empresa. Composição: (nº de POs × valor por PO) + valor fixo por fatura.
+// ---------------------------------------------------------------------------
+enum PlatformFeeStatus {
+  PENDENTE
+  COBRADO
+}
+
+model PlatformFee {
+  id         String            @id @default(uuid())
+  companyId  String            @map("company_id")
+  company    Company           @relation(fields: [companyId], references: [id])
+  invoiceId  String            @unique @map("invoice_id")
+  invoice    Invoice           @relation(fields: [invoiceId], references: [id])
+  poCount    Int               @map("po_count")
+  perPo      Decimal           @map("per_po") @db.Decimal(14, 2)
+  perInvoice Decimal           @map("per_invoice") @db.Decimal(14, 2)
+  amount     Decimal           @db.Decimal(14, 2)
+  currency   String            @default("AOA")
+  status     PlatformFeeStatus @default(PENDENTE)
+  chargedAt  DateTime?         @map("charged_at")
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@map("platform_fees")
 }
 
 // ---------------------------------------------------------------------------
@@ -599,6 +634,7 @@ model Invoice {
   dueAt           DateTime      @map("due_at")
 
   payment         Payment?
+  platformFee     PlatformFee?
 
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")

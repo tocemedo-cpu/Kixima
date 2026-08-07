@@ -193,6 +193,30 @@ async function setBudgetLimit(companyId, { periodMonthly, currency }) {
   });
 }
 
+// Dados bancários da empresa (o Fornecedor preenche/edita os seus). Alimentam a
+// fatura/PO (secção "Dados para pagamento") em vez do "[a preencher]".
+async function getBankDetails(companyId) {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { id: true, name: true, bankName: true, iban: true, swift: true },
+  });
+  if (!company) throw new NotFoundError('Empresa');
+  return company;
+}
+
+async function updateBankDetails(companyId, { bankName, iban, swift }) {
+  await getBankDetails(companyId);
+  return prisma.company.update({
+    where: { id: companyId },
+    data: {
+      bankName: bankName?.trim() || null,
+      iban: iban?.replace(/\s+/g, '').toUpperCase() || null,
+      swift: swift?.replace(/\s+/g, '').toUpperCase() || null,
+    },
+    select: { id: true, name: true, bankName: true, iban: true, swift: true },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Convites de utilizadores (self-service com aprovação do Company Admin)
 // ---------------------------------------------------------------------------
@@ -408,6 +432,8 @@ module.exports = {
   getCompany,
   decideCompanyStatus,
   setBudgetLimit,
+  getBankDetails,
+  updateBankDetails,
   createInvite,
   listInvites,
   resendInvite,

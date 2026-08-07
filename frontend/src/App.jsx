@@ -60,6 +60,7 @@ import Wallet from './pages/fornecedor/Wallet';
 import StockMovements from './pages/fornecedor/StockMovements';
 import Kits from './pages/fornecedor/Kits';
 import SupplierQuotes from './pages/fornecedor/SupplierQuotes';
+import SupplierCompanyProfile from './pages/fornecedor/CompanyProfile';
 
 import FinanceiroHome from './pages/financeiro/Home';
 import PendingInvoices from './pages/financeiro/PendingInvoices';
@@ -73,6 +74,7 @@ import PolicyManagement from './pages/adminSistema/PolicyManagement';
 import AdminContracts from './pages/adminSistema/Contracts';
 import Companies from './pages/adminSistema/Companies';
 import ErpIntegrations from './pages/adminSistema/ErpIntegrations';
+import PlatformFees from './pages/adminSistema/PlatformFees';
 
 function Landing() {
   const { user, loading } = useAuth();
@@ -173,6 +175,7 @@ export default function App() {
             <Route path="/fornecedor/pedidos/solicitacoes" element={<SupplierQuotes />} />
             <Route path="/fornecedor/pedidos/cotacoes" element={<SupplierQuotes />} />
             <Route path="/fornecedor/financeiro/carteira" element={<Wallet />} />
+            <Route path="/fornecedor/empresa" element={<SupplierCompanyProfile />} />
             {/* Módulos do menu ERP ainda em preparação — evita 404 e mantém a navegação. */}
             <Route path="/fornecedor/*" element={<ModulePlaceholder />} />
           </Route>
@@ -194,6 +197,7 @@ export default function App() {
             <Route path="/sistema/empresas" element={<Companies />} />
             <Route path="/sistema/permissoes" element={<AdminPermissions />} />
             <Route path="/sistema/atividades" element={<SystemActivities />} />
+            <Route path="/sistema/taxas" element={<PlatformFees />} />
           </Route>
         </Route>
       </Route>

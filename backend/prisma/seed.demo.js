@@ -32,6 +32,9 @@ async function main() {
       contactEmail: 'vendas@kianda.co.ao',
       status: 'APROVADA',
       approvedAt: new Date(),
+      bankName: 'Banco de Fomento Angola (BFA)',
+      iban: 'AO06000600000012345678910',
+      swift: 'BFMXAOLU',
     },
   });
 

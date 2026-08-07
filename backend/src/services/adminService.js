@@ -52,4 +52,28 @@ async function systemActivities() {
   return { kpis, items: ev.slice(0, 60) };
 }
 
-module.exports = { listUsers, setUserStatus, systemActivities };
+// Livro de taxas da plataforma (KIXIMA) — todas as taxas geradas nos pagamentos.
+async function listPlatformFees() {
+  const fees = await prisma.platformFee.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      company: { select: { name: true, type: true } },
+      invoice: { select: { reference: true, amount: true, currency: true } },
+    },
+  });
+  const totalAOA = fees.reduce((s, f) => s + Number(f.amount), 0);
+  const pendingAOA = fees.filter((f) => f.status === 'PENDENTE').reduce((s, f) => s + Number(f.amount), 0);
+  return {
+    fees,
+    kpis: { total: fees.length, totalAOA, pendingAOA, cobradas: fees.filter((f) => f.status === 'COBRADO').length },
+  };
+}
+
+// Marcar uma taxa como cobrada (enquanto não há débito automático).
+async function chargePlatformFee(id) {
+  const fee = await prisma.platformFee.findUnique({ where: { id } });
+  if (!fee) throw new NotFoundError('Taxa');
+  return prisma.platformFee.update({ where: { id }, data: { status: 'COBRADO', chargedAt: new Date() } });
+}
+
+module.exports = { listUsers, setUserStatus, systemActivities, listPlatformFees, chargePlatformFee };

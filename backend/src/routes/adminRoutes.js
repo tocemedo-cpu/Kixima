@@ -18,4 +18,8 @@ router.patch('/users/:id/status', async (req, res) => {
 
 router.get('/activities', async (req, res) => res.json(await adminService.systemActivities()));
 
+// Livro de taxas da plataforma (KIXIMA).
+router.get('/platform-fees', async (req, res) => res.json(await adminService.listPlatformFees()));
+router.patch('/platform-fees/:id/charge', async (req, res) => res.json(await adminService.chargePlatformFee(req.params.id)));
+
 module.exports = router;

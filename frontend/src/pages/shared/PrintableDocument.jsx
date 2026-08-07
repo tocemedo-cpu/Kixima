@@ -198,7 +198,7 @@ export default function PrintableDocument({ kind }) {
           <>
             <section className="pdoc-legal">
               <div className="pdoc-lbl">DADOS BANCÁRIOS DO FORNECEDOR / BANK DETAILS</div>
-              <div>Banco: [a preencher] · IBAN: [a preencher] · SWIFT/BIC: [a preencher]</div>
+              <div>Banco: {supplier.bankName || '[a preencher]'} · IBAN: {supplier.iban || '[a preencher]'} · SWIFT/BIC: {supplier.swift || '[a preencher]'}</div>
             </section>
             {invoice.payment ? (
               <section className="pdoc-confirm">

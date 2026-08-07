@@ -15,6 +15,7 @@ const COMMON_TAIL = [
 // Estrutura ERP completa da visão do Fornecedor (SAP Ariba / Oracle-like).
 const FORNECEDOR = [
   { label: 'Dashboard', icon: 'home', to: '/fornecedor', end: true },
+  { label: 'Perfil da Empresa', icon: 'building', to: '/fornecedor/empresa' },
   {
     label: 'Catálogo', icon: 'catalog', children: [
       { label: 'Produtos & Serviços', to: '/fornecedor/catalogo' },
@@ -143,6 +144,7 @@ const ADMIN_SISTEMA = [
   { label: 'Gestão de Apólices', icon: 'policy', to: '/sistema/apolices' },
   { label: 'Integrações ERP', icon: 'offshore', to: '/sistema/integracoes-erp' },
   { label: 'Contratos-Quadro', icon: 'contract', to: '/sistema/contratos' },
+  { label: 'Taxa KIXIMA', icon: 'wallet', to: '/sistema/taxas' },
   {
     // No Admin do Sistema, o suporte e a ajuda vivem dentro das configurações.
     label: 'Configurações e Suporte', icon: 'settings', children: [

@@ -11,6 +11,8 @@ import { COMPANY_STATUS, POLICY_STATUS, formatDate, formatMoney } from '../../do
 
 const EMPTY_FORM = { policyNumber: '', insurer: '', coverageAmount: '', currency: 'AOA', validFrom: '', validUntil: '' };
 
+const EMPTY_BANK = { bankName: '', iban: '', swift: '' };
+
 export default function SupplierCompanyProfile() {
   const { user } = useAuth();
   const [company, setCompany] = useState(null);
@@ -19,6 +21,8 @@ export default function SupplierCompanyProfile() {
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
+  const [bank, setBank] = useState(EMPTY_BANK);
+  const [savingBank, setSavingBank] = useState(false);
 
   function load() {
     Promise.all([
@@ -28,11 +32,33 @@ export default function SupplierCompanyProfile() {
       .then(([c, p]) => {
         setCompany(c);
         setPolicies(p);
+        setBank({ bankName: c.bankName || '', iban: c.iban || '', swift: c.swift || '' });
       })
       .catch((e) => setError(e.message));
   }
 
   useEffect(load, [user.companyId]);
+
+  function updateBank(field, value) {
+    setBank((b) => ({ ...b, [field]: value }));
+  }
+
+  async function handleBankSubmit(e) {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setSavingBank(true);
+    try {
+      const saved = await api.put(`/api/companies/${user.companyId}/bank-details`, bank);
+      setCompany((c) => ({ ...c, ...saved }));
+      setBank({ bankName: saved.bankName || '', iban: saved.iban || '', swift: saved.swift || '' });
+      setSuccess('Dados bancários guardados. Passam a constar nas faturas emitidas.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingBank(false);
+    }
+  }
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -101,6 +127,34 @@ export default function SupplierCompanyProfile() {
             </p>
           )}
         </div>
+      </div>
+
+      {/* Dados bancários — usados na secção "Dados para pagamento" das faturas. */}
+      <div className="card card-pad" style={{ marginTop: 16, maxWidth: 620 }}>
+        <strong style={{ fontSize: 13.5 }}>Dados bancários (para pagamento)</strong>
+        <p className="helptext" style={{ marginTop: 6 }}>
+          Estes dados aparecem na secção <em>Dados bancários do fornecedor</em> das faturas geradas
+          pela plataforma. Preencha para que o cliente saiba para onde pagar.
+        </p>
+        <form onSubmit={handleBankSubmit} style={{ marginTop: 14 }}>
+          <div className="field">
+            <label>Banco</label>
+            <input value={bank.bankName} onChange={(e) => updateBank('bankName', e.target.value)} placeholder="Ex.: Banco de Fomento Angola (BFA)" />
+          </div>
+          <div className="grid-cols grid-2">
+            <div className="field">
+              <label>IBAN</label>
+              <input value={bank.iban} onChange={(e) => updateBank('iban', e.target.value)} placeholder="AO06 0000 0000 0000 0000 0000 0" />
+            </div>
+            <div className="field">
+              <label>SWIFT / BIC</label>
+              <input value={bank.swift} onChange={(e) => updateBank('swift', e.target.value)} placeholder="Ex.: BFMXAOLU" />
+            </div>
+          </div>
+          <button className="btn btn-accent" disabled={savingBank} type="submit">
+            {savingBank ? 'A guardar…' : 'Guardar dados bancários'}
+          </button>
+        </form>
       </div>
 
       {isPending && !supplierPolicy && (

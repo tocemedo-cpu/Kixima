@@ -97,7 +97,7 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
   return po;
 }
 
-const COMPANY_FIELDS = { select: { id: true, name: true, taxId: true, contactEmail: true, contactPhone: true, address: true, logoUrl: true, city: true, province: true, country: true } };
+const COMPANY_FIELDS = { select: { id: true, name: true, taxId: true, contactEmail: true, contactPhone: true, address: true, logoUrl: true, city: true, province: true, country: true, bankName: true, iban: true, swift: true } };
 
 async function getPurchaseOrder(id, user = null) {
   const po = await prisma.purchaseOrder.findUnique({

@@ -310,5 +310,39 @@ create index idx_notifications_user on notifications(user_id);
 create index idx_notifications_company on notifications(company_id);
 
 -- ============================================================================
--- Fim. 12 tabelas, 11 tipos enum, índices e triggers de updated_at criados.
+-- Delta idempotente — Dados bancários + Taxa KIXIMA (platform_fees)
+-- ----------------------------------------------------------------------------
+-- A fonte de verdade do esquema é o Prisma (`prisma db push`). Este bloco é um
+-- delta idempotente para quem mantém o Supabase por SQL: pode ser reaplicado
+-- sem erro. Cobre as alterações A (dados bancários) e B (Taxa KIXIMA).
+-- ============================================================================
+
+-- A) Dados bancários da empresa (Fornecedor preenche; entram na fatura).
+alter table companies add column if not exists bank_name text;
+alter table companies add column if not exists iban      text;
+alter table companies add column if not exists swift     text;
+
+-- B) Taxa da plataforma (comissão KIXIMA), à parte da PO/Fatura.
+do $$ begin
+  create type platform_fee_status as enum ('PENDENTE', 'COBRADO');
+exception when duplicate_object then null; end $$;
+
+create table if not exists platform_fees (
+  id           uuid primary key default gen_random_uuid(),
+  company_id   uuid not null references companies(id),
+  invoice_id   uuid not null unique references invoices(id),
+  po_count     integer not null,
+  per_po       numeric(14,2) not null,
+  per_invoice  numeric(14,2) not null,
+  amount       numeric(14,2) not null,
+  currency     text not null default 'AOA',
+  status       platform_fee_status not null default 'PENDENTE',
+  charged_at   timestamptz,
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists idx_platform_fees_company on platform_fees(company_id);
+
+-- ============================================================================
+-- Fim.
 -- ============================================================================

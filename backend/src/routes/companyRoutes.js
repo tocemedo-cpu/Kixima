@@ -12,6 +12,7 @@ const {
   createInviteSchema,
   acceptInviteSchema,
   erpConfigSchema,
+  bankDetailsSchema,
 } = require('../utils/schemas');
 
 const router = express.Router();
@@ -56,6 +57,10 @@ router.get('/:id/erp-config', requireRole('ADMIN_SISTEMA'), companyController.ge
 router.put('/:id/erp-config', requireRole('ADMIN_SISTEMA'), validate(erpConfigSchema), companyController.setErpConfig);
 router.post('/:id/erp-config/test', requireRole('ADMIN_SISTEMA'), companyController.testErpConnection);
 router.get('/:id/erp-config/audits', requireRole('ADMIN_SISTEMA'), companyController.listErpAudits);
+
+// Dados bancários da empresa (para pagamentos) — geridos pela própria empresa.
+router.get('/:id/bank-details', requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'FINANCEIRO', 'ADMIN_SISTEMA'), companyController.getBankDetails);
+router.put('/:id/bank-details', requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'ADMIN_SISTEMA'), validate(bankDetailsSchema), companyController.setBankDetails);
 
 router.get('/:id', companyController.getOne);
 router.patch('/:id/decision', requireRole('ADMIN_SISTEMA'), validate(decideCompanySchema), companyController.decide);

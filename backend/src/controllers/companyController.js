@@ -43,6 +43,23 @@ async function setBudgetLimit(req, res) {
   res.json(limit);
 }
 
+// Dados bancários — cada empresa só acede aos seus (o Admin do Sistema vê todos).
+function assertOwnCompany(req) {
+  if (req.user.role !== 'ADMIN_SISTEMA' && req.params.id !== req.user.companyId) {
+    throw new ForbiddenError('Não pode aceder aos dados de outra empresa.');
+  }
+}
+
+async function getBankDetails(req, res) {
+  assertOwnCompany(req);
+  res.json(await companyService.getBankDetails(req.params.id));
+}
+
+async function setBankDetails(req, res) {
+  assertOwnCompany(req);
+  res.json(await companyService.updateBankDetails(req.params.id, req.body));
+}
+
 async function createUser(req, res) {
   // Company Admin só cria utilizadores da própria empresa; Admin do Sistema cria qualquer um.
   const companyId = req.user.role === 'ADMIN_SISTEMA' ? req.body.companyId : req.user.companyId;
@@ -136,6 +153,8 @@ module.exports = {
   testErpConnection,
   listErpAudits,
   setBudgetLimit,
+  getBankDetails,
+  setBankDetails,
   createUser,
   listUsers,
   createInvite,

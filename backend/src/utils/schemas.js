@@ -239,6 +239,14 @@ const budgetLimitSchema = z.object({
   currency: z.string().default('AOA'),
 });
 
+// Dados bancários da empresa (para pagamentos). Todos opcionais — o Fornecedor
+// pode gravar parcialmente e completar depois. "" é tratado como ausente.
+const bankDetailsSchema = z.object({
+  bankName: optText,
+  iban: optText,
+  swift: optText,
+});
+
 const createContractSchema = z.object({
   clientCompanyId: z.string().uuid(),
   supplierCompanyId: z.string().uuid(),
@@ -281,5 +289,6 @@ module.exports = {
   supplierPolicySchema,
   clientPolicySchema,
   budgetLimitSchema,
+  bankDetailsSchema,
   createContractSchema,
 };
