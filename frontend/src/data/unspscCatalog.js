@@ -1,7 +1,6 @@
 // Catálogo de classificação KIXIMA (UNSPSC verificado, v2 — 119 itens O&G).
-// Gerado a partir de KIXIMA_Catalogo_Completo_v2.xlsx. Cascata:
-// Setor (categoria comercial PT) -> Categoria (família UNSPSC) -> Item.
-// Ao escolher o Item, preenchem-se automaticamente code/tituloEN/tipo/uom/classe.
+// Cascata: Setor -> Categoria -> Item. Ao escolher o item preenche
+// code/tituloEN/tipo/uom/classe e a imagem (img -> /public/catalog/<code>.jpg).
 export const UNSPSC_ITEMS = [
 {
 "setor": "Bombas e Compressores",
@@ -15,7 +14,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4015",
 "segmento": "40",
 "tituloEN": "Centrifugal pumps",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40151503.jpg"
 },
 {
 "setor": "Bombas e Compressores",
@@ -29,7 +29,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4015",
 "segmento": "40",
 "tituloEN": "Mud pumps",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40151508.jpg"
 },
 {
 "setor": "Bombas e Compressores",
@@ -43,7 +44,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4015",
 "segmento": "40",
 "tituloEN": "Dosing pumps",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40151505.jpg"
 },
 {
 "setor": "Bombas e Compressores",
@@ -57,7 +59,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4015",
 "segmento": "40",
 "tituloEN": "Submersible pumps",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40151513.jpg"
 },
 {
 "setor": "Bombas e Compressores",
@@ -71,7 +74,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4015",
 "segmento": "40",
 "tituloEN": "Air compressors",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40151601.jpg"
 },
 {
 "setor": "Bombas e Compressores",
@@ -85,7 +89,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4015",
 "segmento": "40",
 "tituloEN": "Gas compressors",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40151604.jpg"
 },
 {
 "setor": "Bombas e Compressores",
@@ -99,7 +104,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4015",
 "segmento": "40",
 "tituloEN": "Water pumps",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40151510.jpg"
 },
 {
 "setor": "Elevação, Içamento e Rigging",
@@ -113,7 +119,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2411",
 "segmento": "24",
 "tituloEN": "Cargo container",
-"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies"
+"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies",
+"img": "/catalog/24112809.jpg"
 },
 {
 "setor": "Elevação, Içamento e Rigging",
@@ -127,7 +134,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2410",
 "segmento": "24",
 "tituloEN": "Slings",
-"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies"
+"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies",
+"img": "/catalog/24101611.jpg"
 },
 {
 "setor": "Elevação, Içamento e Rigging",
@@ -141,7 +149,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2410",
 "segmento": "24",
 "tituloEN": "Chain sling",
-"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies"
+"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies",
+"img": "/catalog/24101672.jpg"
 },
 {
 "setor": "Elevação, Içamento e Rigging",
@@ -155,7 +164,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2410",
 "segmento": "24",
 "tituloEN": "Forklifts",
-"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies"
+"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies",
+"img": "/catalog/24101603.jpg"
 },
 {
 "setor": "Elevação, Içamento e Rigging",
@@ -169,7 +179,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2410",
 "segmento": "24",
 "tituloEN": "All terrain cranes",
-"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies"
+"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies",
+"img": "/catalog/24101621.jpg"
 },
 {
 "setor": "Elevação, Içamento e Rigging",
@@ -183,7 +194,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2410",
 "segmento": "24",
 "tituloEN": "Hoists",
-"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies"
+"segmentoLabel": "Material Handling and Conditioning and Storage Machinery and their Accessories and Supplies",
+"img": "/catalog/24101602.jpg"
 },
 {
 "setor": "Elevação, Içamento e Rigging",
@@ -197,7 +209,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "3115",
 "segmento": "31",
 "tituloEN": "Wire rope",
-"segmentoLabel": "Manufacturing Components and Supplies"
+"segmentoLabel": "Manufacturing Components and Supplies",
+"img": "/catalog/31151505.jpg"
 },
 {
 "setor": "Elétrico, Iluminação e Automação",
@@ -211,7 +224,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2611",
 "segmento": "26",
 "tituloEN": "Lead acid batteries",
-"segmentoLabel": "Power Generation and Distribution Machinery and Accessories"
+"segmentoLabel": "Power Generation and Distribution Machinery and Accessories",
+"img": "/catalog/26111707.jpg"
 },
 {
 "setor": "Elétrico, Iluminação e Automação",
@@ -225,7 +239,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "3912",
 "segmento": "39",
 "tituloEN": "Variable speed drive",
-"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies"
+"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies",
+"img": "/catalog/39122006.jpg"
 },
 {
 "setor": "Elétrico, Iluminação e Automação",
@@ -239,7 +254,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "3912",
 "segmento": "39",
 "tituloEN": "Circuit breaker switchboard",
-"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies"
+"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies",
+"img": "/catalog/39121110.jpg"
 },
 {
 "setor": "Elétrico, Iluminação e Automação",
@@ -253,7 +269,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "3912",
 "segmento": "39",
 "tituloEN": "Distribution power transformers",
-"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies"
+"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies",
+"img": "/catalog/39121001.jpg"
 },
 {
 "setor": "Elétrico, Iluminação e Automação",
@@ -267,7 +284,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2612",
 "segmento": "26",
 "tituloEN": "Power cable",
-"segmentoLabel": "Power Generation and Distribution Machinery and Accessories"
+"segmentoLabel": "Power Generation and Distribution Machinery and Accessories",
+"img": "/catalog/26121629.jpg"
 },
 {
 "setor": "Elétrico, Iluminação e Automação",
@@ -281,7 +299,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "3911",
 "segmento": "39",
 "tituloEN": "Light emitting diode LED fixture",
-"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies"
+"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies",
+"img": "/catalog/39111544.jpg"
 },
 {
 "setor": "Elétrico, Iluminação e Automação",
@@ -295,7 +314,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2610",
 "segmento": "26",
 "tituloEN": "General purpose motor AC",
-"segmentoLabel": "Power Generation and Distribution Machinery and Accessories"
+"segmentoLabel": "Power Generation and Distribution Machinery and Accessories",
+"img": "/catalog/26101112.jpg"
 },
 {
 "setor": "Ferramentas e Equipamento de Oficina",
@@ -309,7 +329,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2711",
 "segmento": "27",
 "tituloEN": "Power drills",
-"segmentoLabel": "Tools and General Machinery"
+"segmentoLabel": "Tools and General Machinery",
+"img": "/catalog/27112703.jpg"
 },
 {
 "setor": "Ferramentas e Equipamento de Oficina",
@@ -323,7 +344,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2711",
 "segmento": "27",
 "tituloEN": "Torque wrenches",
-"segmentoLabel": "Tools and General Machinery"
+"segmentoLabel": "Tools and General Machinery",
+"img": "/catalog/27111715.jpg"
 },
 {
 "setor": "Ferramentas e Equipamento de Oficina",
@@ -337,7 +359,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2711",
 "segmento": "27",
 "tituloEN": "Wrench set",
-"segmentoLabel": "Tools and General Machinery"
+"segmentoLabel": "Tools and General Machinery",
+"img": "/catalog/27111729.jpg"
 },
 {
 "setor": "Ferramentas e Equipamento de Oficina",
@@ -351,7 +374,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2711",
 "segmento": "27",
 "tituloEN": "Angle grinder",
-"segmentoLabel": "Tools and General Machinery"
+"segmentoLabel": "Tools and General Machinery",
+"img": "/catalog/27112749.jpg"
 },
 {
 "setor": "Ferramentas e Equipamento de Oficina",
@@ -365,7 +389,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4015",
 "segmento": "40",
 "tituloEN": "Air compressors",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40151601.jpg"
 },
 {
 "setor": "Ferramentas e Equipamento de Oficina",
@@ -379,7 +404,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "5612",
 "segmento": "56",
 "tituloEN": "Laboratory benches",
-"segmentoLabel": "Furniture and Furnishings"
+"segmentoLabel": "Furniture and Furnishings",
+"img": "/catalog/56122001.jpg"
 },
 {
 "setor": "Ferramentas e Equipamento de Oficina",
@@ -393,7 +419,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2327",
 "segmento": "23",
 "tituloEN": "Shielded metal arc welding or stick welding machine",
-"segmentoLabel": "Industrial Manufacturing and Processing Machinery and Accessories"
+"segmentoLabel": "Industrial Manufacturing and Processing Machinery and Accessories",
+"img": "/catalog/23271409.jpg"
 },
 {
 "setor": "Geração de Energia",
@@ -407,7 +434,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "3912",
 "segmento": "39",
 "tituloEN": "Uninterruptible power supply UPS",
-"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies"
+"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies",
+"img": "/catalog/39121011.jpg"
 },
 {
 "setor": "Geração de Energia",
@@ -421,7 +449,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "3911",
 "segmento": "39",
 "tituloEN": "Light tower",
-"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies"
+"segmentoLabel": "Electrical Systems and Lighting and Components and Accessories and Supplies",
+"img": "/catalog/39112001.jpg"
 },
 {
 "setor": "Geração de Energia",
@@ -435,7 +464,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2613",
 "segmento": "26",
 "tituloEN": "Photovoltaic module",
-"segmentoLabel": "Power Generation and Distribution Machinery and Accessories"
+"segmentoLabel": "Power Generation and Distribution Machinery and Accessories",
+"img": "/catalog/26131513.jpg"
 },
 {
 "setor": "Geração de Energia",
@@ -449,7 +479,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2611",
 "segmento": "26",
 "tituloEN": "Gas generators",
-"segmentoLabel": "Power Generation and Distribution Machinery and Accessories"
+"segmentoLabel": "Power Generation and Distribution Machinery and Accessories",
+"img": "/catalog/26111604.jpg"
 },
 {
 "setor": "Geração de Energia",
@@ -463,7 +494,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2611",
 "segmento": "26",
 "tituloEN": "Diesel generators",
-"segmentoLabel": "Power Generation and Distribution Machinery and Accessories"
+"segmentoLabel": "Power Generation and Distribution Machinery and Accessories",
+"img": "/catalog/26111601.jpg"
 },
 {
 "setor": "Hidráulica e Pneumática",
@@ -477,7 +509,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2012",
 "segmento": "20",
 "tituloEN": "Hydraulic power unit",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20122851.jpg"
 },
 {
 "setor": "Hidráulica e Pneumática",
@@ -491,7 +524,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4014",
 "segmento": "40",
 "tituloEN": "Pneumatic valves",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40141603.jpg"
 },
 {
 "setor": "Hidráulica e Pneumática",
@@ -505,7 +539,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4014",
 "segmento": "40",
 "tituloEN": "Hydraulic hose",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40142020.jpg"
 },
 {
 "setor": "Hidráulica e Pneumática",
@@ -519,7 +554,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2712",
 "segmento": "27",
 "tituloEN": "Hydraulic quick connectors",
-"segmentoLabel": "Tools and General Machinery"
+"segmentoLabel": "Tools and General Machinery",
+"img": "/catalog/27121701.jpg"
 },
 {
 "setor": "Hidráulica e Pneumática",
@@ -533,7 +569,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2712",
 "segmento": "27",
 "tituloEN": "Hydraulic cylinders",
-"segmentoLabel": "Tools and General Machinery"
+"segmentoLabel": "Tools and General Machinery",
+"img": "/catalog/27121602.jpg"
 },
 {
 "setor": "Hidráulica e Pneumática",
@@ -547,7 +584,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4016",
 "segmento": "40",
 "tituloEN": "Hydraulic filters",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40161515.jpg"
 },
 {
 "setor": "Hidráulica e Pneumática",
@@ -561,7 +599,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "1512",
 "segmento": "15",
 "tituloEN": "Hydraulic oil",
-"segmentoLabel": "Fuels and Fuel Additives and Lubricants and Anti corrosive Materials"
+"segmentoLabel": "Fuels and Fuel Additives and Lubricants and Anti corrosive Materials",
+"img": "/catalog/15121504.jpg"
 },
 {
 "setor": "Hidráulica e Pneumática",
@@ -575,7 +614,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2713",
 "segmento": "27",
 "tituloEN": "Pneumatic cylinders",
-"segmentoLabel": "Tools and General Machinery"
+"segmentoLabel": "Tools and General Machinery",
+"img": "/catalog/27131701.jpg"
 },
 {
 "setor": "Inspeção, Testes e Certificação",
@@ -589,7 +629,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "8114",
 "segmento": "81",
 "tituloEN": "Equipment inspection service",
-"segmentoLabel": "Engineering and Research and Technology Based Services"
+"segmentoLabel": "Engineering and Research and Technology Based Services",
+"img": "/catalog/81141804.jpg"
 },
 {
 "setor": "Inspeção, Testes e Certificação",
@@ -603,7 +644,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7312",
 "segmento": "73",
 "tituloEN": "Non destructive testing service",
-"segmentoLabel": "Industrial Production and Manufacturing Services"
+"segmentoLabel": "Industrial Production and Manufacturing Services",
+"img": "/catalog/73121614.jpg"
 },
 {
 "setor": "Inspeção, Testes e Certificação",
@@ -617,7 +659,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7116",
 "segmento": "71",
 "tituloEN": "Vendor/shop inspection service",
-"segmentoLabel": "Mining and oil and gas services"
+"segmentoLabel": "Mining and oil and gas services",
+"img": "/catalog/71161608.jpg"
 },
 {
 "setor": "Inspeção, Testes e Certificação",
@@ -631,7 +674,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7215",
 "segmento": "72",
 "tituloEN": "Technical safety and process safety HSE service",
-"segmentoLabel": "Building and Facility Construction and Maintenance Services"
+"segmentoLabel": "Building and Facility Construction and Maintenance Services",
+"img": "/catalog/72151707.jpg"
 },
 {
 "setor": "Inspeção, Testes e Certificação",
@@ -645,7 +689,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7112",
 "segmento": "71",
 "tituloEN": "Oilfield pressure testing services",
-"segmentoLabel": "Mining and oil and gas services"
+"segmentoLabel": "Mining and oil and gas services",
+"img": "/catalog/71121012.jpg"
 },
 {
 "setor": "Instrumentação e Controlo",
@@ -659,7 +704,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "3215",
 "segmento": "32",
 "tituloEN": "Programmable Logic Controller Module",
-"segmentoLabel": "Electronic Components and Supplies"
+"segmentoLabel": "Electronic Components and Supplies",
+"img": "/catalog/32151705.jpg"
 },
 {
 "setor": "Instrumentação e Controlo",
@@ -673,7 +719,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4619",
 "segmento": "46",
 "tituloEN": "Flame detectors",
-"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies"
+"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies",
+"img": "/catalog/46191504.jpg"
 },
 {
 "setor": "Instrumentação e Controlo",
@@ -687,7 +734,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4111",
 "segmento": "41",
 "tituloEN": "Multi gas monitors",
-"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment"
+"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment",
+"img": "/catalog/41113118.jpg"
 },
 {
 "setor": "Instrumentação e Controlo",
@@ -701,7 +749,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4111",
 "segmento": "41",
 "tituloEN": "Pressure gauge",
-"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment"
+"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment",
+"img": "/catalog/41112412.jpg"
 },
 {
 "setor": "Instrumentação e Controlo",
@@ -715,7 +764,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4111",
 "segmento": "41",
 "tituloEN": "Flowmeters",
-"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment"
+"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment",
+"img": "/catalog/41112501.jpg"
 },
 {
 "setor": "Instrumentação e Controlo",
@@ -729,7 +779,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4111",
 "segmento": "41",
 "tituloEN": "Remote reading thermometers",
-"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment"
+"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment",
+"img": "/catalog/41112210.jpg"
 },
 {
 "setor": "Instrumentação e Controlo",
@@ -743,7 +794,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4111",
 "segmento": "41",
 "tituloEN": "Pressure transmitters",
-"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment"
+"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment",
+"img": "/catalog/41112410.jpg"
 },
 {
 "setor": "Instrumentação e Controlo",
@@ -757,7 +809,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4111",
 "segmento": "41",
 "tituloEN": "Temperature transmitters",
-"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment"
+"segmentoLabel": "Laboratory and Measuring and Observing and Testing Equipment",
+"img": "/catalog/41112105.jpg"
 },
 {
 "setor": "Logística, Transporte e Armazenagem",
@@ -771,7 +824,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7810",
 "segmento": "78",
 "tituloEN": "Regional or national trucking services",
-"segmentoLabel": "Transportation and Storage and Mail Services"
+"segmentoLabel": "Transportation and Storage and Mail Services",
+"img": "/catalog/78101802.jpg"
 },
 {
 "setor": "Logística, Transporte e Armazenagem",
@@ -785,7 +839,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7810",
 "segmento": "78",
 "tituloEN": "Oil and gas offshore platform supply vessel service",
-"segmentoLabel": "Transportation and Storage and Mail Services"
+"segmentoLabel": "Transportation and Storage and Mail Services",
+"img": "/catalog/78101706.jpg"
 },
 {
 "setor": "Logística, Transporte e Armazenagem",
@@ -799,7 +854,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7811",
 "segmento": "78",
 "tituloEN": "Oil and gas offshore platform personnel transportation service",
-"segmentoLabel": "Transportation and Storage and Mail Services"
+"segmentoLabel": "Transportation and Storage and Mail Services",
+"img": "/catalog/78111705.jpg"
 },
 {
 "setor": "Logística, Transporte e Armazenagem",
@@ -813,7 +869,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7813",
 "segmento": "78",
 "tituloEN": "Industrial material warehousing",
-"segmentoLabel": "Transportation and Storage and Mail Services"
+"segmentoLabel": "Transportation and Storage and Mail Services",
+"img": "/catalog/78131810.jpg"
 },
 {
 "setor": "Logística, Transporte e Armazenagem",
@@ -827,7 +884,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7814",
 "segmento": "78",
 "tituloEN": "Customs brokerage services",
-"segmentoLabel": "Transportation and Storage and Mail Services"
+"segmentoLabel": "Transportation and Storage and Mail Services",
+"img": "/catalog/78141502.jpg"
 },
 {
 "setor": "Material de Escritório e TI",
@@ -841,7 +899,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "5610",
 "segmento": "56",
 "tituloEN": "Desks",
-"segmentoLabel": "Furniture and Furnishings"
+"segmentoLabel": "Furniture and Furnishings",
+"img": "/catalog/56101703.jpg"
 },
 {
 "setor": "Material de Escritório e TI",
@@ -855,7 +914,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4511",
 "segmento": "45",
 "tituloEN": "Videoconferencing systems",
-"segmentoLabel": "Printing and Photographic and Audio and Visual Equipment and Supplies"
+"segmentoLabel": "Printing and Photographic and Audio and Visual Equipment and Supplies",
+"img": "/catalog/45111902.jpg"
 },
 {
 "setor": "Material de Escritório e TI",
@@ -869,7 +929,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4321",
 "segmento": "43",
 "tituloEN": "Notebook computer",
-"segmentoLabel": "Information Technology Broadcasting and Telecommunications"
+"segmentoLabel": "Information Technology Broadcasting and Telecommunications",
+"img": "/catalog/43211503.jpg"
 },
 {
 "setor": "Material de Escritório e TI",
@@ -883,7 +944,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4410",
 "segmento": "44",
 "tituloEN": "Multifunction machines",
-"segmentoLabel": "Office Equipment and Accessories and Supplies"
+"segmentoLabel": "Office Equipment and Accessories and Supplies",
+"img": "/catalog/44101503.jpg"
 },
 {
 "setor": "Material de Escritório e TI",
@@ -897,7 +959,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "1411",
 "segmento": "14",
 "tituloEN": "Printer or copier paper",
-"segmentoLabel": "Paper Materials and Products"
+"segmentoLabel": "Paper Materials and Products",
+"img": "/catalog/14111507.jpg"
 },
 {
 "setor": "Material de Escritório e TI",
@@ -911,7 +974,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4323",
 "segmento": "43",
 "tituloEN": "Office suite software",
-"segmentoLabel": "Information Technology Broadcasting and Telecommunications"
+"segmentoLabel": "Information Technology Broadcasting and Telecommunications",
+"img": "/catalog/43231513.jpg"
 },
 {
 "setor": "Perfuração e Completação",
@@ -925,7 +989,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2012",
 "segmento": "20",
 "tituloEN": "Production packers",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20121420.jpg"
 },
 {
 "setor": "Perfuração e Completação",
@@ -939,7 +1004,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2012",
 "segmento": "20",
 "tituloEN": "Blowout preventers",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20121501.jpg"
 },
 {
 "setor": "Perfuração e Completação",
@@ -953,7 +1019,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2012",
 "segmento": "20",
 "tituloEN": "Mud motors",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20121802.jpg"
 },
 {
 "setor": "Perfuração e Completação",
@@ -967,7 +1034,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2012",
 "segmento": "20",
 "tituloEN": "Workover rigs",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20122837.jpg"
 },
 {
 "setor": "Perfuração e Completação",
@@ -981,7 +1049,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2012",
 "segmento": "20",
 "tituloEN": "Fixed cutter drill bits",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20121601.jpg"
 },
 {
 "setor": "Perfuração e Completação",
@@ -995,7 +1064,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2013",
 "segmento": "20",
 "tituloEN": "Oil well class g cement",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20131305.jpg"
 },
 {
 "setor": "Perfuração e Completação",
@@ -1009,7 +1079,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2011",
 "segmento": "20",
 "tituloEN": "Derricks",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20111616.jpg"
 },
 {
 "setor": "Produtos Químicos e Fluidos",
@@ -1023,7 +1094,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "1216",
 "segmento": "12",
 "tituloEN": "Registered microbiocides",
-"segmentoLabel": "Chemicals including Bio Chemicals and Gas Materials"
+"segmentoLabel": "Chemicals including Bio Chemicals and Gas Materials",
+"img": "/catalog/12164001.jpg"
 },
 {
 "setor": "Produtos Químicos e Fluidos",
@@ -1037,7 +1109,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "1216",
 "segmento": "12",
 "tituloEN": "Corrosion inhibitors",
-"segmentoLabel": "Chemicals including Bio Chemicals and Gas Materials"
+"segmentoLabel": "Chemicals including Bio Chemicals and Gas Materials",
+"img": "/catalog/12163603.jpg"
 },
 {
 "setor": "Produtos Químicos e Fluidos",
@@ -1051,7 +1124,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "1214",
 "segmento": "12",
 "tituloEN": "Industrial gases cylinder",
-"segmentoLabel": "Chemicals including Bio Chemicals and Gas Materials"
+"segmentoLabel": "Chemicals including Bio Chemicals and Gas Materials",
+"img": "/catalog/12142118.jpg"
 },
 {
 "setor": "Produtos Químicos e Fluidos",
@@ -1065,7 +1139,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "1510",
 "segmento": "15",
 "tituloEN": "Diesel fuel",
-"segmentoLabel": "Fuels and Fuel Additives and Lubricants and Anti corrosive Materials"
+"segmentoLabel": "Fuels and Fuel Additives and Lubricants and Anti corrosive Materials",
+"img": "/catalog/15101505.jpg"
 },
 {
 "setor": "Produtos Químicos e Fluidos",
@@ -1079,7 +1154,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2013",
 "segmento": "20",
 "tituloEN": "Synthetic based muds",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20131007.jpg"
 },
 {
 "setor": "Produtos Químicos e Fluidos",
@@ -1093,7 +1169,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2013",
 "segmento": "20",
 "tituloEN": "Water based muds",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20131009.jpg"
 },
 {
 "setor": "Produtos Químicos e Fluidos",
@@ -1107,7 +1184,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "1219",
 "segmento": "12",
 "tituloEN": "Aromatic solvents",
-"segmentoLabel": "Chemicals including Bio Chemicals and Gas Materials"
+"segmentoLabel": "Chemicals including Bio Chemicals and Gas Materials",
+"img": "/catalog/12191501.jpg"
 },
 {
 "setor": "Produtos Químicos e Fluidos",
@@ -1121,7 +1199,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4710",
 "segmento": "47",
 "tituloEN": "Demulsifiers",
-"segmentoLabel": "Cleaning Equipment and Supplies"
+"segmentoLabel": "Cleaning Equipment and Supplies",
+"img": "/catalog/47101611.jpg"
 },
 {
 "setor": "Segurança e EPI",
@@ -1135,7 +1214,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4713",
 "segmento": "47",
 "tituloEN": "Spill kits",
-"segmentoLabel": "Cleaning Equipment and Supplies"
+"segmentoLabel": "Cleaning Equipment and Supplies",
+"img": "/catalog/47131905.jpg"
 },
 {
 "setor": "Segurança e EPI",
@@ -1149,7 +1229,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4619",
 "segmento": "46",
 "tituloEN": "Fire extinguishers",
-"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies"
+"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies",
+"img": "/catalog/46191601.jpg"
 },
 {
 "setor": "Segurança e EPI",
@@ -1163,7 +1244,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4618",
 "segmento": "46",
 "tituloEN": "Safety harnesses or belts",
-"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies"
+"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies",
+"img": "/catalog/46182306.jpg"
 },
 {
 "setor": "Segurança e EPI",
@@ -1177,7 +1259,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4618",
 "segmento": "46",
 "tituloEN": "Safety boots",
-"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies"
+"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies",
+"img": "/catalog/46181604.jpg"
 },
 {
 "setor": "Segurança e EPI",
@@ -1191,7 +1274,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4618",
 "segmento": "46",
 "tituloEN": "Safety helmets",
-"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies"
+"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies",
+"img": "/catalog/46181704.jpg"
 },
 {
 "setor": "Segurança e EPI",
@@ -1205,7 +1289,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4618",
 "segmento": "46",
 "tituloEN": "Protective gloves",
-"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies"
+"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies",
+"img": "/catalog/46181504.jpg"
 },
 {
 "setor": "Segurança e EPI",
@@ -1219,7 +1304,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4618",
 "segmento": "46",
 "tituloEN": "Safety glasses",
-"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies"
+"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies",
+"img": "/catalog/46181802.jpg"
 },
 {
 "setor": "Segurança e EPI",
@@ -1233,7 +1319,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4616",
 "segmento": "46",
 "tituloEN": "Life vests or preservers",
-"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies"
+"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies",
+"img": "/catalog/46161604.jpg"
 },
 {
 "setor": "Segurança e EPI",
@@ -1247,7 +1334,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4617",
 "segmento": "46",
 "tituloEN": "Gas detectors",
-"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies"
+"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies",
+"img": "/catalog/46171613.jpg"
 },
 {
 "setor": "Segurança e EPI",
@@ -1261,7 +1349,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4621",
 "segmento": "46",
 "tituloEN": "Work area barricade tape and flags",
-"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies"
+"segmentoLabel": "Law Enforcement and National Security and Security and Safety Equipment and Supplies",
+"img": "/catalog/46211601.jpg"
 },
 {
 "setor": "Serviços Ambientais e Gestão de Resíduos",
@@ -1275,7 +1364,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7710",
 "segmento": "77",
 "tituloEN": "Environmental monitoring",
-"segmentoLabel": "Environmental Services"
+"segmentoLabel": "Environmental Services",
+"img": "/catalog/77101505.jpg"
 },
 {
 "setor": "Serviços Ambientais e Gestão de Resíduos",
@@ -1289,7 +1379,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7612",
 "segmento": "76",
 "tituloEN": "Inorganic hazardous waste collection and disposal",
-"segmentoLabel": "Industrial Cleaning Services"
+"segmentoLabel": "Industrial Cleaning Services",
+"img": "/catalog/76121905.jpg"
 },
 {
 "setor": "Serviços Ambientais e Gestão de Resíduos",
@@ -1303,7 +1394,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7215",
 "segmento": "72",
 "tituloEN": "Tank cleaning service",
-"segmentoLabel": "Building and Facility Construction and Maintenance Services"
+"segmentoLabel": "Building and Facility Construction and Maintenance Services",
+"img": "/catalog/72154055.jpg"
 },
 {
 "setor": "Serviços Ambientais e Gestão de Resíduos",
@@ -1317,7 +1409,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7613",
 "segmento": "76",
 "tituloEN": "Oil spill treatment services",
-"segmentoLabel": "Industrial Cleaning Services"
+"segmentoLabel": "Industrial Cleaning Services",
+"img": "/catalog/76131702.jpg"
 },
 {
 "setor": "Serviços Ambientais e Gestão de Resíduos",
@@ -1331,7 +1424,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "8310",
 "segmento": "83",
 "tituloEN": "Water treatment services",
-"segmentoLabel": "Public Utilities and Public Sector Related Services"
+"segmentoLabel": "Public Utilities and Public Sector Related Services",
+"img": "/catalog/83101506.jpg"
 },
 {
 "setor": "Serviços de Engenharia e Manutenção",
@@ -1345,7 +1439,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7315",
 "segmento": "73",
 "tituloEN": "Manufacturing equipment repair services",
-"segmentoLabel": "Industrial Production and Manufacturing Services"
+"segmentoLabel": "Industrial Production and Manufacturing Services",
+"img": "/catalog/73152102.jpg"
 },
 {
 "setor": "Serviços de Engenharia e Manutenção",
@@ -1359,7 +1454,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7212",
 "segmento": "72",
 "tituloEN": "Offshore oil and gas production facility hookup and commissioning service",
-"segmentoLabel": "Building and Facility Construction and Maintenance Services"
+"segmentoLabel": "Building and Facility Construction and Maintenance Services",
+"img": "/catalog/72121511.jpg"
 },
 {
 "setor": "Serviços de Engenharia e Manutenção",
@@ -1373,7 +1469,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "8110",
 "segmento": "81",
 "tituloEN": "Front-end engineering design services",
-"segmentoLabel": "Engineering and Research and Technology Based Services"
+"segmentoLabel": "Engineering and Research and Technology Based Services",
+"img": "/catalog/81103402.jpg"
 },
 {
 "setor": "Serviços de Engenharia e Manutenção",
@@ -1387,7 +1484,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "8110",
 "segmento": "81",
 "tituloEN": "Structural engineering",
-"segmentoLabel": "Engineering and Research and Technology Based Services"
+"segmentoLabel": "Engineering and Research and Technology Based Services",
+"img": "/catalog/81101505.jpg"
 },
 {
 "setor": "Serviços de Engenharia e Manutenção",
@@ -1401,7 +1499,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "8114",
 "segmento": "81",
 "tituloEN": "Equipment test calibration or repair",
-"segmentoLabel": "Engineering and Research and Technology Based Services"
+"segmentoLabel": "Engineering and Research and Technology Based Services",
+"img": "/catalog/81141504.jpg"
 },
 {
 "setor": "Serviços de Engenharia e Manutenção",
@@ -1415,7 +1514,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "7215",
 "segmento": "72",
 "tituloEN": "On site welding service",
-"segmentoLabel": "Building and Facility Construction and Maintenance Services"
+"segmentoLabel": "Building and Facility Construction and Maintenance Services",
+"img": "/catalog/72154031.jpg"
 },
 {
 "setor": "Tubulares e Acessórios (OCTG)",
@@ -1429,7 +1529,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2012",
 "segmento": "20",
 "tituloEN": "Drill collars",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20121504.jpg"
 },
 {
 "setor": "Tubulares e Acessórios (OCTG)",
@@ -1443,7 +1544,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2012",
 "segmento": "20",
 "tituloEN": "Drill pipe",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20121508.jpg"
 },
 {
 "setor": "Tubulares e Acessórios (OCTG)",
@@ -1457,7 +1559,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2012",
 "segmento": "20",
 "tituloEN": "Oil country couplings",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20122702.jpg"
 },
 {
 "setor": "Tubulares e Acessórios (OCTG)",
@@ -1471,7 +1574,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2012",
 "segmento": "20",
 "tituloEN": "Oil country tubing",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20122704.jpg"
 },
 {
 "setor": "Tubulares e Acessórios (OCTG)",
@@ -1485,7 +1589,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2012",
 "segmento": "20",
 "tituloEN": "Oil country casing",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20122701.jpg"
 },
 {
 "setor": "Tubulares e Acessórios (OCTG)",
@@ -1499,7 +1604,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "2014",
 "segmento": "20",
 "tituloEN": "Wellhead surface flow or christmas trees",
-"segmentoLabel": "Mining and Well Drilling Machinery and Accessories"
+"segmentoLabel": "Mining and Well Drilling Machinery and Accessories",
+"img": "/catalog/20141007.jpg"
 },
 {
 "setor": "Tubulares e Acessórios (OCTG)",
@@ -1513,7 +1619,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4017",
 "segmento": "40",
 "tituloEN": "Carbon steel pipe elbow",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40172802.jpg"
 },
 {
 "setor": "Tubulares e Acessórios (OCTG)",
@@ -1527,7 +1634,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4017",
 "segmento": "40",
 "tituloEN": "Industrial seamless carbon steel pipe",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40171602.jpg"
 },
 {
 "setor": "Válvulas e Conexões",
@@ -1541,7 +1649,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4014",
 "segmento": "40",
 "tituloEN": "Pipe fitting flange general",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40142701.jpg"
 },
 {
 "setor": "Válvulas e Conexões",
@@ -1555,7 +1664,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4014",
 "segmento": "40",
 "tituloEN": "Butterfly valves",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40141678.jpg"
 },
 {
 "setor": "Válvulas e Conexões",
@@ -1569,7 +1679,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4014",
 "segmento": "40",
 "tituloEN": "Ball valves",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40141607.jpg"
 },
 {
 "setor": "Válvulas e Conexões",
@@ -1583,7 +1694,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4014",
 "segmento": "40",
 "tituloEN": "Gate valves",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40141613.jpg"
 },
 {
 "setor": "Válvulas e Conexões",
@@ -1597,7 +1709,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4014",
 "segmento": "40",
 "tituloEN": "Lubricated plug valves",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40141624.jpg"
 },
 {
 "setor": "Válvulas e Conexões",
@@ -1611,7 +1724,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4014",
 "segmento": "40",
 "tituloEN": "Swing check valves",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40141634.jpg"
 },
 {
 "setor": "Válvulas e Conexões",
@@ -1625,7 +1739,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4014",
 "segmento": "40",
 "tituloEN": "Relief valves",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40141606.jpg"
 },
 {
 "setor": "Válvulas e Conexões",
@@ -1639,7 +1754,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "4014",
 "segmento": "40",
 "tituloEN": "Globe valves",
-"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components"
+"segmentoLabel": "Distribution and Conditioning Systems and Equipment and Components",
+"img": "/catalog/40141611.jpg"
 },
 {
 "setor": "Válvulas e Conexões",
@@ -1653,7 +1769,8 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "3140",
 "segmento": "31",
 "tituloEN": "Rubber molded gasket",
-"segmentoLabel": "Manufacturing Components and Supplies"
+"segmentoLabel": "Manufacturing Components and Supplies",
+"img": "/catalog/31401501.jpg"
 },
 {
 "setor": "Válvulas e Conexões",
@@ -1667,6 +1784,7 @@ export const UNSPSC_ITEMS = [
 "familiaCode": "3141",
 "segmento": "31",
 "tituloEN": "Mechanical seal kit",
-"segmentoLabel": "Manufacturing Components and Supplies"
+"segmentoLabel": "Manufacturing Components and Supplies",
+"img": "/catalog/31411703.jpg"
 }
 ];

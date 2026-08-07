@@ -109,7 +109,9 @@ async function createProduct(supplierCompanyId, data, media = {}) {
       ...data,
       slug,
       supplierId: supplierCompanyId,
-      imageUrl: primaryUrl || undefined,
+      // Imagem: a carregada pelo fornecedor tem prioridade; senão, a imagem do
+      // catálogo de referência (escolhida no dropdown de classificação).
+      imageUrl: primaryUrl || data.imageUrl || undefined,
       images: imageRecords.length ? { create: imageRecords } : undefined,
       documents: docRecords.length ? { create: docRecords } : undefined,
     },

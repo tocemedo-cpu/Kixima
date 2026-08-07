@@ -104,6 +104,8 @@ const createProductSchema = z.object({
   standard: optText,
   warranty: optText,
   supplierNotes: optText,
+  // Imagem de referência do catálogo (URL local), quando não há upload próprio.
+  imageUrl: optText,
   // Especificações técnicas (texto livre)
   material: optText,
   weight: optText,

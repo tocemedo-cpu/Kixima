@@ -1623,6 +1623,9 @@ tbody tr:hover {
 .cls-box .cls-k { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-400); display: block; }
 .cls-box strong { font-size: 13.5px; }
 .cls-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; }
+.cls-box-img { flex-direction: row; align-items: flex-start; gap: 14px; }
+.cls-box-img .cls-info { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+.cls-thumb { width: 84px; height: 84px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); flex-shrink: 0; background: #fff; }
 
 .dropzone {
   border: 1.5px dashed var(--line); border-radius: var(--radius-sm);

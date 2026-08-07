@@ -61,6 +61,7 @@ const TABS = ['Produto', 'Preço & Disponibilidade', 'Imagens & Documentos'];
 const EMPTY_FORM = {
   // Classificação (UNSPSC) + tipo (Produto/Serviço — determina o IVA)
   kind: 'PRODUTO', unspscCode: '', unspscTitle: '', unspscSegment: '', unspscFamily: '', unspscClass: '',
+  imageUrl: '', // imagem de referência do catálogo (auto)
   // Produto
   name: '', category: '', subcategory: '', brand: '', description: '', measurementUnit: '',
   // Atributos universais (livres) + comentários
@@ -124,6 +125,7 @@ export default function CatalogManage() {
       unspscSegment: it.segmento,
       unspscFamily: it.familiaCode,
       unspscClass: it.classe,
+      imageUrl: f.imageUrl || it.img || '',
     }));
   }
 
@@ -262,12 +264,16 @@ export default function CatalogManage() {
                 </select>
               </div>
               {form.unspscCode ? (
-                <div className="cls-box">
-                  <div><span className="cls-k">Classificação internacional</span><strong>{form.unspscTitle}</strong></div>
-                  <div className="cls-row">
-                    <span className="badge badge-neutral bz-mono">UNSPSC {form.unspscCode}</span>
-                    <span className={`badge ${form.kind === 'SERVICO' ? 'badge-info' : 'badge-neutral'}`}>{form.kind === 'SERVICO' ? 'Serviço' : 'Produto'}</span>
-                    <span className="badge badge-success">IVA {ivaPct(form.kind)}</span>
+                <div className="cls-box cls-box-img">
+                  {form.imageUrl ? <img className="cls-thumb" src={form.imageUrl} alt={form.name} /> : null}
+                  <div className="cls-info">
+                    <div><span className="cls-k">Classificação internacional</span><strong>{form.unspscTitle}</strong></div>
+                    <div className="cls-row">
+                      <span className="badge badge-neutral bz-mono">UNSPSC {form.unspscCode}</span>
+                      <span className={`badge ${form.kind === 'SERVICO' ? 'badge-info' : 'badge-neutral'}`}>{form.kind === 'SERVICO' ? 'Serviço' : 'Produto'}</span>
+                      <span className="badge badge-success">IVA {ivaPct(form.kind)}</span>
+                    </div>
+                    {form.imageUrl ? <small className="helptext">Imagem de referência do catálogo — será usada se não carregar uma foto própria (aba Imagens).</small> : null}
                   </div>
                 </div>
               ) : null}
