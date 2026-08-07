@@ -74,7 +74,7 @@ function renderView(seg, g, title) {
     return (
       <div className="card" style={{ overflowX: 'auto' }}>
         <table>
-          <thead><tr><th>{t('Produto')}</th><th>{t('Categoria')}</th><th style={{ textAlign: 'right' }}>{t('Preço')}</th></tr></thead>
+          <thead><tr><th>Produto</th><th>Categoria</th><th style={{ textAlign: 'right' }}>Preço</th></tr></thead>
           <tbody>
             {rows.map((p) => (
               <tr key={p.id}>

@@ -163,7 +163,7 @@ export default function App() {
             <Route path="/fornecedor/documentacao/fichas" element={<SupplierDocuments />} />
             <Route path="/fornecedor/catalogo/categorias" element={<CatalogInsights />} />
             <Route path="/fornecedor/catalogo/marcas" element={<CatalogInsights />} />
-            <Route path="/fornecedor/catalogo/servicos" element={<CatalogInsights />} />
+            <Route path="/fornecedor/catalogo/servicos" element={<CatalogManage />} />
             <Route path="/fornecedor/catalogo/promocoes" element={<CatalogInsights />} />
             <Route path="/fornecedor/catalogo/kits" element={<Kits />} />
             <Route path="/fornecedor/inventario/armazens" element={<CatalogInsights />} />

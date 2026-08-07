@@ -93,6 +93,7 @@ export default function CatalogManage() {
   // Cascata de classificação: Setor -> Categoria -> Item.
   const [setor, setSetor] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [listFilter, setListFilter] = useState('TODOS'); // TODOS | PRODUTO | SERVICO
   const [mainImage, setMainImage] = useState(null); // { file, preview }
   const [gallery, setGallery] = useState([]);        // [{ file, preview }]
   const [docs, setDocs] = useState({});              // { TYPE: File[] }
@@ -445,8 +446,19 @@ export default function CatalogManage() {
           <p>Adicione produtos ou serviços para começar a receber ordens de compra.</p>
         </div>
       ) : (
+        <>
+        <div className="cat-filter">
+          {[['TODOS', 'Todos'], ['PRODUTO', 'Produtos'], ['SERVICO', 'Serviços']].map(([k, label]) => {
+            const n = products.filter((p) => k === 'TODOS' || (p.kind || 'PRODUTO') === k).length;
+            return (
+              <button key={k} type="button" className={`chip ${listFilter === k ? 'chip-active' : ''}`} onClick={() => setListFilter(k)}>
+                {label} <span className="cat-filter-n">{n}</span>
+              </button>
+            );
+          })}
+        </div>
         <div className="mk-grid">
-          {products.map((p) => (
+          {products.filter((p) => listFilter === 'TODOS' || (p.kind || 'PRODUTO') === listFilter).map((p) => (
             <div key={p.id} className="mk-card">
               <div className="mk-cover">
                 <ProductCover imageUrl={p.imageUrl} category={p.category} name={p.name} />
@@ -471,6 +483,7 @@ export default function CatalogManage() {
             </div>
           ))}
         </div>
+        </>
       )}
     </div>
   );

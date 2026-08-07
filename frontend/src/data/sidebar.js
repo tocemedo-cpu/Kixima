@@ -17,8 +17,7 @@ const FORNECEDOR = [
   { label: 'Dashboard', icon: 'home', to: '/fornecedor', end: true },
   {
     label: 'Catálogo', icon: 'catalog', children: [
-      { label: 'Produtos', to: '/fornecedor/catalogo' },
-      { label: 'Serviços', to: '/fornecedor/catalogo/servicos' },
+      { label: 'Produtos & Serviços', to: '/fornecedor/catalogo' },
       { label: 'Categorias', to: '/fornecedor/catalogo/categorias' },
       { label: 'Marcas', to: '/fornecedor/catalogo/marcas' },
       { label: 'Kits', to: '/fornecedor/catalogo/kits' },
