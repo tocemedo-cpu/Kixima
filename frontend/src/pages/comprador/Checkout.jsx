@@ -118,7 +118,7 @@ export default function Checkout() {
             <hr className="co-hr" />
             <div className="bz-panel-row"><span>Subtotal ({items.length} itens)</span><strong>{formatMoney(subtotal)}</strong></div>
             <div className="bz-panel-row"><span>Impostos (IVA 14%)</span><strong>{formatMoney(iva)}</strong></div>
-            <div className="bz-panel-row"><span>Taxa KIXIMA (1,5%)</span><strong>{formatMoney(fee)}</strong></div>
+            <div className="bz-panel-row"><span>Comissão KIXIMA (6,5%)</span><strong>{formatMoney(fee)}</strong></div>
             <div className="bz-panel-row co-total"><span>Total Estimado</span><strong>{formatMoney(total)}</strong></div>
             <div className="co-note"><Icon name="shield" size={14} /> Serão geradas {groups.length} {groups.length === 1 ? 'Ordem de Compra' : 'Ordens de Compra'} (PO). Uma para cada fornecedor.</div>
             <button className="btn btn-accent" style={{ width: '100%', marginTop: 12 }} disabled={busy} onClick={confirm}>

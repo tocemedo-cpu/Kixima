@@ -67,8 +67,8 @@ export const POLICY_STATUS = {
 };
 
 // Taxas apresentadas no resumo da cesta (nível de apresentação/estimativa).
-export const KIXIMA_FEE_RATE = 0.015; // Taxa de serviço KIXIMA
-export const IVA_RATE = 0.14; // IVA Angola
+export const KIXIMA_FEE_RATE = 0.065; // Comissão KIXIMA (o que fica com a plataforma)
+export const IVA_RATE = 0.14; // IVA Angola (14% sobre tudo)
 
 export function computeCartTotals(subtotal) {
   const fee = subtotal * KIXIMA_FEE_RATE;

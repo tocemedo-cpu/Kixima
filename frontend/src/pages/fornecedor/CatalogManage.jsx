@@ -12,10 +12,11 @@ import { Icon } from '../../components/icons';
 import { useI18n } from '../../i18n';
 import { UNSPSC_ITEMS } from '../../data/unspscCatalog';
 
-// IVA (lei angolana): 14% para produtos/bens, 6,5% para serviços. Indicador no
+// IVA (lei angolana): 14% sobre tudo (produtos e serviços). Indicador no
 // formulário; o cálculo autoritativo é feito no backend (taxService).
-const IVA = { PRODUTO: 0.14, SERVICO: 0.065 };
-const ivaPct = (kind) => `${(Math.round((IVA[kind] ?? IVA.PRODUTO) * 1000) / 10).toString().replace('.', ',')}%`;
+const IVA_RATE = 0.14;
+const IVA = { PRODUTO: IVA_RATE, SERVICO: IVA_RATE };
+const ivaPct = () => '14%';
 
 // Cascata de classificação, derivada do catálogo UNSPSC verificado (119 itens).
 const SETORES = [...new Set(UNSPSC_ITEMS.map((i) => i.setor))].sort((a, b) => a.localeCompare(b, 'pt'));

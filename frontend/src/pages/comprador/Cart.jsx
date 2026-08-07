@@ -87,7 +87,7 @@ export default function Cart() {
             <h3>{t('Resumo da Cesta')}</h3>
             <div className="bz-panel-row"><span>Subtotal ({items.length} itens)</span><strong>{formatMoney(subtotal)}</strong></div>
             <div className="bz-panel-row"><span>Impostos (IVA 14%)</span><strong>{formatMoney(iva)}</strong></div>
-            <div className="bz-panel-row"><span>Taxa KIXIMA (1,5%)</span><strong>{formatMoney(fee)}</strong></div>
+            <div className="bz-panel-row"><span>Comissão KIXIMA (6,5%)</span><strong>{formatMoney(fee)}</strong></div>
             <div className="bz-panel-row co-total"><span>Total Estimado</span><strong>{formatMoney(total)}</strong></div>
             <button className="btn btn-accent" style={{ width: '100%', marginTop: 12 }} onClick={() => nav('/comprador/checkout')}>Avançar para Checkout →</button>
             <button className="btn btn-ghost" style={{ width: '100%', marginTop: 8 }} onClick={() => nav('/comprador/cotacoes')}><Icon name="invoice" size={14} /> Solicitar Cotação</button>

@@ -76,9 +76,9 @@ export default function PrintableDocument({ kind }) {
   const supplier = po.supplierCompany || {};
   const cur = po.currency || 'AOA';
   const subtotal = po.items.reduce((s, it) => s + Number(it.lineTotal || 0), 0);
-  // IVA (lei angolana): 14% produtos, 6,5% serviços — por linha, conforme o tipo.
-  const IVA_RATE = { PRODUTO: 0.14, SERVICO: 0.065 };
-  const taxCalc = po.items.reduce((s, it) => s + Number(it.lineTotal || 0) * (IVA_RATE[it.product?.kind] ?? IVA_RATE.PRODUTO), 0);
+  // IVA (lei angolana): 14% sobre tudo (produtos e serviços).
+  const IVA_RATE = 0.14;
+  const taxCalc = po.items.reduce((s, it) => s + Number(it.lineTotal || 0) * IVA_RATE, 0);
   // Na fatura usa os valores gravados (autoritativos); na PO é uma estimativa.
   const net = isInvoice ? Number(invoice.netAmount ?? subtotal) : subtotal;
   const tax = isInvoice ? Number(invoice.taxAmount ?? taxCalc) : taxCalc;

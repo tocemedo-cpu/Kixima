@@ -1,35 +1,34 @@
 // src/services/taxService.js
-// Cálculo de IVA segundo a lei angolana. Taxa geral de 14% para bens/produtos;
-// 6,5% para serviços. As taxas são configuráveis por ambiente.
-const STANDARD = Number(process.env.IVA_RATE_STANDARD) || 0.14;   // produtos/bens
-const SERVICES = Number(process.env.IVA_RATE_SERVICES) || 0.065;  // serviços
-
-// kind: 'PRODUTO' | 'SERVICO' (ProductKind). Serviço → 6,5%; restante → 14%.
-function rateForKind(kind) {
-  return kind === 'SERVICO' ? SERVICES : STANDARD;
-}
+// IVA e comissão da plataforma.
+//  - IVA (lei angolana): 14% sobre tudo (produtos e serviços).
+//  - Comissão KIXIMA: 6,5% — a parte que fica com a plataforma (não é imposto).
+// Ambas configuráveis por ambiente.
+const IVA_RATE = Number(process.env.IVA_RATE) || 0.14;                 // imposto (14%)
+const COMMISSION_RATE = Number(process.env.KIXIMA_COMMISSION) || 0.065; // comissão da plataforma (6,5%)
 
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
-// Calcula o IVA de um montante líquido para um dado tipo.
-function computeTax(netAmount, kind) {
-  const rate = rateForKind(kind);
-  const tax = round2(Number(netAmount) * rate);
-  return { rate, net: round2(netAmount), tax, gross: round2(Number(netAmount) + tax) };
+// O IVA é igual para produto e serviço; `kind` é aceite por compatibilidade.
+function rateForKind() {
+  return IVA_RATE;
 }
 
-// Agrega várias linhas ({ net, kind }) num resumo com IVA por taxa.
+// Calcula o IVA de um montante líquido.
+function computeTax(netAmount) {
+  const tax = round2(Number(netAmount) * IVA_RATE);
+  return { rate: IVA_RATE, net: round2(netAmount), tax, gross: round2(Number(netAmount) + tax) };
+}
+
+// Comissão da plataforma sobre um montante líquido (o que fica com a KIXIMA).
+function commission(netAmount) {
+  return round2(Number(netAmount) * COMMISSION_RATE);
+}
+
+// Agrega várias linhas ({ net }) num resumo com IVA (14%).
 function summarize(lines) {
-  let net = 0; let tax = 0;
-  const byRate = {};
-  for (const l of lines) {
-    const r = computeTax(l.net, l.kind);
-    net += r.net; tax += r.tax;
-    const key = r.rate.toString();
-    byRate[key] = round2((byRate[key] || 0) + r.tax);
-  }
-  net = round2(net); tax = round2(tax);
-  return { net, tax, gross: round2(net + tax), byRate };
+  const net = round2(lines.reduce((s, l) => s + Number(l.net || 0), 0));
+  const tax = round2(net * IVA_RATE);
+  return { net, tax, gross: round2(net + tax), rate: IVA_RATE };
 }
 
-module.exports = { STANDARD, SERVICES, rateForKind, computeTax, summarize };
+module.exports = { IVA_RATE, COMMISSION_RATE, rateForKind, computeTax, commission, summarize };
