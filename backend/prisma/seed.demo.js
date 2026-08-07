@@ -94,6 +94,7 @@ async function main() {
       {
         supplierId: supplier.id,
         name: 'Válvula de esfera 4" API 6D',
+        imageUrl: '/catalog/40141607.jpg',
         category: 'Válvulas',
         description: 'Válvula de esfera flangeada, corpo em aço carbono.',
         unitPrice: 850000,
@@ -105,6 +106,7 @@ async function main() {
       {
         supplierId: supplier.id,
         name: 'Mangueira hidráulica de alta pressão 2"',
+        imageUrl: '/catalog/40142020.jpg',
         category: 'Hidráulica',
         description: 'Mangueira reforçada, 350 bar, 10 metros.',
         unitPrice: 120000,
@@ -116,6 +118,7 @@ async function main() {
       {
         supplierId: supplier.id,
         name: 'Inspeção por Ultrassom (UT)',
+        imageUrl: '/catalog/81141804.jpg',
         category: 'Inspeção & Ensaios',
         description: 'Serviço de inspeção por ultrassom convencional e phased array para deteção de descontinuidades.',
         unitPrice: 950000,
@@ -127,6 +130,7 @@ async function main() {
       {
         supplierId: supplier.id,
         name: 'Ensaios não Destrutivos (NDT)',
+        imageUrl: '/catalog/73121614.jpg',
         category: 'Inspeção & Ensaios',
         description: 'Ensaios não destrutivos: RT, PT, MT, UT, TOFD e outros métodos avançados.',
         unitPrice: 1250000,
@@ -138,6 +142,7 @@ async function main() {
       {
         supplierId: supplier.id,
         name: 'Transporte de Carga Industrial',
+        imageUrl: '/catalog/78101802.jpg',
         category: 'Logística & Transporte',
         description: 'Serviço de transporte de equipamentos e carga pesada para bases logísticas em Angola.',
         unitPrice: 480000,
@@ -149,6 +154,7 @@ async function main() {
       {
         supplierId: supplier.id,
         name: 'Engenharia de Detalhe (Oil & Gas)',
+        imageUrl: '/catalog/81103402.jpg',
         category: 'Engenharia',
         description: 'Serviços de engenharia básica e detalhada para projetos de óleo e gás.',
         unitPrice: 3200000,
@@ -160,6 +166,7 @@ async function main() {
       {
         supplierId: supplier.id,
         name: 'Gerador Diesel 500 kVA',
+        imageUrl: '/catalog/26111601.jpg',
         category: 'Equipamentos',
         description: 'Aluguer de gerador industrial 500 kVA, insonorizado, com manutenção incluída.',
         unitPrice: 2100000,
@@ -182,6 +189,7 @@ async function main() {
       {
         supplierId: supplier.id,
         name: 'Tubos de Aço Carbono (lote)',
+        imageUrl: '/catalog/20122704.jpg',
         category: 'Materiais',
         description: 'Fornecimento de tubos sem costura para linhas de processo, conforme ASTM.',
         unitPrice: 1650000,
