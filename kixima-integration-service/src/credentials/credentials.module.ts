@@ -8,6 +8,6 @@ import { AdminTokenGuard } from './admin-token.guard';
   imports: [AdaptersModule],
   controllers: [CredentialsController],
   providers: [CredentialsService, AdminTokenGuard],
-  exports: [CredentialsService],
+  exports: [CredentialsService, AdminTokenGuard],
 })
 export class CredentialsModule {}

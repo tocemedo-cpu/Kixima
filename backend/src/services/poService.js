@@ -98,7 +98,7 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
 
 const COMPANY_FIELDS = { select: { id: true, name: true, taxId: true, contactEmail: true, contactPhone: true, address: true, logoUrl: true, city: true, province: true, country: true } };
 
-async function getPurchaseOrder(id) {
+async function getPurchaseOrder(id, user = null) {
   const po = await prisma.purchaseOrder.findUnique({
     where: { id },
     include: {
@@ -112,6 +112,12 @@ async function getPurchaseOrder(id) {
     },
   });
   if (!po) throw new NotFoundError('Ordem de compra');
+  // Controlo de acesso multi-tenant: só as empresas envolvidas (ou o Admin do
+  // Sistema) podem ver a PO. Devolve 404 para não revelar a existência.
+  if (user && user.role !== 'ADMIN_SISTEMA') {
+    const own = po.buyerCompanyId === user.companyId || po.supplierCompanyId === user.companyId;
+    if (!own) throw new NotFoundError('Ordem de compra');
+  }
   // Nome de quem processou o pagamento (Payment só guarda o id).
   if (po.invoice?.payment?.processedById) {
     const u = await prisma.user.findUnique({ where: { id: po.invoice.payment.processedById }, select: { name: true } });

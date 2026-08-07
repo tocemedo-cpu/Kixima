@@ -1,38 +1,34 @@
-import { Controller, Get, Header, Param, Post } from '@nestjs/common';
+import { Controller, Get, Header, Param, Post, UseGuards } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { EventStatus } from '@prisma/client';
 import { PrismaService } from '@app/common/prisma/prisma.service';
-import { AdapterFactory } from '@app/adapters/adapter.factory';
-import { CredentialsService } from '@app/credentials/credentials.service';
+import { AdminTokenGuard } from '@app/credentials/admin-token.guard';
 import { MetricsService } from './metrics.service';
 import { QUEUES } from '@app/common/constants';
 
 /**
  * Painel de monitorização (API JSON) + healthcheck + métricas Prometheus.
- * Consumível por um dashboard ou por Grafana/Prometheus.
+ * Os endpoints de dados/replay/métricas exigem o token de administração
+ * (AdminTokenGuard); só o /health é público.
  */
 @Controller()
 export class MonitoringController {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly factory: AdapterFactory,
-    private readonly credentials: CredentialsService,
     private readonly metrics: MetricsService,
     @InjectQueue(QUEUES.SYNC) private readonly syncQueue: Queue,
   ) {}
 
   @Get('health')
-  async health(): Promise<Record<string, unknown>> {
-    const configured = await this.credentials.countByErp();
-    const adapters = this.factory.supported().map((erp) => ({
-      erp,
-      tenantsEnabled: configured[erp] ?? 0, // nº de tenants com este ERP ativo
-    }));
-    return { status: 'ok', service: 'kixima-integration-service', multiTenant: true, adapters };
+  health(): Record<string, unknown> {
+    // Público (health check do Render). Sem detalhes internos: a contagem de
+    // adaptadores/tenants por ERP está no /monitoring/overview (autenticado).
+    return { status: 'ok', service: 'kixima-integration-service' };
   }
 
   @Get('monitoring/overview')
+  @UseGuards(AdminTokenGuard)
   async overview(): Promise<Record<string, unknown>> {
     const [byStatus, deadLetters, pendingWebhooks, waiting, active, failed] = await Promise.all([
       this.prisma.integrationEvent.groupBy({ by: ['status'], _count: { _all: true } }),
@@ -62,6 +58,7 @@ export class MonitoringController {
   }
 
   @Get('monitoring/dead-letters')
+  @UseGuards(AdminTokenGuard)
   async listDeadLetters(): Promise<unknown> {
     return this.prisma.deadLetter.findMany({
       where: { replayed: false },
@@ -71,6 +68,7 @@ export class MonitoringController {
   }
 
   @Post('monitoring/dead-letters/:id/replay')
+  @UseGuards(AdminTokenGuard)
   async replay(@Param('id') id: string): Promise<{ replayed: boolean }> {
     const dl = await this.prisma.deadLetter.findUnique({ where: { id } });
     if (!dl) return { replayed: false };
@@ -87,6 +85,7 @@ export class MonitoringController {
   }
 
   @Get('metrics')
+  @UseGuards(AdminTokenGuard)
   @Header('Content-Type', 'text/plain')
   metricsEndpoint(): Promise<string> {
     return this.metrics.render();

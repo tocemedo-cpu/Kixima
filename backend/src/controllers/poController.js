@@ -20,7 +20,7 @@ async function list(req, res) {
 }
 
 async function getOne(req, res) {
-  const po = await poService.getPurchaseOrder(req.params.id);
+  const po = await poService.getPurchaseOrder(req.params.id, req.user);
   res.json(po);
 }
 

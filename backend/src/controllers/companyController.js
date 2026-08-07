@@ -1,6 +1,7 @@
 const companyService = require('../services/companyService');
 const authService = require('../services/authService');
 const erpConfigService = require('../services/erpConfigService');
+const { ForbiddenError } = require('../utils/errors');
 
 const DOCUMENT_TYPES = ['CERTIDAO_COMERCIAL', 'ALVARA_COMERCIAL', 'LICENCA_ANPG'];
 
@@ -22,6 +23,12 @@ async function list(req, res) {
 }
 
 async function getOne(req, res) {
+  // Controlo de acesso multi-tenant: o Admin do Sistema vê qualquer empresa;
+  // os restantes utilizadores só a própria (o perfil inclui documentos de
+  // credenciamento, apólices e limites — dados sensíveis).
+  if (req.user.role !== 'ADMIN_SISTEMA' && req.params.id !== req.user.companyId) {
+    throw new ForbiddenError('Não pode aceder aos dados de outra empresa.');
+  }
   const company = await companyService.getCompany(req.params.id);
   res.json(company);
 }

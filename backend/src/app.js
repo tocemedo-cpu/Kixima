@@ -11,6 +11,7 @@ const morgan = require('morgan');
 
 const config = require('./config/env');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { apiLimiter, authLimiter, sensitiveLimiter } = require('./middleware/rateLimit');
 
 const authRoutes = require('./routes/authRoutes');
 const companyRoutes = require('./routes/companyRoutes');
@@ -35,6 +36,10 @@ const integrationRoutes = require('./routes/integrationRoutes');
 
 const app = express();
 
+// Atrás do proxy do Render (TLS terminado no edge): confia no 1.º hop para que
+// req.ip reflita o cliente real (usado pelo rate limiting).
+app.set('trust proxy', 1);
+
 // crossOriginResourcePolicy: cross-origin para as imagens carregadas poderem
 // ser servidas ao frontend (dev noutra porta) sem bloqueio do helmet.
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
@@ -52,6 +57,13 @@ if (!config.isTest) {
 }
 
 app.get('/health', (req, res) => res.json({ status: 'ok', env: config.env }));
+
+// Rate limiting: limite geral em toda a API + limites apertados nos endpoints
+// sensíveis (login e fluxos públicos de registo/convite).
+app.use('/api/', apiLimiter);
+app.use('/api/auth', authLimiter);
+app.use('/api/companies/register', sensitiveLimiter);
+app.use('/api/companies/invite', sensitiveLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/companies', companyRoutes);

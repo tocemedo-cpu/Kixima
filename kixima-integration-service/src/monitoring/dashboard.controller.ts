@@ -63,6 +63,14 @@ const PAGE = `<!doctype html>
     </table>
   </main>
 <script>
+  // Os endpoints de monitorização exigem o token de administração
+  // (INTEGRATION_ADMIN_TOKEN). Aceita ?token=... no URL ou pede uma vez.
+  const params = new URLSearchParams(location.search);
+  let TOKEN = params.get('token') || sessionStorage.getItem('kx_admin_token') || '';
+  if (!TOKEN) { TOKEN = prompt('Token de administração (INTEGRATION_ADMIN_TOKEN):') || ''; }
+  if (TOKEN) sessionStorage.setItem('kx_admin_token', TOKEN);
+  const authFetch = (url, opts = {}) =>
+    fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + TOKEN } });
   const cardsInto = (el, items) => {
     el.innerHTML = items.map(i =>
       '<div class="card"><div class="label">'+i.label+'</div><div class="value '+(i.tone||'')+'">'+i.value+'</div></div>'
@@ -70,7 +78,7 @@ const PAGE = `<!doctype html>
   };
   async function refresh() {
     try {
-      const ov = await (await fetch('/monitoring/overview')).json();
+      const ov = await (await authFetch('/monitoring/overview')).json();
       cardsInto(document.getElementById('events'), [
         { label:'Recebidos', value: ov.events.received },
         { label:'Em processamento', value: ov.events.processing, tone:'amber' },
@@ -85,7 +93,7 @@ const PAGE = `<!doctype html>
         { label:'Falhados', value: ov.queue.failed, tone:'red' },
         { label:'Webhooks pendentes', value: ov.pendingWebhooks },
       ]);
-      const dl = await (await fetch('/monitoring/dead-letters')).json();
+      const dl = await (await authFetch('/monitoring/dead-letters')).json();
       document.getElementById('dlqcount').textContent = dl.length ? '('+dl.length+')' : '';
       const body = document.getElementById('dlq');
       body.innerHTML = dl.length ? dl.map(d =>
@@ -99,7 +107,7 @@ const PAGE = `<!doctype html>
     }
   }
   async function replay(id) {
-    await fetch('/monitoring/dead-letters/'+id+'/replay', { method:'POST' });
+    await authFetch('/monitoring/dead-letters/'+id+'/replay', { method:'POST' });
     refresh();
   }
   refresh();

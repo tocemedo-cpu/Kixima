@@ -57,12 +57,18 @@ async function listAllContracts() {
   });
 }
 
-async function getContract(id) {
+async function getContract(id, user = null) {
   const contract = await prisma.contract.findUnique({
     where: { id },
     include: { callOffs: { orderBy: { createdAt: 'desc' } } },
   });
   if (!contract) throw new NotFoundError('Contrato');
+  // Controlo de acesso multi-tenant: só as empresas do contrato (ou o Admin do
+  // Sistema) podem vê-lo. Devolve 404 para não revelar a existência.
+  if (user && user.role !== 'ADMIN_SISTEMA') {
+    const own = contract.clientCompanyId === user.companyId || contract.supplierCompanyId === user.companyId;
+    if (!own) throw new NotFoundError('Contrato');
+  }
   return contract;
 }
 

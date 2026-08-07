@@ -15,7 +15,7 @@ async function listMine(req, res) {
 }
 
 async function getOne(req, res) {
-  const contract = await contractService.getContract(req.params.id);
+  const contract = await contractService.getContract(req.params.id, req.user);
   res.json(contract);
 }
 
