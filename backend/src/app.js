@@ -43,7 +43,25 @@ app.set('trust proxy', 1);
 // crossOriginResourcePolicy: cross-origin para as imagens carregadas poderem
 // ser servidas ao frontend (dev noutra porta) sem bloqueio do helmet.
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(cors());
+
+// CORS: em produção o SPA é servido na mesma origem, por isso restringimos a
+// uma allow-list (APP_URL + CORS_ORIGINS). Em desenvolvimento permitimos tudo
+// para o servidor Vite (noutra porta) poder chamar a API.
+const corsAllowList = [config.appUrl, ...String(process.env.CORS_ORIGINS || '').split(',')]
+  .map((s) => (s || '').trim())
+  .filter(Boolean);
+app.use(cors({
+  origin(origin, cb) {
+    if (!origin) return cb(null, true);            // same-origin, curl, apps móveis
+    if (config.isDevelopment || config.isTest) return cb(null, true);
+    if (corsAllowList.includes(origin)) return cb(null, true);
+    // Origem não autorizada: não erra (não quebra pedidos same-origin que
+    // enviam Origin em POST); apenas não devolve o cabeçalho ACAO, pelo que o
+    // browser bloqueia a resposta cross-origin.
+    return cb(null, false);
+  },
+  credentials: false,
+}));
 // Guarda o corpo bruto (rawBody) para verificação de assinatura HMAC dos
 // callbacks de integração; não altera o comportamento normal do parser.
 app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));

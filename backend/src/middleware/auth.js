@@ -16,7 +16,7 @@ async function authenticate(req, res, next) {
 
   let payload;
   try {
-    payload = jwt.verify(token, config.auth.jwtSecret);
+    payload = jwt.verify(token, config.auth.jwtSecret, { algorithms: ['HS256'] });
   } catch (err) {
     throw new UnauthorizedError('Token inválido ou expirado.');
   }

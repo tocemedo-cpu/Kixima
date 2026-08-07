@@ -4,8 +4,10 @@
 const multer = require('multer');
 
 function fileFilter(req, file, cb) {
-  if (/^image\/(png|jpe?g|webp|gif|svg\+xml)$/.test(file.mimetype)) cb(null, true);
-  else cb(new Error('Formato de imagem não suportado (use PNG, JPG, WEBP, GIF ou SVG).'));
+  // SVG é intencionalmente rejeitado: pode conter script e resultar em XSS
+  // armazenado quando servido na mesma origem.
+  if (/^image\/(png|jpe?g|webp|gif)$/.test(file.mimetype)) cb(null, true);
+  else cb(new Error('Formato de imagem não suportado (use PNG, JPG, WEBP ou GIF).'));
 }
 
 const upload = multer({
@@ -31,10 +33,11 @@ const uploadDocuments = multer({
 // de documento aceitam PDF ou imagem.
 const IMAGE_FIELDS = new Set(['mainImage', 'gallery']);
 function productMediaFilter(req, file, cb) {
-  const isImage = /^image\/(png|jpe?g|webp|gif|svg\+xml)$/.test(file.mimetype);
+  // SVG rejeitado (risco de XSS armazenado — ver fileFilter).
+  const isImage = /^image\/(png|jpe?g|webp|gif)$/.test(file.mimetype);
   const isPdf = file.mimetype === 'application/pdf';
   if (IMAGE_FIELDS.has(file.fieldname)) {
-    return isImage ? cb(null, true) : cb(new Error('As imagens devem ser PNG, JPG, WEBP, GIF ou SVG.'));
+    return isImage ? cb(null, true) : cb(new Error('As imagens devem ser PNG, JPG, WEBP ou GIF.'));
   }
   // Campos de documento.
   return isImage || isPdf ? cb(null, true) : cb(new Error('Documento inválido — use PDF ou imagem.'));

@@ -51,6 +51,11 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: info
+      # CORS (OPCIONAL): origens externas autorizadas a chamar a API, separadas
+      # por vírgula. O SPA é servido na mesma origem, por isso normalmente não é
+      # necessário. Em produção, sem esta lista, só a própria origem é aceite.
+      - key: CORS_ORIGINS
+        sync: false
       # Define no dashboard (segredo): a connection string do Supabase (pooler).
       - key: DATABASE_URL
         sync: false

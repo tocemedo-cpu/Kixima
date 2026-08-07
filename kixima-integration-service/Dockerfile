@@ -26,5 +26,8 @@ COPY --from=build /app/dist ./dist
 COPY prisma ./prisma
 COPY docker/entrypoint.sh ./docker/entrypoint.sh
 RUN chmod +x ./docker/entrypoint.sh
+# Corre como utilizador não-root (o node:alpine já traz o utilizador "node").
+RUN chown -R node:node /app
+USER node
 EXPOSE 4100
 CMD ["./docker/entrypoint.sh"]

@@ -22,6 +22,10 @@ ENV NODE_ENV=production
 ENV PORT=4000
 EXPOSE 4000
 
+# Corre como utilizador não-root (o node:alpine já traz o utilizador "node").
+RUN mkdir -p /app/uploads && chown -R node:node /app
+USER node
+
 # db push aplica o schema à base de dados no arranque (adequado para
 # demo/staging; em produção a sério, preferir migrações versionadas).
 CMD ["sh", "-c", "npx prisma db push --skip-generate && node src/server.js"]

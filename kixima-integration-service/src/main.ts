@@ -11,7 +11,9 @@ import helmet from 'helmet';
 import { AppModule } from '@app/app.module';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  // rawBody: true expõe req.rawBody para verificação de assinatura HMAC dos
+  // webhooks de entrada (sem alterar o parsing JSON normal).
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
 
   app.useLogger(app.get(PinoLogger));
   app.use(helmet());

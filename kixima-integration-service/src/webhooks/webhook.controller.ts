@@ -1,30 +1,62 @@
-import { Body, Controller, Headers, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  Controller,
+  Headers,
+  HttpCode,
+  Param,
+  Post,
+  Req,
+  RawBodyRequest,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { ErpSystem } from '@prisma/client';
 import { AuditService } from '@app/audit/audit.service';
 
 /**
- * Webhooks de ENTRADA — confirmações assíncronas vindas dos ERPs (ex.: um ERP
- * que confirma o processamento de um documento fora do ciclo síncrono).
- * Regista em auditoria; a validação de assinatura por ERP é adicionada por
- * fornecedor conforme o esquema de segurança de cada um.
+ * Webhooks de ENTRADA — confirmações assíncronas vindas dos ERPs. A carga é
+ * autenticada por HMAC-SHA256 (cabeçalho `x-signature`) sobre o corpo bruto,
+ * com o segredo WEBHOOK_SIGNING_SECRET. Falha fechada: sem segredo, recusa.
  */
 @Controller('webhooks')
 export class WebhookController {
-  constructor(private readonly audit: AuditService) {}
+  constructor(
+    private readonly audit: AuditService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Post('erp/:erp')
   @HttpCode(202)
   async receive(
     @Param('erp') erp: string,
     @Headers('x-signature') signature: string | undefined,
-    @Body() body: unknown,
+    @Req() req: RawBodyRequest<Request>,
   ): Promise<{ received: true }> {
+    this.verifySignature(signature, req.rawBody);
+
     const system = this.parseErp(erp);
+    // Não regista o corpo (pode conter dados de negócio) — apenas metadados.
     await this.audit.info('webhook.inbound', `Webhook recebido de ${erp}`, {
       erp: system ?? undefined,
-      metadata: { hasSignature: Boolean(signature), body: body as Record<string, unknown> },
+      metadata: { verified: true },
     });
     return { received: true };
+  }
+
+  private verifySignature(signature: string | undefined, rawBody: Buffer | undefined): void {
+    const secret = this.config.get<string>('webhookSecret') ?? '';
+    if (!secret) {
+      throw new ServiceUnavailableException('Webhook não configurado (WEBHOOK_SIGNING_SECRET em falta).');
+    }
+    const raw = rawBody ?? Buffer.alloc(0);
+    const expected = createHmac('sha256', secret).update(raw).digest('hex');
+    const a = Buffer.from(signature ?? '');
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) {
+      throw new UnauthorizedException('Assinatura do webhook inválida.');
+    }
   }
 
   private parseErp(erp: string): ErpSystem | null {

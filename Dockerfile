@@ -40,5 +40,11 @@ ENV FRONTEND_DIST=/app/frontend/dist
 # O Render injeta a porta em $PORT; o servidor usa process.env.PORT.
 EXPOSE 4000
 
+# Corre como utilizador não-root (o node:alpine já traz o utilizador "node").
+# Garante a pasta de uploads e a posse dos ficheiros pela conta node.
+RUN mkdir -p /app/uploads && chown -R node:node /app
+USER node
+
 # db push aplica o schema à base de dados no arranque; depois inicia a API+SPA.
+# Nota: em produção robusta, preferir migrações versionadas (prisma migrate deploy).
 CMD ["sh", "-c", "npx prisma db push --skip-generate && node src/server.js"]

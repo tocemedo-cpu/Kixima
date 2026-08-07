@@ -28,6 +28,7 @@ export interface AppConfig {
   bullmq: { prefix: string; attempts: number; backoffMs: number };
   encryptionKey: string;
   adminToken: string;
+  webhookSecret: string;
   callback: { url: string; secret: string; timeoutMs: number };
   otel: { enabled: boolean; endpoint: string; serviceName: string };
 }
@@ -58,6 +59,7 @@ export default (): AppConfig => ({
   },
   encryptionKey: process.env.ENCRYPTION_KEY ?? '',
   adminToken: process.env.INTEGRATION_ADMIN_TOKEN ?? '',
+  webhookSecret: process.env.WEBHOOK_SIGNING_SECRET ?? '',
   callback: {
     url: process.env.KIXIMA_CALLBACK_URL ?? '',
     secret: process.env.KIXIMA_CALLBACK_SECRET ?? '',

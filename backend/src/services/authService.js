@@ -32,7 +32,7 @@ function signInvite({ companyId, role, inviteId }) {
 function verifyInvite(token) {
   let payload;
   try {
-    payload = jwt.verify(token, config.auth.jwtSecret);
+    payload = jwt.verify(token, config.auth.jwtSecret, { algorithms: ['HS256'] });
   } catch {
     throw new UnauthorizedError('Convite inválido ou expirado.');
   }
