@@ -93,6 +93,17 @@ const createProductSchema = z.object({
   applications: optText,
   benefits: optText,
   keywords: optText,
+  // Classificação (UNSPSC) — preenchida via dropdown em cascata.
+  unspscCode: optText,
+  unspscTitle: optText,
+  unspscSegment: optText,
+  unspscFamily: optText,
+  unspscClass: optText,
+  // Atributos universais (livres) + comentários do fornecedor.
+  keySpec: optText,
+  standard: optText,
+  warranty: optText,
+  supplierNotes: optText,
   // Especificações técnicas (texto livre)
   material: optText,
   weight: optText,

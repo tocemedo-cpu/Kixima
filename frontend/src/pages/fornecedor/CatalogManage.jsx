@@ -10,6 +10,18 @@ import { formatMoney } from '../../domain';
 import ProductCover from '../../components/ProductCover';
 import { Icon } from '../../components/icons';
 import { useI18n } from '../../i18n';
+import { UNSPSC_ITEMS } from '../../data/unspscCatalog';
+
+// IVA (lei angolana): 14% para produtos/bens, 6,5% para serviços. Indicador no
+// formulário; o cálculo autoritativo é feito no backend (taxService).
+const IVA = { PRODUTO: 0.14, SERVICO: 0.065 };
+const ivaPct = (kind) => `${(Math.round((IVA[kind] ?? IVA.PRODUTO) * 1000) / 10).toString().replace('.', ',')}%`;
+
+// Cascata de classificação, derivada do catálogo UNSPSC verificado (119 itens).
+const SETORES = [...new Set(UNSPSC_ITEMS.map((i) => i.setor))].sort((a, b) => a.localeCompare(b, 'pt'));
+const categoriasDe = (setor) => [...new Set(UNSPSC_ITEMS.filter((i) => i.setor === setor).map((i) => i.categoria))].sort((a, b) => a.localeCompare(b, 'pt'));
+const itensDe = (setor, cat) => UNSPSC_ITEMS.filter((i) => i.setor === setor && i.categoria === cat).sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt'));
+const kindFromTipo = (tipo) => (String(tipo).toLowerCase().startsWith('serv') ? 'SERVICO' : 'PRODUTO');
 
 // Taxonomia Oil & Gas — categoria → subcategorias. Cobre o espetro do setor
 // (upstream/midstream/downstream, produtos e serviços). "Outros" + subcategoria
@@ -47,12 +59,25 @@ const TABS = ['Produto', 'Preço & Disponibilidade', 'Imagens & Documentos'];
 
 // Apenas os campos essenciais/importantes para publicar um item no marketplace.
 const EMPTY_FORM = {
+  // Classificação (UNSPSC) + tipo (Produto/Serviço — determina o IVA)
+  kind: 'PRODUTO', unspscCode: '', unspscTitle: '', unspscSegment: '', unspscFamily: '', unspscClass: '',
   // Produto
   name: '', category: '', subcategory: '', brand: '', description: '', measurementUnit: '',
+  // Atributos universais (livres) + comentários
+  model: '', keySpec: '', standard: '', warranty: '', supplierNotes: '',
   // Preço & disponibilidade
   currency: 'AOA', unitPrice: '', promoPrice: '',
   availability: 'Em stock', stockQuantity: '', leadTimeDays: '',
 };
+
+// Cinco campos livres, comuns a qualquer produto ou serviço (iphone, válvula,
+// manutenção de AC, drilling…). A Marca tem campo próprio acima.
+const UNIVERSAL_FIELDS = [
+  ['model', 'Modelo / Referência', 'Ex.: T30, iPhone 15 Pro, Plano Preventivo.'],
+  ['keySpec', 'Especificação principal', 'A característica que melhor define o item (dimensão, capacidade, potência, âmbito).'],
+  ['standard', 'Norma / Certificação', 'Ex.: API 6D, ISO 9001, ANSI 150. Ou “Não aplicável”.'],
+  ['warranty', 'Garantia / Validade', 'Ex.: 12 meses, 2 anos, ou SLA para serviços.'],
+];
 
 export default function CatalogManage() {
   const { t } = useI18n();
@@ -63,6 +88,9 @@ export default function CatalogManage() {
   const [showForm, setShowForm] = useState(false);
   const [tab, setTab] = useState(0);
   const [form, setForm] = useState(EMPTY_FORM);
+  // Cascata de classificação: Setor -> Categoria -> Item.
+  const [setor, setSetor] = useState('');
+  const [categoria, setCategoria] = useState('');
   const [mainImage, setMainImage] = useState(null); // { file, preview }
   const [gallery, setGallery] = useState([]);        // [{ file, preview }]
   const [docs, setDocs] = useState({});              // { TYPE: File[] }
@@ -79,10 +107,32 @@ export default function CatalogManage() {
 
   const update = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
+  function pickSetor(v) { setSetor(v); setCategoria(''); }
+  // Ao escolher um Item, preenche automaticamente nome, unidade, tipo (IVA) e a
+  // classificação UNSPSC (código, título, segmento, família, classe).
+  function pickItem(code) {
+    const it = UNSPSC_ITEMS.find((i) => i.code === code);
+    if (!it) return;
+    setForm((f) => ({
+      ...f,
+      name: f.name || it.nome,
+      kind: kindFromTipo(it.tipo),
+      measurementUnit: f.measurementUnit || it.uom || '',
+      description: f.description || it.descricao || '',
+      unspscCode: it.code,
+      unspscTitle: it.tituloEN || '',
+      unspscSegment: it.segmento,
+      unspscFamily: it.familiaCode,
+      unspscClass: it.classe,
+    }));
+  }
+
   function resetForm() {
     gallery.forEach((g) => URL.revokeObjectURL(g.preview));
     if (mainImage) URL.revokeObjectURL(mainImage.preview);
     setForm(EMPTY_FORM);
+    setSetor('');
+    setCategoria('');
     setMainImage(null);
     setGallery([]);
     setDocs({});
@@ -183,9 +233,49 @@ export default function CatalogManage() {
           <form onSubmit={handleSubmit} className="prod-form">
             {/* ABA 1 — Produto */}
             <div className="tab-panel" style={{ display: tab === 0 ? 'block' : 'none' }}>
+              {/* Classificação em cascata (UNSPSC) — preenche o essencial sozinha */}
+              <label className="reg-section" style={{ display: 'block' }}>Classificação</label>
+              <p className="helptext" style={{ marginTop: 0 }}>Escolha o item na lista — o código de classificação, o tipo e a unidade preenchem-se automaticamente.</p>
+              <div className="grid-cols grid-2">
+                <div className="field">
+                  <label>Setor</label>
+                  <select value={setor} onChange={(e) => pickSetor(e.target.value)}>
+                    <option value="">— Escolher setor —</option>
+                    {SETORES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className="field">
+                  <label>Categoria</label>
+                  <select value={categoria} onChange={(e) => setCategoria(e.target.value)} disabled={!setor}>
+                    <option value="">{setor ? '— Escolher categoria —' : 'Escolha o setor primeiro'}</option>
+                    {setor && categoriasDe(setor).map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="field">
+                <label>Produto ou Serviço</label>
+                <select value={form.unspscCode} onChange={(e) => pickItem(e.target.value)} disabled={!setor || !categoria}>
+                  <option value="">{categoria ? '— Escolher item —' : 'Escolha setor e categoria primeiro'}</option>
+                  {setor && categoria && itensDe(setor, categoria).map((i) => (
+                    <option key={i.code} value={i.code}>{i.nome} — {i.tipo}</option>
+                  ))}
+                </select>
+              </div>
+              {form.unspscCode ? (
+                <div className="cls-box">
+                  <div><span className="cls-k">Classificação internacional</span><strong>{form.unspscTitle}</strong></div>
+                  <div className="cls-row">
+                    <span className="badge badge-neutral bz-mono">UNSPSC {form.unspscCode}</span>
+                    <span className={`badge ${form.kind === 'SERVICO' ? 'badge-info' : 'badge-neutral'}`}>{form.kind === 'SERVICO' ? 'Serviço' : 'Produto'}</span>
+                    <span className="badge badge-success">IVA {ivaPct(form.kind)}</span>
+                  </div>
+                </div>
+              ) : null}
+
+              <label className="reg-section" style={{ display: 'block', marginTop: 16 }}>Dados do item</label>
               <div className="field">
                 <label>Nome do Produto <span className="req">*</span></label>
-                <input value={form.name} onChange={(e) => update('name', e.target.value)} />
+                <input value={form.name} onChange={(e) => update('name', e.target.value)} placeholder="Preenchido pela escolha acima; pode ajustar." />
               </div>
               <div className="grid-cols grid-2">
                 <div className="field">
@@ -222,6 +312,21 @@ export default function CatalogManage() {
                 <textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} />
                 <small className="helptext">Aparece nos cartões do marketplace.</small>
               </div>
+
+              <label className="reg-section" style={{ display: 'block', marginTop: 8 }}>Atributos (comuns a qualquer item)</label>
+              <div className="grid-cols grid-2">
+                {UNIVERSAL_FIELDS.map(([k, label, help]) => (
+                  <div className="field" key={k}>
+                    <label>{label}</label>
+                    <input value={form[k]} onChange={(e) => update(k, e.target.value)} placeholder={help} />
+                  </div>
+                ))}
+              </div>
+              <div className="field">
+                <label>Comentários</label>
+                <textarea rows={3} value={form.supplierNotes} onChange={(e) => update('supplierNotes', e.target.value)}
+                  placeholder="Qualquer requisito ou informação adicional que não caiba nos campos acima." />
+              </div>
             </div>
 
             {/* ABA 2 — Preço & Disponibilidade */}
@@ -256,6 +361,17 @@ export default function CatalogManage() {
                   <input type="number" min="0" value={form.leadTimeDays} onChange={(e) => update('leadTimeDays', e.target.value)} />
                 </div>
               </div>
+              {form.unitPrice ? (
+                <div className="cls-box">
+                  <span className="cls-k">IVA ({ivaPct(form.kind)} — {form.kind === 'SERVICO' ? 'serviço' : 'produto'}, lei angolana)</span>
+                  <div className="cls-row" style={{ justifyContent: 'space-between' }}>
+                    <span>Preço sem IVA: <strong>{formatMoney(Number(form.unitPrice), form.currency)}</strong></span>
+                    <span>IVA: <strong>{formatMoney(Number(form.unitPrice) * (IVA[form.kind] ?? IVA.PRODUTO), form.currency)}</strong></span>
+                    <span>Com IVA: <strong>{formatMoney(Number(form.unitPrice) * (1 + (IVA[form.kind] ?? IVA.PRODUTO)), form.currency)}</strong></span>
+                  </div>
+                  <small className="helptext">O preço que introduz é <strong>sem IVA</strong>. O IVA é calculado automaticamente conforme o tipo.</small>
+                </div>
+              ) : null}
             </div>
 
             {/* ABA 3 — Imagens & Documentos */}

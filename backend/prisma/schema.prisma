@@ -244,6 +244,19 @@ model Product {
   benefits        String?
   keywords        String?
 
+  // --- Classificação (UNSPSC, preenchida via dropdown em cascata) ---
+  unspscCode      String?  @map("unspsc_code")    // ex.: 40141607
+  unspscTitle     String?  @map("unspsc_title")   // título oficial (EN)
+  unspscSegment   String?  @map("unspsc_segment") // 2 dígitos
+  unspscFamily    String?  @map("unspsc_family")  // 4 dígitos
+  unspscClass     String?  @map("unspsc_class")   // 6 dígitos
+
+  // --- Atributos universais (livres, comuns a qualquer produto/serviço) ---
+  keySpec         String?  @map("key_spec")       // Especificação principal
+  standard        String?                          // Norma / Certificação
+  warranty        String?                          // Garantia / Validade
+  supplierNotes   String?  @map("supplier_notes") // Comentários do fornecedor
+
   // --- Especificações técnicas (texto livre — os valores variam muito) ---
   material        String?
   weight          String?

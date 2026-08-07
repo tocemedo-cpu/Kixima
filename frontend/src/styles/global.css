@@ -1618,6 +1618,12 @@ tbody tr:hover {
 }
 .tab-nav { display: flex; gap: 8px; }
 
+/* Caixa de classificação/IVA no formulário de produto (Vendedor) */
+.cls-box { background: var(--paper-100, #f7f7f8); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 10px 0 4px; display: flex; flex-direction: column; gap: 8px; }
+.cls-box .cls-k { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-400); display: block; }
+.cls-box strong { font-size: 13.5px; }
+.cls-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; }
+
 .dropzone {
   border: 1.5px dashed var(--line); border-radius: var(--radius-sm);
   padding: 18px; text-align: center; cursor: pointer;
