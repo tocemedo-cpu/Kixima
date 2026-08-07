@@ -80,9 +80,33 @@ const IMAGE_SLOTS = [
 ];
 const SLOT_KEYS = new Set(IMAGE_SLOTS.map((s) => s.key));
 
+// Imagens por omissão de cada local (fornecidas pelo Admin do Sistema e
+// versionadas no build em frontend/public/help). Aparecem em toda a plataforma
+// sem depender de upload nem de armazenamento externo; um upload do admin
+// (guardado em supportCategoryImage) tem prioridade sobre a imagem por omissão.
+const DEFAULT_IMAGES = {
+  hero: '/help/hero.png',
+  mascot: '/help/mascot.png',
+  quick_kb: '/help/quick_kb.jpg',
+  quick_contact: '/help/quick_contact.png',
+  quick_tickets: '/help/quick_tickets.jpg',
+  ordens: '/help/ordens.png',
+  faturacao: '/help/faturacao.jpg',
+  pagamentos: '/help/pagamentos.jpg',
+  contratos: '/help/contratos.jpg',
+  catalogo: '/help/catalogo.jpg',
+  conta: '/help/conta.jpg',
+  channel_chat: '/help/channel_chat.jpg',
+  channel_email: '/help/channel_email.jpg',
+  channel_telefone: '/help/channel_telefone.png',
+  channel_whatsapp: '/help/channel_whatsapp.png',
+};
+
 async function loadImageMap() {
   const rows = await prisma.supportCategoryImage.findMany();
-  return Object.fromEntries(rows.map((i) => [i.key, i.imageUrl]));
+  const fromDb = Object.fromEntries(rows.map((i) => [i.key, i.imageUrl]));
+  // Defaults primeiro; o upload do admin (fromDb) sobrepõe-se.
+  return { ...DEFAULT_IMAGES, ...fromDb };
 }
 
 router.get('/overview', async (req, res) => {

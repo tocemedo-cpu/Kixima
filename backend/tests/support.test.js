@@ -97,6 +97,18 @@ describe('Ajuda & Suporte — painel do Administrador do Sistema', () => {
     expect((await auth(token).get('/api/support/admin/tickets')).status).toBe(403);
   });
 
+  test('todos os locais têm imagem por omissão (bundled em /help)', async () => {
+    const ov = await auth(adminToken).get('/api/support/admin/overview');
+    // Cada slot traz sempre uma imagem (default versionado, ou upload do admin).
+    expect(ov.body.imageSlots.every((s) => typeof s.imageUrl === 'string' && s.imageUrl.length > 0)).toBe(true);
+    // A vista do utilizador recebe os defaults nos locais sem upload.
+    const user = await auth(token).get('/api/support/overview');
+    expect(user.body.images.hero).toBe('/help/hero.png');
+    expect(user.body.categories.find((c) => c.key === 'catalogo').imageUrl).toBe('/help/catalogo.jpg');
+    // Nenhum teste faz upload de canais → todos ficam no default.
+    expect(user.body.channels.every((c) => c.imageUrl && c.imageUrl.startsWith('/help/'))).toBe(true);
+  });
+
   test('admin gere todos os locais de imagem (hero, atalhos, canais…)', async () => {
     const ov = await auth(adminToken).get('/api/support/admin/overview');
     expect(ov.body.imageSlots.length).toBeGreaterThanOrEqual(15);
