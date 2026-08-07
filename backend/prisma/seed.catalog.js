@@ -74,6 +74,12 @@ async function ensureSupplier() {
 }
 
 async function main() {
+  // Permite desligar o carregamento automático (ex.: produção real sem dados de
+  // demonstração): definir SKIP_CATALOG_SEED=1 no ambiente.
+  if (process.env.SKIP_CATALOG_SEED === '1') {
+    console.log('Catálogo: carregamento ignorado (SKIP_CATALOG_SEED=1).');
+    return;
+  }
   const supplier = await ensureSupplier();
   let created = 0;
   let updated = 0;

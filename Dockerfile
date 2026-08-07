@@ -45,6 +45,7 @@ EXPOSE 4000
 RUN mkdir -p /app/uploads && chown -R node:node /app
 USER node
 
-# db push aplica o schema à base de dados no arranque; depois inicia a API+SPA.
+# db push aplica o schema; depois carrega o catálogo de demonstração (idempotente,
+# não-bloqueante — desligável com SKIP_CATALOG_SEED=1) e inicia a API+SPA.
 # Nota: em produção robusta, preferir migrações versionadas (prisma migrate deploy).
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node src/server.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate && (node prisma/seed.catalog.js || echo 'catalogo: seed ignorado') && node src/server.js"]
