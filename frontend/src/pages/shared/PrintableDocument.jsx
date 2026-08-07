@@ -79,9 +79,13 @@ export default function PrintableDocument({ kind }) {
   // IVA (lei angolana): 14% sobre tudo (produtos e serviços).
   const IVA_RATE = 0.14;
   const taxCalc = po.items.reduce((s, it) => s + Number(it.lineTotal || 0) * IVA_RATE, 0);
+  // Retenção na Fonte de Imposto Industrial (Lei 26/20): 6,5% só sobre serviços.
+  const WHT_RATE = 0.065;
+  const whtCalc = po.items.reduce((s, it) => s + (it.product?.kind === 'SERVICO' ? Number(it.lineTotal || 0) * WHT_RATE : 0), 0);
   // Na fatura usa os valores gravados (autoritativos); na PO é uma estimativa.
   const net = isInvoice ? Number(invoice.netAmount ?? subtotal) : subtotal;
   const tax = isInvoice ? Number(invoice.taxAmount ?? taxCalc) : taxCalc;
+  const withheld = isInvoice ? Number(invoice.withholdingAmount ?? whtCalc) : whtCalc;
   const total = isInvoice ? Number(invoice.amount) : subtotal + taxCalc;
   const ref = isInvoice ? invoice.reference : po.reference;
   const delivery = buyer.address || [buyer.city, buyer.province, buyer.country].filter(Boolean).join(', ') || 'A definir na receção';
@@ -179,8 +183,14 @@ export default function PrintableDocument({ kind }) {
         {/* Totais */}
         <section className="pdoc-totals">
           <div className="pdoc-total-row"><span>Subtotal (sem IVA)</span><span>{money(net, cur)}</span></div>
-          <div className="pdoc-total-row"><span>IVA{isInvoice ? '' : ' (estimado)'}</span><span>{money(tax, cur)}</span></div>
+          <div className="pdoc-total-row"><span>IVA (14%){isInvoice ? '' : ' — estimado'}</span><span>{money(tax, cur)}</span></div>
           <div className="pdoc-total-row pdoc-total-grand"><span>{isInvoice ? 'TOTAL A PAGAR' : 'TOTAL ESTIMADO (c/ IVA)'}</span><span>{money(total, cur)}</span></div>
+          {withheld > 0 ? (
+            <>
+              <div className="pdoc-total-row" style={{ marginTop: 6 }}><span>Retenção na fonte II (6,5% s/ serviços)</span><span>− {money(withheld, cur)}</span></div>
+              <div className="pdoc-total-row pdoc-total-grand"><span>LÍQUIDO A RECEBER (FORNECEDOR)</span><span>{money(total - withheld, cur)}</span></div>
+            </>
+          ) : null}
         </section>
 
         {/* Blocos legais específicos */}

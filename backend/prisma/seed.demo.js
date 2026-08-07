@@ -214,6 +214,7 @@ async function main() {
   let i = 0;
   for (const p of all) {
     const isService = SERVICE_CATS.has(p.category);
+    p.kind = isService ? 'SERVICO' : 'PRODUTO'; // reflete em memória (usado no cálculo de retenção nas ordens)
     await prisma.product.update({
       where: { id: p.id },
       data: {
@@ -274,7 +275,7 @@ async function main() {
       const invoice = await prisma.invoice.create({
         data: {
           reference: `FAT-2026-${pad(invSeq)}`, purchaseOrderId: po.id,
-          amount: iva.gross, netAmount: iva.net, taxAmount: iva.tax, currency: 'AOA', status: invoiceStatus,
+          amount: iva.gross, netAmount: iva.net, taxAmount: iva.tax, withholdingAmount: iva.withheld, currency: 'AOA', status: invoiceStatus,
           issuedAt: ago(7), dueAt: ago(-3),
         },
       });

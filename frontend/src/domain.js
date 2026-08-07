@@ -67,8 +67,11 @@ export const POLICY_STATUS = {
 };
 
 // Taxas apresentadas no resumo da cesta (nível de apresentação/estimativa).
-export const KIXIMA_FEE_RATE = 0.065; // Comissão KIXIMA (o que fica com a plataforma)
+export const KIXIMA_FEE_RATE = 0.015; // Taxa de serviço KIXIMA
 export const IVA_RATE = 0.14; // IVA Angola (14% sobre tudo)
+// Retenção na Fonte de Imposto Industrial (Lei 26/20): 6,5% sobre SERVIÇOS.
+// Não soma à fatura — é descontada ao fornecedor (o comprador entrega à AGT).
+export const WITHHOLDING_RATE = 0.065;
 
 export function computeCartTotals(subtotal) {
   const fee = subtotal * KIXIMA_FEE_RATE;

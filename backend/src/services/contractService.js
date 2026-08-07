@@ -135,6 +135,7 @@ async function consolidateContractBilling(contractId) {
       amount: iva.gross,
       netAmount: iva.net,
       taxAmount: iva.tax,
+      withholdingAmount: iva.withheld,
       currency: contract.currency,
       dueAt,
       status: 'PENDENTE',

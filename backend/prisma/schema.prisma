@@ -588,9 +588,10 @@ model Invoice {
   contract        Contract?     @relation(fields: [contractId], references: [id])
   consolidatedPoIds String[]    @default([]) @map("consolidated_po_ids")
 
-  amount          Decimal       @db.Decimal(14, 2)          // total a pagar (com IVA)
-  netAmount       Decimal?      @map("net_amount") @db.Decimal(14, 2) // subtotal sem IVA
-  taxAmount       Decimal?      @map("tax_amount") @db.Decimal(14, 2) // IVA (lei angolana)
+  amount             Decimal    @db.Decimal(14, 2)          // total a pagar pelo comprador (com IVA)
+  netAmount          Decimal?   @map("net_amount") @db.Decimal(14, 2) // subtotal sem IVA
+  taxAmount          Decimal?   @map("tax_amount") @db.Decimal(14, 2) // IVA (14%)
+  withholdingAmount  Decimal?   @map("withholding_amount") @db.Decimal(14, 2) // retenção na fonte II (6,5% serviços)
   currency        String        @default("AOA")
   status          InvoiceStatus @default(PENDENTE)
 

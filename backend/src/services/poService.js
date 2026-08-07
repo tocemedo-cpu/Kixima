@@ -230,9 +230,10 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
       data: {
         reference,
         purchaseOrderId: id,
-        amount: iva.gross,        // total a pagar, com IVA
-        netAmount: iva.net,       // subtotal sem IVA
-        taxAmount: iva.tax,       // IVA
+        amount: iva.gross,               // total a pagar pelo comprador (com IVA)
+        netAmount: iva.net,              // subtotal sem IVA
+        taxAmount: iva.tax,              // IVA (14%)
+        withholdingAmount: iva.withheld, // retenção na fonte II (6,5% serviços)
         currency: po.currency,
         dueAt: paymentDueAt,
         status: 'PENDENTE',

@@ -373,13 +373,22 @@ export default function CatalogManage() {
               </div>
               {form.unitPrice ? (
                 <div className="cls-box">
-                  <span className="cls-k">IVA ({ivaPct(form.kind)} — {form.kind === 'SERVICO' ? 'serviço' : 'produto'}, lei angolana)</span>
+                  <span className="cls-k">Impostos (lei angolana) — {form.kind === 'SERVICO' ? 'serviço' : 'produto'}</span>
                   <div className="cls-row" style={{ justifyContent: 'space-between' }}>
                     <span>Preço sem IVA: <strong>{formatMoney(Number(form.unitPrice), form.currency)}</strong></span>
-                    <span>IVA: <strong>{formatMoney(Number(form.unitPrice) * (IVA[form.kind] ?? IVA.PRODUTO), form.currency)}</strong></span>
-                    <span>Com IVA: <strong>{formatMoney(Number(form.unitPrice) * (1 + (IVA[form.kind] ?? IVA.PRODUTO)), form.currency)}</strong></span>
+                    <span>IVA (14%): <strong>{formatMoney(Number(form.unitPrice) * IVA_RATE, form.currency)}</strong></span>
+                    <span>Com IVA: <strong>{formatMoney(Number(form.unitPrice) * (1 + IVA_RATE), form.currency)}</strong></span>
                   </div>
-                  <small className="helptext">O preço que introduz é <strong>sem IVA</strong>. O IVA é calculado automaticamente conforme o tipo.</small>
+                  {form.kind === 'SERVICO' ? (
+                    <div className="cls-row" style={{ justifyContent: 'space-between' }}>
+                      <span>Retenção na fonte II (6,5%): <strong>− {formatMoney(Number(form.unitPrice) * 0.065, form.currency)}</strong></span>
+                      <span>Líquido a receber: <strong>{formatMoney(Number(form.unitPrice) * (1 + IVA_RATE) - Number(form.unitPrice) * 0.065, form.currency)}</strong></span>
+                    </div>
+                  ) : null}
+                  <small className="helptext">
+                    O preço é <strong>sem IVA</strong>. O IVA (14%) soma-se à fatura.
+                    {form.kind === 'SERVICO' ? ' Nos serviços, o comprador retém 6,5% (Imposto Industrial) e entrega à AGT — reduz o líquido que recebe.' : ''}
+                  </small>
                 </div>
               ) : null}
             </div>
