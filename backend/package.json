@@ -11,6 +11,7 @@
     "seed": "cross-env NODE_ENV=development node -r dotenv/config prisma/seed.js",
     "seed:demo": "cross-env NODE_ENV=development node -r dotenv/config prisma/seed.demo.js",
     "seed:catalog": "node -r dotenv/config prisma/seed.catalog.js",
+    "storage:check": "node -r dotenv/config scripts/storage-check.js",
     "prisma:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:reset": "prisma db push --force-reset",

@@ -82,8 +82,15 @@ Isto cria as 5 personas de demonstração + catálogo, ordens, faturas e documen
      STORAGE_SECRET_KEY=...   (segredo)
      STORAGE_FORCE_PATH_STYLE=true
      ```
-  A partir daí, as fotos carregadas pelos fornecedores ficam guardadas no
-  Supabase e sobrevivem aos deploys.
+  4. **Verifica** a configuração (no Shell do serviço):
+     ```bash
+     cd backend && npm run storage:check
+     ```
+     Deve enviar um objeto de teste e confirmar `HTTP 200` no URL público.
+  A partir daí, as fotos carregadas pelos fornecedores (incluindo a importação
+  em massa **Catálogo → Importar (Excel)**) ficam guardadas no Supabase e
+  sobrevivem aos deploys. Nota: as imagens do catálogo de demonstração vão no
+  próprio build (pasta `catalog/`), pelo que já persistem sem Storage.
 - **Segurança:** roda a Database password e quaisquer chaves que tenham sido
   partilhadas em texto.
 - **Domínio próprio:** podes ligar `app.kixima.co.ao` em Settings → Custom Domains.
