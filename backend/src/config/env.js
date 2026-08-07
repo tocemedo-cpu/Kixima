@@ -30,7 +30,9 @@ const config = {
 
   auth: {
     jwtSecret: process.env.JWT_SECRET,
-    jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    // Validade curta do access token (revogável via tokenVersion). 1 dia é um
+    // compromisso entre segurança e não obrigar a login constante.
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
   },
 
   // Regras de negócio — configuráveis por ambiente, nunca hardcoded no código.

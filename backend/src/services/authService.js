@@ -6,16 +6,29 @@ const prisma = require('../config/database');
 const config = require('../config/env');
 const { UnauthorizedError, ForbiddenError, ConflictError } = require('../utils/errors');
 
-const SALT_ROUNDS = 10;
+// Custo do bcrypt. 12 é o mínimo recomendado atualmente (mais lento = mais
+// resistente a força bruta). Hashes antigos (custo 10) continuam válidos.
+const SALT_ROUNDS = 12;
 
 async function hashPassword(plain) {
   return bcrypt.hash(plain, SALT_ROUNDS);
 }
 
 function signToken(user) {
-  return jwt.sign({ sub: user.id, role: user.role, companyId: user.companyId }, config.auth.jwtSecret, {
-    expiresIn: config.auth.jwtExpiresIn,
-  });
+  // `tv` (tokenVersion) permite revogação server-side: o middleware compara-o
+  // com o valor atual do utilizador em BD.
+  return jwt.sign(
+    { sub: user.id, role: user.role, companyId: user.companyId, tv: user.tokenVersion ?? 0 },
+    config.auth.jwtSecret,
+    { expiresIn: config.auth.jwtExpiresIn },
+  );
+}
+
+// Revoga todas as sessões ativas de um utilizador (logout global): incrementa
+// a tokenVersion, invalidando de imediato todos os JWT já emitidos.
+async function revokeSessions(userId) {
+  await prisma.user.update({ where: { id: userId }, data: { tokenVersion: { increment: 1 } } });
+  return { ok: true };
 }
 
 // Convite de utilizador: token assinado (sem estado em BD) que o Company Admin
@@ -97,8 +110,12 @@ async function changePassword(userId, currentPassword, newPassword) {
   const valid = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!valid) throw new UnauthorizedError('A senha atual está incorreta.');
   const passwordHash = await hashPassword(newPassword);
-  await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  // Ao trocar a senha, revoga as sessões antigas (todos os JWT anteriores).
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash, tokenVersion: { increment: 1 } },
+  });
   return { ok: true };
 }
 
-module.exports = { login, createUser, hashPassword, signToken, signInvite, verifyInvite, changePassword };
+module.exports = { login, createUser, hashPassword, signToken, signInvite, verifyInvite, changePassword, revokeSessions };

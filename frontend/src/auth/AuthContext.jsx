@@ -34,7 +34,9 @@ export function AuthProvider({ children }) {
     return result.user;
   }
 
-  function logout() {
+  async function logout() {
+    // Revoga a sessão no servidor (best-effort) e limpa o estado local.
+    try { await api.post('/api/auth/logout'); } catch { /* ignora falhas de rede */ }
     setToken(null);
     setUser(null);
   }

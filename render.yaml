@@ -27,7 +27,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
-        value: 7d
+        value: 1d
       - key: PAYMENT_SLA_DAYS
         value: "7"
       - key: POLICY_EXPIRY_ALERT_DAYS

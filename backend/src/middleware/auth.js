@@ -25,6 +25,11 @@ async function authenticate(req, res, next) {
   if (!user || !user.active) {
     throw new UnauthorizedError('Utilizador inválido ou inativo.');
   }
+  // Revogação server-side: se a tokenVersion do token não corresponder à atual
+  // (logout global, troca de senha, bloqueio), o token deixou de ser válido.
+  if ((payload.tv ?? 0) !== (user.tokenVersion ?? 0)) {
+    throw new UnauthorizedError('Sessão terminada. Inicie sessão novamente.');
+  }
 
   req.user = {
     id: user.id,

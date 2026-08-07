@@ -188,6 +188,9 @@ model User {
 
   avatarUrl    String?     @map("avatar_url") // foto de perfil (upload ou câmera)
   active       Boolean     @default(true)
+  // Versão de sessão: incrementar invalida imediatamente todos os tokens JWT
+  // já emitidos para este utilizador (logout global, troca de senha, etc.).
+  tokenVersion Int         @default(0) @map("token_version")
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
 

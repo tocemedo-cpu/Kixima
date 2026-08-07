@@ -15,4 +15,10 @@ async function changePassword(req, res) {
   res.json(result);
 }
 
-module.exports = { login, me, changePassword };
+// Termina a sessão em todos os dispositivos (revoga os JWT emitidos).
+async function logout(req, res) {
+  await authService.revokeSessions(req.user.id);
+  res.json({ ok: true });
+}
+
+module.exports = { login, me, changePassword, logout };

@@ -96,7 +96,7 @@ async function registerCompany(data, uploadedDocs = [], policyFile = null) {
     });
   }
 
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
 
   // 4. Criar empresa + admin + documentos (+ apólice, se fornecedora) atómico.
   return prisma.$transaction(async (tx) => {
@@ -353,7 +353,7 @@ async function acceptInvite(token, { name, email, password }) {
   if (await prisma.user.findUnique({ where: { email: finalEmail } })) {
     throw new ConflictError('Já existe uma conta com este email.');
   }
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
     data: { name: finalName, email: finalEmail, passwordHash, role, companyId, active: false },
     select: USER_SELECT,
