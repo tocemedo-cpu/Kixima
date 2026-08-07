@@ -49,4 +49,18 @@ const uploadProductMedia = multer({
   limits: { fileSize: 15 * 1024 * 1024 },
 });
 
-module.exports = { upload, uploadDocuments, uploadProductMedia };
+// Importação de catálogo em massa — aceita ficheiros .xlsx (até 25 MB, pois
+// podem incluir imagens embebidas).
+function spreadsheetFilter(req, file, cb) {
+  const ok = /(sheet|excel|officedocument\.spreadsheetml)/.test(file.mimetype)
+    || /\.xlsx?$/i.test(file.originalname || '');
+  cb(ok ? null : new Error('Ficheiro inválido — envie uma folha de cálculo .xlsx.'), ok);
+}
+
+const uploadSpreadsheet = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: spreadsheetFilter,
+  limits: { fileSize: 25 * 1024 * 1024 },
+});
+
+module.exports = { upload, uploadDocuments, uploadProductMedia, uploadSpreadsheet };

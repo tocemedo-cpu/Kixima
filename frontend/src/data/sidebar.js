@@ -19,6 +19,7 @@ const FORNECEDOR = [
   {
     label: 'Catálogo', icon: 'catalog', children: [
       { label: 'Produtos & Serviços', to: '/fornecedor/catalogo' },
+      { label: 'Importar (Excel)', to: '/fornecedor/catalogo/importar' },
       { label: 'Categorias', to: '/fornecedor/catalogo/categorias' },
       { label: 'Marcas', to: '/fornecedor/catalogo/marcas' },
       { label: 'Kits', to: '/fornecedor/catalogo/kits' },

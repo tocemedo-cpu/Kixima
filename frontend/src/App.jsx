@@ -61,6 +61,7 @@ import StockMovements from './pages/fornecedor/StockMovements';
 import Kits from './pages/fornecedor/Kits';
 import SupplierQuotes from './pages/fornecedor/SupplierQuotes';
 import SupplierCompanyProfile from './pages/fornecedor/CompanyProfile';
+import CatalogImport from './pages/fornecedor/CatalogImport';
 
 import FinanceiroHome from './pages/financeiro/Home';
 import PendingInvoices from './pages/financeiro/PendingInvoices';
@@ -168,6 +169,7 @@ export default function App() {
             <Route path="/fornecedor/catalogo/servicos" element={<CatalogManage />} />
             <Route path="/fornecedor/catalogo/promocoes" element={<CatalogInsights />} />
             <Route path="/fornecedor/catalogo/kits" element={<Kits />} />
+            <Route path="/fornecedor/catalogo/importar" element={<CatalogImport />} />
             <Route path="/fornecedor/inventario/armazens" element={<CatalogInsights />} />
             <Route path="/fornecedor/inventario/entradas" element={<StockMovements />} />
             <Route path="/fornecedor/inventario/saidas" element={<StockMovements />} />

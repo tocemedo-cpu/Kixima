@@ -1,5 +1,6 @@
 const catalogService = require('../services/catalogService');
 const reviewService = require('../services/reviewService');
+const catalogImportService = require('../services/catalogImportService');
 
 const PRODUCT_DOC_TYPES = ['FICHA_TECNICA', 'DATASHEET', 'MANUAL', 'CATALOGO', 'CERTIFICADO', 'DESENHO_TECNICO'];
 
@@ -86,4 +87,14 @@ async function uploadImage(req, res) {
   return res.json(product);
 }
 
-module.exports = { list, getOne, getBySlug, create, update, updateStock, documents, listMovements, createMovement, listReviews, addReview, deactivate, uploadImage };
+// Importação de catálogo em massa (Excel .xlsx) — o Fornecedor carrega os seus
+// produtos de uma vez. Company Admin importa para a própria empresa.
+async function importCatalog(req, res) {
+  if (!req.file) {
+    return res.status(400).json({ error: { code: 'NO_FILE', message: 'Envie um ficheiro Excel (.xlsx).' } });
+  }
+  const result = await catalogImportService.importCatalog(req.file.buffer, req.user.companyId);
+  return res.status(201).json(result);
+}
+
+module.exports = { list, getOne, getBySlug, create, update, updateStock, documents, listMovements, createMovement, listReviews, addReview, deactivate, uploadImage, importCatalog };

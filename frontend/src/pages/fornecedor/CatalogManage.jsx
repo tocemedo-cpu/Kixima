@@ -64,7 +64,7 @@ const EMPTY_FORM = {
   kind: 'PRODUTO', unspscCode: '', unspscTitle: '', unspscSegment: '', unspscFamily: '', unspscClass: '',
   imageUrl: '', // imagem de referência do catálogo (auto)
   // Produto
-  name: '', category: '', subcategory: '', brand: '', description: '', measurementUnit: '',
+  name: '', category: '', subcategory: '', brand: '', description: '', measurementUnit: '', countryOfOrigin: '',
   // Atributos universais (livres) + comentários
   model: '', keySpec: '', standard: '', warranty: '', supplierNotes: '',
   // Preço & disponibilidade
@@ -316,6 +316,11 @@ export default function CatalogManage() {
                   <label>Unidade de Medida</label>
                   <input value={form.measurementUnit} onChange={(e) => update('measurementUnit', e.target.value)} placeholder="Ex.: un, m, kg, caixa" />
                 </div>
+              </div>
+              <div className="field">
+                <label>País de origem (proveniência do fabrico)</label>
+                <input value={form.countryOfOrigin} onChange={(e) => update('countryOfOrigin', e.target.value)} placeholder="Ex.: Angola, EUA, China, UE — opcional" />
+                <small className="helptext">Opcional. O fornecedor é sempre angolano; este campo indica só a origem do fabrico do bem.</small>
               </div>
               <div className="field">
                 <label>Descrição Curta <span className="req">*</span></label>

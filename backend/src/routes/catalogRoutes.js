@@ -4,7 +4,7 @@ const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 const { validate } = require('../utils/validate');
 const { createProductSchema, updateProductSchema, stockUpdateSchema, stockMovementSchema, reviewSchema } = require('../utils/schemas');
-const { upload, uploadProductMedia } = require('../config/upload');
+const { upload, uploadProductMedia, uploadSpreadsheet } = require('../config/upload');
 
 const router = express.Router();
 
@@ -24,6 +24,8 @@ const productMedia = uploadProductMedia.fields([
 router.use(authenticate);
 
 router.get('/', catalogController.list);
+// Importação em massa por Excel (.xlsx) — antes de /:id para não colidir.
+router.post('/import', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), uploadSpreadsheet.single('file'), catalogController.importCatalog);
 // Documentos do fornecedor (Documentação) — antes de /:id para não colidir.
 router.get('/documents', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogController.documents);
 // Movimentos de inventário (Entradas/Saídas) — antes de /:id.
