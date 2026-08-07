@@ -4,6 +4,7 @@
 const prisma = require('../config/database');
 const { NotFoundError, BusinessRuleError } = require('../utils/errors');
 const { nextReference } = require('../utils/reference');
+const taxService = require('./taxService');
 
 async function createContract({
   clientCompanyId,
@@ -110,13 +111,17 @@ async function consolidateContractBilling(contractId) {
       status: { in: ['ENTREGUE', 'RECEBIDA_CONFORME', 'EM_EXECUCAO', 'APROVADA'] },
       invoice: null,
     },
+    include: { items: { include: { product: { select: { kind: true } } } } },
   });
 
   if (pendingCallOffs.length === 0) {
     throw new BusinessRuleError('Não há call-offs pendentes de faturação para este contrato.');
   }
 
-  const amount = pendingCallOffs.reduce((sum, po) => sum + Number(po.totalAmount), 0);
+  // IVA (lei angolana) por linha de todos os call-offs consolidados.
+  const iva = taxService.summarize(
+    pendingCallOffs.flatMap((po) => po.items.map((li) => ({ net: Number(li.lineTotal), kind: li.product?.kind }))),
+  );
   const dueAt = new Date();
   dueAt.setDate(dueAt.getDate() + contract.paymentTermDays);
 
@@ -127,7 +132,9 @@ async function consolidateContractBilling(contractId) {
       reference,
       contractId,
       consolidatedPoIds: pendingCallOffs.map((po) => po.id),
-      amount,
+      amount: iva.gross,
+      netAmount: iva.net,
+      taxAmount: iva.tax,
       currency: contract.currency,
       dueAt,
       status: 'PENDENTE',

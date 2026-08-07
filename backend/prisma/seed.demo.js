@@ -5,6 +5,7 @@
 
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const taxService = require('../src/services/taxService');
 
 const prisma = new PrismaClient();
 const PASSWORD = 'Kixima@123';
@@ -240,6 +241,8 @@ async function main() {
       return { productId: p.id, quantity: qty, unitPrice, lineTotal: unitPrice * qty };
     });
     const totalAmount = items.reduce((s, i) => s + i.lineTotal, 0);
+    // IVA (lei angolana) por linha, conforme o tipo do produto/serviço.
+    const iva = taxService.summarize(lines.map(([name, qty]) => ({ net: Number(pick(name).unitPrice) * qty, kind: pick(name).kind })));
     const po = await prisma.purchaseOrder.create({
       data: {
         reference: `PO-2026-${pad(poSeq)}`,
@@ -263,7 +266,7 @@ async function main() {
       const invoice = await prisma.invoice.create({
         data: {
           reference: `FAT-2026-${pad(invSeq)}`, purchaseOrderId: po.id,
-          amount: totalAmount, currency: 'AOA', status: invoiceStatus,
+          amount: iva.gross, netAmount: iva.net, taxAmount: iva.tax, currency: 'AOA', status: invoiceStatus,
           issuedAt: ago(7), dueAt: ago(-3),
         },
       });
@@ -271,7 +274,7 @@ async function main() {
       if (invoiceStatus === 'PAGA') {
         await prisma.payment.create({
           data: {
-            invoiceId: invoice.id, amount: totalAmount, currency: 'AOA', status: 'PROCESSADO',
+            invoiceId: invoice.id, amount: iva.gross, currency: 'AOA', status: 'PROCESSADO',
             processedById: financeiro.id, reference: `PAY-2026-${pad(invSeq)}`, processedAt: ago(5),
           },
         });

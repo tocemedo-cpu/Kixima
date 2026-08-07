@@ -76,7 +76,13 @@ export default function PrintableDocument({ kind }) {
   const supplier = po.supplierCompany || {};
   const cur = po.currency || 'AOA';
   const subtotal = po.items.reduce((s, it) => s + Number(it.lineTotal || 0), 0);
-  const total = isInvoice ? invoice.amount : po.totalAmount;
+  // IVA (lei angolana): 14% produtos, 6,5% serviços — por linha, conforme o tipo.
+  const IVA_RATE = { PRODUTO: 0.14, SERVICO: 0.065 };
+  const taxCalc = po.items.reduce((s, it) => s + Number(it.lineTotal || 0) * (IVA_RATE[it.product?.kind] ?? IVA_RATE.PRODUTO), 0);
+  // Na fatura usa os valores gravados (autoritativos); na PO é uma estimativa.
+  const net = isInvoice ? Number(invoice.netAmount ?? subtotal) : subtotal;
+  const tax = isInvoice ? Number(invoice.taxAmount ?? taxCalc) : taxCalc;
+  const total = isInvoice ? Number(invoice.amount) : subtotal + taxCalc;
   const ref = isInvoice ? invoice.reference : po.reference;
   const delivery = buyer.address || [buyer.city, buyer.province, buyer.country].filter(Boolean).join(', ') || 'A definir na receção';
 
@@ -172,9 +178,9 @@ export default function PrintableDocument({ kind }) {
 
         {/* Totais */}
         <section className="pdoc-totals">
-          <div className="pdoc-total-row"><span>Subtotal</span><span>{money(subtotal, cur)}</span></div>
-          <div className="pdoc-total-row"><span>Impostos</span><span className="pdoc-muted">N/A — fora do escopo KIXIMA</span></div>
-          <div className="pdoc-total-row pdoc-total-grand"><span>{isInvoice ? 'TOTAL A PAGAR' : 'TOTAL GERAL'}</span><span>{money(total, cur)}</span></div>
+          <div className="pdoc-total-row"><span>Subtotal (sem IVA)</span><span>{money(net, cur)}</span></div>
+          <div className="pdoc-total-row"><span>IVA{isInvoice ? '' : ' (estimado)'}</span><span>{money(tax, cur)}</span></div>
+          <div className="pdoc-total-row pdoc-total-grand"><span>{isInvoice ? 'TOTAL A PAGAR' : 'TOTAL ESTIMADO (c/ IVA)'}</span><span>{money(total, cur)}</span></div>
         </section>
 
         {/* Blocos legais específicos */}

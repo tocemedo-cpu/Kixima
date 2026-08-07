@@ -19,6 +19,7 @@ const { nextReference } = require('../utils/reference');
 const notificationService = require('./notificationService');
 const contractService = require('./contractService');
 const eventBus = require('./eventBus');
+const taxService = require('./taxService');
 
 // --- 1. Checkout: criação da PO ---------------------------------------------
 
@@ -223,11 +224,15 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
     });
 
     const reference = await nextReference('FAT', 'invoice');
+    // IVA (lei angolana): calculado por linha conforme o tipo do produto/serviço.
+    const iva = taxService.summarize(po.items.map((li) => ({ net: Number(li.lineTotal), kind: li.product?.kind })));
     const createdInvoice = await tx.invoice.create({
       data: {
         reference,
         purchaseOrderId: id,
-        amount: po.totalAmount,
+        amount: iva.gross,        // total a pagar, com IVA
+        netAmount: iva.net,       // subtotal sem IVA
+        taxAmount: iva.tax,       // IVA
         currency: po.currency,
         dueAt: paymentDueAt,
         status: 'PENDENTE',
