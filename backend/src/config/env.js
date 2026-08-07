@@ -42,8 +42,11 @@ const config = {
   },
 
   email: {
+    // 'console' (log), 'smtp' (nodemailer) ou 'brevo' (API HTTP do Brevo —
+    // usa a porta 443, imune ao bloqueio de portas SMTP de saída no Render).
     provider: process.env.EMAIL_PROVIDER || 'console',
     from: process.env.EMAIL_FROM || 'notificacoes@kixima.co.ao',
+    brevoApiKey: process.env.BREVO_API_KEY,
     smtp: {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,

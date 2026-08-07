@@ -11,22 +11,66 @@ const logger = require('../config/logger');
 // sem tocar no resto do código.
 const config = require('../config/env');
 
+// Separa o EMAIL_FROM ("Nome <email>" ou "email") em nome + email.
+function parseFrom(from) {
+  const m = String(from || '').match(/^\s*(.*?)\s*<\s*([^>]+)\s*>\s*$/);
+  if (m) return { name: m[1] || undefined, email: m[2] };
+  return { email: String(from || '').trim() || undefined };
+}
+
+// Envio pela API HTTP do Brevo (porta 443 — não é afetada pelo bloqueio de
+// portas SMTP de saída do Render). Precisa de BREVO_API_KEY (xkeysib-...).
+async function sendViaBrevoApi(to, subject, body, html) {
+  const sender = parseFrom(config.email.from);
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': config.email.brevoApiKey || '',
+      'content-type': 'application/json',
+      accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender,
+      to: [{ email: to }],
+      subject,
+      textContent: body,
+      ...(html ? { htmlContent: html } : {}),
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`Brevo API ${res.status}: ${detail.slice(0, 200)}`);
+  }
+}
+
 async function dispatchEmail(to, subject, body, { html } = {}) {
-  if (config.email.provider === 'console' || !to) {
+  const provider = config.email.provider;
+  if (provider === 'console' || !to) {
     logger.info('Email (modo console)', { to, subject, body });
     return;
   }
-  if (config.email.provider === 'smtp') {
-    // Envio real por SMTP. O nodemailer é carregado de forma preguiçosa para
-    // não impor a dependência quando o provider é "console" (default).
+
+  // Provider 'brevo' — API HTTP (recomendado no Render).
+  if (provider === 'brevo' || provider === 'brevo-api') {
+    try {
+      await sendViaBrevoApi(to, subject, body, html);
+      logger.info('Email enviado (Brevo API)', { to, subject });
+    } catch (err) {
+      logger.error('Falha no envio de email (Brevo API)', { to, subject, error: err.message });
+    }
+    return;
+  }
+
+  // Provider 'smtp' — nodemailer (carregado de forma preguiçosa).
+  if (provider === 'smtp') {
     try {
       // eslint-disable-next-line global-require
       const nodemailer = require('nodemailer');
       const { host, port, user, password } = config.email.smtp;
       const transport = nodemailer.createTransport({
         host, port,
-        secure: port === 465,        // 465 = TLS direto; 587 = STARTTLS
-        requireTLS: port === 587,
+        secure: port === 465,        // 465 = TLS direto; 587/2525 = STARTTLS
+        requireTLS: port !== 465,
         auth: user ? { user, pass: password } : undefined,
         // Falha rápido se o SMTP estiver indisponível — não bloqueia o pedido
         // (o erro é apanhado abaixo e o convite é criado na mesma).
@@ -36,12 +80,13 @@ async function dispatchEmail(to, subject, body, { html } = {}) {
       });
       await transport.sendMail({ from: config.email.from, to, subject, text: body, html });
       logger.info('Email enviado (SMTP)', { to, subject });
-      return;
     } catch (err) {
-      logger.error('Falha no envio de email (SMTP) — a registar no log', { to, subject, error: err.message });
+      logger.error('Falha no envio de email (SMTP)', { to, subject, error: err.message });
     }
+    return;
   }
-  logger.info('Email enviado', { to, subject });
+
+  logger.warn('Email não enviado — EMAIL_PROVIDER desconhecido', { provider, to, subject });
 }
 
 // Envio genérico de email, reutilizável por outras áreas (ex.: convites).

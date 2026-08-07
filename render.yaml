@@ -32,19 +32,22 @@ services:
         value: "7"
       - key: POLICY_EXPIRY_ALERT_DAYS
         value: "30"
-      # Email: envio real por SMTP (Brevo). O host/porta não são segredos; o
-      # login e a chave SMTP definem-se no dashboard do Render (sync:false).
-      # EMAIL_FROM tem de ser um remetente verificado na conta Brevo.
+      # Email. RECOMENDADO no Render: provider "brevo" (API HTTP, porta 443) —
+      # o Render bloqueia portas SMTP de saída (587/465/25), pelo que o SMTP dá
+      # "Connection timeout". Define BREVO_API_KEY (xkeysib-...) no dashboard.
+      # EMAIL_FROM tem de ser um remetente VERIFICADO na conta Brevo.
       - key: EMAIL_PROVIDER
-        value: smtp
+        value: brevo
+      - key: EMAIL_FROM
+        value: "Kixima <tocemedo@gmail.com>"
+      - key: BREVO_API_KEY
+        sync: false
+      # Alternativa por SMTP (só se o outbound SMTP estiver aberto; no Render
+      # geralmente não está). Se usada, experimentar SMTP_PORT=2525.
       - key: SMTP_HOST
         value: smtp-relay.brevo.com
       - key: SMTP_PORT
-        value: "587"
-      # Remetente. TEM de ser um remetente verificado na conta Brevo.
-      - key: EMAIL_FROM
-        value: "Kixima <tocemedo@gmail.com>"
-      # Login e chave SMTP do Brevo — segredos, definidos no dashboard.
+        value: "2525"
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASSWORD
