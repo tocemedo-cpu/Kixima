@@ -125,7 +125,9 @@ export default function CatalogManage() {
       unspscSegment: it.segmento,
       unspscFamily: it.familiaCode,
       unspscClass: it.classe,
-      imageUrl: f.imageUrl || it.img || '',
+      // A imagem de referência acompanha sempre o item escolhido (a foto
+      // própria do fornecedor é separada — carregada na aba Imagens).
+      imageUrl: it.img || '',
     }));
   }
 
