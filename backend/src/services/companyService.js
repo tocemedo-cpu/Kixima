@@ -228,8 +228,11 @@ function buildInviteEmail({ name, companyName, link }) {
 }
 
 // Envia (ou reenvia) o email de convite com o link único.
-async function sendInviteEmail(invite, company) {
-  const base = (config.appUrl || '').replace(/\/$/, '');
+async function sendInviteEmail(invite, company, baseUrl = null) {
+  // Prioridade: APP_URL explícito (config intencional, ex.: domínio próprio) >
+  // endereço real do pedido (auto-deteção, resolve o caso em que APP_URL não
+  // está definido) > fallback. Evita links para localhost em produção.
+  const base = String(process.env.APP_URL || baseUrl || config.appUrl || '').replace(/\/$/, '');
   const link = `${base}/convite/${invite.token}`;
   const { subject, text, html } = buildInviteEmail({ name: invite.name, companyName: company.name, link });
   await notificationService.sendEmail(invite.email, subject, text, { html });
@@ -238,7 +241,7 @@ async function sendInviteEmail(invite, company) {
 
 // Cria um convite de funcionário: gera o link único, persiste o convite e
 // envia automaticamente o email ao funcionário — sem o admin copiar nada.
-async function createInvite(companyId, role, { name, email }, createdById = null) {
+async function createInvite(companyId, role, { name, email }, createdById = null, baseUrl = null) {
   const company = await prisma.company.findUnique({ where: { id: companyId } });
   if (!company) throw new NotFoundError('Empresa');
   const allowed = INVITABLE_ROLES[company.type] || [];
@@ -256,7 +259,7 @@ async function createInvite(companyId, role, { name, email }, createdById = null
   });
   const token = authService.signInvite({ companyId, role, inviteId: created.id });
   const invite = await prisma.employeeInvite.update({ where: { id: created.id }, data: { token } });
-  await sendInviteEmail(invite, company);
+  await sendInviteEmail(invite, company, baseUrl);
   return { ...pickInvite(invite), companyName: company.name };
 }
 
@@ -269,7 +272,7 @@ async function listInvites(companyId) {
 }
 
 // Reenvia o convite: renova token/validade (volta a PENDENTE) e reenvia o email.
-async function resendInvite(companyId, inviteId) {
+async function resendInvite(companyId, inviteId, baseUrl = null) {
   const invite = await getOwnedInvite(companyId, inviteId);
   if (invite.status === 'ACEITO') throw new BusinessRuleError('Este convite já foi aceite.');
   const company = await prisma.company.findUnique({ where: { id: companyId } });
@@ -278,7 +281,7 @@ async function resendInvite(companyId, inviteId) {
   const updated = await prisma.employeeInvite.update({
     where: { id: inviteId }, data: { token, status: 'PENDENTE', expiresAt, acceptedAt: null },
   });
-  await sendInviteEmail(updated, company);
+  await sendInviteEmail(updated, company, baseUrl);
   return pickInvite(updated);
 }
 

@@ -58,9 +58,15 @@ async function listUsers(req, res) {
   res.json(users);
 }
 
+// Endereço público real do serviço (com trust proxy, reflete o host/proto do
+// Render). Usado para construir o link do convite no email.
+function publicBaseUrl(req) {
+  return `${req.protocol}://${req.get('host')}`;
+}
+
 async function createInvite(req, res) {
   const { role, name, email } = req.body;
-  const invite = await companyService.createInvite(req.user.companyId, role, { name, email }, req.user.id);
+  const invite = await companyService.createInvite(req.user.companyId, role, { name, email }, req.user.id, publicBaseUrl(req));
   res.status(201).json(invite);
 }
 
@@ -69,7 +75,7 @@ async function listInvites(req, res) {
 }
 
 async function resendInvite(req, res) {
-  res.json(await companyService.resendInvite(req.user.companyId, req.params.id));
+  res.json(await companyService.resendInvite(req.user.companyId, req.params.id, publicBaseUrl(req)));
 }
 
 async function cancelInvite(req, res) {
