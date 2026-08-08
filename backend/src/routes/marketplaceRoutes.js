@@ -15,6 +15,7 @@ function parseFilters(req) {
   const f = { ...parsed.data };
   f.certifications = f.certifications ? f.certifications.split(',').map((s) => s.trim()).filter(Boolean) : [];
   f.verified = f.verified === 'true';
+  f.promo = f.promo === 'true';
   // Um comprador nunca vê produtos da própria empresa.
   if (req.user.role === 'COMPRADOR') f.excludeSupplierId = req.user.companyId;
   return f;

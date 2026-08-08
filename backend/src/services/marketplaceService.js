@@ -31,6 +31,7 @@ function buildWhere(f) {
     if (f.maxPrice != null) where.unitPrice.lte = f.maxPrice;
   }
   if (f.certifications?.length) where.certifications = { hasSome: f.certifications };
+  if (f.promo) where.promoPrice = { not: null };
   if (f.verified) where.supplier = { is: { verified: true } };
   if (f.excludeSupplierId) where.supplierId = { not: f.excludeSupplierId };
   if (f.q) {
@@ -79,7 +80,7 @@ async function search(filters, { userId } = {}) {
 // Facetas (contagens) para os filtros. Cada faceta ignora o seu próprio filtro
 // para continuar a mostrar todas as opções disponíveis.
 async function facets(filters) {
-  const [byCategory, byKind, byCountry, certRows] = await Promise.all([
+  const [byCategory, byKind, byCountry, certRows, priceAgg] = await Promise.all([
     prisma.product.groupBy({
       by: ['category'], where: buildWhere({ ...filters, category: undefined }),
       _count: { _all: true }, orderBy: { _count: { category: 'desc' } },
@@ -93,6 +94,11 @@ async function facets(filters) {
     prisma.product.findMany({
       where: buildWhere({ ...filters, certifications: undefined }), select: { certifications: true },
     }),
+    // Limites de preço (ignora o próprio filtro de preço) para o slider/hint.
+    prisma.product.aggregate({
+      where: buildWhere({ ...filters, minPrice: undefined, maxPrice: undefined }),
+      _min: { unitPrice: true }, _max: { unitPrice: true },
+    }),
   ]);
 
   // Certificações são um array por produto — conta-se em memória.
@@ -104,6 +110,7 @@ async function facets(filters) {
     kinds: byKind.map((k) => ({ name: k.kind, count: k._count._all })),
     countries: byCountry.filter((c) => c.country).map((c) => ({ name: c.country, count: c._count._all })),
     certifications: [...certCount.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
+    priceBounds: { min: Number(priceAgg._min.unitPrice) || 0, max: Number(priceAgg._max.unitPrice) || 0 },
   };
 }
 

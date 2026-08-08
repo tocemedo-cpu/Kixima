@@ -157,6 +157,7 @@ const marketplaceSearchSchema = z.object({
   certifications: z.string().max(200).optional(),
   availability: z.string().max(40).optional(),
   verified: z.enum(['true', 'false']).optional(),
+  promo: z.enum(['true', 'false']).optional(),
   country: z.string().max(60).optional(),
   province: z.string().max(60).optional(),
   city: z.string().max(60).optional(),
