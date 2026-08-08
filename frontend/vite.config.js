@@ -1,4 +1,5 @@
-import { defineConfig } from 'vite';
+/// <reference types="vitest/config" />
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // KIXIMA — frontend dev server. A API do backend corre em http://localhost:4000
@@ -26,5 +27,11 @@ export default defineConfig({
         },
       },
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.js',
+    css: false,
   },
 });
