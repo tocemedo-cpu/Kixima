@@ -50,7 +50,8 @@ export default function Catalog() {
   const [showCompare, setShowCompare] = useState(false);
 
   useEffect(() => {
-    api.get('/api/catalog').then(setProducts).catch((e) => setError(e.message));
+    // Secção Produtos: apenas produtos (os serviços têm a sua própria secção).
+    api.get('/api/catalog', { kind: 'PRODUTO' }).then(setProducts).catch((e) => setError(e.message));
   }, []);
 
   // Sempre que um filtro muda, volta à primeira página.

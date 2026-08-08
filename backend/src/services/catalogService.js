@@ -12,11 +12,14 @@ function slugify(name, hint) {
   return `${base || 'item'}-${String(hint).slice(0, 6)}`;
 }
 
-async function listCatalog({ category, search, supplierId, excludeSupplierId } = {}) {
+async function listCatalog({ category, search, supplierId, excludeSupplierId, kind } = {}) {
   return prisma.product.findMany({
     where: {
       active: true,
       ...(category ? { category } : {}),
+      // PRODUTO vs SERVICO — a página de Produtos pede kind=PRODUTO e a de
+      // Serviços kind=SERVICO; sem o parâmetro, devolve ambos (Explorar/geral).
+      ...(kind === 'PRODUTO' || kind === 'SERVICO' ? { kind } : {}),
       ...(supplierId ? { supplierId } : {}),
       // Um comprador não vê (nem compra) produtos da própria empresa.
       ...(excludeSupplierId ? { supplierId: { not: excludeSupplierId } } : {}),
