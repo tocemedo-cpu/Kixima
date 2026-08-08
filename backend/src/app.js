@@ -3,6 +3,9 @@
 // para que os testes possam importar `app` sem abrir uma porta real.
 
 require('express-async-errors');
+// Inicializa o Sentry o mais cedo possível (no-op se SENTRY_DSN não estiver
+// definido). Antes dos outros requires para instrumentar o máximo possível.
+require('./config/sentry');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');

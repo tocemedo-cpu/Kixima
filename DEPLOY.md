@@ -96,3 +96,8 @@ Isto cria as 5 personas de demonstração + catálogo, ordens, faturas e documen
 - **Domínio próprio:** podes ligar `app.kixima.co.ao` em Settings → Custom Domains.
 - **Email real:** define `EMAIL_PROVIDER=smtp` + `SMTP_*` para as notificações
   saírem por email em vez de irem só para o log.
+- **Rastreio de erros (Sentry):** cria um projeto no Sentry e define, no Render →
+  Environment, `SENTRY_DSN` (backend). Para o browser, define também o build-arg
+  `VITE_SENTRY_DSN` (frontend). Sem estas variáveis o rastreio fica desligado e a
+  app corre normalmente; com elas, os erros de servidor (5xx) e as falhas de UI
+  passam a ser reportados automaticamente.

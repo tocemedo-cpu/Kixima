@@ -8,6 +8,10 @@
 # ---------------------------------------------------------------------------
 FROM node:20-alpine AS frontend
 WORKDIR /fe
+# DSN do Sentry do frontend (opcional). O Vite embute VITE_* no build; define
+# este build-arg no Render (Environment) para ativar o rastreio no browser.
+ARG VITE_SENTRY_DSN=""
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ ./

@@ -3,6 +3,7 @@
 
 const config = require('../config/env');
 const logger = require('../config/logger');
+const { captureException } = require('../config/sentry');
 const { AppError } = require('../utils/errors');
 
 // eslint-disable-next-line no-unused-vars
@@ -10,6 +11,7 @@ function errorHandler(err, req, res, next) {
   if (err instanceof AppError) {
     if (err.statusCode >= 500) {
       logger.error(err.message, { code: err.code, stack: err.stack });
+      captureException(err, req); // erros de servidor (5xx) — para o Sentry
     } else {
       logger.warn(err.message, { code: err.code, path: req.path });
     }
@@ -49,6 +51,7 @@ function errorHandler(err, req, res, next) {
   }
 
   logger.error('Erro não tratado', { message: err.message, stack: err.stack });
+  captureException(err, req); // erro inesperado — sempre reportado ao Sentry
 
   return res.status(500).json({
     error: {

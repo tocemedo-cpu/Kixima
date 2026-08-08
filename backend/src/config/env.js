@@ -74,6 +74,13 @@ const config = {
   },
 
   logLevel: process.env.LOG_LEVEL || 'info',
+
+  // Rastreio de erros (Sentry) — inativo se SENTRY_DSN não estiver definido.
+  sentry: {
+    dsn: process.env.SENTRY_DSN || '',
+    // Amostragem de performance (0 = desligado). Erros são sempre capturados.
+    tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0,
+  },
 };
 
 module.exports = config;
