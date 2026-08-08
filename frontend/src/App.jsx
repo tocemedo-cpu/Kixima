@@ -1,4 +1,5 @@
 // src/App.jsx
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import { RequireAuth, RequireRole } from './auth/RequireAuth';
@@ -6,76 +7,85 @@ import { ROLE_HOME } from './domain';
 import AppLayout from './components/AppLayout';
 import { CartProvider } from './pages/comprador/CartContext';
 
+// A página de login fica eager (é o primeiro ecrã) — evita um flash de "a
+// carregar" no arranque. Todas as outras páginas são carregadas a pedido
+// (code-splitting): cada rota é um chunk próprio, buscado só quando visitada.
 import LoginPage from './pages/shared/LoginPage';
-import Register from './pages/shared/Register';
-import AcceptInvite from './pages/shared/AcceptInvite';
-import Notifications from './pages/shared/Notifications';
-import Profile from './pages/shared/Profile';
-import Help from './pages/shared/Help';
-import OrderDetail from './pages/shared/OrderDetail';
-import ModulePlaceholder from './pages/shared/ModulePlaceholder';
-import Security from './pages/shared/Security';
-import PrintableDocument from './pages/shared/PrintableDocument';
 
-import CompradorHome from './pages/comprador/Home';
-import Catalog from './pages/comprador/Catalog';
-import ItemDetail from './pages/comprador/ItemDetail';
-import Cart from './pages/comprador/Cart';
-import Orders from './pages/comprador/Orders';
-import BuyerQuotes from './pages/comprador/Quotes';
-import Services from './pages/comprador/Services';
-import Explore from './pages/comprador/Explore';
-import ServiceDetail from './pages/comprador/ServiceDetail';
-import Checkout from './pages/comprador/Checkout';
-import Payments from './pages/comprador/Payments';
-import Deliveries from './pages/comprador/Deliveries';
-import Receptions from './pages/comprador/Receptions';
-import Suppliers from './pages/comprador/Suppliers';
-import Activities from './pages/comprador/Activities';
+const Register = lazy(() => import('./pages/shared/Register'));
+const AcceptInvite = lazy(() => import('./pages/shared/AcceptInvite'));
+const Notifications = lazy(() => import('./pages/shared/Notifications'));
+const Profile = lazy(() => import('./pages/shared/Profile'));
+const Help = lazy(() => import('./pages/shared/Help'));
+const OrderDetail = lazy(() => import('./pages/shared/OrderDetail'));
+const ModulePlaceholder = lazy(() => import('./pages/shared/ModulePlaceholder'));
+const Security = lazy(() => import('./pages/shared/Security'));
+const PrintableDocument = lazy(() => import('./pages/shared/PrintableDocument'));
 
-import CompanyAdminHome from './pages/companyAdmin/Home';
-import Approvals from './pages/companyAdmin/Approvals';
-import Users from './pages/companyAdmin/Users';
-import CompanyProfile from './pages/companyAdmin/CompanyProfile';
-import Contracts from './pages/companyAdmin/Contracts';
-import Organization from './pages/companyAdmin/Organization';
-import CompanyDocuments from './pages/companyAdmin/CompanyDocuments';
-import CompanyPermissions from './pages/companyAdmin/Permissions';
-import CompanyReports from './pages/companyAdmin/Reports';
-import CompanyActivities from './pages/companyAdmin/Activities';
-import CompanySettings from './pages/companyAdmin/Settings';
+const CompradorHome = lazy(() => import('./pages/comprador/Home'));
+const Catalog = lazy(() => import('./pages/comprador/Catalog'));
+const ItemDetail = lazy(() => import('./pages/comprador/ItemDetail'));
+const Cart = lazy(() => import('./pages/comprador/Cart'));
+const Orders = lazy(() => import('./pages/comprador/Orders'));
+const BuyerQuotes = lazy(() => import('./pages/comprador/Quotes'));
+const Services = lazy(() => import('./pages/comprador/Services'));
+const Explore = lazy(() => import('./pages/comprador/Explore'));
+const ServiceDetail = lazy(() => import('./pages/comprador/ServiceDetail'));
+const Checkout = lazy(() => import('./pages/comprador/Checkout'));
+const Payments = lazy(() => import('./pages/comprador/Payments'));
+const Deliveries = lazy(() => import('./pages/comprador/Deliveries'));
+const Receptions = lazy(() => import('./pages/comprador/Receptions'));
+const Suppliers = lazy(() => import('./pages/comprador/Suppliers'));
+const Activities = lazy(() => import('./pages/comprador/Activities'));
 
-import FornecedorHome from './pages/fornecedor/Home';
-import CatalogManage from './pages/fornecedor/CatalogManage';
-import OrdersReceived from './pages/fornecedor/OrdersReceived';
-import SupplierInvoices from './pages/fornecedor/Invoices';
-import SupplierPayments from './pages/fornecedor/Payments';
-import Inventory from './pages/fornecedor/Inventory';
-import Reports from './pages/fornecedor/Reports';
-import ProductRanking from './pages/fornecedor/ProductRanking';
-import SupplierDocuments from './pages/fornecedor/Documents';
-import CatalogInsights from './pages/fornecedor/CatalogInsights';
-import OrderHistory from './pages/fornecedor/OrderHistory';
-import Wallet from './pages/fornecedor/Wallet';
-import StockMovements from './pages/fornecedor/StockMovements';
-import Kits from './pages/fornecedor/Kits';
-import SupplierQuotes from './pages/fornecedor/SupplierQuotes';
-import SupplierCompanyProfile from './pages/fornecedor/CompanyProfile';
-import CatalogImport from './pages/fornecedor/CatalogImport';
+const CompanyAdminHome = lazy(() => import('./pages/companyAdmin/Home'));
+const Approvals = lazy(() => import('./pages/companyAdmin/Approvals'));
+const Users = lazy(() => import('./pages/companyAdmin/Users'));
+const CompanyProfile = lazy(() => import('./pages/companyAdmin/CompanyProfile'));
+const Contracts = lazy(() => import('./pages/companyAdmin/Contracts'));
+const Organization = lazy(() => import('./pages/companyAdmin/Organization'));
+const CompanyDocuments = lazy(() => import('./pages/companyAdmin/CompanyDocuments'));
+const CompanyPermissions = lazy(() => import('./pages/companyAdmin/Permissions'));
+const CompanyReports = lazy(() => import('./pages/companyAdmin/Reports'));
+const CompanyActivities = lazy(() => import('./pages/companyAdmin/Activities'));
+const CompanySettings = lazy(() => import('./pages/companyAdmin/Settings'));
 
-import FinanceiroHome from './pages/financeiro/Home';
-import PendingInvoices from './pages/financeiro/PendingInvoices';
-import PaymentHistory from './pages/financeiro/PaymentHistory';
+const FornecedorHome = lazy(() => import('./pages/fornecedor/Home'));
+const CatalogManage = lazy(() => import('./pages/fornecedor/CatalogManage'));
+const OrdersReceived = lazy(() => import('./pages/fornecedor/OrdersReceived'));
+const SupplierInvoices = lazy(() => import('./pages/fornecedor/Invoices'));
+const SupplierPayments = lazy(() => import('./pages/fornecedor/Payments'));
+const Inventory = lazy(() => import('./pages/fornecedor/Inventory'));
+const Reports = lazy(() => import('./pages/fornecedor/Reports'));
+const ProductRanking = lazy(() => import('./pages/fornecedor/ProductRanking'));
+const SupplierDocuments = lazy(() => import('./pages/fornecedor/Documents'));
+const CatalogInsights = lazy(() => import('./pages/fornecedor/CatalogInsights'));
+const OrderHistory = lazy(() => import('./pages/fornecedor/OrderHistory'));
+const Wallet = lazy(() => import('./pages/fornecedor/Wallet'));
+const StockMovements = lazy(() => import('./pages/fornecedor/StockMovements'));
+const Kits = lazy(() => import('./pages/fornecedor/Kits'));
+const SupplierQuotes = lazy(() => import('./pages/fornecedor/SupplierQuotes'));
+const SupplierCompanyProfile = lazy(() => import('./pages/fornecedor/CompanyProfile'));
+const CatalogImport = lazy(() => import('./pages/fornecedor/CatalogImport'));
 
-import AdminHome from './pages/adminSistema/Home';
-import AdminPermissions from './pages/adminSistema/Permissions';
-import SystemActivities from './pages/adminSistema/SystemActivities';
-import DueDiligence from './pages/adminSistema/DueDiligence';
-import PolicyManagement from './pages/adminSistema/PolicyManagement';
-import AdminContracts from './pages/adminSistema/Contracts';
-import Companies from './pages/adminSistema/Companies';
-import ErpIntegrations from './pages/adminSistema/ErpIntegrations';
-import PlatformFees from './pages/adminSistema/PlatformFees';
+const FinanceiroHome = lazy(() => import('./pages/financeiro/Home'));
+const PendingInvoices = lazy(() => import('./pages/financeiro/PendingInvoices'));
+const PaymentHistory = lazy(() => import('./pages/financeiro/PaymentHistory'));
+
+const AdminHome = lazy(() => import('./pages/adminSistema/Home'));
+const AdminPermissions = lazy(() => import('./pages/adminSistema/Permissions'));
+const SystemActivities = lazy(() => import('./pages/adminSistema/SystemActivities'));
+const DueDiligence = lazy(() => import('./pages/adminSistema/DueDiligence'));
+const PolicyManagement = lazy(() => import('./pages/adminSistema/PolicyManagement'));
+const AdminContracts = lazy(() => import('./pages/adminSistema/Contracts'));
+const Companies = lazy(() => import('./pages/adminSistema/Companies'));
+const ErpIntegrations = lazy(() => import('./pages/adminSistema/ErpIntegrations'));
+const PlatformFees = lazy(() => import('./pages/adminSistema/PlatformFees'));
+
+// Ecrã de recurso enquanto o chunk de uma rota é carregado.
+function PageLoading() {
+  return <div style={{ minHeight: '50vh', display: 'grid', placeItems: 'center', color: 'var(--ink-400,#888)' }}>A carregar…</div>;
+}
 
 function Landing() {
   const { user, loading } = useAuth();
@@ -95,6 +105,7 @@ function Shell() {
 
 export default function App() {
   return (
+    <Suspense fallback={<PageLoading />}>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<Register />} />
@@ -207,5 +218,6 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="*" element={<Landing />} />
     </Routes>
+    </Suspense>
   );
 }

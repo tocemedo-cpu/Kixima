@@ -15,4 +15,16 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Separa as bibliotecas de terceiros em chunks próprios e cacheáveis —
+        // mudam raramente, pelo que o browser reutiliza-os entre deploys.
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-sentry': ['@sentry/react'],
+        },
+      },
+    },
+  },
 });
