@@ -109,6 +109,22 @@ describe('Ajuda & Suporte — painel do Administrador do Sistema', () => {
     expect(user.body.channels.every((c) => c.imageUrl && c.imageUrl.startsWith('/help/'))).toBe(true);
   });
 
+  test('override morto (upload efémero apagado num deploy) volta à imagem por omissão', async () => {
+    // Simula um upload antigo cujo ficheiro já não existe no disco (o Render
+    // apaga /api/uploads a cada deploy). O registo persiste na BD, mas o URL
+    // aponta para um ficheiro inexistente.
+    await prisma.supportCategoryImage.upsert({
+      where: { key: 'contratos' },
+      create: { key: 'contratos', imageUrl: '/api/uploads/support-contratos-morto.jpg' },
+      update: { imageUrl: '/api/uploads/support-contratos-morto.jpg' },
+    });
+    const ov = await auth(token).get('/api/support/overview');
+    const cat = ov.body.categories.find((c) => c.key === 'contratos');
+    // Não devolve o URL morto — recupera para a imagem por omissão.
+    expect(cat.imageUrl).toBe('/help/contratos.jpg');
+    await prisma.supportCategoryImage.deleteMany({ where: { key: 'contratos' } });
+  });
+
   test('admin gere todos os locais de imagem (hero, atalhos, canais…)', async () => {
     const ov = await auth(adminToken).get('/api/support/admin/overview');
     expect(ov.body.imageSlots.length).toBeGreaterThanOrEqual(15);

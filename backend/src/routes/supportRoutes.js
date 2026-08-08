@@ -2,6 +2,8 @@
 // Ajuda & Suporte — categorias/canais (conteúdo informativo) e pedidos de
 // suporte (tickets) do próprio utilizador, persistidos no banco.
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 const { upload } = require('../config/upload');
@@ -10,6 +12,22 @@ const prisma = require('../config/database');
 
 const router = express.Router();
 router.use(authenticate);
+
+// Pasta dos uploads locais (mesmo cálculo do storageService).
+const uploadsDir = path.join(__dirname, '../../uploads');
+
+// Um override do admin só conta se ainda existir. Uploads locais (/api/uploads/…)
+// ficam em disco efémero — perdem-se em cada deploy no Render. Se o ficheiro já
+// não existe, ignoramos o override e voltamos à imagem por omissão (auto-
+// recuperação, sem intervenção do admin). URLs http(s)/S3 são consideradas
+// persistentes e mantêm-se.
+function overrideIsAlive(url) {
+  if (!url) return false;
+  if (url.startsWith('/api/uploads/')) {
+    return fs.existsSync(path.join(uploadsDir, url.replace('/api/uploads/', '')));
+  }
+  return true;
+}
 
 // Base de conhecimento (Perguntas Frequentes) — conteúdo real e visível na
 // página. Cada categoria contém apenas as perguntas que existem de facto; a
@@ -104,8 +122,11 @@ const DEFAULT_IMAGES = {
 
 async function loadImageMap() {
   const rows = await prisma.supportCategoryImage.findMany();
-  const fromDb = Object.fromEntries(rows.map((i) => [i.key, i.imageUrl]));
-  // Defaults primeiro; o upload do admin (fromDb) sobrepõe-se.
+  const fromDb = {};
+  // Só mantém overrides cujo ficheiro ainda existe; os "mortos" (upload efémero
+  // apagado num deploy) caem para a imagem por omissão.
+  for (const r of rows) if (overrideIsAlive(r.imageUrl)) fromDb[r.key] = r.imageUrl;
+  // Defaults primeiro; o upload (válido) do admin sobrepõe-se.
   return { ...DEFAULT_IMAGES, ...fromDb };
 }
 
