@@ -8,11 +8,11 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // App: ligação via pooler do Supabase (PgBouncer, porta 6543).
+  // App: pooler de TRANSAÇÃO do Supabase (porta 6543, pgbouncer=true).
   url      = env("DATABASE_URL")
-  // Migrações/DDL: ligação DIRETA (porta 5432) — o PgBouncer em modo transação
-  // não suporta as operações que o `prisma migrate` precisa. Em dev/teste pode
-  // ser igual ao DATABASE_URL (Postgres local direto).
+  // Migrações/DDL: pooler de SESSÃO (porta 5432, mesmo host `...pooler.supabase.com`,
+  // IPv4). NÃO usar o host direto `db.<ref>.supabase.co` (só IPv6 → P1001). Em
+  // dev/teste local pode ser igual ao DATABASE_URL (Postgres local direto).
   directUrl = env("DIRECT_URL")
 }
 

@@ -25,16 +25,22 @@ git checkout main && git merge claude/kixima-app-work-gmz6jk && git push origin 
 2. Seleciona este repositório (e a branch com o código).
 3. O Render lê o `render.yaml` e propõe um web service chamado **kixima**. Confirma.
 
-### 3. Define a base de dados (segredo)
-No serviço criado → **Environment** → a variável `DATABASE_URL` está marcada como
-"a definir". Cola a string do **pooler** do Supabase (Session mode, porta 5432):
+### 3. Define a base de dados (segredos)
+No serviço → **Environment**. Define **duas** variáveis, ambas com o host do
+**pooler** (`...pooler.supabase.com`, IPv4). Copia-as em Supabase → Project
+Settings → Database → **Connect**:
 
 ```
-postgresql://postgres.zbaybvxycwkyjkndjhly:A_TUA_DB_PASSWORD@aws-0-eu-central-1.pooler.supabase.com:5432/postgres
+# App — Transaction pooler (porta 6543):
+DATABASE_URL=postgresql://postgres.zbaybvxycwkyjkndjhly:A_TUA_DB_PASSWORD@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true
+
+# Migrações — Session pooler (porta 5432, MESMO host do pooler):
+DIRECT_URL=postgresql://postgres.zbaybvxycwkyjkndjhly:A_TUA_DB_PASSWORD@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require
 ```
 
-> Substitui `A_TUA_DB_PASSWORD` pela tua Database password. **Não** a ponhas no
-> `render.yaml` nem no git — só neste campo do dashboard.
+> ⚠️ **Não uses** o host direto `db.<ref>.supabase.co:5432` — é **só IPv6** e no
+> Render dá `P1001: Can't reach database server`. Usa sempre o host `pooler`.
+> Substitui `A_TUA_DB_PASSWORD` pela tua Database password (só no dashboard, nunca no git).
 
 O `JWT_SECRET` é **gerado automaticamente** pelo Render. As restantes variáveis já
 vêm definidas no `render.yaml`.
@@ -50,8 +56,9 @@ Quando ficar "Live", abre o URL do serviço (algo como `https://kixima.onrender.
 
 ### 4b. Migrações (Supabase) — passo único de baseline ⚠️
 O projeto usa **migrações Prisma** (SQL versionado, seguro) em vez de `db push`.
-A app liga-se pelo **pooler** (`DATABASE_URL`, porta 6543) e as migrações usam a
-**ligação direta** (`DIRECT_URL`, porta 5432) — define ambas no Render (secção 3).
+A app usa o **pooler de transação** (`DATABASE_URL`, porta 6543) e as migrações o
+**pooler de sessão** (`DIRECT_URL`, porta 5432) — ambos no host `...pooler.supabase.com`
+(IPv4). Nunca o host direto `db.<ref>.supabase.co` (IPv6, dá `P1001`). Ver secção 3.
 
 Como a tua base **já tem as tabelas** (foram criadas por `db push`), é preciso
 fazer o **baseline UMA única vez** — dizer ao Prisma que a migração inicial
