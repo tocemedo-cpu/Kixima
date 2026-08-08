@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Icon, Stars } from '../../components/icons';
+import ProductCover from '../../components/ProductCover';
 import { formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
 
@@ -219,6 +220,10 @@ function initials(name = '') {
 function ExploreCard({ p, onFav, onOpen }) {
   return (
     <div className="exp-card">
+      <div className="exp-media" onClick={onOpen} role="button" tabIndex={0}>
+        <ProductCover imageUrl={p.imageUrl} category={p.category} name={p.name} caption={false} />
+        <span className="exp-kind">{KIND_LABEL[p.kind] || ''}</span>
+      </div>
       <div className="exp-top">
         <span className="exp-logo">{p.supplier?.logoUrl ? <img src={p.supplier.logoUrl} alt={p.supplier.name} /> : initials(p.supplier?.name)}</span>
         <button className={`svc-fav${p.isFavorite ? ' on' : ''}`} onClick={() => onFav(p)} aria-label="Favorito">♥</button>
