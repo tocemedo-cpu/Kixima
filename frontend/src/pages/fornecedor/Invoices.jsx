@@ -5,22 +5,25 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import DataTable from '../../components/DataTable';
+import { Pagination } from '../../components/BuyerUI';
 import Badge from '../../components/Badge';
 import { INVOICE_STATUS, formatDate, formatMoney } from '../../domain';
 
 export default function SupplierInvoices() {
-  const [orders, setOrders] = useState(null);
+  const [data, setData] = useState(null);
+  const [page, setPage] = useState(1);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get('/api/purchase-orders').then(setOrders).catch((e) => setError(e.message));
-  }, []);
+    setError('');
+    // Paginação server-side: só ordens já faturadas.
+    api.get('/api/purchase-orders', { invoiced: 'true', page, limit: 15 })
+      .then(setData).catch((e) => setError(e.message));
+  }, [page]);
 
   if (error) return <ErrorBanner message={error} />;
-  if (!orders) return <Loading />;
-
-  const invoiced = orders.filter((o) => o.invoice);
+  if (!data) return <Loading />;
 
   return (
     <div>
@@ -31,7 +34,7 @@ export default function SupplierInvoices() {
 
       <div className="card">
         <DataTable
-          rows={invoiced}
+          rows={data.items}
           rowKey="id"
           onRowClick={(row) => navigate(`/fornecedor/ordens/${row.id}`)}
           emptyTitle="Sem faturas ainda"
@@ -48,6 +51,9 @@ export default function SupplierInvoices() {
             },
           ]}
         />
+        <div style={{ padding: '10px 14px' }}>
+          <Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} unit="faturas" />
+        </div>
       </div>
     </div>
   );

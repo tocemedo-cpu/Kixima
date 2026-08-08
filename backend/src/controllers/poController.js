@@ -15,6 +15,9 @@ async function list(req, res) {
     companyId: req.user.companyId,
     role: req.user.role,
     status: req.query.status,
+    invoiced: req.query.invoiced === 'true',
+    page: req.query.page,
+    limit: req.query.limit,
   });
   res.json(orders);
 }

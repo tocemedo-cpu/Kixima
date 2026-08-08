@@ -127,18 +127,31 @@ async function getPurchaseOrder(id, user = null) {
   return po;
 }
 
-async function listPurchaseOrders({ companyId, role, status }) {
+async function listPurchaseOrders({ companyId, role, status, invoiced, page, limit }) {
   const where = { ...(status ? { status } : {}) };
   if (role === 'FORNECEDOR' || role === 'FINANCEIRO_FORNECEDOR') {
     where.supplierCompanyId = companyId;
   } else if (companyId) {
     where.OR = [{ buyerCompanyId: companyId }, { supplierCompanyId: companyId }];
   }
-  return prisma.purchaseOrder.findMany({
-    where,
-    include: { items: true, invoice: { include: { payment: true } } },
-    orderBy: { createdAt: 'desc' },
-  });
+  // Só ordens que já têm fatura (ecrã de Faturas).
+  if (invoiced) where.invoice = { isNot: null };
+
+  const include = { items: true, invoice: { include: { payment: true } } };
+  const orderBy = { createdAt: 'desc' };
+
+  // Sem `page` → devolve o array completo (compatível com os consumidores
+  // existentes). Com `page` → paginação server-side com envelope.
+  if (!page) {
+    return prisma.purchaseOrder.findMany({ where, include, orderBy });
+  }
+  const take = Math.min(Math.max(1, Number(limit) || 15), 50);
+  const current = Math.max(1, Number(page));
+  const [total, rows] = await Promise.all([
+    prisma.purchaseOrder.count({ where }),
+    prisma.purchaseOrder.findMany({ where, include, orderBy, skip: (current - 1) * take, take }),
+  ]);
+  return { items: rows, total, page: current, pages: Math.max(1, Math.ceil(total / take)), limit: take };
 }
 
 // --- 2. Aprovação (Company Admin — ponto único) -----------------------------

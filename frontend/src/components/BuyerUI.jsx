@@ -112,3 +112,36 @@ export function EmptyRow({ children = 'Sem registos.' }) {
   const tr = useT();
   return <div className="bz-empty">{tr(children)}</div>;
 }
+
+// [1,2,3,…,N] com reticências, centrado na página atual.
+function pageNumbers(cur, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const out = [1];
+  const s = Math.max(2, cur - 1);
+  const e = Math.min(total - 1, cur + 1);
+  if (s > 2) out.push('…');
+  for (let i = s; i <= e; i++) out.push(i);
+  if (e < total - 1) out.push('…');
+  out.push(total);
+  return out;
+}
+
+// Paginação reutilizável (server-side): recebe page/pages/total e um onPage.
+// Não renderiza nada se só houver uma página (mostra só a contagem, se dada).
+export function Pagination({ page, pages, total, onPage, unit = 'registos' }) {
+  if (!pages || pages <= 1) {
+    return total != null && total > 0
+      ? <div className="bz-pagcount">{total.toLocaleString('pt-PT')} {unit}</div>
+      : null;
+  }
+  return (
+    <div className="bz-pag">
+      <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>← Anterior</button>
+      {pageNumbers(page, pages).map((n, i) => (n === '…'
+        ? <span key={`e${i}`} className="bz-pag-ell">…</span>
+        : <button key={n} className={`bz-pagn${n === page ? ' on' : ''}`} onClick={() => onPage(n)}>{n}</button>))}
+      <button className="btn btn-ghost btn-sm" disabled={page >= pages} onClick={() => onPage(page + 1)}>Próximo →</button>
+      {total != null ? <span className="bz-pagcount">{total.toLocaleString('pt-PT')} {unit}</span> : null}
+    </div>
+  );
+}

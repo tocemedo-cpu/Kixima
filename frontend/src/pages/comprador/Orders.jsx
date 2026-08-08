@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
-import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
+import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow, Pagination } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { PO_STATUS, formatMoney, formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
@@ -19,14 +19,18 @@ export default function Orders() {
   const nav = useNavigate();
   const [tab, setTab] = useState('');
   const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
+  // Volta à 1ª página ao mudar de filtro/pesquisa.
+  useEffect(() => { setPage(1); }, [tab, q]);
+
   useEffect(() => {
     setError('');
-    api.get('/api/buyer/orders', { status: tab || undefined, q: q || undefined, limit: 25 })
+    api.get('/api/buyer/orders', { status: tab || undefined, q: q || undefined, page, limit: 15 })
       .then(setData).catch((e) => setError(e.message));
-  }, [tab, q]);
+  }, [tab, q, page]);
 
   const k = data?.kpis;
   return (
@@ -76,6 +80,7 @@ export default function Orders() {
                 ))}
             </tbody>
           </table>
+          {data ? <div style={{ padding: '10px 14px' }}><Pagination page={data.page} pages={data.pages} total={data.total} onPage={setPage} unit="ordens" /></div> : null}
         </div>
       )}
     </div>

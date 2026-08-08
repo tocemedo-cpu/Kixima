@@ -119,4 +119,20 @@ describe('Fluxo principal da Purchase Order', () => {
     expect(received.status).toBe(200);
     expect(received.body.status).toBe('RECEBIDA_COM_DIVERGENCIA');
   });
+
+  test('lista de POs: sem page devolve array; com page devolve envelope paginado', async () => {
+    // Compatibilidade: sem paginação continua a devolver um array.
+    const plain = await auth(tokens.fornecedor).get('/api/purchase-orders');
+    expect(Array.isArray(plain.body)).toBe(true);
+
+    // Paginação server-side + filtro invoiced (ecrã de Faturas do fornecedor).
+    const paged = await auth(tokens.fornecedor).get('/api/purchase-orders?invoiced=true&page=1&limit=2');
+    expect(Array.isArray(paged.body)).toBe(false);
+    expect(paged.body).toHaveProperty('total');
+    expect(paged.body).toHaveProperty('pages');
+    expect(paged.body.page).toBe(1);
+    expect(paged.body.items.length).toBeLessThanOrEqual(2);
+    // Todas as ordens devolvidas têm fatura.
+    expect(paged.body.items.every((o) => o.invoice)).toBe(true);
+  });
 });
