@@ -16,6 +16,9 @@
     "db:push": "prisma db push",
     "db:reset": "prisma db push --force-reset",
     "prisma:migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:baseline": "prisma migrate resolve --applied 0_init",
+    "migrate:status": "prisma migrate status",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {

@@ -43,9 +43,33 @@ vêm definidas no `render.yaml`.
 Clica **Create / Deploy**. O build:
 - compila o frontend (`vite build`),
 - gera o Prisma Client,
-- e no arranque corre `prisma db push` → **cria as tabelas no teu Supabase**.
+- e no arranque corre **`prisma migrate deploy`** → aplica as migrações versionadas
+  (pasta `backend/prisma/migrations`) à base de dados, pela ligação DIRETA (`DIRECT_URL`).
 
 Quando ficar "Live", abre o URL do serviço (algo como `https://kixima.onrender.com`).
+
+### 4b. Migrações (Supabase) — passo único de baseline ⚠️
+O projeto usa **migrações Prisma** (SQL versionado, seguro) em vez de `db push`.
+A app liga-se pelo **pooler** (`DATABASE_URL`, porta 6543) e as migrações usam a
+**ligação direta** (`DIRECT_URL`, porta 5432) — define ambas no Render (secção 3).
+
+Como a tua base **já tem as tabelas** (foram criadas por `db push`), é preciso
+fazer o **baseline UMA única vez** — dizer ao Prisma que a migração inicial
+`0_init` já está aplicada, para o `migrate deploy` não tentar recriar tudo:
+
+```bash
+# No Shell do serviço (ou local com o DIRECT_URL do Supabase):
+cd backend && npm run migrate:baseline    # = prisma migrate resolve --applied 0_init
+```
+
+Faz isto **antes** do primeiro deploy com migrações (ou, se o 1º deploy falhar com
+`P3005 database schema is not empty`, corre o comando acima e volta a fazer deploy).
+A partir daí, cada nova migração aplica-se sozinha no deploy.
+
+**Fluxo de futuras alterações ao esquema:** altera `schema.prisma`, gera a migração
+(`npx prisma migrate dev --name a_minha_alteracao` em local com `DIRECT_URL`), faz
+commit da pasta `prisma/migrations/…` e deploy — o `migrate deploy` aplica-a.
+Confirma o estado com `npm run migrate:status`.
 
 ### 5. (Opcional) Dados de exemplo
 No serviço → **Shell**:

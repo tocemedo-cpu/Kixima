@@ -14,3 +14,5 @@ process.env.EMAIL_PROVIDER = process.env.EMAIL_PROVIDER || 'console';
 process.env.LOG_LEVEL = process.env.LOG_LEVEL || 'error';
 process.env.DATABASE_URL =
   process.env.DATABASE_URL || 'postgresql://kixima:kixima@127.0.0.1:5432/kixima_test';
+// Em teste, a ligação direta é a mesma (Postgres local). O schema exige DIRECT_URL.
+process.env.DIRECT_URL = process.env.DIRECT_URL || process.env.DATABASE_URL;
