@@ -89,7 +89,7 @@ const COMPRADOR = [
   { label: 'Home Marketplace', icon: 'home', to: '/comprador', end: true },
   { label: 'Explorar / Pesquisa', icon: 'search', to: '/comprador/explorar' },
   {
-    label: 'Produtos / Serviços', icon: 'catalog', children: [
+    label: 'Catálogo', icon: 'catalog', children: [
       { label: 'Produtos', to: '/comprador/catalogo' },
       { label: 'Serviços', to: '/comprador/servicos' },
     ],

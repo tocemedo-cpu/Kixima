@@ -118,7 +118,7 @@ export default function Services() {
     <div>
       {toast ? <div className="svc-toast">{toast}</div> : null}
 
-      <div className="svc-crumbs">Home <span>›</span> Produtos / Serviços <span>›</span> <strong>Serviços</strong></div>
+      <div className="svc-crumbs">Home <span>›</span> Catálogo <span>›</span> <strong>Serviços</strong></div>
       <h1 className="svc-title">Serviços</h1>
 
       {/* Barra de pesquisa + ações */}

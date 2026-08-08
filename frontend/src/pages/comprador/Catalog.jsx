@@ -142,7 +142,7 @@ export default function Catalog() {
 
   return (
     <div>
-      <Crumbs trail={['Home', 'Produtos / Serviços', 'Produtos']} />
+      <Crumbs trail={['Home', 'Catálogo', 'Produtos']} />
       <PageHead
         title="Produtos"
         actions={(
