@@ -132,10 +132,13 @@ async function verifiedSuppliers(limit = 8) {
   return withRating.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 }
 
-// Comparação de fornecedores para um produto (só comprador). Reúne até 5 ofertas
-// do MESMO item (mesmo código UNSPSC; senão, mesma categoria), de fornecedores
-// diferentes, para comparar preço, prazo, material, garantia, norma, origem,
-// incoterm e avaliação. Exclui os produtos da própria empresa do comprador.
+// Comparação de fornecedores para um produto (só comprador). Ao clicar num
+// produto, o sistema faz uma VARREDURA e encontra fornecedores que vendem o
+// MESMO produto — mesmo código UNSPSC ou mesmo nome (sem acentos/caixa). Nunca
+// agrupa por categoria genérica (misturaria produtos diferentes). Devolve UMA
+// oferta por fornecedor (a mais barata), até 5, para comparar preço, prazo,
+// material, garantia, norma, origem, incoterm e avaliação. Exclui os produtos
+// da própria empresa do comprador.
 const COMPARE_SELECT = {
   id: true, name: true, unitPrice: true, promoPrice: true, currency: true,
   leadTimeDays: true, material: true, warranty: true, standard: true, keySpec: true,
@@ -144,6 +147,11 @@ const COMPARE_SELECT = {
   supplier: { select: { id: true, name: true, verified: true, city: true, country: true } },
 };
 
+// Normaliza um nome para comparação: sem acentos, caixa baixa, espaços únicos.
+const normName = (s) => String(s || '')
+  .normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase().replace(/\s+/g, ' ').trim();
+
 async function compareSuppliers(productId, { excludeSupplierId } = {}) {
   const base = await prisma.product.findUnique({
     where: { id: productId },
@@ -151,18 +159,32 @@ async function compareSuppliers(productId, { excludeSupplierId } = {}) {
   });
   if (!base) throw new NotFoundError('Produto');
 
-  const where = { active: true };
-  if (base.unspscCode) where.unspscCode = base.unspscCode;
-  else where.category = base.category;
+  // Varredura: mesmo produto = mesmo código UNSPSC OU mesmo nome.
+  const sameProduct = [{ name: { equals: base.name, mode: 'insensitive' } }];
+  if (base.unspscCode) sameProduct.unshift({ unspscCode: base.unspscCode });
+
+  const where = { active: true, OR: sameProduct };
   if (excludeSupplierId) where.supplierId = { not: excludeSupplierId };
 
   const rows = await prisma.product.findMany({
-    where, select: COMPARE_SELECT, orderBy: { unitPrice: 'asc' }, take: 5,
+    where, select: COMPARE_SELECT, orderBy: { unitPrice: 'asc' }, take: 40,
   });
-  // Preço efetivo (promo se houver) e ordenação por esse valor.
-  const offers = rows
-    .map((o) => ({ ...o, effectivePrice: Number(o.promoPrice ?? o.unitPrice) || 0 }))
-    .sort((a, b) => a.effectivePrice - b.effectivePrice);
+
+  // Defesa extra no nome (acentos) + preço efetivo (promo se houver).
+  const baseName = normName(base.name);
+  const matches = rows
+    .filter((o) => (base.unspscCode && o.unspscCode === base.unspscCode) || normName(o.name) === baseName)
+    .map((o) => ({ ...o, effectivePrice: Number(o.promoPrice ?? o.unitPrice) || 0 }));
+
+  // A comparação é entre FORNECEDORES: uma oferta por fornecedor (a mais barata).
+  const bySupplier = new Map();
+  for (const o of matches) {
+    const cur = bySupplier.get(o.supplier.id);
+    if (!cur || o.effectivePrice < cur.effectivePrice) bySupplier.set(o.supplier.id, o);
+  }
+  const offers = [...bySupplier.values()]
+    .sort((a, b) => a.effectivePrice - b.effectivePrice)
+    .slice(0, 5);
 
   return {
     base: { name: base.name, unspscCode: base.unspscCode, unspscTitle: base.unspscTitle, category: base.category },

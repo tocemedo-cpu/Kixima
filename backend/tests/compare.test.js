@@ -68,6 +68,52 @@ describe('Comparar fornecedores', () => {
     expect(res.body.offers.some((o) => o.id === mine.id)).toBe(false);
   });
 
+  test('NÃO mistura produtos diferentes da mesma categoria', async () => {
+    // Outro produto na MESMA categoria mas com código e nome diferentes →
+    // não é "o mesmo produto" e não pode entrar na comparação.
+    const other = await prisma.product.create({
+      data: {
+        supplierId: created.companies[0], name: 'Flange de aço', category: 'Válvulas e Conexões',
+        unspscCode: 'CMP-OUTRO-9', unitPrice: 100000, currency: 'AOA', active: true,
+      },
+    });
+    created.products.push(other.id);
+    const res = await auth(compToken).get(`/api/marketplace/compare?productId=${created.products[0]}`);
+    expect(res.body.offers.some((o) => o.id === other.id)).toBe(false);
+  });
+
+  test('sem código UNSPSC, encontra fornecedores pelo MESMO nome (varredura por nome)', async () => {
+    // Dois fornecedores com o mesmo produto (mesmo nome), sem código UNSPSC.
+    const p1 = await prisma.product.create({
+      data: { supplierId: created.companies[0], name: 'Bomba Dosadora XPTO-9', category: 'Bombas e Compressores', unitPrice: 300000, currency: 'AOA', active: true },
+    });
+    const p2 = await prisma.product.create({
+      data: { supplierId: created.companies[1], name: 'bomba dosadora xpto-9', category: 'Bombas e Compressores', unitPrice: 280000, currency: 'AOA', active: true },
+    });
+    created.products.push(p1.id, p2.id);
+    const res = await auth(compToken).get(`/api/marketplace/compare?productId=${p1.id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.count).toBe(2);
+    expect(res.body.offers.map((o) => o.id).sort()).toEqual([p1.id, p2.id].sort());
+  });
+
+  test('devolve UMA oferta por fornecedor (a mais barata)', async () => {
+    // O fornecedor A publica uma 2ª oferta do MESMO item, mais barata → na
+    // comparação só entra essa (uma linha por fornecedor).
+    const cheaper = await prisma.product.create({
+      data: {
+        supplierId: created.companies[0], name: 'Válvula de comparação (promo)', category: 'Válvulas e Conexões',
+        unspscCode: CODE, unitPrice: 700000, currency: 'AOA', active: true,
+      },
+    });
+    created.products.push(cheaper.id);
+    const res = await auth(compToken).get(`/api/marketplace/compare?productId=${created.products[0]}`);
+    const supplierIds = res.body.offers.map((o) => o.supplier.id);
+    expect(new Set(supplierIds).size).toBe(supplierIds.length); // sem fornecedores repetidos
+    const fromA = res.body.offers.find((o) => o.supplier.id === created.companies[0]);
+    expect(fromA.id).toBe(cheaper.id); // ficou a oferta mais barata do fornecedor A
+  });
+
   test('um fornecedor NÃO pode aceder à comparação (403)', async () => {
     const res = await auth(fornToken).get(`/api/marketplace/compare?productId=${created.products[0]}`);
     expect(res.status).toBe(403);
