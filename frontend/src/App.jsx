@@ -31,6 +31,7 @@ const BuyerQuotes = lazy(() => import('./pages/comprador/Quotes'));
 const Services = lazy(() => import('./pages/comprador/Services'));
 const Explore = lazy(() => import('./pages/comprador/Explore'));
 const ServiceDetail = lazy(() => import('./pages/comprador/ServiceDetail'));
+const SupplierCompare = lazy(() => import('./pages/comprador/SupplierCompare'));
 const Checkout = lazy(() => import('./pages/comprador/Checkout'));
 const Payments = lazy(() => import('./pages/comprador/Payments'));
 const Deliveries = lazy(() => import('./pages/comprador/Deliveries'));
@@ -131,6 +132,7 @@ export default function App() {
             <Route path="/comprador/catalogo/:id" element={<ItemDetail />} />
             <Route path="/comprador/servicos" element={<Services />} />
             <Route path="/comprador/servicos/:slug" element={<ServiceDetail />} />
+            <Route path="/comprador/comparar" element={<SupplierCompare />} />
             <Route path="/comprador/cesta" element={<Cart />} />
             <Route path="/comprador/checkout" element={<Checkout />} />
             <Route path="/comprador/cotacoes" element={<BuyerQuotes />} />

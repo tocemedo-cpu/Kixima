@@ -103,6 +103,7 @@ const createProductSchema = z.object({
   keySpec: optText,
   standard: optText,
   warranty: optText,
+  incoterm: optText,
   supplierNotes: optText,
   // Imagem de referência do catálogo (URL local), quando não há upload próprio.
   imageUrl: optText,

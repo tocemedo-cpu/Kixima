@@ -1,6 +1,7 @@
 // src/services/marketplaceService.js
 // Pesquisa do marketplace: paginação no backend, filtros e ordenação seguros.
 const prisma = require('../config/database');
+const { NotFoundError } = require('../utils/errors');
 
 const SORTS = {
   relevantes: [{ reviewCount: 'desc' }, { rating: 'desc' }, { createdAt: 'desc' }],
@@ -131,4 +132,43 @@ async function verifiedSuppliers(limit = 8) {
   return withRating.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 }
 
-module.exports = { search, facets, verifiedSuppliers };
+// Comparação de fornecedores para um produto (só comprador). Reúne até 5 ofertas
+// do MESMO item (mesmo código UNSPSC; senão, mesma categoria), de fornecedores
+// diferentes, para comparar preço, prazo, material, garantia, norma, origem,
+// incoterm e avaliação. Exclui os produtos da própria empresa do comprador.
+const COMPARE_SELECT = {
+  id: true, name: true, unitPrice: true, promoPrice: true, currency: true,
+  leadTimeDays: true, material: true, warranty: true, standard: true, keySpec: true,
+  certifications: true, countryOfOrigin: true, incoterm: true, availability: true,
+  rating: true, reviewCount: true, unspscCode: true, category: true,
+  supplier: { select: { id: true, name: true, verified: true, city: true, country: true } },
+};
+
+async function compareSuppliers(productId, { excludeSupplierId } = {}) {
+  const base = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { id: true, name: true, unspscCode: true, unspscTitle: true, category: true },
+  });
+  if (!base) throw new NotFoundError('Produto');
+
+  const where = { active: true };
+  if (base.unspscCode) where.unspscCode = base.unspscCode;
+  else where.category = base.category;
+  if (excludeSupplierId) where.supplierId = { not: excludeSupplierId };
+
+  const rows = await prisma.product.findMany({
+    where, select: COMPARE_SELECT, orderBy: { unitPrice: 'asc' }, take: 5,
+  });
+  // Preço efetivo (promo se houver) e ordenação por esse valor.
+  const offers = rows
+    .map((o) => ({ ...o, effectivePrice: Number(o.promoPrice ?? o.unitPrice) || 0 }))
+    .sort((a, b) => a.effectivePrice - b.effectivePrice);
+
+  return {
+    base: { name: base.name, unspscCode: base.unspscCode, unspscTitle: base.unspscTitle, category: base.category },
+    offers,
+    count: offers.length,
+  };
+}
+
+module.exports = { search, facets, verifiedSuppliers, compareSuppliers };

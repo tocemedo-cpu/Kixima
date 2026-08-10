@@ -150,6 +150,9 @@ export default function ItemDetail() {
           <button className="btn btn-accent" style={{ width: '100%' }} onClick={handleAdd}>
             {added ? 'Adicionado à cesta ✓' : 'Adicionar à cesta'}
           </button>
+          <Link to={`/comprador/comparar?productId=${product.id}`} className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: 10, justifyContent: 'center' }}>
+            ⇄ Comparar fornecedores
+          </Link>
           {added ? (
             <Link to="/comprador/cesta" className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: 10, justifyContent: 'center' }}>
               Ver cesta

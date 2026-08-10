@@ -1,5 +1,6 @@
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 const { ValidationError } = require('../utils/errors');
 const { marketplaceSearchSchema, favoriteSchema } = require('../utils/schemas');
 const marketplaceService = require('../services/marketplaceService');
@@ -23,6 +24,13 @@ function parseFilters(req) {
 
 router.get('/search', async (req, res) => {
   res.json(await marketplaceService.search(parseFilters(req), { userId: req.user.id }));
+});
+
+// Comparação de fornecedores para um produto — SÓ o Comprador.
+router.get('/compare', requireRole('COMPRADOR'), async (req, res) => {
+  const productId = String(req.query.productId || '');
+  if (!productId) throw new ValidationError('Indique o produto a comparar (productId).');
+  res.json(await marketplaceService.compareSuppliers(productId, { excludeSupplierId: req.user.companyId }));
 });
 
 router.get('/facets', async (req, res) => {

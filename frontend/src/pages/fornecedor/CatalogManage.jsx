@@ -66,7 +66,7 @@ const EMPTY_FORM = {
   // Produto
   name: '', category: '', subcategory: '', brand: '', description: '', measurementUnit: '', countryOfOrigin: '',
   // Atributos universais (livres) + comentários
-  model: '', keySpec: '', standard: '', warranty: '', supplierNotes: '',
+  model: '', keySpec: '', standard: '', warranty: '', incoterm: '', supplierNotes: '',
   // Preço & disponibilidade
   currency: 'AOA', unitPrice: '', promoPrice: '',
   availability: 'Em stock', stockQuantity: '', leadTimeDays: '',
@@ -79,6 +79,7 @@ const UNIVERSAL_FIELDS = [
   ['keySpec', 'Especificação principal', 'A característica que melhor define o item (dimensão, capacidade, potência, âmbito).'],
   ['standard', 'Norma / Certificação', 'Ex.: API 6D, ISO 9001, ANSI 150. Ou “Não aplicável”.'],
   ['warranty', 'Garantia / Validade', 'Ex.: 12 meses, 2 anos, ou SLA para serviços.'],
+  ['incoterm', 'Incoterm', 'Condição de entrega (ex.: DAP, EXW, CIF). Usado na comparação de fornecedores.'],
 ];
 
 export default function CatalogManage() {

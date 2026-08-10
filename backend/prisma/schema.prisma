@@ -295,6 +295,7 @@ model Product {
   keySpec         String?  @map("key_spec")       // Especificação principal
   standard        String?                          // Norma / Certificação
   warranty        String?                          // Garantia / Validade
+  incoterm        String?                          // Incoterm (ex.: DAP, EXW, CIF) — comparação de fornecedores
   supplierNotes   String?  @map("supplier_notes") // Comentários do fornecedor
 
   // --- Especificações técnicas (texto livre — os valores variam muito) ---
