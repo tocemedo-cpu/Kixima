@@ -127,8 +127,15 @@ Isto cria as 5 personas de demonstração + catálogo, ordens, faturas e documen
 - **Domínio próprio:** podes ligar `app.kixima.co.ao` em Settings → Custom Domains.
 - **Email real:** define `EMAIL_PROVIDER=smtp` + `SMTP_*` para as notificações
   saírem por email em vez de irem só para o log.
-- **Rastreio de erros (Sentry):** cria um projeto no Sentry e define, no Render →
-  Environment, `SENTRY_DSN` (backend). Para o browser, define também o build-arg
-  `VITE_SENTRY_DSN` (frontend). Sem estas variáveis o rastreio fica desligado e a
-  app corre normalmente; com elas, os erros de servidor (5xx) e as falhas de UI
-  passam a ser reportados automaticamente.
+- **Rastreio de erros (Sentry):**
+  1. Cria conta em sentry.io → **Create Project** → plataforma **Node.js** (dá o
+     DSN do backend) e outra **React** (dá o DSN do frontend). Copia cada DSN
+     (`https://…@…ingest.sentry.io/…`).
+  2. No Render → Environment: `SENTRY_DSN` = DSN do Node; e o **build-arg**
+     `VITE_SENTRY_DSN` = DSN do React (é embutido no build do frontend).
+  3. **Verifica** o backend (no Shell do serviço): `cd backend && npm run sentry:test`
+     → deve aparecer um issue em Sentry → Issues. O frontend confirma-se quando
+     ocorrer um erro real (o `ErrorBoundary` mostra o ecrã de recurso e reporta).
+
+  Sem estas variáveis o rastreio fica desligado e a app corre normalmente; com
+  elas, os erros de servidor (5xx) e as falhas de UI passam a ser reportados.
