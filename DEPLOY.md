@@ -60,17 +60,15 @@ A app usa o **pooler de transação** (`DATABASE_URL`, porta 6543) e as migraç�
 **pooler de sessão** (`DIRECT_URL`, porta 5432) — ambos no host `...pooler.supabase.com`
 (IPv4). Nunca o host direto `db.<ref>.supabase.co` (IPv6, dá `P1001`). Ver secção 3.
 
-Como a tua base **já tem as tabelas** (foram criadas por `db push`), é preciso
-fazer o **baseline UMA única vez** — dizer ao Prisma que a migração inicial
-`0_init` já está aplicada, para o `migrate deploy` não tentar recriar tudo:
+Como a tua base **já tinha as tabelas** (criadas por `db push`), a 1ª execução do
+`migrate deploy` daria `P3005 (schema not empty)`. O arranque **trata disto
+automaticamente** (auto-baseline): se apanhar o P3005, faz `prisma migrate
+resolve --applied 0_init` e volta a correr o `migrate deploy`. Ou seja, **basta
+fazer deploy** — não precisas de correr nada à mão.
 
-```bash
-# No Shell do serviço (ou local com o DIRECT_URL do Supabase):
-cd backend && npm run migrate:baseline    # = prisma migrate resolve --applied 0_init
-```
+> Se preferires fazer o baseline manualmente (ex.: local com o `DIRECT_URL` do
+> Supabase): `cd backend && npm run migrate:baseline`.
 
-Faz isto **antes** do primeiro deploy com migrações (ou, se o 1º deploy falhar com
-`P3005 database schema is not empty`, corre o comando acima e volta a fazer deploy).
 A partir daí, cada nova migração aplica-se sozinha no deploy.
 
 **Fluxo de futuras alterações ao esquema:** altera `schema.prisma`, gera a migração

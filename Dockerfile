@@ -49,10 +49,11 @@ EXPOSE 4000
 RUN mkdir -p /app/uploads && chown -R node:node /app
 USER node
 
-# `migrate deploy` aplica as migrações versionadas (prisma/migrations) à base de
-# dados via ligação DIRETA (DIRECT_URL). Depois carrega o catálogo de demonstração
-# (idempotente, desligável com SKIP_CATALOG_SEED=1) e inicia a API+SPA.
-# IMPORTANTE (1ª vez, base já existente): fazer o baseline uma única vez —
-#   npx prisma migrate resolve --applied 0_init
-# (ver DEPLOY.md). Sem isso, o 1º `migrate deploy` falha com P3005.
-CMD ["sh", "-c", "npx prisma migrate deploy && (node prisma/seed.catalog.js || echo 'catalogo: seed ignorado') && node src/server.js"]
+# Arranque com migrações AUTO-BASELINE:
+#  - `migrate deploy` aplica as migrações versionadas (prisma/migrations).
+#  - Se a base já existir sem histórico (criada por db push), o 1º deploy dá P3005;
+#    nesse caso faz-se o baseline (resolve --applied 0_init) e tenta de novo.
+#    Numa base fresca, o `migrate deploy` cria tudo à primeira (o fallback não corre).
+# Depois carrega o catálogo de demonstração (idempotente, desligável com
+# SKIP_CATALOG_SEED=1) e inicia a API+SPA.
+CMD ["sh", "-c", "(npx prisma migrate deploy || (echo 'baseline (1x) da base existente...' && npx prisma migrate resolve --applied 0_init && npx prisma migrate deploy)) && (node prisma/seed.catalog.js || echo 'catalogo: seed ignorado') && node src/server.js"]
