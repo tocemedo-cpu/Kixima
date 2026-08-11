@@ -1,1 +1,0 @@
-import{j as a,I as t,h as n}from"./index-B2XO9Uco.js";function l({imageUrl:s,category:o,name:r="",caption:e=!0}){if(s)return a.jsx("img",{className:"mk-photo",src:s,alt:r,loading:"lazy"});const i=n(o);return a.jsxs("div",{className:"mk-ph","aria-label":"Sem fotografia",children:[a.jsx(t,{name:i.icon,size:28}),e?a.jsx("span",{children:"Sem fotografia"}):null]})}export{l as P};

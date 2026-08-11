@@ -37,7 +37,10 @@ function FlameFallback({ size }) {
   );
 }
 
+import { useI18n } from '../i18n';
+
 export default function Logo({ size = 22, subtitle = false, light = false, mark }) {
+  const { t } = useI18n();
   const [imgOk, setImgOk] = useState(true);
   // O logótipo (a gota) fica bem maior que o texto para ser bem visível.
   const box = mark || Math.round(size * 2.4);
@@ -61,7 +64,7 @@ export default function Logo({ size = 22, subtitle = false, light = false, mark 
           KIXIMA
         </span>
         {subtitle ? (
-          <span className={`brand-sub${light ? ' brand-sub-light' : ''}`}>Plataforma de Procurement Garantido</span>
+          <span className={`brand-sub${light ? ' brand-sub-light' : ''}`}>{t('Plataforma de Procurement Garantido')}</span>
         ) : null}
       </span>
     </div>

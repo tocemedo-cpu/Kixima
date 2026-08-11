@@ -65,11 +65,11 @@ export default function LoginPage() {
         <div className="login-card">
           {challenge ? (
             <>
-              <h2>Verificação em dois passos</h2>
-              <p>Introduza o código de 6 dígitos da sua app de autenticação.</p>
+              <h2>{t('Verificação em dois passos')}</h2>
+              <p>{t('Introduza o código de 6 dígitos da sua app de autenticação.')}</p>
               <form onSubmit={handleVerify}>
                 <div className="field">
-                  <label htmlFor="totp">Código</label>
+                  <label htmlFor="totp">{t('Código')}</label>
                   <input
                     id="totp"
                     inputMode="numeric"
@@ -83,11 +83,11 @@ export default function LoginPage() {
                 </div>
                 {error ? <p className="error-text" style={{ marginBottom: 12 }}>{error}</p> : null}
                 <button className="btn btn-accent" type="submit" disabled={submitting || code.trim().length !== 6} style={{ width: '100%' }}>
-                  {submitting ? t('A entrar…') : 'Verificar e entrar'}
+                  {submitting ? t('A entrar…') : t('Verificar e entrar')}
                 </button>
                 <p style={{ marginTop: 10, textAlign: 'right' }}>
                   <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setChallenge(''); setCode(''); setError(''); }}>
-                    ← Voltar ao login
+                    {t('← Voltar ao login')}
                   </button>
                 </p>
               </form>
@@ -100,7 +100,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit}>
             <div className="field">
               <label htmlFor="email">{t('Email')}</label>
-              <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@empresa.co.ao" />
+              <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('voce@empresa.co.ao')} />
             </div>
             <div className="field">
               <label htmlFor="password">{t('Palavra-passe')}</label>

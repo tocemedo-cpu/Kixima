@@ -70,7 +70,7 @@ function RequestForm() {
       <form onSubmit={handleSubmit}>
         <div className="field">
           <label htmlFor="email">{t('Email')}</label>
-          <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@empresa.co.ao" />
+          <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('voce@empresa.co.ao')} />
         </div>
         {error ? <p className="error-text" style={{ marginBottom: 12 }}>{error}</p> : null}
         <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%' }}>

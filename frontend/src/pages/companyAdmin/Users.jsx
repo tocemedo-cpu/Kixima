@@ -185,7 +185,7 @@ export default function Users() {
               <input value={name} onChange={(e) => setName(e.target.value)} required placeholder={t('Nome completo')} />
             </label>
             <label className="field"><span>{t('Email do funcionário')}</span>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="funcionario@empresa.co.ao" />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder={t('funcionario@empresa.co.ao')} />
             </label>
             <label className="field"><span>{t('Perfil')}</span>
               <select value={role} onChange={(e) => setRole(e.target.value)}>{options.map((o) => <option key={o.value} value={o.value}>{t(o.label)}</option>)}</select>

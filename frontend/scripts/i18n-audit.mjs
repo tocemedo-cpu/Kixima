@@ -120,3 +120,67 @@ if (strict && (missingEn.length || missingFr.length)) {
   console.error('\n✗ Existem chaves sem tradução. Corre com --missing para as listar.');
   process.exit(1);
 }
+
+// --- 5. Deteção de TEXTO PT NÃO TRADUZIDO (hardcoded) ------------------------
+// O bloco acima acusa chaves passadas a t() sem tradução. Este acusa o problema
+// inverso e mais insidioso: texto português escrito diretamente no JSX que
+// NUNCA passou por t() — não gera "chave em falta" nenhuma e por isso escapa
+// silenciosamente, aparecendo em português mesmo com outro idioma escolhido.
+if (process.argv.includes('--hardcoded') || process.argv.includes('--strict')) {
+  // Marcas de português: acentos/cedilha ou palavras funcionais comuns.
+  const PT_HINT = /[áàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ]|\b(de|da|do|das|dos|para|com|sem|não|são|está|estão|você|sua|seu|pela|pelo|uma|nos|nas|ao|aos|à|às)\b/i;
+  const AUTO_TRANSLATED = /<(PageHead|PageHeader|Toolbar|EmptyRow|DataTable|StatCard|KpiRow|Pill|Badge|Crumbs|Pagination|Tabs|PermissionsPanel)\b/;
+  const findings = [];
+
+  for (const f of files) {
+    const src = readFileSync(f, 'utf8');
+    const rel = f.replace(SRC + '/', '');
+    const lines = src.split('\n');
+
+    // Os componentes auto-traduzidos abrem muitas vezes em várias linhas
+    // (<PageHead\n  title="…"\n/>); enquanto o elemento não fecha, as suas
+    // props são chaves e não erros.
+    let insideAuto = false;
+
+    lines.forEach((line, idx) => {
+      const trimmed = line.trim();
+      if (insideAuto) {
+        if (/\/>|>\s*$/.test(line)) insideAuto = false;
+        return;
+      }
+      // Ignora comentários e importações.
+      if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*') || trimmed.startsWith('import ')) return;
+
+      // Componentes partilhados que JÁ traduzem o que recebem — o literal em
+      // PT neles é a CHAVE, não um erro. Ignora a linha onde são usados.
+      if (AUTO_TRANSLATED.test(line)) {
+        // Abre sem fechar na mesma linha → as próximas linhas são props dele.
+        if (!/\/>/.test(line)) insideAuto = true;
+        return;
+      }
+
+      // (a) Nós de texto JSX: >Texto<  (sem { } pelo meio)
+      for (const m of line.matchAll(/>\s*([^<>{}\n]{3,})\s*</g)) {
+        const txt = m[1].trim();
+        if (!PT_HINT.test(txt) || !/[A-Za-zÀ-ÿ]{3,}/.test(txt)) continue;
+        findings.push({ rel, line: idx + 1, kind: 'texto JSX', txt });
+      }
+
+      // (b) Atributos visíveis com literal: placeholder="…" title="…" alt="…" aria-label="…"
+      for (const m of line.matchAll(/\b(placeholder|title|alt|aria-label)\s*=\s*"([^"]{3,})"/g)) {
+        const txt = m[2].trim();
+        if (!PT_HINT.test(txt)) continue;
+        findings.push({ rel, line: idx + 1, kind: `atributo ${m[1]}`, txt });
+      }
+    });
+  }
+
+  console.log(`\n--- TEXTO PT HARDCODED (fora do i18n): ${findings.length} ---`);
+  for (const x of findings) {
+    console.log(`  ${x.rel}:${x.line}  [${x.kind}]  ${JSON.stringify(x.txt.slice(0, 90))}`);
+  }
+  if (findings.length && process.argv.includes('--strict')) {
+    console.error('\n✗ Existe texto por traduzir fora do sistema i18n.');
+    process.exit(1);
+  }
+}

@@ -1,11 +1,13 @@
 // src/auth/RequireAuth.jsx
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { useI18n } from '../i18n';
 import { ROLE_HOME } from '../domain';
 
 export function RequireAuth() {
   const { user, loading } = useAuth();
-  if (loading) return <div className="loading-text">A verificar sessão…</div>;
+  const { t } = useI18n();
+  if (loading) return <div className="loading-text">{t('A verificar sessão…')}</div>;
   if (!user) return <Navigate to="/login" replace />;
   return <Outlet />;
 }

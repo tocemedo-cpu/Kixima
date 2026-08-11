@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "i18n:check": "node scripts/i18n-audit.mjs",
     "i18n:missing": "node scripts/i18n-audit.mjs --missing",
-    "i18n:unused": "node scripts/i18n-audit.mjs --unused"
+    "i18n:unused": "node scripts/i18n-audit.mjs --unused",
+    "i18n:hardcoded": "node scripts/i18n-audit.mjs --hardcoded",
+    "i18n:strict": "node scripts/i18n-audit.mjs --strict"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",

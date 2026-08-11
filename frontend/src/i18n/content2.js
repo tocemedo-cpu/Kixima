@@ -12,6 +12,8 @@ export const EN3 = {
   // Saudação (uso dinâmico via t(greeting()))
   'Bom dia': 'Good morning', 'Boa tarde': 'Good afternoon', 'Boa noite': 'Good evening',
   'item': 'item', 'itens': 'items',
+  'A verificar sessão…': 'Checking session…',
+  'Plataforma de Procurement Garantido': 'Guaranteed Procurement Platform',
   'Ainda não há registos de auditoria. São criados automaticamente nas aprovações, pagamentos e alterações sensíveis.': 'No audit records yet. They are created automatically on approvals, payments and sensitive changes.',
   'Ainda não há taxas geradas. São criadas automaticamente quando um pagamento é processado.': 'No fees generated yet. They are created automatically when a payment is processed.',
   // --- Login / autenticação --------------------------------------------------
@@ -174,6 +176,8 @@ export const FR3 = {
   // Saudação (uso dinâmico via t(greeting()))
   'Bom dia': 'Bonjour', 'Boa tarde': 'Bonjour', 'Boa noite': 'Bonsoir',
   'item': 'article', 'itens': 'articles',
+  'A verificar sessão…': 'Vérification de la session…',
+  'Plataforma de Procurement Garantido': "Plateforme d'approvisionnement garanti",
   'Ainda não há registos de auditoria. São criados automaticamente nas aprovações, pagamentos e alterações sensíveis.': "Pas encore d'enregistrements d'audit. Ils sont créés automatiquement lors des approbations, paiements et modifications sensibles.",
   'Ainda não há taxas geradas. São criadas automaticamente quando um pagamento é processado.': "Pas encore de frais générés. Ils sont créés automatiquement lorsqu'un paiement est traité.",
   // --- Login / autenticação --------------------------------------------------
