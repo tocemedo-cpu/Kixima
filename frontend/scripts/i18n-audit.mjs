@@ -56,7 +56,7 @@ const PATTERNS = [
   /(?:title|subtitle|label|sub|header|emptyTitle|emptyBody|placeholder|unit)\s*[:=]\s*\{?\s*'((?:[^'\\]|\\.)+)'/g,
   /(?:title|subtitle|label|sub|header|emptyTitle|emptyBody|placeholder|unit)\s*[:=]\s*\{?\s*"((?:[^"\\]|\\.)+)"/g,
 ];
-const CHILDREN = /<(?:Pill|Badge)\b[^>]*>\s*([^<{][^<{]*?)\s*</g;   // filhos literais
+const CHILDREN = /<(?:Pill|Badge|EmptyRow)\b[^>]*>\s*([^<{][^<{]*?)\s*</g;   // filhos literais
 const TRAIL = /trail=\{\[([^\]]+)\]\}/g;                            // Crumbs trail
 
 for (const f of files) {
@@ -85,7 +85,7 @@ function dictKeys(file) {
   return keys;
 }
 const en = new Set(); const fr = new Set();
-for (const file of ['index.jsx', 'content.js', 'content2.js']) {
+for (const file of ['index.jsx', 'content.js', 'content2.js', 'content3.js', 'content4.js']) {
   const k = dictKeys(file);
   k.en.forEach((x) => en.add(x));
   k.fr.forEach((x) => fr.add(x));

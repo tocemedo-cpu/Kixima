@@ -9,6 +9,11 @@
 // KIXIMA Fee / Frais KIXIMA; Extrato → Statement / Relevé.
 
 export const EN3 = {
+  // Saudação (uso dinâmico via t(greeting()))
+  'Bom dia': 'Good morning', 'Boa tarde': 'Good afternoon', 'Boa noite': 'Good evening',
+  'item': 'item', 'itens': 'items',
+  'Ainda não há registos de auditoria. São criados automaticamente nas aprovações, pagamentos e alterações sensíveis.': 'No audit records yet. They are created automatically on approvals, payments and sensitive changes.',
+  'Ainda não há taxas geradas. São criadas automaticamente quando um pagamento é processado.': 'No fees generated yet. They are created automatically when a payment is processed.',
   // --- Login / autenticação --------------------------------------------------
   'Esqueceu a senha?': 'Forgot your password?',
   'voce@empresa.co.ao': 'you@company.com',
@@ -159,9 +164,18 @@ export const EN3 = {
   'Licença da ANPG': 'ANPG License',
   // --- Divergências / receção -------------------------------------------------
   'Ex.: quantidade incompleta, item danificado…': 'E.g.: incomplete quantity, damaged item…',
+  'O fornecedor será notificado para corrigir/reentregar. A ordem volta a "Em execução" e, após a nova entrega, confirma a receção outra vez.': 'The supplier will be notified to correct/redeliver. The order returns to "In execution" and, after the new delivery, you confirm receipt again.',
+  // --- Importação de catálogo ---------------------------------------------------
+  'A folha "Catálogo" deve ter uma linha de cabeçalho com, no mínimo, as colunas Categoria e Produto/Serviço. As restantes são opcionais e reconhecidas automaticamente:': 'The "Catálogo" sheet must have a header row with, at minimum, the Categoria and Produto/Serviço columns. The rest are optional and recognized automatically:',
+  'As fotos podem vir embebidas numa folha "Catálogo Visual" (uma imagem por linha, na mesma ordem dos itens) — são extraídas e associadas automaticamente. A moeda é sempre o Kwanza (AOA) e os produtos ficam publicados no marketplace em nome da sua empresa.': 'Photos can come embedded in a "Catálogo Visual" sheet (one image per row, in the same order as the items) — they are extracted and linked automatically. The currency is always the Kwanza (AOA) and the products are published on the marketplace under your company name.',
 };
 
 export const FR3 = {
+  // Saudação (uso dinâmico via t(greeting()))
+  'Bom dia': 'Bonjour', 'Boa tarde': 'Bonjour', 'Boa noite': 'Bonsoir',
+  'item': 'article', 'itens': 'articles',
+  'Ainda não há registos de auditoria. São criados automaticamente nas aprovações, pagamentos e alterações sensíveis.': "Pas encore d'enregistrements d'audit. Ils sont créés automatiquement lors des approbations, paiements et modifications sensibles.",
+  'Ainda não há taxas geradas. São criadas automaticamente quando um pagamento é processado.': "Pas encore de frais générés. Ils sont créés automatiquement lorsqu'un paiement est traité.",
   // --- Login / autenticação --------------------------------------------------
   'Esqueceu a senha?': 'Mot de passe oublié ?',
   'voce@empresa.co.ao': 'vous@entreprise.com',
@@ -312,4 +326,8 @@ export const FR3 = {
   'Licença da ANPG': "Licence de l'ANPG",
   // --- Divergências / receção -------------------------------------------------
   'Ex.: quantidade incompleta, item danificado…': 'Ex. : quantité incomplète, article endommagé…',
+  'O fornecedor será notificado para corrigir/reentregar. A ordem volta a "Em execução" e, após a nova entrega, confirma a receção outra vez.': "Le fournisseur sera notifié pour corriger/relivrer. La commande repasse « En exécution » et, après la nouvelle livraison, vous confirmez à nouveau la réception.",
+  // --- Importação de catálogo ---------------------------------------------------
+  'A folha "Catálogo" deve ter uma linha de cabeçalho com, no mínimo, as colunas Categoria e Produto/Serviço. As restantes são opcionais e reconhecidas automaticamente:': "La feuille « Catálogo » doit avoir une ligne d'en-tête avec, au minimum, les colonnes Categoria et Produto/Serviço. Les autres sont facultatives et reconnues automatiquement :",
+  'As fotos podem vir embebidas numa folha "Catálogo Visual" (uma imagem por linha, na mesma ordem dos itens) — são extraídas e associadas automaticamente. A moeda é sempre o Kwanza (AOA) e os produtos ficam publicados no marketplace em nome da sua empresa.': "Les photos peuvent être intégrées dans une feuille « Catálogo Visual » (une image par ligne, dans le même ordre que les articles) — elles sont extraites et associées automatiquement. La devise est toujours le Kwanza (AOA) et les produits sont publiés sur la marketplace au nom de votre entreprise.",
 };

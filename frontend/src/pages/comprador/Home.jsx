@@ -113,7 +113,7 @@ export default function Home() {
           <SectionHead title={t('Minhas Ordens')} to="/comprador/ordens" />
           <ul className="ord-list">
             {d.dash.minhasOrdens.map((o) => (
-              <li key={o.label}><span className="ord-dot" /><span>{o.label}</span><strong>{o.count}</strong></li>
+              <li key={o.label}><span className="ord-dot" /><span>{t(o.label)}</span><strong>{o.count}</strong></li>
             ))}
           </ul>
         </section>
