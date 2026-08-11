@@ -69,7 +69,6 @@ const Wallet = lazy(() => import('./pages/fornecedor/Wallet'));
 const StockMovements = lazy(() => import('./pages/fornecedor/StockMovements'));
 const Kits = lazy(() => import('./pages/fornecedor/Kits'));
 const SupplierQuotes = lazy(() => import('./pages/fornecedor/SupplierQuotes'));
-const SupplierCompanyProfile = lazy(() => import('./pages/fornecedor/CompanyProfile'));
 const CatalogImport = lazy(() => import('./pages/fornecedor/CatalogImport'));
 
 const FinanceiroHome = lazy(() => import('./pages/financeiro/Home'));
@@ -199,7 +198,8 @@ export default function App() {
             <Route path="/fornecedor/pedidos/solicitacoes" element={<SupplierQuotes />} />
             <Route path="/fornecedor/pedidos/cotacoes" element={<SupplierQuotes />} />
             <Route path="/fornecedor/financeiro/carteira" element={<Wallet />} />
-            <Route path="/fornecedor/empresa" element={<SupplierCompanyProfile />} />
+            {/* Perfil da Empresa — a MESMA página do Company Admin (Organization). */}
+            <Route path="/fornecedor/empresa" element={<Organization />} />
             {/* Módulos do menu ERP ainda em preparação — evita 404 e mantém a navegação. */}
             <Route path="/fornecedor/*" element={<ModulePlaceholder />} />
           </Route>

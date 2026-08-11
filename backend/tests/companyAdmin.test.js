@@ -27,6 +27,21 @@ describe('Company Admin — telas agregadas', () => {
     expect(res.body.summary).toHaveProperty('users');
   });
 
+  test('Organização: o FORNECEDOR vê a MESMA página (a da própria empresa); comprador não', async () => {
+    const fornecedorToken = await login('fornecedor@kianda.co.ao');
+    const res = await auth(fornecedorToken).get('/api/company-admin/organizacao');
+    expect(res.status).toBe(200);
+    expect(res.body.company.type).toBe('FORNECEDOR');
+    expect(res.body.company.name).toMatch(/Kianda/);
+
+    // As restantes telas do Company Admin continuam vedadas ao fornecedor.
+    const dash = await auth(fornecedorToken).get('/api/company-admin/dashboard');
+    expect(dash.status).toBe(403);
+    // E o comprador não acede à Organização.
+    const buyer = await auth(compradorToken).get('/api/company-admin/organizacao');
+    expect(buyer.status).toBe(403);
+  });
+
   test('Atividades: KPIs e itens derivados das POs', async () => {
     const res = await auth(adminToken).get('/api/company-admin/activities');
     expect(res.status).toBe(200);

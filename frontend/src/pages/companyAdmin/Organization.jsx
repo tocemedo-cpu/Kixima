@@ -1,15 +1,78 @@
 // src/pages/companyAdmin/Organization.jsx
-// Organização — dados da empresa, contactos e resumo (utilizadores, contratos,
-// documentos, certificações). Ligado a /api/company-admin/organizacao.
+// Perfil da Empresa / Organização — dados da empresa, contactos e resumo
+// (utilizadores, contratos, documentos, certificações). É a MESMA página para
+// o Company Admin e para o Fornecedor. Ligado a /api/company-admin/organizacao.
 import { useEffect, useState } from 'react';
+import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, Pill } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
 
+// Dados bancários da empresa fornecedora — aparecem na secção "Dados para
+// pagamento" das faturas geradas pela plataforma.
+function BankDetailsPanel({ companyId }) {
+  const [bank, setBank] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null); // { ok, text }
+
+  useEffect(() => {
+    api.get(`/api/companies/${companyId}/bank-details`)
+      .then((b) => setBank({ bankName: b.bankName || '', iban: b.iban || '', swift: b.swift || '' }))
+      .catch(() => setBank(null));
+  }, [companyId]);
+
+  if (!bank) return null;
+  const update = (k, v) => setBank((b) => ({ ...b, [k]: v }));
+
+  async function save(e) {
+    e.preventDefault();
+    setSaving(true);
+    setMsg(null);
+    try {
+      await api.put(`/api/companies/${companyId}/bank-details`, bank);
+      setMsg({ ok: true, text: 'Dados bancários guardados — passam a aparecer nas faturas.' });
+    } catch (err) {
+      setMsg({ ok: false, text: err.message });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="bz-panel" style={{ marginTop: 18 }}>
+      <h3>Dados bancários (para pagamento)</h3>
+      <p className="bz-sub2" style={{ margin: '4px 0 12px' }}>
+        Aparecem na secção <em>Dados bancários do fornecedor</em> das faturas — preencha para que o cliente saiba para onde pagar.
+      </p>
+      <form onSubmit={save}>
+        <div className="field">
+          <label>Banco</label>
+          <input value={bank.bankName} onChange={(e) => update('bankName', e.target.value)} placeholder="Ex.: Banco de Fomento Angola (BFA)" />
+        </div>
+        <div className="grid-cols grid-2">
+          <div className="field">
+            <label>IBAN</label>
+            <input value={bank.iban} onChange={(e) => update('iban', e.target.value)} placeholder="AO06 0000 0000 0000 0000 0000 0" />
+          </div>
+          <div className="field">
+            <label>SWIFT / BIC</label>
+            <input value={bank.swift} onChange={(e) => update('swift', e.target.value)} placeholder="Ex.: BFMXAOLU" />
+          </div>
+        </div>
+        {msg ? <p className={msg.ok ? 'helptext' : 'error-text'} style={{ margin: '8px 0' }}>{msg.text}</p> : null}
+        <button className="btn btn-accent" disabled={saving} type="submit">
+          {saving ? 'A guardar…' : 'Guardar dados bancários'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export default function Organization() {
   const { t } = useI18n();
+  const { user } = useAuth();
   const [d, setD] = useState(null);
   const [error, setError] = useState('');
   useEffect(() => { api.get('/api/company-admin/organizacao').then(setD).catch((e) => setError(e.message)); }, []);
@@ -21,8 +84,8 @@ export default function Organization() {
 
   return (
     <div>
-      <Crumbs trail={['Organização']} />
-      <PageHead title="Organização" subtitle="Dados da empresa, contactos e documentos." />
+      <Crumbs trail={['Perfil da Empresa']} />
+      <PageHead title="Perfil da Empresa" subtitle="Dados da empresa, contactos e documentos." />
 
       <div className="bz-layout">
         <div className="bz-panel">
@@ -66,6 +129,9 @@ export default function Organization() {
           </div>
         ))}
       </div>
+
+      {/* Empresas fornecedoras: dados bancários que alimentam as faturas. */}
+      {c.type === 'FORNECEDOR' ? <BankDetailsPanel companyId={user.companyId} /> : null}
     </div>
   );
 }
