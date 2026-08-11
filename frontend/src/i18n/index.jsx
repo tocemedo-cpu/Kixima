@@ -9,6 +9,8 @@ import { EN2, FR2 } from './content';
 import { EN3, FR3 } from './content2';
 import { EN4, FR4 } from './content3';
 import { EN5, FR5 } from './content4';
+import { EN6, FR6 } from './content5';
+import { EN7, FR7 } from './content6';
 
 export const LANGS = [
   { code: 'pt', label: 'Português', flag: '🇦🇴' },
@@ -71,7 +73,7 @@ const FR = {
   'Registe-a aqui': 'Inscrivez-la ici',
 };
 
-const DICT = { en: { ...EN2, ...EN3, ...EN4, ...EN5, ...EN }, fr: { ...FR2, ...FR3, ...FR4, ...FR5, ...FR } };
+const DICT = { en: { ...EN2, ...EN3, ...EN4, ...EN5, ...EN6, ...EN7, ...EN }, fr: { ...FR2, ...FR3, ...FR4, ...FR5, ...FR6, ...FR7, ...FR } };
 const STORAGE_KEY = 'kixima_lang';
 
 const I18nContext = createContext(null);
@@ -113,6 +115,15 @@ export function useI18n() {
   const ctx = useContext(I18nContext);
   if (!ctx) return { lang: 'pt', locale: LOCALES.pt, setLang: () => {}, t: (k) => k };
   return ctx;
+}
+
+// Tradução FORA de componentes React (ex.: cliente da API, que traduz as
+// mensagens do servidor à chegada). Usa o mesmo dicionário e o idioma guardado.
+export function translate(key, vars) {
+  const lang = readStored();
+  let s = (lang !== 'pt' && DICT[lang]?.[key]) || key;
+  if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, v);
+  return s;
 }
 
 // Locale ativo para código FORA de componentes React (formatMoney/formatDate em

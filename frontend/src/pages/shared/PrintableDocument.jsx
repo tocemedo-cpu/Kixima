@@ -8,7 +8,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Loading, ErrorBanner } from '../../components/Common';
 import { PO_STATUS, INVOICE_STATUS } from '../../domain';
-import { useI18n } from '../../i18n';
+import { useI18n, activeLocale } from '../../i18n';
 
 // Formatação de valores igual ao modelo: 5.100.000,00 AOA (ponto de milhar,
 // vírgula decimal, moeda como sufixo).
@@ -19,11 +19,11 @@ function money(v, cur = 'AOA') {
 }
 function d(value) {
   if (!value) return '—';
-  return new Intl.DateTimeFormat('pt-AO', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value));
+  return new Intl.DateTimeFormat(activeLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value));
 }
 function dt(value) {
   if (!value) return '—';
-  return new Intl.DateTimeFormat('pt-AO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+  return new Intl.DateTimeFormat(activeLocale(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
 }
 
 function Party({ label, c }) {
@@ -66,8 +66,8 @@ export default function PrintableDocument({ kind }) {
   if (isInvoice && !invoice) {
     return (
       <div className="doc-page">
-        <div className="doc-toolbar no-print"><button className="btn btn-ghost" onClick={() => navigate(-1)}>← Voltar</button></div>
-        <div className="pdoc-sheet"><p style={{ padding: 24 }}>Esta ordem ainda não tem fatura emitida.</p></div>
+        <div className="doc-toolbar no-print"><button className="btn btn-ghost" onClick={() => navigate(-1)}>{t('← Voltar')}</button></div>
+        <div className="pdoc-sheet"><p style={{ padding: 24 }}>{t('Esta ordem ainda não tem fatura emitida.')}</p></div>
       </div>
     );
   }
@@ -93,22 +93,22 @@ export default function PrintableDocument({ kind }) {
   return (
     <div className="doc-page">
       <div className="doc-toolbar no-print">
-        <button className="btn btn-ghost" onClick={() => navigate(-1)}>← Voltar</button>
-        <button className="btn btn-accent" onClick={() => window.print()}>Imprimir / Guardar PDF</button>
+        <button className="btn btn-ghost" onClick={() => navigate(-1)}>{t('← Voltar')}</button>
+        <button className="btn btn-accent" onClick={() => window.print()}>{t('Imprimir / Guardar PDF')}</button>
       </div>
 
       <div className="pdoc-sheet">
         {/* Cabeçalho: logótipo do cliente + tagline KIXIMA */}
         <header className="pdoc-head">
           <div className="pdoc-clientlogo">
-            {buyer.logoUrl ? <img src={buyer.logoUrl} alt={buyer.name} /> : <span>LOGÓTIPO DO CLIENTE</span>}
+            {buyer.logoUrl ? <img src={buyer.logoUrl} alt={buyer.name} /> : <span>{t('LOGÓTIPO DO CLIENTE')}</span>}
           </div>
-          <div className="pdoc-tagline">Emitido via <strong>KIXIMA</strong> — e-Market Oil &amp; Gas · Angola / África</div>
+          <div className="pdoc-tagline">{t('Emitido via')} <strong>KIXIMA</strong> {t('— e-Market Oil & Gas · Angola / África')}</div>
         </header>
 
         {/* Título + referência */}
         <div className="pdoc-titlebar">
-          <h1>{isInvoice ? 'FATURA / INVOICE' : 'ORDEM DE COMPRA / PURCHASE ORDER'}</h1>
+          <h1>{t(isInvoice ? 'FATURA / INVOICE' : 'ORDEM DE COMPRA / PURCHASE ORDER')}</h1>
           <div className="pdoc-ref">{ref}</div>
         </div>
 
@@ -116,17 +116,17 @@ export default function PrintableDocument({ kind }) {
         <section className="pdoc-meta">
           {isInvoice ? (
             <>
-              <Meta l="ESTADO" v={INVOICE_STATUS[invoice.status]?.label || invoice.status} />
-              <Meta l="DATA DE EMISSÃO" v={d(invoice.issuedAt)} />
-              <Meta l="DATA DE VENCIMENTO" v={d(invoice.dueAt)} />
-              <Meta l="MOEDA" v={cur} />
+              <Meta l={t('ESTADO')} v={t(INVOICE_STATUS[invoice.status]?.label || invoice.status)} />
+              <Meta l={t('DATA DE EMISSÃO')} v={d(invoice.issuedAt)} />
+              <Meta l={t('DATA DE VENCIMENTO')} v={d(invoice.dueAt)} />
+              <Meta l={t('MOEDA')} v={cur} />
             </>
           ) : (
             <>
-              <Meta l="ESTADO" v={PO_STATUS[po.status]?.label || po.status} />
-              <Meta l="DATA DE EMISSÃO" v={d(po.createdAt)} />
-              <Meta l="MOEDA" v={cur} />
-              <Meta l="REF. CONTRATO" v={po.contract?.reference || 'N/A — PO regular'} />
+              <Meta l={t('ESTADO')} v={t(PO_STATUS[po.status]?.label || po.status)} />
+              <Meta l={t('DATA DE EMISSÃO')} v={d(po.createdAt)} />
+              <Meta l={t('MOEDA')} v={cur} />
+              <Meta l={t('REF. CONTRATO')} v={po.contract?.reference || t('N/A — PO regular')} />
             </>
           )}
         </section>
@@ -135,13 +135,13 @@ export default function PrintableDocument({ kind }) {
         <section className="pdoc-parties">
           {isInvoice ? (
             <>
-              <Party label="EMITIDO POR / FROM" c={supplier} />
-              <Party label="FATURADO A / BILL TO" c={buyer} />
+              <Party label={t('EMITIDO POR / FROM')} c={supplier} />
+              <Party label={t('FATURADO A / BILL TO')} c={buyer} />
             </>
           ) : (
             <>
-              <Party label="COMPRADOR / BUYER" c={buyer} />
-              <Party label="FORNECEDOR / SUPPLIER" c={supplier} />
+              <Party label={t('COMPRADOR / BUYER')} c={buyer} />
+              <Party label={t('FORNECEDOR / SUPPLIER')} c={supplier} />
             </>
           )}
         </section>
@@ -150,13 +150,13 @@ export default function PrintableDocument({ kind }) {
         <section className="pdoc-boxes">
           {isInvoice ? (
             <>
-              <div className="pdoc-box"><div className="pdoc-lbl">ORDEM DE COMPRA DE ORIGEM</div><strong>{po.reference}</strong></div>
-              <div className="pdoc-box"><div className="pdoc-lbl">PRAZO DE PAGAMENTO</div><div>Vencimento em {d(invoice.dueAt)} (7 dias após aceitação da PO pelo fornecedor).</div></div>
+              <div className="pdoc-box"><div className="pdoc-lbl">{t('ORDEM DE COMPRA DE ORIGEM')}</div><strong>{po.reference}</strong></div>
+              <div className="pdoc-box"><div className="pdoc-lbl">{t('PRAZO DE PAGAMENTO')}</div><div>{t('Vencimento em {data} (7 dias após aceitação da PO pelo fornecedor).', { data: d(invoice.dueAt) })}</div></div>
             </>
           ) : (
             <>
-              <div className="pdoc-box"><div className="pdoc-lbl">LOCAL DE ENTREGA / DELIVERY SITE</div><div>{delivery}</div></div>
-              <div className="pdoc-box pdoc-box-accent"><div className="pdoc-lbl">GARANTIA DE PAGAMENTO KIXIMA</div><div>Pagamento ao fornecedor em até 7 dias após aceitação — coberto por apólice de seguro.</div></div>
+              <div className="pdoc-box"><div className="pdoc-lbl">{t('LOCAL DE ENTREGA / DELIVERY SITE')}</div><div>{delivery}</div></div>
+              <div className="pdoc-box pdoc-box-accent"><div className="pdoc-lbl">{t('GARANTIA DE PAGAMENTO KIXIMA')}</div><div>{t('Pagamento ao fornecedor em até 7 dias após aceitação — coberto por apólice de seguro.')}</div></div>
             </>
           )}
         </section>
@@ -182,13 +182,13 @@ export default function PrintableDocument({ kind }) {
 
         {/* Totais */}
         <section className="pdoc-totals">
-          <div className="pdoc-total-row"><span>Subtotal (sem IVA)</span><span>{money(net, cur)}</span></div>
-          <div className="pdoc-total-row"><span>IVA (14%){isInvoice ? '' : ' — estimado'}</span><span>{money(tax, cur)}</span></div>
-          <div className="pdoc-total-row pdoc-total-grand"><span>{isInvoice ? 'TOTAL A PAGAR' : 'TOTAL ESTIMADO (c/ IVA)'}</span><span>{money(total, cur)}</span></div>
+          <div className="pdoc-total-row"><span>{t('Subtotal (sem IVA)')}</span><span>{money(net, cur)}</span></div>
+          <div className="pdoc-total-row"><span>{t('IVA (14%)')}{isInvoice ? '' : ` — ${t('estimado')}`}</span><span>{money(tax, cur)}</span></div>
+          <div className="pdoc-total-row pdoc-total-grand"><span>{t(isInvoice ? 'TOTAL A PAGAR' : 'TOTAL ESTIMADO (c/ IVA)')}</span><span>{money(total, cur)}</span></div>
           {withheld > 0 ? (
             <>
-              <div className="pdoc-total-row" style={{ marginTop: 6 }}><span>Retenção na fonte II (6,5% s/ serviços)</span><span>− {money(withheld, cur)}</span></div>
-              <div className="pdoc-total-row pdoc-total-grand"><span>LÍQUIDO A RECEBER (FORNECEDOR)</span><span>{money(total - withheld, cur)}</span></div>
+              <div className="pdoc-total-row" style={{ marginTop: 6 }}><span>{t('Retenção na fonte II (6,5% s/ serviços)')}</span><span>− {money(withheld, cur)}</span></div>
+              <div className="pdoc-total-row pdoc-total-grand"><span>{t('LÍQUIDO A RECEBER (FORNECEDOR)')}</span><span>{money(total - withheld, cur)}</span></div>
             </>
           ) : null}
         </section>
@@ -197,29 +197,29 @@ export default function PrintableDocument({ kind }) {
         {isInvoice ? (
           <>
             <section className="pdoc-legal">
-              <div className="pdoc-lbl">DADOS BANCÁRIOS DO FORNECEDOR / BANK DETAILS</div>
-              <div>Banco: {supplier.bankName || '[a preencher]'} · IBAN: {supplier.iban || '[a preencher]'} · SWIFT/BIC: {supplier.swift || '[a preencher]'}</div>
+              <div className="pdoc-lbl">{t('DADOS BANCÁRIOS DO FORNECEDOR / BANK DETAILS')}</div>
+              <div>{t('Banco')}: {supplier.bankName || t('[a preencher]')} · IBAN: {supplier.iban || t('[a preencher]')} · SWIFT/BIC: {supplier.swift || t('[a preencher]')}</div>
             </section>
             {invoice.payment ? (
               <section className="pdoc-confirm">
-                <div className="pdoc-lbl">PAGAMENTO CONFIRMADO</div>
-                <div>Pagamento processado em {dt(invoice.payment.processedAt)} — referência {invoice.payment.reference}. Protegido pela garantia de pagamento KIXIMA, com fundos do cliente.</div>
+                <div className="pdoc-lbl">{t('PAGAMENTO CONFIRMADO')}</div>
+                <div>{t('Pagamento processado em {data} — referência {ref}. Protegido pela garantia de pagamento KIXIMA, com fundos do cliente.', { data: dt(invoice.payment.processedAt), ref: invoice.payment.reference })}</div>
               </section>
             ) : null}
             <section className="pdoc-terms">
-              <div className="pdoc-lbl">TERMOS DA FATURA</div>
-              <p>1. <strong>Emissão automática:</strong> esta fatura foi gerada automaticamente pela plataforma KIXIMA na aceitação da ordem de compra pelo fornecedor, sem intervenção manual. 2. <strong>Pagamento:</strong> processado pelo Financeiro da empresa compradora, com fundos próprios, dentro do prazo indicado. 3. <strong>Sinistros:</strong> incumprimentos do prazo são cobertos pela apólice de seguro em nome do fornecedor e acompanhados pela KIXIMA junto da seguradora, fora da plataforma. 4. <strong>Lei aplicável:</strong> leis da República de Angola.</p>
+              <div className="pdoc-lbl">{t('TERMOS DA FATURA')}</div>
+              <p>{t('1. Emissão automática: esta fatura foi gerada automaticamente pela plataforma KIXIMA na aceitação da ordem de compra pelo fornecedor, sem intervenção manual. 2. Pagamento: processado pelo Financeiro da empresa compradora, com fundos próprios, dentro do prazo indicado. 3. Sinistros: incumprimentos do prazo são cobertos pela apólice de seguro em nome do fornecedor e acompanhados pela KIXIMA junto da seguradora, fora da plataforma. 4. Lei aplicável: leis da República de Angola.')}</p>
             </section>
           </>
         ) : (
           <>
             <section className="pdoc-legal">
-              <div className="pdoc-lbl">GARANTIA DE PAGAMENTO / PAYMENT GUARANTEE</div>
-              <div><strong>Como funciona:</strong> o fornecedor submete, no credenciamento, uma apólice a favor da KIXIMA; a KIXIMA emite uma apólice a favor do comprador contra não-entrega. O comprador paga sempre com fundos próprios — a KIXIMA nunca adianta capital. O relógio dos 7 dias começa a contar na aceitação desta PO pelo fornecedor.</div>
+              <div className="pdoc-lbl">{t('GARANTIA DE PAGAMENTO / PAYMENT GUARANTEE')}</div>
+              <div>{t('Como funciona: o fornecedor submete, no credenciamento, uma apólice a favor da KIXIMA; a KIXIMA emite uma apólice a favor do comprador contra não-entrega. O comprador paga sempre com fundos próprios — a KIXIMA nunca adianta capital. O relógio dos 7 dias começa a contar na aceitação desta PO pelo fornecedor.')}</div>
             </section>
             <section className="pdoc-terms">
-              <div className="pdoc-lbl">TERMOS E CONDIÇÕES</div>
-              <p>1. <strong>HSE &amp; Qualidade:</strong> cumprimento das políticas de Saúde, Segurança e Ambiente do setor e das certificações aplicáveis (API, ISO ou equivalentes). 2. <strong>Inspeção:</strong> o comprador pode inspecionar os bens/serviços antes de confirmar a receção. 3. <strong>Confidencialidade</strong> dos termos comerciais desta PO. 4. <strong>Força maior:</strong> nenhuma das partes responde por atrasos fora do seu controlo razoável. 5. <strong>Lei aplicável:</strong> leis da República de Angola. 6. <strong>Sinistros:</strong> divergências na receção são registadas na plataforma e acompanhadas pela KIXIMA junto da seguradora, fora da plataforma.</p>
+              <div className="pdoc-lbl">{t('TERMOS E CONDIÇÕES')}</div>
+              <p>{t('1. HSE & Qualidade: cumprimento das políticas de Saúde, Segurança e Ambiente do setor e das certificações aplicáveis (API, ISO ou equivalentes). 2. Inspeção: o comprador pode inspecionar os bens/serviços antes de confirmar a receção. 3. Confidencialidade dos termos comerciais desta PO. 4. Força maior: nenhuma das partes responde por atrasos fora do seu controlo razoável. 5. Lei aplicável: leis da República de Angola. 6. Sinistros: divergências na receção são registadas na plataforma e acompanhadas pela KIXIMA junto da seguradora, fora da plataforma.')}</p>
             </section>
           </>
         )}
@@ -228,20 +228,20 @@ export default function PrintableDocument({ kind }) {
         <section className="pdoc-signs">
           {isInvoice ? (
             <>
-              <Sign label="FATURA EMITIDA POR" name="Sistema KIXIMA (automático)" date={invoice.issuedAt} />
-              <Sign label="PROCESSADO POR (FINANCEIRO)" name={invoice.payment?.processedByName || 'Financeiro'} date={invoice.payment?.processedAt} />
+              <Sign label={t('FATURA EMITIDA POR')} name={t('Sistema KIXIMA (automático)')} date={invoice.issuedAt} />
+              <Sign label={t('PROCESSADO POR (FINANCEIRO)')} name={invoice.payment?.processedByName || t('Financeiro')} date={invoice.payment?.processedAt} />
             </>
           ) : (
             <>
-              <Sign label="EMITIDO POR (COMPRADOR)" name={po.createdBy?.name} date={po.createdAt} />
-              <Sign label="APROVADO POR (COMPANY ADMIN)" name={po.approvedBy?.name} date={po.approvedAt} />
-              <Sign label="ACEITE POR (FORNECEDOR)" name={supplier.name} date={po.acceptedAt} />
+              <Sign label={t('EMITIDO POR (COMPRADOR)')} name={po.createdBy?.name} date={po.createdAt} />
+              <Sign label={t('APROVADO POR (COMPANY ADMIN)')} name={po.approvedBy?.name} date={po.approvedAt} />
+              <Sign label={t('ACEITE POR (FORNECEDOR)')} name={supplier.name} date={po.acceptedAt} />
             </>
           )}
         </section>
 
         <footer className="pdoc-foot">
-          Documento gerado eletronicamente pela plataforma KIXIMA em {dt(new Date().toISOString())}. Ref. {ref} · Pág. 1
+          {t('Documento gerado eletronicamente pela plataforma KIXIMA em {data}. Ref. {ref} · Pág. 1', { data: dt(new Date().toISOString()), ref })}
         </footer>
       </div>
     </div>

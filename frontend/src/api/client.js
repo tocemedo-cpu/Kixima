@@ -1,6 +1,11 @@
 // src/api/client.js
 // Cliente HTTP fino sobre fetch. Injeta o token JWT guardado e normaliza erros
 // no formato { error: { code, message } } devolvido pelo backend.
+//
+// i18n: as mensagens do servidor chegam em português (que é a CHAVE de
+// tradução) e são traduzidas AQUI, à chegada — assim qualquer ecrã que mostre
+// err.message já a recebe no idioma ativo, sem ter de traduzir em cada sítio.
+import { translate } from '../i18n';
 
 const TOKEN_KEY = 'kixima_token';
 
@@ -35,8 +40,11 @@ async function request(path, { method = 'GET', body, params } = {}) {
   const data = isJson ? await res.json().catch(() => null) : null;
 
   if (!res.ok) {
-    const message = data?.error?.message || `Erro ${res.status} ao contactar a API.`;
+    const message = data?.error?.message
+      ? translate(data.error.message)
+      : translate('Erro {status} ao contactar a API.', { status: res.status });
     const err = new Error(message);
+    err.rawMessage = data?.error?.message ?? null;
     err.code = data?.error?.code;
     err.status = res.status;
     throw err;
@@ -60,7 +68,10 @@ async function uploadFile(path, file, field = 'image') {
     ? await res.json().catch(() => null)
     : null;
   if (!res.ok) {
-    const err = new Error(data?.error?.message || `Erro ${res.status} ao enviar o ficheiro.`);
+    const err = new Error(data?.error?.message
+      ? translate(data.error.message)
+      : translate('Erro {status} ao enviar o ficheiro.', { status: res.status }));
+    err.rawMessage = data?.error?.message ?? null;
     err.code = data?.error?.code;
     err.status = res.status;
     throw err;
@@ -80,7 +91,10 @@ async function postForm(path, formData) {
     ? await res.json().catch(() => null)
     : null;
   if (!res.ok) {
-    const err = new Error(data?.error?.message || `Erro ${res.status} ao enviar o formulário.`);
+    const err = new Error(data?.error?.message
+      ? translate(data.error.message)
+      : translate('Erro {status} ao enviar o formulário.', { status: res.status }));
+    err.rawMessage = data?.error?.message ?? null;
     err.code = data?.error?.code;
     err.status = res.status;
     throw err;

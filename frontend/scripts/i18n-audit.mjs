@@ -24,7 +24,8 @@ function walk(dir, out = []) {
       // Exceções deliberadas (ficam em PT): documentos jurídicos e documentos
       // oficiais A4 (PO/fatura/extrato, já bilingues PT/EN por desenho), e o
       // navConfig.js (ficheiro legado não usado pela navegação).
-      if (/Legal\.jsx|PrintableDocument\.jsx|FeeStatement\.jsx|navConfig\.js$/.test(p)) continue;
+      // legalContent.js: documentos jurídicos completos por idioma (não usa t()).
+      if (/legalContent\.js|navConfig\.js$/.test(p)) continue;
       out.push(p);
     }
   }
@@ -85,17 +86,21 @@ function dictKeys(file) {
   return keys;
 }
 const en = new Set(); const fr = new Set();
-for (const file of ['index.jsx', 'content.js', 'content2.js', 'content3.js', 'content4.js']) {
+for (const file of ['index.jsx', 'content.js', 'content2.js', 'content3.js', 'content4.js', 'content5.js', 'content6.js']) {
   const k = dictKeys(file);
   k.en.forEach((x) => en.add(x));
   k.fr.forEach((x) => fr.add(x));
 }
+// As mensagens do SERVIDOR (content5.js) são aplicadas dinamicamente no cliente
+// da API — não aparecem como t('…') no código, por isso não contam como "não
+// usadas".
+const dynamicKeys = dictKeys('content5.js').en;
 
 // --- 4. Relatório ------------------------------------------------------------
 const usedKeys = [...used.keys()].sort((a, b) => a.localeCompare(b));
 const missingEn = usedKeys.filter((k) => !en.has(k));
 const missingFr = usedKeys.filter((k) => !fr.has(k));
-const unusedEn = [...en].filter((k) => !used.has(k)).sort();
+const unusedEn = [...en].filter((k) => !used.has(k) && !dynamicKeys.has(k)).sort();
 
 console.log(`Ficheiros analisados: ${files.length}`);
 console.log(`Chaves visíveis em uso: ${usedKeys.length}`);
