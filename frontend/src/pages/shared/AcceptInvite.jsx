@@ -20,6 +20,7 @@ export default function AcceptInvite() {
   const [invite, setInvite] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -41,7 +42,7 @@ export default function AcceptInvite() {
     setError('');
     setSubmitting(true);
     try {
-      await api.post(`/api/companies/invite/${token}/accept`, form);
+      await api.post(`/api/companies/invite/${token}/accept`, { ...form, termsAccepted: true });
       setDone(true);
     } catch (err) {
       setError(err.message);
@@ -107,8 +108,23 @@ export default function AcceptInvite() {
                   <label>Senha (mín. 8)</label>
                   <input type="password" required minLength={8} value={form.password} onChange={(e) => update('password', e.target.value)} />
                 </div>
+                <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10, fontSize: 12.5, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    required
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    style={{ marginTop: 2 }}
+                  />
+                  <span>
+                    Li e aceito os{' '}
+                    <a href="/termos" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Termos de Uso</a>{' '}
+                    e a{' '}
+                    <a href="/privacidade" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Política de Privacidade</a>.
+                  </span>
+                </label>
                 {error ? <p className="error-text" style={{ margin: '12px 0' }}>{error}</p> : null}
-                <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%', marginTop: 8 }}>
+                <button className="btn btn-accent" type="submit" disabled={submitting || !termsAccepted} style={{ width: '100%', marginTop: 8 }}>
                   {submitting ? 'A submeter…' : 'Submeter cadastro'}
                 </button>
               </form>

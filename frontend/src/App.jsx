@@ -15,6 +15,7 @@ import LoginPage from './pages/shared/LoginPage';
 const Register = lazy(() => import('./pages/shared/Register'));
 const AcceptInvite = lazy(() => import('./pages/shared/AcceptInvite'));
 const PasswordReset = lazy(() => import('./pages/shared/PasswordReset'));
+const Legal = lazy(() => import('./pages/shared/Legal'));
 const Notifications = lazy(() => import('./pages/shared/Notifications'));
 const Profile = lazy(() => import('./pages/shared/Profile'));
 const Help = lazy(() => import('./pages/shared/Help'));
@@ -116,6 +117,8 @@ export default function App() {
       <Route path="/convite/:token" element={<AcceptInvite />} />
       <Route path="/recuperar" element={<PasswordReset />} />
       <Route path="/recuperar/:token" element={<PasswordReset />} />
+      <Route path="/termos" element={<Legal kind="termos" />} />
+      <Route path="/privacidade" element={<Legal kind="privacidade" />} />
 
       <Route element={<RequireAuth />}>
         {/* Documentos imprimíveis (folha A4, sem a moldura da app) */}

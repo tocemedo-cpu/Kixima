@@ -41,6 +41,7 @@ describe('Cadastro de empresas (onboarding)', () => {
       .field('adminName', 'Admin Cliente')
       .field('adminEmail', clienteAdmin)
       .field('adminPassword', PW)
+      .field('termsAccepted', 'true')
       .attach('CERTIDAO_COMERCIAL', PDF, 'certidao.pdf')
       .attach('ALVARA_COMERCIAL', PDF, 'alvara.pdf');
 
@@ -59,6 +60,7 @@ describe('Cadastro de empresas (onboarding)', () => {
       .field('adminName', 'Admin X')
       .field('adminEmail', `x.admin.${S}@empresa.co.ao`)
       .field('adminPassword', PW)
+      .field('termsAccepted', 'true')
       .attach('CERTIDAO_COMERCIAL', PDF, 'certidao.pdf'); // falta ALVARA_COMERCIAL
 
     expect(res.status).toBe(400);
@@ -74,6 +76,7 @@ describe('Cadastro de empresas (onboarding)', () => {
       .field('adminName', 'Admin FX')
       .field('adminEmail', `fx.admin.${S}@empresa.co.ao`)
       .field('adminPassword', PW)
+      .field('termsAccepted', 'true')
       .attach('ALVARA_COMERCIAL', PDF, 'alvara.pdf')
       .attach('LICENCA_ANPG', PDF, 'anpg.pdf')
       .attach('CERTIDAO_COMERCIAL', PDF, 'certidao.pdf');
@@ -92,6 +95,7 @@ describe('Cadastro de empresas (onboarding)', () => {
       .field('adminName', 'Admin Fornecedor')
       .field('adminEmail', fornAdmin)
       .field('adminPassword', PW)
+      .field('termsAccepted', 'true')
       .field('insurer', 'Seguradora Angola')
       .field('policyNumber', 'AP-2026-001')
       .field('coverageAmount', '50000000')
@@ -131,6 +135,32 @@ describe('Cadastro de empresas (onboarding)', () => {
     expect(typeof after.body.token).toBe('string');
   });
 
+  test('sem aceitar os Termos/Privacidade → 422 e nada é criado', async () => {
+    const res = await request(app)
+      .post('/api/companies/register')
+      .field('type', 'CLIENTE')
+      .field('name', 'Operadora Sem Termos')
+      .field('taxId', `${clienteTax}-t`)
+      .field('contactEmail', `t.${S}@empresa.co.ao`)
+      .field('adminName', 'Admin T')
+      .field('adminEmail', `t.admin.${S}@empresa.co.ao`)
+      .field('adminPassword', PW)
+      .attach('CERTIDAO_COMERCIAL', PDF, 'certidao.pdf')
+      .attach('ALVARA_COMERCIAL', PDF, 'alvara.pdf');
+    // (sem termsAccepted)
+
+    expect(res.status).toBe(422);
+    expect(JSON.stringify(res.body)).toMatch(/Termos/i);
+    expect(await prisma.company.findUnique({ where: { taxId: `${clienteTax}-t` } })).toBeNull();
+  });
+
+  test('o aceite fica registado com data na empresa e no admin', async () => {
+    const company = await prisma.company.findUnique({ where: { taxId: clienteTax } });
+    expect(company.termsAcceptedAt).toBeTruthy();
+    const admin = await prisma.user.findUnique({ where: { email: clienteAdmin } });
+    expect(admin.termsAcceptedAt).toBeTruthy();
+  });
+
   test('NIF duplicado → 409', async () => {
     const res = await request(app)
       .post('/api/companies/register')
@@ -141,6 +171,7 @@ describe('Cadastro de empresas (onboarding)', () => {
       .field('adminName', 'Admin Dup')
       .field('adminEmail', `dup.admin.${S}@empresa.co.ao`)
       .field('adminPassword', PW)
+      .field('termsAccepted', 'true')
       .attach('CERTIDAO_COMERCIAL', PDF, 'certidao.pdf')
       .attach('ALVARA_COMERCIAL', PDF, 'alvara.pdf');
 

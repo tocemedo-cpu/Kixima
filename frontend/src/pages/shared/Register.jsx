@@ -45,6 +45,7 @@ export default function Register() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const update = (field, value) => setForm((f) => ({ ...f, [field]: value }));
   const requiredDocs = REQUIRED_DOCS[form.type] || [];
@@ -66,9 +67,15 @@ export default function Register() {
       return;
     }
 
+    if (!termsAccepted) {
+      setError('É necessário aceitar os Termos de Uso e a Política de Privacidade.');
+      return;
+    }
+
     const fd = new FormData();
     const companyFields = ['type', 'name', 'taxId', 'contactEmail', 'contactPhone', 'address', 'adminName', 'adminEmail', 'adminPassword'];
     companyFields.forEach((k) => fd.append(k, form[k]));
+    fd.append('termsAccepted', 'true');
     requiredDocs.forEach((d) => docs[d.type] && fd.append(d.type, docs[d.type]));
 
     // Campos da apólice só para fornecedoras (evita quebrar a validação do cliente).
@@ -224,8 +231,24 @@ export default function Register() {
                   </>
                 ) : null}
 
+                <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 14, fontSize: 12.5, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    required
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    style={{ marginTop: 2 }}
+                  />
+                  <span>
+                    Li e aceito, em nome da empresa, os{' '}
+                    <a href="/termos" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Termos de Uso</a>{' '}
+                    e a{' '}
+                    <a href="/privacidade" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Política de Privacidade</a>.
+                  </span>
+                </label>
+
                 {error ? <p className="error-text" style={{ margin: '12px 0' }}>{error}</p> : null}
-                <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%', marginTop: 14 }}>
+                <button className="btn btn-accent" type="submit" disabled={submitting || !termsAccepted} style={{ width: '100%', marginTop: 14 }}>
                   {submitting ? 'A submeter…' : 'Submeter cadastro'}
                 </button>
               </form>

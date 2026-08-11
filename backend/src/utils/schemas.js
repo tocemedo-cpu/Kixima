@@ -28,6 +28,12 @@ const registerCompanySchema = z.object({
   policyCurrency: z.string().optional(),
   policyValidFrom: z.coerce.date().optional(),
   policyValidUntil: z.coerce.date().optional(),
+  // Aceite obrigatório dos Termos de Uso e Política de Privacidade. Vem por
+  // multipart (string "true") ou JSON (boolean) — normalizado antes de validar.
+  termsAccepted: z.preprocess(
+    (v) => v === true || v === 'true',
+    z.literal(true, { errorMap: () => ({ message: 'É necessário aceitar os Termos de Uso e a Política de Privacidade.' }) })
+  ),
 });
 
 const changePasswordSchema = z.object({
@@ -72,6 +78,8 @@ const acceptInviteSchema = z.object({
   name: z.string().min(2).optional(),
   email: z.string().email().optional(),
   password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.'),
+  // Aceite individual dos Termos/Privacidade ao criar a conta por convite.
+  termsAccepted: z.literal(true, { errorMap: () => ({ message: 'É necessário aceitar os Termos de Uso e a Política de Privacidade.' }) }),
 });
 
 // Campo de texto opcional que trata "" (vindo de multipart) como ausente.

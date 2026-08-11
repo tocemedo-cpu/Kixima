@@ -70,6 +70,10 @@ model Company {
   iban        String?
   swift       String?
 
+  // Aceite dos Termos de Uso e Política de Privacidade no cadastro (quem
+  // regista aceita em nome da empresa; obrigatório no formulário).
+  termsAcceptedAt DateTime? @map("terms_accepted_at")
+
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   approvedAt  DateTime?     @map("approved_at")
@@ -231,6 +235,8 @@ model User {
   // Versão de sessão: incrementar invalida imediatamente todos os tokens JWT
   // já emitidos para este utilizador (logout global, troca de senha, etc.).
   tokenVersion Int         @default(0) @map("token_version")
+  // Aceite individual dos Termos/Privacidade (registo por convite).
+  termsAcceptedAt DateTime? @map("terms_accepted_at")
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
 

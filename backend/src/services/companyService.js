@@ -100,11 +100,14 @@ async function registerCompany(data, uploadedDocs = [], policyFile = null) {
 
   // 4. Criar empresa + admin + documentos (+ apólice, se fornecedora) atómico.
   return prisma.$transaction(async (tx) => {
+    // O aceite dos Termos/Privacidade já foi validado no schema (obrigatório);
+    // aqui fica apenas o carimbo de QUANDO foi dado.
+    const termsAcceptedAt = new Date();
     const company = await tx.company.create({
-      data: { name, taxId, type, contactEmail, contactPhone, address, status: 'PENDENTE' },
+      data: { name, taxId, type, contactEmail, contactPhone, address, status: 'PENDENTE', termsAcceptedAt },
     });
     await tx.user.create({
-      data: { name: adminName, email: adminEmail, passwordHash, role: 'COMPANY_ADMIN', companyId: company.id },
+      data: { name: adminName, email: adminEmail, passwordHash, role: 'COMPANY_ADMIN', companyId: company.id, termsAcceptedAt },
     });
     for (const dr of docRecords) {
       await tx.companyDocument.create({ data: { ...dr, companyId: company.id } });
@@ -382,7 +385,7 @@ async function acceptInvite(token, { name, email, password }) {
   }
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
-    data: { name: finalName, email: finalEmail, passwordHash, role, companyId, active: false },
+    data: { name: finalName, email: finalEmail, passwordHash, role, companyId, active: false, termsAcceptedAt: new Date() },
     select: USER_SELECT,
   });
   if (invite) {

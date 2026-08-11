@@ -68,7 +68,7 @@ describe('Convite de funcionário (link gerado e enviado automaticamente)', () =
     expect(resolved.body.email).toBe(compradorEmail);
 
     // 4. Convidado apenas define a senha; nome/email vêm do convite.
-    const accept = await request(app).post(`/api/companies/invite/${token}/accept`).send({ password: NEW_PW });
+    const accept = await request(app).post(`/api/companies/invite/${token}/accept`).send({ password: NEW_PW, termsAccepted: true });
     expect(accept.status).toBe(201);
     expect(accept.body.active).toBe(false);
     expect(accept.body.email).toBe(compradorEmail);
@@ -103,7 +103,7 @@ describe('Convite de funcionário (link gerado e enviado automaticamente)', () =
       .send({ role: 'FORNECEDOR', name: 'Novo Vendedor', email: vendedorEmail });
     expect(res.status).toBe(201);
     const token = await tokenOf(res.body.id);
-    const accept = await request(app).post(`/api/companies/invite/${token}/accept`).send({ password: NEW_PW });
+    const accept = await request(app).post(`/api/companies/invite/${token}/accept`).send({ password: NEW_PW, termsAccepted: true });
     expect(accept.status).toBe(201);
     expect(accept.body.role).toBe('FORNECEDOR');
     expect(accept.body.active).toBe(false);
@@ -118,14 +118,14 @@ describe('Convite de funcionário (link gerado e enviado automaticamente)', () =
     const cancel = await auth(clientAdminToken).post(`/api/companies/invites/${id}/cancel`);
     expect(cancel.status).toBe(200);
     expect(cancel.body.status).toBe('CANCELADO');
-    const blocked = await request(app).post(`/api/companies/invite/${await tokenOf(id)}/accept`).send({ password: NEW_PW });
+    const blocked = await request(app).post(`/api/companies/invite/${await tokenOf(id)}/accept`).send({ password: NEW_PW, termsAccepted: true });
     expect(blocked.status).toBeGreaterThanOrEqual(400);
 
     // Reenviar → novo token, estado PENDENTE, aceitação volta a funcionar.
     const resend = await auth(clientAdminToken).post(`/api/companies/invites/${id}/resend`);
     expect(resend.status).toBe(200);
     expect(resend.body.status).toBe('PENDENTE');
-    const accept = await request(app).post(`/api/companies/invite/${await tokenOf(id)}/accept`).send({ password: NEW_PW });
+    const accept = await request(app).post(`/api/companies/invite/${await tokenOf(id)}/accept`).send({ password: NEW_PW, termsAccepted: true });
     expect(accept.status).toBe(201);
   });
 

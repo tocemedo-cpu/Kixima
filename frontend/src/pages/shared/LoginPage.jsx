@@ -62,6 +62,11 @@ export default function LoginPage() {
             {t('A sua empresa ainda não está na KIXIMA?')}{' '}
             <Link to="/cadastro" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Registe-a aqui')}</Link>.
           </p>
+          <p className="helptext" style={{ marginTop: 10, fontSize: 11.5 }}>
+            <Link to="/termos" style={{ color: 'inherit' }}>Termos de Uso</Link>
+            {' · '}
+            <Link to="/privacidade" style={{ color: 'inherit' }}>Política de Privacidade</Link>
+          </p>
         </div>
       </div>
     </div>
