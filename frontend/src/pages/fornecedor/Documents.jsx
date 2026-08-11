@@ -52,7 +52,7 @@ export default function Documents() {
   return (
     <div>
       <PageHeader
-        title={`Documentação — ${view.title}`}
+        title={`${t('Documentação')} — ${t(view.title)}`}
         subtitle="Todos os documentos técnicos dos seus produtos e o credenciamento da empresa num só sítio."
       />
 

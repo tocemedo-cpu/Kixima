@@ -7,6 +7,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { EN2, FR2 } from './content';
 import { EN3, FR3 } from './content2';
+import { EN4, FR4 } from './content3';
+import { EN5, FR5 } from './content4';
 
 export const LANGS = [
   { code: 'pt', label: 'Português', flag: '🇦🇴' },
@@ -69,7 +71,7 @@ const FR = {
   'Registe-a aqui': 'Inscrivez-la ici',
 };
 
-const DICT = { en: { ...EN2, ...EN3, ...EN }, fr: { ...FR2, ...FR3, ...FR } };
+const DICT = { en: { ...EN2, ...EN3, ...EN4, ...EN5, ...EN }, fr: { ...FR2, ...FR3, ...FR4, ...FR5, ...FR } };
 const STORAGE_KEY = 'kixima_lang';
 
 const I18nContext = createContext(null);

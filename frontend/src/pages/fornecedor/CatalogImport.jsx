@@ -69,8 +69,7 @@ export default function CatalogImport() {
         <div className="card card-pad">
           <strong style={{ fontSize: 13.5 }}>{t('Formato esperado')}</strong>
           <p className="helptext" style={{ marginTop: 8 }}>
-            {t('A folha')} <strong>"{t('Catálogo')}"</strong> {t('deve ter uma linha de cabeçalho com, no mínimo, as colunas')}
-            <strong> {t('Categoria')}</strong> {t('e')} <strong>{t('Produto/Serviço')}</strong>. {t('As restantes são opcionais e reconhecidas automaticamente:')}
+            {t('A folha "Catálogo" deve ter uma linha de cabeçalho com, no mínimo, as colunas Categoria e Produto/Serviço. As restantes são opcionais e reconhecidas automaticamente:')}
           </p>
           <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 13, lineHeight: 1.7 }}>
             <li><strong>{t('Categoria')}</strong> — {t('família comercial do item')}</li>
@@ -81,7 +80,7 @@ export default function CatalogImport() {
             <li><strong>{t('Preço')}</strong> — {t('opcional (em AOA; se ausente, é estimado por categoria)')}</li>
           </ul>
           <p className="helptext" style={{ marginTop: 10 }}>
-            {t('As')} <strong>{t('fotos')}</strong> {t('podem vir embebidas numa folha')} <strong>"{t('Catálogo Visual')}"</strong> {t('(uma imagem por linha, na mesma ordem dos itens) — são extraídas e associadas automaticamente. A moeda é sempre o')} <strong>Kwanza (AOA)</strong> {t('e os produtos ficam publicados no marketplace em nome da sua empresa.')}
+            {t('As fotos podem vir embebidas numa folha "Catálogo Visual" (uma imagem por linha, na mesma ordem dos itens) — são extraídas e associadas automaticamente. A moeda é sempre o Kwanza (AOA) e os produtos ficam publicados no marketplace em nome da sua empresa.')}
           </p>
         </div>
       </div>

@@ -62,7 +62,7 @@ export default function StockMovements() {
 
   return (
     <div>
-      <PageHeader title={`Inventário — ${title}`} subtitle={isEntrada ? 'Registe entradas em armazém (aumentam o stock).' : 'Registe saídas de armazém (reduzem o stock).'} />
+      <PageHeader title={`${t('Inventário')} — ${t(title)}`} subtitle={isEntrada ? 'Registe entradas em armazém (aumentam o stock).' : 'Registe saídas de armazém (reduzem o stock).'} />
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 

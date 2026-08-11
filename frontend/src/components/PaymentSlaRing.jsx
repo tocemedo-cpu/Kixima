@@ -4,6 +4,7 @@
 // aceitação da PO. O anel enche à medida que os dias passam e muda de cor
 // (verde-azulado -> âmbar -> terracota) conforme se aproxima o prazo.
 import { useI18n } from '../i18n';
+import { activeLocale } from '../i18n';
 
 const SIZE = 56;
 const STROKE = 6;
@@ -63,7 +64,7 @@ export default function PaymentSlaRing({ acceptedAt, paymentDueAt, paidAt, total
         <div className="sla-caption">
           {paidAt
             ? t('Pagamento garantido cumprido dentro do prazo.')
-            : `${t('Prazo de pagamento')}: ${new Intl.DateTimeFormat('pt-AO', { day: '2-digit', month: 'short' }).format(due)}`}
+            : `${t('Prazo de pagamento')}: ${new Intl.DateTimeFormat(activeLocale(), { day: '2-digit', month: 'short' }).format(due)}`}
         </div>
       </div>
     </div>
