@@ -52,7 +52,7 @@ export default function PolicyManagement() {
 
       <h3 style={{ fontSize: 15, marginBottom: 12 }}>{t('Apólices KIXIMA→Cliente')}</h3>
       {clients.length === 0 ? (
-        <p className="helptext" style={{ marginBottom: 20 }}>Nenhuma empresa cliente aprovada ainda.</p>
+        <p className="helptext" style={{ marginBottom: 20 }}>{t('Nenhuma empresa cliente aprovada ainda.')}</p>
       ) : (
         <div style={{ marginBottom: 28 }}>
           {clients.map(({ company, policies }) => (
@@ -63,7 +63,7 @@ export default function PolicyManagement() {
 
       <h3 style={{ fontSize: 15, marginBottom: 12 }}>{t('Apólices Fornecedor→KIXIMA submetidas')}</h3>
       {suppliers.length === 0 ? (
-        <p className="helptext">Nenhuma apólice de fornecedor submetida por rever.</p>
+        <p className="helptext">{t('Nenhuma apólice de fornecedor submetida por rever.')}</p>
       ) : (
         suppliers.map(({ company, policies }) => (
           <SupplierPolicyRow key={company.id} company={company} policy={policies.supplierToKixima[0]} onDecided={load} />
@@ -74,6 +74,7 @@ export default function PolicyManagement() {
 }
 
 function ClientPolicyRow({ company, currentPolicy, onIssued }) {
+  const { t } = useI18n();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ policyNumber: '', insurer: '', coverageAmount: '', currency: 'AOA', validFrom: '', validUntil: '' });
   const [busy, setBusy] = useState(false);
@@ -105,15 +106,15 @@ function ClientPolicyRow({ company, currentPolicy, onIssued }) {
           <strong>{company.name}</strong>
           {currentPolicy ? (
             <div style={{ fontSize: 12.5, color: 'var(--ink-600)', marginTop: 3 }}>
-              <span className="mono">{currentPolicy.policyNumber}</span> · válida até {formatDate(currentPolicy.validUntil)}{' '}
+              <span className="mono">{currentPolicy.policyNumber}</span> · {t('válida até')} {formatDate(currentPolicy.validUntil)}{' '}
               <Badge tone={POLICY_STATUS[currentPolicy.status]?.tone}>{POLICY_STATUS[currentPolicy.status]?.label}</Badge>
             </div>
           ) : (
-            <div style={{ fontSize: 12.5, color: 'var(--ink-400)', marginTop: 3 }}>Sem apólice KIXIMA→Cliente emitida.</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-400)', marginTop: 3 }}>{t('Sem apólice KIXIMA→Cliente emitida.')}</div>
           )}
         </div>
         <button className="btn btn-ghost btn-sm" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? 'Cancelar' : currentPolicy ? 'Renovar apólice' : 'Emitir apólice'}
+          {showForm ? t('Cancelar') : currentPolicy ? t('Renovar apólice') : t('Emitir apólice')}
         </button>
       </div>
 
@@ -122,29 +123,29 @@ function ClientPolicyRow({ company, currentPolicy, onIssued }) {
           <ErrorBanner message={error} />
           <div className="grid-cols grid-2">
             <div className="field">
-              <label>Nº da apólice</label>
+              <label>{t('Nº da apólice')}</label>
               <input required value={form.policyNumber} onChange={(e) => update('policyNumber', e.target.value)} />
             </div>
             <div className="field">
-              <label>Seguradora</label>
+              <label>{t('Seguradora')}</label>
               <input required value={form.insurer} onChange={(e) => update('insurer', e.target.value)} />
             </div>
           </div>
           <div className="grid-cols grid-2">
             <div className="field">
-              <label>Cobertura (AOA)</label>
+              <label>{t('Cobertura (AOA)')}</label>
               <input required type="number" min="0" step="0.01" value={form.coverageAmount} onChange={(e) => update('coverageAmount', e.target.value)} />
             </div>
             <div className="field">
-              <label>Válida até</label>
+              <label>{t('Válida até')}</label>
               <input required type="date" value={form.validUntil} onChange={(e) => update('validUntil', e.target.value)} />
             </div>
           </div>
           <div className="field">
-            <label>Válida a partir de</label>
+            <label>{t('Válida a partir de')}</label>
             <input required type="date" value={form.validFrom} onChange={(e) => update('validFrom', e.target.value)} />
           </div>
-          <button className="btn btn-accent" disabled={busy} type="submit">{busy ? 'A emitir…' : 'Confirmar emissão'}</button>
+          <button className="btn btn-accent" disabled={busy} type="submit">{busy ? t('A emitir…') : t('Confirmar emissão')}</button>
         </form>
       )}
     </div>
@@ -152,6 +153,7 @@ function ClientPolicyRow({ company, currentPolicy, onIssued }) {
 }
 
 function SupplierPolicyRow({ company, policy, onDecided }) {
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -181,8 +183,8 @@ function SupplierPolicyRow({ company, policy, onDecided }) {
         <Badge tone={POLICY_STATUS[policy.status]?.tone}>{POLICY_STATUS[policy.status]?.label}</Badge>
         {policy.status === 'SUBMETIDA' && (
           <>
-            <button className="btn btn-accent btn-sm" disabled={busy} onClick={() => decide(true)}>Aprovar</button>
-            <button className="btn btn-danger btn-sm" disabled={busy} onClick={() => decide(false)}>Rejeitar</button>
+            <button className="btn btn-accent btn-sm" disabled={busy} onClick={() => decide(true)}>{t('Aprovar')}</button>
+            <button className="btn btn-danger btn-sm" disabled={busy} onClick={() => decide(false)}>{t('Rejeitar')}</button>
           </>
         )}
       </div>

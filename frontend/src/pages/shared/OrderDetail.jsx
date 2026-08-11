@@ -47,7 +47,7 @@ export default function OrderDetail() {
     setSuccess('');
     try {
       await action(body);
-      setSuccess('Ação registada com sucesso.');
+      setSuccess(t('Ação registada com sucesso.'));
       load();
     } catch (e) {
       setError(e.message);
@@ -71,7 +71,7 @@ export default function OrderDetail() {
   return (
     <div>
       <button className="btn btn-ghost btn-sm" style={{ marginBottom: 14 }} onClick={() => navigate(BACK_BY_ROLE[user.role])}>
-        ← Voltar
+        ← {t('Voltar')}
       </button>
 
       <div className="page-header">
@@ -89,11 +89,11 @@ export default function OrderDetail() {
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/po/${po.id}`, '_blank')}>
-          Ver / Imprimir PO
+          {t('Ver / Imprimir PO')}
         </button>
         {po.invoice ? (
           <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/fatura/${po.id}`, '_blank')}>
-            Ver / Imprimir Fatura
+            {t('Ver / Imprimir Fatura')}
           </button>
         ) : null}
       </div>
@@ -103,7 +103,7 @@ export default function OrderDetail() {
 
       <div className="grid-cols grid-2" style={{ alignItems: 'start' }}>
         <div className="card card-pad" style={{ marginBottom: 16 }}>
-          <strong style={{ fontSize: 13.5 }}>Itens</strong>
+          <strong style={{ fontSize: 13.5 }}>{t('Itens')}</strong>
           <table style={{ marginTop: 10 }}>
             <thead>
               <tr><th>{t('Produto')}</th><th>{t('Qtd.')}</th><th>{t('Preço unit.')}</th><th>{t('Total')}</th></tr>
@@ -122,21 +122,21 @@ export default function OrderDetail() {
         </div>
 
         <div className="card card-pad" style={{ marginBottom: 16 }}>
-          <strong style={{ fontSize: 13.5 }}>Pagamento garantido</strong>
+          <strong style={{ fontSize: 13.5 }}>{t('Pagamento garantido')}</strong>
           <div style={{ marginTop: 12 }}>
             <PaymentSlaRing acceptedAt={po.acceptedAt} paymentDueAt={po.paymentDueAt} paidAt={po.paidAt} />
           </div>
           <div style={{ marginTop: 16, fontSize: 12.5, color: 'var(--ink-600)', display: 'grid', gap: 6 }}>
-            <div>Emitida em: {formatDate(po.createdAt)}</div>
-            {po.approvedAt ? <div>Aprovada em: {formatDate(po.approvedAt)}</div> : null}
-            {po.acceptedAt ? <div>Aceite pelo fornecedor em: {formatDate(po.acceptedAt)}</div> : null}
-            {po.dispatchedAt ? <div>Despachada em: {formatDate(po.dispatchedAt)}</div> : null}
-            {po.deliveredAt ? <div>Entregue em: {formatDate(po.deliveredAt)}</div> : null}
-            {po.receivedAt ? <div>Receção confirmada em: {formatDate(po.receivedAt)} ({po.receptionStatus})</div> : null}
+            <div>{t('Emitida em')}: {formatDate(po.createdAt)}</div>
+            {po.approvedAt ? <div>{t('Aprovada em')}: {formatDate(po.approvedAt)}</div> : null}
+            {po.acceptedAt ? <div>{t('Aceite pelo fornecedor em')}: {formatDate(po.acceptedAt)}</div> : null}
+            {po.dispatchedAt ? <div>{t('Despachada em')}: {formatDate(po.dispatchedAt)}</div> : null}
+            {po.deliveredAt ? <div>{t('Entregue em')}: {formatDate(po.deliveredAt)}</div> : null}
+            {po.receivedAt ? <div>{t('Receção confirmada em')}: {formatDate(po.receivedAt)} ({po.receptionStatus})</div> : null}
             {po.divergenceResolvedAt ? (
               <div>
-                Divergência resolvida em: {formatDate(po.divergenceResolvedAt)}{' '}
-                ({po.divergenceResolution === 'REPOSICAO' ? 'reposição solicitada' : 'entrega aceite'})
+                {t('Divergência resolvida em')}: {formatDate(po.divergenceResolvedAt)}{' '}
+                ({po.divergenceResolution === 'REPOSICAO' ? t('reposição solicitada') : t('entrega aceite')})
                 {po.divergenceResolutionNotes ? <> — {po.divergenceResolutionNotes}</> : null}
               </div>
             ) : null}
@@ -149,10 +149,10 @@ export default function OrderDetail() {
           {canApprove && (
             <>
               <button className="btn btn-accent" disabled={busy} onClick={() => runAction(() => api.patch(`/api/purchase-orders/${id}/approve`))}>
-                Aprovar PO
+                {t('Aprovar PO')}
               </button>
               <button className="btn btn-danger" disabled={busy} onClick={() => setShowReject((v) => !v)}>
-                Rejeitar PO
+                {t('Rejeitar PO')}
               </button>
             </>
           )}
@@ -160,23 +160,23 @@ export default function OrderDetail() {
           {canAcceptRefuse && (
             <>
               <button className="btn btn-accent" disabled={busy} onClick={() => runAction(() => api.patch(`/api/purchase-orders/${id}/accept`))}>
-                Aceitar PO
+                {t('Aceitar PO')}
               </button>
               <button className="btn btn-danger" disabled={busy} onClick={() => runAction(() => api.patch(`/api/purchase-orders/${id}/refuse`))}>
-                Recusar PO
+                {t('Recusar PO')}
               </button>
             </>
           )}
 
           {canDispatch && (
             <button className="btn btn-primary" disabled={busy} onClick={() => runAction(() => api.patch(`/api/purchase-orders/${id}/dispatch`))}>
-              Despachar entrega
+              {t('Despachar entrega')}
             </button>
           )}
 
           {canMarkDelivered && (
             <button className="btn btn-primary" disabled={busy} onClick={() => runAction(() => api.patch(`/api/purchase-orders/${id}/delivered`))}>
-              Marcar como entregue
+              {t('Marcar como entregue')}
             </button>
           )}
 
@@ -187,10 +187,10 @@ export default function OrderDetail() {
                 disabled={busy}
                 onClick={() => runAction((body) => api.patch(`/api/purchase-orders/${id}/reception`, body), { conforme: true })}
               >
-                Confirmar receção conforme
+                {t('Confirmar receção conforme')}
               </button>
               <button className="btn btn-danger" disabled={busy} onClick={() => setShowDivergence((v) => !v)}>
-                Reportar divergência
+                {t('Reportar divergência')}
               </button>
             </>
           )}
@@ -202,14 +202,14 @@ export default function OrderDetail() {
                 disabled={busy}
                 onClick={() => setResolveOutcome((v) => (v === 'ACEITE' ? null : 'ACEITE'))}
               >
-                Aceitar entrega e concluir
+                {t('Aceitar entrega e concluir')}
               </button>
               <button
                 className="btn btn-primary"
                 disabled={busy}
                 onClick={() => setResolveOutcome((v) => (v === 'REPOSICAO' ? null : 'REPOSICAO'))}
               >
-                Pedir reposição ao fornecedor
+                {t('Pedir reposição ao fornecedor')}
               </button>
             </>
           )}
@@ -219,20 +219,20 @@ export default function OrderDetail() {
       {canResolveDivergence && resolveOutcome && (
         <div className="card card-pad" style={{ marginTop: 12 }}>
           <strong style={{ fontSize: 13.5 }}>
-            {resolveOutcome === 'ACEITE' ? 'Aceitar a entrega como está' : 'Pedir reposição/correção'}
+            {resolveOutcome === 'ACEITE' ? t('Aceitar a entrega como está') : t('Pedir reposição/correção')}
           </strong>
           <p className="helptext" style={{ margin: '8px 0 10px' }}>
             {resolveOutcome === 'ACEITE'
-              ? 'A divergência fica registada, mas a entrega é aceite (ex.: após acordo com o fornecedor) e a ordem é CONCLUÍDA.'
-              : 'O fornecedor será notificado para corrigir/reentregar. A ordem volta a "Em execução" e, após a nova entrega, confirma a receção outra vez.'}
+              ? t('A divergência fica registada, mas a entrega é aceite (ex.: após acordo com o fornecedor) e a ordem é CONCLUÍDA.')
+              : t('O fornecedor será notificado para corrigir/reentregar. A ordem volta a "Em execução" e, após a nova entrega, confirma a receção outra vez.')}
           </p>
           <div className="field">
-            <label>Notas {resolveOutcome === 'REPOSICAO' ? '(o que deve ser corrigido)' : '(opcional)'}</label>
+            <label>{t('Notas')} {resolveOutcome === 'REPOSICAO' ? t('(o que deve ser corrigido)') : t('(opcional)')}</label>
             <textarea
               rows={3}
               value={resolveNotes}
               onChange={(e) => setResolveNotes(e.target.value)}
-              placeholder={resolveOutcome === 'REPOSICAO' ? 'Ex.: repor as 3 unidades danificadas…' : 'Ex.: acordado desconto de 10% com o fornecedor…'}
+              placeholder={resolveOutcome === 'REPOSICAO' ? t('Ex.: repor as 3 unidades danificadas…') : t('Ex.: acordado desconto de 10% com o fornecedor…')}
             />
           </div>
           <button
@@ -243,7 +243,7 @@ export default function OrderDetail() {
               { outcome: resolveOutcome, notes: resolveNotes.trim() || undefined },
             )}
           >
-            {resolveOutcome === 'ACEITE' ? 'Confirmar: aceitar e concluir' : 'Confirmar: pedir reposição'}
+            {resolveOutcome === 'ACEITE' ? t('Confirmar: aceitar e concluir') : t('Confirmar: pedir reposição')}
           </button>
         </div>
       )}
@@ -251,7 +251,7 @@ export default function OrderDetail() {
       {showReject && (
         <div className="card card-pad" style={{ marginTop: 12 }}>
           <div className="field">
-            <label>Motivo da rejeição</label>
+            <label>{t('Motivo da rejeição')}</label>
             <textarea rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
           </div>
           <button
@@ -259,7 +259,7 @@ export default function OrderDetail() {
             disabled={busy || !rejectReason.trim()}
             onClick={() => runAction((body) => api.patch(`/api/purchase-orders/${id}/reject`, body), { reason: rejectReason })}
           >
-            Confirmar rejeição
+            {t('Confirmar rejeição')}
           </button>
         </div>
       )}
@@ -267,24 +267,24 @@ export default function OrderDetail() {
       {showDivergence && (
         <div className="card card-pad" style={{ marginTop: 12 }}>
           <div className="field">
-            <label>Descreva a divergência</label>
-            <textarea rows={3} value={receptionNotes} onChange={(e) => setReceptionNotes(e.target.value)} placeholder="Ex.: quantidade incompleta, item danificado…" />
+            <label>{t('Descreva a divergência')}</label>
+            <textarea rows={3} value={receptionNotes} onChange={(e) => setReceptionNotes(e.target.value)} placeholder={t('Ex.: quantidade incompleta, item danificado…')} />
           </div>
           <p className="helptext" style={{ marginBottom: 10 }}>
-            A KIXIMA e o fornecedor serão notificados. Depois, resolve a divergência aqui mesmo: aceitar a entrega (após acordo) ou pedir reposição.
+            {t('A KIXIMA e o fornecedor serão notificados. Depois, resolve a divergência aqui mesmo: aceitar a entrega (após acordo) ou pedir reposição.')}
           </p>
           <button
             className="btn btn-danger"
             disabled={busy || !receptionNotes.trim()}
             onClick={() => runAction((body) => api.patch(`/api/purchase-orders/${id}/reception`, body), { conforme: false, notes: receptionNotes })}
           >
-            Reportar divergência
+            {t('Reportar divergência')}
           </button>
         </div>
       )}
 
       {po.rejectionReason ? (
-        <div className="banner banner-error" style={{ marginTop: 16 }}>Motivo da rejeição: {po.rejectionReason}</div>
+        <div className="banner banner-error" style={{ marginTop: 16 }}>{t('Motivo da rejeição')}: {po.rejectionReason}</div>
       ) : null}
     </div>
   );

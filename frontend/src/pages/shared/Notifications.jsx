@@ -35,7 +35,7 @@ export default function Notifications() {
       {notifications.length === 0 ? (
         <div className="empty-state">
           <h3>{t('Sem notificações por agora')}</h3>
-          <p>Assim que houver algo relevante para si, aparece aqui.</p>
+          <p>{t('Assim que houver algo relevante para si, aparece aqui.')}</p>
         </div>
       ) : (
         <div className="card">

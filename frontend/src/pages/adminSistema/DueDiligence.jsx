@@ -35,7 +35,7 @@ export default function DueDiligence() {
       {companies.length === 0 ? (
         <div className="empty-state">
           <h3>{t('Nenhum cadastro pendente')}</h3>
-          <p>Novos registos de empresa aparecem aqui para revisão.</p>
+          <p>{t('Novos registos de empresa aparecem aqui para revisão.')}</p>
         </div>
       ) : (
         companies.map((company) => (
@@ -53,6 +53,7 @@ export default function DueDiligence() {
 }
 
 function CompanyReviewCard({ company, expanded, onToggle, onDecided }) {
+  const { t } = useI18n();
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -70,7 +71,7 @@ function CompanyReviewCard({ company, expanded, onToggle, onDecided }) {
     setSuccess('');
     try {
       await api.patch(`/api/companies/${company.id}/decision`, { approve });
-      setSuccess(approve ? 'Empresa aprovada.' : 'Cadastro rejeitado.');
+      setSuccess(approve ? t('Empresa aprovada.') : t('Cadastro rejeitado.'));
       onDecided();
     } catch (e) {
       setError(e.message);
@@ -92,7 +93,7 @@ function CompanyReviewCard({ company, expanded, onToggle, onDecided }) {
         <div>
           <strong>{company.name}</strong>
           <div style={{ fontSize: 12.5, color: 'var(--ink-600)', marginTop: 2 }}>
-            {company.type === 'CLIENTE' ? 'Cliente' : 'Fornecedor'} · NIF {company.taxId} · {company.contactEmail}
+            {company.type === 'CLIENTE' ? t('Cliente') : t('Fornecedor')} · {t('NIF')} {company.taxId} · {company.contactEmail}
           </div>
         </div>
         <Badge tone={COMPANY_STATUS[company.status]?.tone}>{COMPANY_STATUS[company.status]?.label}</Badge>
@@ -108,41 +109,41 @@ function CompanyReviewCard({ company, expanded, onToggle, onDecided }) {
           ) : (
             <>
               <div style={{ marginBottom: 16 }}>
-                <strong style={{ fontSize: 13 }}>Documentos de credenciamento</strong>
+                <strong style={{ fontSize: 13 }}>{t('Documentos de credenciamento')}</strong>
                 {detail.documents?.length ? (
                   <div className="doc-list">
                     {detail.documents.map((doc) => (
                       <a key={doc.id} className="doc-item" href={doc.fileUrl} target="_blank" rel="noreferrer">
                         <Icon name="invoice" size={16} className="doc-ic" />
-                        {DOC_LABELS[doc.type] || doc.type}
+                        {t(DOC_LABELS[doc.type] || doc.type)}
                         <span className="doc-name">{doc.originalName}</span>
                       </a>
                     ))}
                   </div>
                 ) : (
-                  <p className="helptext" style={{ marginTop: 6 }}>Nenhum documento anexado no cadastro.</p>
+                  <p className="helptext" style={{ marginTop: 6 }}>{t('Nenhum documento anexado no cadastro.')}</p>
                 )}
               </div>
 
               {company.type === 'FORNECEDOR' && (
                 <div style={{ marginBottom: 16 }}>
-                  <strong style={{ fontSize: 13 }}>Apólice Fornecedor→KIXIMA</strong>
+                  <strong style={{ fontSize: 13 }}>{t('Apólice Fornecedor→KIXIMA')}</strong>
                   {supplierPolicy ? (
                     <div style={{ marginTop: 8, fontSize: 13, display: 'grid', gap: 4 }}>
-                      <span>Nº <span className="mono">{supplierPolicy.policyNumber}</span> — {supplierPolicy.insurer}</span>
-                      <span>Cobertura: {formatMoney(supplierPolicy.coverageAmount, supplierPolicy.currency)}</span>
-                      <span>Válida: {formatDate(supplierPolicy.validFrom)} — {formatDate(supplierPolicy.validUntil)}</span>
+                      <span>{t('Nº')} <span className="mono">{supplierPolicy.policyNumber}</span> — {supplierPolicy.insurer}</span>
+                      <span>{t('Cobertura')}: {formatMoney(supplierPolicy.coverageAmount, supplierPolicy.currency)}</span>
+                      <span>{t('Válida')}: {formatDate(supplierPolicy.validFrom)} — {formatDate(supplierPolicy.validUntil)}</span>
                       {supplierPolicy.documentUrl ? (
                         <a className="doc-item" href={supplierPolicy.documentUrl} target="_blank" rel="noreferrer" style={{ marginTop: 4 }}>
                           <Icon name="invoice" size={16} className="doc-ic" />
-                          Documento da apólice
+                          {t('Documento da apólice')}
                         </a>
                       ) : null}
                       <span><Badge tone={POLICY_STATUS[supplierPolicy.status]?.tone}>{POLICY_STATUS[supplierPolicy.status]?.label}</Badge></span>
                     </div>
                   ) : (
                     <p className="helptext" style={{ marginTop: 6 }}>
-                      Ainda não submetida. Não é possível aprovar o fornecedor sem esta apólice.
+                      {t('Ainda não submetida. Não é possível aprovar o fornecedor sem esta apólice.')}
                     </p>
                   )}
                 </div>
@@ -150,10 +151,10 @@ function CompanyReviewCard({ company, expanded, onToggle, onDecided }) {
 
               <div style={{ display: 'flex', gap: 10 }}>
                 <button className="btn btn-accent" disabled={busy || !canApprove} onClick={() => decide(true)}>
-                  Aprovar empresa
+                  {t('Aprovar empresa')}
                 </button>
                 <button className="btn btn-danger" disabled={busy} onClick={() => decide(false)}>
-                  Rejeitar cadastro
+                  {t('Rejeitar cadastro')}
                 </button>
               </div>
             </>

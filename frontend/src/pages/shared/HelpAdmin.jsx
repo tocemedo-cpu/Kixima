@@ -55,33 +55,33 @@ export default function HelpAdmin() {
       const MAX = 12 * 1024 * 1024;
       if (!/^image\/(png|jpe?g|webp|gif)$/.test(f.type)) {
         flash(/heic|heif/i.test(f.type) || /\.hei[cf]$/i.test(f.name)
-          ? 'Formato HEIC/HEIF (foto de iPhone) não é suportado. Converta para JPG ou PNG.'
-          : 'Formato não suportado. Use PNG, JPG, WEBP ou GIF.');
+          ? t('Formato HEIC/HEIF (foto de iPhone) não é suportado. Converta para JPG ou PNG.')
+          : t('Formato não suportado. Use PNG, JPG, WEBP ou GIF.'));
         e.target.value = ''; return;
       }
       if (f.size > MAX) {
-        flash(`Imagem demasiado grande (${(f.size / 1048576).toFixed(1)} MB). O máximo é 12 MB.`);
+        flash(t('Imagem demasiado grande ({mb} MB). O máximo é 12 MB.', { mb: (f.size / 1048576).toFixed(1) }));
         e.target.value = ''; return;
       }
-      flash('A carregar imagem…');
+      flash(t('A carregar imagem…'));
       api.upload(`/api/support/images/${uploadKey}`, f, 'image')
-        .then(() => { loadOverview(); flash('Imagem atualizada.'); })
-        .catch((err) => flash(err.message || 'Não foi possível carregar a imagem.'));
+        .then(() => { loadOverview(); flash(t('Imagem atualizada.')); })
+        .catch((err) => flash(err.message || t('Não foi possível carregar a imagem.')));
     }
     e.target.value = '';
   }
   function removeImage(key) {
     api.del(`/api/support/images/${key}`)
-      .then(() => { loadOverview(); flash('Imagem removida.'); })
-      .catch((err) => flash(err.message || 'Não foi possível remover a imagem.'));
+      .then(() => { loadOverview(); flash(t('Imagem removida.')); })
+      .catch((err) => flash(err.message || t('Não foi possível remover a imagem.')));
   }
   async function setStatus(id, status) {
-    try { await api.patch(`/api/support/tickets/${id}`, { status }); loadTickets(); loadOverview(); flash('Estado atualizado.'); }
-    catch { flash('Não foi possível atualizar.'); }
+    try { await api.patch(`/api/support/tickets/${id}`, { status }); loadTickets(); loadOverview(); flash(t('Estado atualizado.')); }
+    catch { flash(t('Não foi possível atualizar.')); }
   }
 
   const k = ov?.kpis;
-  const items = (tickets || []).filter((t) => !q || t.reference.toLowerCase().includes(q.toLowerCase()) || t.subject.toLowerCase().includes(q.toLowerCase()) || (t.user?.name || '').toLowerCase().includes(q.toLowerCase()));
+  const items = (tickets || []).filter((tk) => !q || tk.reference.toLowerCase().includes(q.toLowerCase()) || tk.subject.toLowerCase().includes(q.toLowerCase()) || (tk.user?.name || '').toLowerCase().includes(q.toLowerCase()));
 
   return (
     <div>
@@ -99,7 +99,7 @@ export default function HelpAdmin() {
 
       {/* Gestão de TODAS as imagens da página de Ajuda */}
       <h3 className="pf-h2">{t('Imagens da Página de Ajuda')}</h3>
-      <p className="bz-sub" style={{ marginTop: -6 }}>Todos os locais de imagem da página são preenchidos por upload. Só o Administrador do Sistema pode carregá-las/trocá-las; elas aparecem para todos os utilizadores.</p>
+      <p className="bz-sub" style={{ marginTop: -6 }}>{t('Todos os locais de imagem da página são preenchidos por upload. Só o Administrador do Sistema pode carregá-las/trocá-las; elas aparecem para todos os utilizadores.')}</p>
       {groupsOf(ov?.imageSlots).map(([group, slots]) => (
         <div key={group} className="img-group">
           <div className="img-group-title">{group}</div>
@@ -107,12 +107,12 @@ export default function HelpAdmin() {
             {slots.map((s) => (
               <div className="img-slot" key={s.key}>
                 <div className="img-thumb">
-                  {s.imageUrl ? <img src={s.imageUrl} alt={s.label} /> : <span className="img-empty"><Icon name="report" size={18} /> Sem imagem</span>}
+                  {s.imageUrl ? <img src={s.imageUrl} alt={s.label} /> : <span className="img-empty"><Icon name="report" size={18} /> {t('Sem imagem')}</span>}
                 </div>
                 <div className="img-slot-name">{s.label}</div>
                 <div className="img-slot-actions">
-                  <button className="btn btn-ghost btn-sm" onClick={() => pickImage(s.key)}>{s.imageUrl ? 'Trocar' : 'Carregar'}</button>
-                  {s.imageUrl ? <button className="btn btn-ghost btn-sm" onClick={() => removeImage(s.key)}>Remover</button> : null}
+                  <button className="btn btn-ghost btn-sm" onClick={() => pickImage(s.key)}>{s.imageUrl ? t('Trocar') : t('Carregar')}</button>
+                  {s.imageUrl ? <button className="btn btn-ghost btn-sm" onClick={() => removeImage(s.key)}>{t('Remover')}</button> : null}
                 </div>
               </div>
             ))}
@@ -132,17 +132,17 @@ export default function HelpAdmin() {
           <tbody>
             {!tickets ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>
               : items.length === 0 ? <tr><td colSpan={7}><EmptyRow>Sem pedidos.</EmptyRow></td></tr>
-              : items.map((t) => (
-                <tr key={t.id}>
-                  <td><span className="bz-mono">#{t.reference}</span></td>
-                  <td><div className="bz-supplier"><span className="bz-supplier-logo">{initials(t.user?.name || '?')}</span><div><strong>{t.user?.name || '—'}</strong><span className="bz-supplier-loc">{t.user?.email}</span></div></div></td>
-                  <td className="bz-muted">{t.company || '—'}</td>
-                  <td>{t.subject}</td>
-                  <td className="bz-muted">{t.category}</td>
-                  <td className="bz-muted">{formatDateTime(t.createdAt)}</td>
+              : items.map((tk) => (
+                <tr key={tk.id}>
+                  <td><span className="bz-mono">#{tk.reference}</span></td>
+                  <td><div className="bz-supplier"><span className="bz-supplier-logo">{initials(tk.user?.name || '?')}</span><div><strong>{tk.user?.name || '—'}</strong><span className="bz-supplier-loc">{tk.user?.email}</span></div></div></td>
+                  <td className="bz-muted">{tk.company || '—'}</td>
+                  <td>{tk.subject}</td>
+                  <td className="bz-muted">{tk.category}</td>
+                  <td className="bz-muted">{formatDateTime(tk.createdAt)}</td>
                   <td>
-                    <select className="hs-status-sel" value={t.status} onChange={(e) => setStatus(t.id, e.target.value)}>
-                      {Object.entries(ST).map(([v, o]) => <option key={v} value={v}>{o.label}</option>)}
+                    <select className="hs-status-sel" value={tk.status} onChange={(e) => setStatus(tk.id, e.target.value)}>
+                      {Object.entries(ST).map(([v, o]) => <option key={v} value={v}>{t(o.label)}</option>)}
                     </select>
                   </td>
                 </tr>

@@ -23,7 +23,7 @@ export default function Profile() {
   const setAvatar = (avatarUrl) => { setData((d) => ({ ...d, user: { ...d.user, avatarUrl } })); updateUser({ avatarUrl }); };
 
   if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
-  if (!data) return <div className="bz-empty">A carregar…</div>;
+  if (!data) return <div className="bz-empty">{t('A carregar…')}</div>;
 
   const { user, company, cards, recent } = data;
   const kpiCards = (cards || []).map((c) => ({ ...c, value: c.money ? formatMoney(c.value) : c.value }));
@@ -39,7 +39,7 @@ export default function Profile() {
           <div>
             <div className="pf-name">{user.name} <Pill tone="success">Ativo</Pill></div>
             <div className="pf-role">{t(ROLE_LABELS[user.role] || user.role)}</div>
-            <div className="pf-company">{company?.name || 'Administração KIXIMA'}</div>
+            <div className="pf-company">{company?.name || t('Administração KIXIMA')}</div>
           </div>
         </div>
 
@@ -48,24 +48,24 @@ export default function Profile() {
           <div className="pf-info"><Icon name="policy" size={15} /> <span>{user.email}</span></div>
           <div className="pf-info"><Icon name="building" size={15} /> <span>{company?.contactPhone || '—'}</span></div>
           <div className="pf-info"><Icon name="offshore" size={15} /> <span>{[company?.city, company?.country].filter(Boolean).join(', ') || 'Angola'}</span></div>
-          <div className="pf-info"><Icon name="wallet" size={15} /> <span>Kwanza (Kz)</span></div>
+          <div className="pf-info"><Icon name="wallet" size={15} /> <span>{t('Kwanza (Kz)')}</span></div>
         </div>
 
         <div className="bz-panel">
           <h3>{t('Segurança da Conta')}</h3>
-          <div className="bz-panel-row"><span>Palavra-passe</span><a className="pf-link" href="/seguranca">Alterar</a></div>
-          <div className="bz-panel-row"><span>Autenticação em duas etapas</span><span className="bz-muted">Configurar</span></div>
-          <div className="bz-panel-row"><span>Conta criada</span><strong>{formatDateTime(user.createdAt)}</strong></div>
+          <div className="bz-panel-row"><span>{t('Palavra-passe')}</span><a className="pf-link" href="/seguranca">{t('Alterar')}</a></div>
+          <div className="bz-panel-row"><span>{t('Autenticação em duas etapas')}</span><span className="bz-muted">{t('Configurar')}</span></div>
+          <div className="bz-panel-row"><span>{t('Conta criada')}</span><strong>{formatDateTime(user.createdAt)}</strong></div>
         </div>
       </div>
 
-      <h2 className="pf-h2">Resumo da Conta</h2>
+      <h2 className="pf-h2">{t('Resumo da Conta')}</h2>
       <KpiRow cards={kpiCards} />
 
       <div className="bz-layout">
         <div className="bz-panel">
           <h3>{t('Atividade Recente')}</h3>
-          {(!recent || recent.length === 0) ? <p className="bz-sub">Sem atividade recente.</p> : (
+          {(!recent || recent.length === 0) ? <p className="bz-sub">{t('Sem atividade recente.')}</p> : (
             <table className="bz-table" style={{ marginTop: 4 }}>
               <tbody>
                 {recent.map((r) => (
@@ -81,17 +81,17 @@ export default function Profile() {
         </div>
         <div className="bz-side">
           <div className="bz-panel">
-            <h3>{company ? 'Informações da Empresa' : 'Plataforma'}</h3>
+            <h3>{company ? t('Informações da Empresa') : t('Plataforma')}</h3>
             {company ? (
               <>
-                <div className="bz-panel-row"><span>Empresa</span><strong>{company.name}</strong></div>
-                <div className="bz-panel-row"><span>NIF</span><strong>{company.taxId}</strong></div>
-                <div className="bz-panel-row"><span>Tipo</span><strong>{company.type === 'FORNECEDOR' ? 'Prestadora' : 'Cliente'}</strong></div>
-                <div className="bz-panel-row"><span>Endereço</span><strong>{company.address || '—'}</strong></div>
-                <div className="bz-panel-row"><span>Estado</span><Pill tone={company.status === 'APROVADA' ? 'success' : 'pending'}>{company.status === 'APROVADA' ? 'Aprovada' : company.status}</Pill></div>
+                <div className="bz-panel-row"><span>{t('Empresa')}</span><strong>{company.name}</strong></div>
+                <div className="bz-panel-row"><span>{t('NIF')}</span><strong>{company.taxId}</strong></div>
+                <div className="bz-panel-row"><span>{t('Tipo')}</span><strong>{company.type === 'FORNECEDOR' ? t('Prestadora') : t('Cliente')}</strong></div>
+                <div className="bz-panel-row"><span>{t('Endereço')}</span><strong>{company.address || '—'}</strong></div>
+                <div className="bz-panel-row"><span>{t('Estado')}</span><Pill tone={company.status === 'APROVADA' ? 'success' : 'pending'}>{company.status === 'APROVADA' ? 'Aprovada' : company.status}</Pill></div>
               </>
             ) : (
-              <p className="bz-sub">Conta de Administração do Sistema KIXIMA — sem empresa associada.</p>
+              <p className="bz-sub">{t('Conta de Administração do Sistema KIXIMA — sem empresa associada.')}</p>
             )}
           </div>
         </div>

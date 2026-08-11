@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import Logo from '../../components/Logo';
+import { useI18n } from '../../i18n';
 
 // Rótulo do perfil no contexto da empresa (Vendedor = FORNECEDOR).
 function roleLabel(role, companyType) {
@@ -16,6 +17,7 @@ function roleLabel(role, companyType) {
 }
 
 export default function AcceptInvite() {
+  const { t } = useI18n();
   const { token } = useParams();
   const [invite, setInvite] = useState(null);
   const [loadError, setLoadError] = useState('');
@@ -56,56 +58,54 @@ export default function AcceptInvite() {
       <div className="login-hero">
         <Logo size={30} mark={72} subtitle light />
         <div>
-          <h1 className="login-hero-title">Junte-se à equipa da sua empresa na KIXIMA.</h1>
+          <h1 className="login-hero-title">{t('Junte-se à equipa da sua empresa na KIXIMA.')}</h1>
           <p className="login-hero-body">
-            Foi convidado para criar a sua conta. Preencha os seus dados; o administrador da
-            empresa confirma o acesso e poderá entrar de seguida.
+            {t('Foi convidado para criar a sua conta. Preencha os seus dados; o administrador da empresa confirma o acesso e poderá entrar de seguida.')}
           </p>
         </div>
-        <div style={{ fontSize: 12, color: 'var(--navy-100)' }}>Angola / África — setor Oil &amp; Gas</div>
+        <div style={{ fontSize: 12, color: 'var(--navy-100)' }}>{t('Angola / África — setor Oil & Gas')}</div>
       </div>
 
       <div className="login-panel">
         <div className="login-card" style={{ maxWidth: 420 }}>
           {loadError ? (
             <div>
-              <h2>Convite inválido</h2>
-              <p>{loadError} Peça um novo link ao administrador da sua empresa.</p>
+              <h2>{t('Convite inválido')}</h2>
+              <p>{loadError} {t('Peça um novo link ao administrador da sua empresa.')}</p>
               <Link className="btn btn-ghost" to="/login" style={{ marginTop: 18, display: 'inline-flex' }}>
-                Ir para o login
+                {t('Ir para o login')}
               </Link>
             </div>
           ) : done ? (
             <div>
-              <h2>Cadastro submetido</h2>
+              <h2>{t('Cadastro submetido')}</h2>
               <p>
-                A sua conta foi criada e está <strong>pendente de aprovação</strong> pelo administrador
-                da empresa. Assim que for aceite, poderá entrar com o email e a senha que definiu.
+                {t('A sua conta foi criada e está')} <strong>{t('pendente de aprovação')}</strong> {t('pelo administrador da empresa. Assim que for aceite, poderá entrar com o email e a senha que definiu.')}
               </p>
               <Link className="btn btn-ghost" to="/login" style={{ marginTop: 18, display: 'inline-flex' }}>
-                Ir para o login
+                {t('Ir para o login')}
               </Link>
             </div>
           ) : !invite ? (
-            <p className="loading-text">A carregar convite…</p>
+            <p className="loading-text">{t('A carregar convite…')}</p>
           ) : (
             <>
-              <h2>Criar a minha conta</h2>
+              <h2>{t('Criar a minha conta')}</h2>
               <p>
-                Convite para <strong>{invite.companyName}</strong> — perfil{' '}
-                <strong>{roleLabel(invite.role, invite.companyType)}</strong>.
+                {t('Convite para')} <strong>{invite.companyName}</strong> — {t('perfil')}{' '}
+                <strong>{t(roleLabel(invite.role, invite.companyType))}</strong>.
               </p>
               <form onSubmit={handleSubmit}>
                 <div className="field">
-                  <label>Nome completo</label>
+                  <label>{t('Nome completo')}</label>
                   <input required value={form.name} onChange={(e) => update('name', e.target.value)} readOnly={!!invite.email} />
                 </div>
                 <div className="field">
-                  <label>Email (login)</label>
+                  <label>{t('Email (login)')}</label>
                   <input type="email" required value={form.email} onChange={(e) => update('email', e.target.value)} readOnly={!!invite.email} />
                 </div>
                 <div className="field">
-                  <label>Senha (mín. 8)</label>
+                  <label>{t('Senha (mín. 8)')}</label>
                   <input type="password" required minLength={8} value={form.password} onChange={(e) => update('password', e.target.value)} />
                 </div>
                 <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10, fontSize: 12.5, cursor: 'pointer' }}>
@@ -117,19 +117,19 @@ export default function AcceptInvite() {
                     style={{ marginTop: 2 }}
                   />
                   <span>
-                    Li e aceito os{' '}
-                    <a href="/termos" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Termos de Uso</a>{' '}
-                    e a{' '}
-                    <a href="/privacidade" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Política de Privacidade</a>.
+                    {t('Li e aceito os')}{' '}
+                    <a href="/termos" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Termos de Uso')}</a>{' '}
+                    {t('e a')}{' '}
+                    <a href="/privacidade" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Política de Privacidade')}</a>.
                   </span>
                 </label>
                 {error ? <p className="error-text" style={{ margin: '12px 0' }}>{error}</p> : null}
                 <button className="btn btn-accent" type="submit" disabled={submitting || !termsAccepted} style={{ width: '100%', marginTop: 8 }}>
-                  {submitting ? 'A submeter…' : 'Submeter cadastro'}
+                  {submitting ? t('A submeter…') : t('Submeter cadastro')}
                 </button>
               </form>
               <p className="helptext" style={{ marginTop: 16 }}>
-                Já tem uma conta? <Link to="/login" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Entrar</Link>
+                {t('Já tem uma conta?')} <Link to="/login" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Entrar')}</Link>
               </p>
             </>
           )}

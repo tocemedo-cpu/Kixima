@@ -5,6 +5,7 @@
 import { useLocation } from 'react-router-dom';
 import { PageHeader } from '../../components/Common';
 import { Icon } from '../../components/icons';
+import { useI18n } from '../../i18n';
 
 const TITLES = {
   servicos: 'Serviços', categorias: 'Categorias', marcas: 'Marcas', kits: 'Kits', promocoes: 'Promoções',
@@ -17,6 +18,7 @@ const TITLES = {
 };
 
 export default function ModulePlaceholder() {
+  const { t } = useI18n();
   const { pathname } = useLocation();
   const seg = pathname.split('/').filter(Boolean).pop() || '';
   const title = TITLES[seg] || seg.replace(/-/g, ' ');
@@ -26,8 +28,8 @@ export default function ModulePlaceholder() {
       <PageHeader title={title} subtitle="Módulo em preparação — a estrutura de navegação já está pronta." />
       <div className="empty-state">
         <div style={{ color: 'var(--brand-600)', marginBottom: 10 }}><Icon name="box" size={30} /></div>
-        <h3 style={{ textTransform: 'capitalize' }}>{title}</h3>
-        <p>Este módulo faz parte do plano do portal do fornecedor e será disponibilizado em breve.</p>
+        <h3 style={{ textTransform: 'capitalize' }}>{t(title)}</h3>
+        <p>{t('Este módulo faz parte do plano do portal do fornecedor e será disponibilizado em breve.')}</p>
       </div>
     </div>
   );

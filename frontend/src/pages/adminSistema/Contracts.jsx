@@ -9,6 +9,7 @@ import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../component
 import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
 import { CONTRACT_STATUS, BILLING_PERIODICITY, formatMoney, formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const EMPTY_FORM = {
   clientCompanyId: '',
@@ -23,6 +24,7 @@ const EMPTY_FORM = {
 };
 
 export default function Contracts() {
+  const { t } = useI18n();
   const [contracts, setContracts] = useState(null);
   const [clients, setClients] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -56,7 +58,7 @@ export default function Contracts() {
       .filter(Boolean);
 
     if (categories.length === 0) {
-      setError('Indique pelo menos uma categoria coberta pelo contrato.');
+      setError(t('Indique pelo menos uma categoria coberta pelo contrato.'));
       return;
     }
 
@@ -75,7 +77,7 @@ export default function Contracts() {
     setSaving(true);
     try {
       const created = await api.post('/api/contracts', payload);
-      setSuccess(`Contrato ${created.reference} criado. As POs elegíveis passam agora a Call-off.`);
+      setSuccess(t('Contrato {ref} criado. As POs elegíveis passam agora a Call-off.', { ref: created.reference }));
       setForm(EMPTY_FORM);
       setShowForm(false);
       loadContracts();
@@ -96,7 +98,7 @@ export default function Contracts() {
         subtitle="Contratos ativos geram Call-offs automáticos, com faturação consolidada e prazo próprio."
         action={
           <button className="btn btn-primary" onClick={() => { setShowForm((v) => !v); setSuccess(''); setError(''); }}>
-            {showForm ? 'Cancelar' : 'Novo contrato-quadro'}
+            {showForm ? t('Cancelar') : t('Novo contrato-quadro')}
           </button>
         }
       />
@@ -108,18 +110,18 @@ export default function Contracts() {
         <form className="card card-pad" style={{ marginBottom: 16 }} onSubmit={submit}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div className="field">
-              <label>Empresa cliente</label>
+              <label>{t('Empresa cliente')}</label>
               <select value={form.clientCompanyId} onChange={set('clientCompanyId')} required>
-                <option value="">Selecione o cliente…</option>
+                <option value="">{t('Selecione o cliente…')}</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
             <div className="field">
-              <label>Empresa fornecedora</label>
+              <label>{t('Empresa fornecedora')}</label>
               <select value={form.supplierCompanyId} onChange={set('supplierCompanyId')} required>
-                <option value="">Selecione o fornecedor…</option>
+                <option value="">{t('Selecione o fornecedor…')}</option>
                 {suppliers.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -128,33 +130,33 @@ export default function Contracts() {
           </div>
 
           <div className="field" style={{ marginTop: 16 }}>
-            <label>Categorias cobertas</label>
+            <label>{t('Categorias cobertas')}</label>
             <input
               type="text"
               value={form.categoriesCovered}
               onChange={set('categoriesCovered')}
-              placeholder="Ex.: Válvulas, Tubagem, Bombas (separadas por vírgula)"
+              placeholder={t('Ex.: Válvulas, Tubagem, Bombas (separadas por vírgula)')}
               required
             />
             <small className="helptext">
-              Uma PO só vira Call-off se todas as categorias dos seus itens estiverem cobertas.
+              {t('Uma PO só vira Call-off se todas as categorias dos seus itens estiverem cobertas.')}
             </small>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 16 }}>
             <div className="field">
-              <label>Valor total do contrato</label>
+              <label>{t('Valor total do contrato')}</label>
               <input type="number" min="0" step="0.01" value={form.totalValue} onChange={set('totalValue')} required />
             </div>
             <div className="field">
-              <label>Moeda</label>
+              <label>{t('Moeda')}</label>
               <input type="text" value={form.currency} onChange={set('currency')} />
             </div>
             <div className="field">
-              <label>Periodicidade de faturação</label>
+              <label>{t('Periodicidade de faturação')}</label>
               <select value={form.billingPeriodicity} onChange={set('billingPeriodicity')}>
                 {Object.entries(BILLING_PERIODICITY).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                  <option key={key} value={key}>{t(label)}</option>
                 ))}
               </select>
             </div>
@@ -162,23 +164,23 @@ export default function Contracts() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 16 }}>
             <div className="field">
-              <label>Prazo de pagamento (dias)</label>
+              <label>{t('Prazo de pagamento (dias)')}</label>
               <input type="number" min="1" step="1" value={form.paymentTermDays} onChange={set('paymentTermDays')} required />
-              <small className="helptext">Substitui os 7 dias padrão para os call-offs deste contrato.</small>
+              <small className="helptext">{t('Substitui os 7 dias padrão para os call-offs deste contrato.')}</small>
             </div>
             <div className="field">
-              <label>Válido de</label>
+              <label>{t('Válido de')}</label>
               <input type="date" value={form.validFrom} onChange={set('validFrom')} required />
             </div>
             <div className="field">
-              <label>Válido até</label>
+              <label>{t('Válido até')}</label>
               <input type="date" value={form.validUntil} onChange={set('validUntil')} required />
             </div>
           </div>
 
           <div style={{ marginTop: 20 }}>
             <button className="btn btn-primary" type="submit" disabled={saving}>
-              {saving ? 'A criar…' : 'Criar contrato-quadro'}
+              {saving ? t('A criar…') : t('Criar contrato-quadro')}
             </button>
           </div>
         </form>
@@ -206,7 +208,7 @@ export default function Contracts() {
               {
                 key: 'paymentTermDays',
                 header: 'Prazo',
-                render: (r) => `${r.paymentTermDays} dias · ${BILLING_PERIODICITY[r.billingPeriodicity] || r.billingPeriodicity}`,
+                render: (r) => `${r.paymentTermDays} ${t('dias')} · ${t(BILLING_PERIODICITY[r.billingPeriodicity] || r.billingPeriodicity)}`,
               },
               {
                 key: 'validity',

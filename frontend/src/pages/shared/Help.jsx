@@ -21,7 +21,6 @@ const TICKET_LABEL = {
 // O Administrador do Sistema vê o painel de administração; os restantes
 // utilizadores veem a página de pedir ajuda.
 export default function Help() {
-  const { t } = useI18n();
   const { user } = useAuth();
   return user?.role === 'ADMIN_SISTEMA' ? <HelpAdmin /> : <HelpUser />;
 }
@@ -71,9 +70,9 @@ function HelpUser() {
   // Atalhos: apenas ações que existem de facto na plataforma.
   const faqCount = ov?.faqCount ?? allFaq.length;
   const quick = [
-    { k: 'quick_kb', i: 'catalog', t: 'Perguntas Frequentes', s: `${faqCount} respostas disponíveis`, act: () => scrollTo(catsRef) },
-    { k: 'quick_contact', i: 'help', t: 'Contato com Suporte', s: 'Abra um pedido de suporte', act: () => setModal(true) },
-    { k: 'quick_tickets', i: 'invoice', t: 'Tickets Abertos', s: 'Acompanhe os seus pedidos', badge: ov?.openTickets, act: () => scrollTo(ticketsRef) },
+    { k: 'quick_kb', i: 'catalog', t: t('Perguntas Frequentes'), s: t('{n} respostas disponíveis', { n: faqCount }), act: () => scrollTo(catsRef) },
+    { k: 'quick_contact', i: 'help', t: t('Contato com Suporte'), s: t('Abra um pedido de suporte'), act: () => setModal(true) },
+    { k: 'quick_tickets', i: 'invoice', t: t('Tickets Abertos'), s: t('Acompanhe os seus pedidos'), badge: ov?.openTickets, act: () => scrollTo(ticketsRef) },
   ];
 
   return (
@@ -81,10 +80,10 @@ function HelpUser() {
       <Crumbs trail={['Ajuda & Suporte', 'Visão Geral']} />
       <div className="bz-head">
         <div>
-          <h1 className="bz-title"><Icon name="help" size={22} /> Ajuda &amp; Suporte</h1>
-          <p className="bz-sub">Estamos aqui para ajudar. Encontre respostas, tutoriais e suporte especializado.</p>
+          <h1 className="bz-title"><Icon name="help" size={22} /> {t('Ajuda & Suporte')}</h1>
+          <p className="bz-sub">{t('Estamos aqui para ajudar. Encontre respostas, tutoriais e suporte especializado.')}</p>
         </div>
-        <div className="bz-head-actions"><button className="btn btn-accent" onClick={() => setModal(true)}>+ Novo Pedido de Suporte</button></div>
+        <div className="bz-head-actions"><button className="btn btn-accent" onClick={() => setModal(true)}>+ {t('Novo Pedido de Suporte')}</button></div>
       </div>
 
       <div className="hs-layout">
@@ -93,14 +92,14 @@ function HelpUser() {
           <div className="bz-panel hs-search">
             <div className={`hs-search-ico${ov?.images?.hero ? ' has-img' : ''}`}>{ov?.images?.hero ? <img src={ov.images.hero} alt="" /> : <Icon name="help" size={40} />}</div>
             <div style={{ flex: 1 }}>
-              <h2 className="hs-h2">Como podemos ajudá-lo hoje?</h2>
-              <p className="bz-sub">Pesquise na nossa base de conhecimento ou faça uma pergunta à equipa de suporte.</p>
+              <h2 className="hs-h2">{t('Como podemos ajudá-lo hoje?')}</h2>
+              <p className="bz-sub">{t('Pesquise na nossa base de conhecimento ou faça uma pergunta à equipa de suporte.')}</p>
               <form className="hs-searchbar" onSubmit={(e) => { e.preventDefault(); runSearch(); }}>
-                <div className="bz-search"><Icon name="search" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar nas perguntas frequentes…" /></div>
-                <button type="submit" className="btn btn-accent">Buscar</button>
+                <div className="bz-search"><Icon name="search" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Pesquisar nas perguntas frequentes…')} /></div>
+                <button type="submit" className="btn btn-accent">{t('Buscar')}</button>
               </form>
-              <div className="hs-popular"><span>Sugestões populares:</span>
-                {POPULAR.map((p) => <button key={p} className="chip" onClick={() => { setQ(p); runSearch(p); }}>{p}</button>)}
+              <div className="hs-popular"><span>{t('Sugestões populares:')}</span>
+                {POPULAR.map((p) => <button key={p} className="chip" onClick={() => { setQ(p); runSearch(p); }}>{t(p)}</button>)}
               </div>
             </div>
           </div>
@@ -109,11 +108,11 @@ function HelpUser() {
           {query ? (
             <div className="bz-panel hs-results">
               <div className="hs-results-head">
-                <strong>Resultados para “{query}”</strong>
-                <button className="pf-link" onClick={() => { setQuery(''); setQ(''); }}>Limpar pesquisa ✕</button>
+                <strong>{t('Resultados para “{q}”', { q: query })}</strong>
+                <button className="pf-link" onClick={() => { setQuery(''); setQ(''); }}>{t('Limpar pesquisa ✕')}</button>
               </div>
               {foundFaq.length === 0 && visibleCats.length === 0 ? (
-                <p className="bz-sub">Nenhum resultado encontrado. <button className="pf-link" onClick={() => setModal(true)}>Abrir um pedido de suporte</button>.</p>
+                <p className="bz-sub">{t('Nenhum resultado encontrado.')} <button className="pf-link" onClick={() => setModal(true)}>{t('Abrir um pedido de suporte')}</button>.</p>
               ) : (
                 <ul className="hs-artlist">
                   {foundFaq.map((f) => (
@@ -142,7 +141,7 @@ function HelpUser() {
           {/* Perguntas Frequentes (por categoria) */}
           <div className="hs-sec-head" ref={catsRef}>
             <h3 className="pf-h2" style={{ margin: 0 }}>{t('Perguntas Frequentes')}</h3>
-            {query ? <button className="pf-link" onClick={() => { setQuery(''); setQ(''); }}>Ver todas as categorias →</button> : null}
+            {query ? <button className="pf-link" onClick={() => { setQuery(''); setQ(''); }}>{t('Ver todas as categorias →')}</button> : null}
           </div>
           <div className="hs-cats">
             {visibleCats.map((c) => (
@@ -150,15 +149,15 @@ function HelpUser() {
                 <span className={`hs-cat-ico${c.imageUrl ? ' has-img' : ''}`}>
                   {c.imageUrl ? <img src={c.imageUrl} alt={c.title} /> : <Icon name={c.icon} size={18} />}
                   {ov?.canManageImages ? (
-                    <span className="hs-cat-edit" title="Trocar imagem (Admin)" role="button" tabIndex={0}
+                    <span className="hs-cat-edit" title={t('Trocar imagem (Admin)')} role="button" tabIndex={0}
                       onClick={(e) => { e.stopPropagation(); pickImage(c.key); }}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); pickImage(c.key); } }}><Icon name="certification" size={12} /></span>
                   ) : null}
                 </span>
-                <div><strong>{c.title}</strong><span className="bz-sub2">{c.desc}</span><span className="hs-cat-art">{c.count} {c.count === 1 ? 'pergunta' : 'perguntas'}</span></div>
+                <div><strong>{c.title}</strong><span className="bz-sub2">{c.desc}</span><span className="hs-cat-art">{c.count} {c.count === 1 ? t('pergunta') : t('perguntas')}</span></div>
               </button>
             ))}
-            {query && visibleCats.length === 0 ? <p className="bz-sub">Nenhuma categoria corresponde à pesquisa.</p> : null}
+            {query && visibleCats.length === 0 ? <p className="bz-sub">{t('Nenhuma categoria corresponde à pesquisa.')}</p> : null}
           </div>
           {ov?.canManageImages ? <input ref={fileRef} type="file" accept="image/*" hidden onChange={onCategoryFile} /> : null}
 
@@ -167,35 +166,35 @@ function HelpUser() {
             {ov?.images?.mascot ? <img className="hs-mascot" src={ov.images.mascot} alt="" /> : null}
             <div>
               <h3>{t('Ainda precisa de ajuda?')}</h3>
-              <p className="bz-sub">A nossa equipa está pronta para ajudar.</p>
+              <p className="bz-sub">{t('A nossa equipa está pronta para ajudar.')}</p>
               <div className="hs-cta-feats">
-                <span><Icon name="truck" size={14} /> Resposta rápida — &lt; 2h</span>
-                <span><Icon name="certification" size={14} /> Equipa especializada</span>
-                <span><Icon name="shield" size={14} /> 98% de satisfação</span>
+                <span><Icon name="truck" size={14} /> {t('Resposta rápida — < 2h')}</span>
+                <span><Icon name="certification" size={14} /> {t('Equipa especializada')}</span>
+                <span><Icon name="shield" size={14} /> {t('98% de satisfação')}</span>
               </div>
             </div>
-            <button className="btn btn-accent" onClick={() => setModal(true)}>Novo Pedido de Suporte</button>
+            <button className="btn btn-accent" onClick={() => setModal(true)}>{t('Novo Pedido de Suporte')}</button>
           </div>
 
           {/* Rodapé interno da página */}
           <footer className="hs-foot">
-            <span>KIXIMA — Plataforma de Procurement Garantido para a Indústria Africana</span>
-            <span className="bz-sub2">© 2024 KIXIMA. Todos os direitos reservados.</span>
+            <span>{t('KIXIMA — Plataforma de Procurement Garantido para a Indústria Africana')}</span>
+            <span className="bz-sub2">{t('© 2024 KIXIMA. Todos os direitos reservados.')}</span>
           </footer>
         </div>
 
         {/* Coluna lateral */}
         <div className="bz-side">
           <div className="bz-panel">
-            <div className="hs-hours"><span>Horário de Suporte</span>{ov?.hours?.online ? <Pill tone="success">Online</Pill> : <Pill tone="neutral">Offline</Pill>}</div>
+            <div className="hs-hours"><span>{t('Horário de Suporte')}</span>{ov?.hours?.online ? <Pill tone="success">Online</Pill> : <Pill tone="neutral">Offline</Pill>}</div>
             <p className="bz-sub" style={{ margin: '6px 0 0' }}>{ov?.hours?.label}</p>
             <p className="bz-sub2">{ov?.hours?.tz}</p>
-            <button className="btn btn-accent hs-side-btn" onClick={() => setModal(true)}>+ Novo Pedido de Suporte</button>
+            <button className="btn btn-accent hs-side-btn" onClick={() => setModal(true)}>+ {t('Novo Pedido de Suporte')}</button>
           </div>
 
           <div className="bz-panel" ref={ticketsRef}>
-            <div className="hs-sec-head"><h3 style={{ margin: 0 }}>{t('Meus Pedidos Recentes')}</h3>{tickets.length > 5 ? <button className="pf-link" onClick={() => setShowTickets(true)}>Ver todos →</button> : null}</div>
-            {tickets.length === 0 ? <p className="bz-sub">Sem pedidos ainda.</p> : tickets.slice(0, 5).map((tk) => (
+            <div className="hs-sec-head"><h3 style={{ margin: 0 }}>{t('Meus Pedidos Recentes')}</h3>{tickets.length > 5 ? <button className="pf-link" onClick={() => setShowTickets(true)}>{t('Ver todos →')}</button> : null}</div>
+            {tickets.length === 0 ? <p className="bz-sub">{t('Sem pedidos ainda.')}</p> : tickets.slice(0, 5).map((tk) => (
               <div className="hs-ticket" key={tk.id}>
                 <div><strong>{tk.subject}</strong><span className="bz-sub2 bz-mono">#{tk.reference}</span></div>
                 <div className="hs-ticket-meta"><Pill tone={TICKET_TONE[tk.status]}>{TICKET_LABEL[tk.status]}</Pill><span className="bz-sub2">{formatDateTime(tk.createdAt)}</span></div>
@@ -215,7 +214,7 @@ function HelpUser() {
 
           <div className="bz-panel">
             <h3>{t('Status do Sistema')}</h3>
-            <div className="hs-status"><Icon name="shield" size={16} /><div style={{ flex: 1 }}><strong>Todos os sistemas operacionais</strong><span className="bz-sub2">Atualizado agora</span></div>{ov?.system?.operational ? <Pill tone="success">Operacional</Pill> : <Pill tone="danger">Incidente</Pill>}</div>
+            <div className="hs-status"><Icon name="shield" size={16} /><div style={{ flex: 1 }}><strong>{t('Todos os sistemas operacionais')}</strong><span className="bz-sub2">{t('Atualizado agora')}</span></div>{ov?.system?.operational ? <Pill tone="success">Operacional</Pill> : <Pill tone="danger">Incidente</Pill>}</div>
           </div>
         </div>
       </div>
@@ -237,12 +236,13 @@ function channelHref(c) {
 
 // Modal da base de conhecimento — perguntas frequentes reais da categoria.
 function KbModal({ category, faq, onClose, onTicket }) {
+  const { t } = useI18n();
   return (
     <div className="av-modal" onClick={onClose}>
       <div className="hs-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="hs-modal-head"><h3><Icon name="help" size={18} /> {category}</h3><button className="hs-modal-x" onClick={onClose} aria-label="Fechar">✕</button></div>
+        <div className="hs-modal-head"><h3><Icon name="help" size={18} /> {category}</h3><button className="hs-modal-x" onClick={onClose} aria-label={t('Fechar')}>✕</button></div>
         {(!faq || faq.length === 0) ? (
-          <p className="bz-sub">Ainda não há perguntas nesta categoria. <button className="pf-link" onClick={onTicket}>Fale com o suporte</button>.</p>
+          <p className="bz-sub">{t('Ainda não há perguntas nesta categoria.')} <button className="pf-link" onClick={onTicket}>{t('Fale com o suporte')}</button>.</p>
         ) : (
           <div className="hs-faq">
             {faq.map((f) => (
@@ -253,7 +253,7 @@ function KbModal({ category, faq, onClose, onTicket }) {
             ))}
           </div>
         )}
-        <div className="hs-form-actions"><button className="btn btn-ghost" onClick={onClose}>Fechar</button><button className="btn btn-accent" onClick={onTicket}>Ainda preciso de ajuda</button></div>
+        <div className="hs-form-actions"><button className="btn btn-ghost" onClick={onClose}>{t('Fechar')}</button><button className="btn btn-accent" onClick={onTicket}>{t('Ainda preciso de ajuda')}</button></div>
       </div>
     </div>
   );
@@ -265,7 +265,7 @@ function AllTickets({ tickets, onClose }) {
   return (
     <div className="av-modal" onClick={onClose}>
       <div className="hs-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="hs-modal-head"><h3>{t('Meus Pedidos Recentes')}</h3><button className="hs-modal-x" onClick={onClose} aria-label="Fechar">✕</button></div>
+        <div className="hs-modal-head"><h3>{t('Meus Pedidos Recentes')}</h3><button className="hs-modal-x" onClick={onClose} aria-label={t('Fechar')}>✕</button></div>
         {tickets.map((tk) => (
           <div className="hs-ticket" key={tk.id}>
             <div><strong>{tk.subject}</strong><span className="bz-sub2 bz-mono">#{tk.reference}</span></div>
@@ -295,16 +295,16 @@ function NewTicket({ onClose, onCreated, categories }) {
       <form className="hs-form" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <h3>{t('Novo Pedido de Suporte')}</h3>
         {error ? <p className="av-error" style={{ maxWidth: 'none' }}>{error}</p> : null}
-        <label className="field"><span>Assunto</span><input value={subject} onChange={(e) => setSubject(e.target.value)} required placeholder="Resumo do problema" /></label>
-        <label className="field"><span>Categoria</span>
+        <label className="field"><span>{t('Assunto')}</span><input value={subject} onChange={(e) => setSubject(e.target.value)} required placeholder={t('Resumo do problema')} /></label>
+        <label className="field"><span>{t('Categoria')}</span>
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
             {(categories.length ? categories.map((c) => c.title) : ['Geral']).map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </label>
-        <label className="field"><span>Mensagem</span><textarea value={message} onChange={(e) => setMessage(e.target.value)} required rows={5} placeholder="Descreva o que precisa…" /></label>
+        <label className="field"><span>{t('Mensagem')}</span><textarea value={message} onChange={(e) => setMessage(e.target.value)} required rows={5} placeholder={t('Descreva o que precisa…')} /></label>
         <div className="hs-form-actions">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="btn btn-accent" disabled={busy}>{busy ? 'A enviar…' : 'Enviar Pedido'}</button>
+          <button type="button" className="btn btn-ghost" onClick={onClose}>{t('Cancelar')}</button>
+          <button type="submit" className="btn btn-accent" disabled={busy}>{busy ? t('A enviar…') : t('Enviar Pedido')}</button>
         </div>
       </form>
     </div>

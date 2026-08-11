@@ -6,11 +6,13 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { formatDateTime, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const STATUS_TONE = { PENDENTE: 'pending', COBRADO: 'success' };
 const STATUS_LABEL = { PENDENTE: 'Pendente', COBRADO: 'Cobrada' };
 
 export default function PlatformFees() {
+  const { t } = useI18n();
   const [data, setData] = useState(null);
   const [tab, setTab] = useState('');
   const [q, setQ] = useState('');
@@ -68,8 +70,8 @@ export default function PlatformFees() {
           <table className="bz-table">
             <thead>
               <tr>
-                <th>Fornecedor</th><th>Fatura</th><th>POs</th><th>Composição</th>
-                <th>Taxa</th><th>Estado</th><th>Data</th><th></th>
+                <th>{t('Fornecedor')}</th><th>{t('Fatura')}</th><th>POs</th><th>{t('Composição')}</th>
+                <th>{t('Taxa')}</th><th>{t('Estado')}</th><th>{t('Data')}</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -88,17 +90,17 @@ export default function PlatformFees() {
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         {f.status === 'PENDENTE' ? (
                           <button className="btn btn-sm" disabled={busy === f.id} onClick={() => charge(f.id)}>
-                            {busy === f.id ? 'A cobrar…' : 'Marcar cobrada'}
+                            {busy === f.id ? t('A cobrar…') : t('Marcar cobrada')}
                           </button>
                         ) : (
                           <span className="bz-muted">{formatDateTime(f.chargedAt)}</span>
                         )}
                         <button
                           className="btn btn-ghost btn-sm"
-                          title="Extrato/documento de cobrança do fornecedor"
+                          title={t('Extrato/documento de cobrança do fornecedor')}
                           onClick={() => window.open(`/documento/taxas/${f.companyId}`, '_blank')}
                         >
-                          Extrato
+                          {t('Extrato')}
                         </button>
                       </div>
                     </td>

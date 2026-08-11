@@ -5,8 +5,10 @@ import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
 import { COMPANY_STATUS, formatDate } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function Companies() {
+  const { t } = useI18n();
   const [companies, setCompanies] = useState(null);
   const [error, setError] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -28,16 +30,16 @@ export default function Companies() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <div className="field" style={{ maxWidth: 200 }}>
           <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-            <option value="">Todos os tipos</option>
-            <option value="CLIENTE">Cliente</option>
-            <option value="FORNECEDOR">Fornecedor</option>
+            <option value="">{t('Todos os tipos')}</option>
+            <option value="CLIENTE">{t('Cliente')}</option>
+            <option value="FORNECEDOR">{t('Fornecedor')}</option>
           </select>
         </div>
         <div className="field" style={{ maxWidth: 220 }}>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="">Todos os estados</option>
+            <option value="">{t('Todos os estados')}</option>
             {Object.entries(COMPANY_STATUS).map(([key, val]) => (
-              <option key={key} value={key}>{val.label}</option>
+              <option key={key} value={key}>{t(val.label)}</option>
             ))}
           </select>
         </div>
@@ -55,7 +57,7 @@ export default function Companies() {
             emptyBody="Ajuste os filtros ou aguarde novos cadastros."
             columns={[
               { key: 'name', header: 'Empresa', render: (r) => <strong>{r.name}</strong> },
-              { key: 'type', header: 'Tipo', render: (r) => (r.type === 'CLIENTE' ? 'Cliente' : 'Fornecedor') },
+              { key: 'type', header: 'Tipo', render: (r) => (r.type === 'CLIENTE' ? t('Cliente') : t('Fornecedor')) },
               { key: 'taxId', header: 'NIF', render: (r) => <span className="mono">{r.taxId}</span> },
               { key: 'status', header: 'Estado', render: (r) => <Badge tone={COMPANY_STATUS[r.status]?.tone}>{COMPANY_STATUS[r.status]?.label}</Badge> },
               { key: 'createdAt', header: 'Cadastrada em', render: (r) => formatDate(r.createdAt) },
@@ -70,6 +72,7 @@ export default function Companies() {
 }
 
 function CompanyDetail({ id }) {
+  const { t } = useI18n();
   const [company, setCompany] = useState(null);
 
   useEffect(() => {
@@ -82,10 +85,10 @@ function CompanyDetail({ id }) {
     <div className="card card-pad" style={{ marginTop: 16 }}>
       <strong style={{ fontSize: 13.5 }}>{company.name}</strong>
       <div style={{ marginTop: 12, display: 'grid', gap: 8, fontSize: 13 }}>
-        <span>Contacto: {company.contactEmail} {company.contactPhone ? `· ${company.contactPhone}` : ''}</span>
-        {company.address ? <span>Morada: {company.address}</span> : null}
-        <span>Apólices Fornecedor→KIXIMA: {company.supplierPolicies?.length || 0}</span>
-        <span>Apólices KIXIMA→Cliente: {company.clientPolicies?.length || 0}</span>
+        <span>{t('Contacto')}: {company.contactEmail} {company.contactPhone ? `· ${company.contactPhone}` : ''}</span>
+        {company.address ? <span>{t('Morada')}: {company.address}</span> : null}
+        <span>{t('Apólices Fornecedor→KIXIMA')}: {company.supplierPolicies?.length || 0}</span>
+        <span>{t('Apólices KIXIMA→Cliente')}: {company.clientPolicies?.length || 0}</span>
       </div>
     </div>
   );

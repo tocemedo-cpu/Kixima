@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import AuthHero from '../../components/AuthHero';
+import { useI18n } from '../../i18n';
 
 const EMPTY_FORM = {
   type: 'CLIENTE',
@@ -40,6 +41,7 @@ const REQUIRED_DOCS = {
 };
 
 export default function Register() {
+  const { t } = useI18n();
   const [form, setForm] = useState(EMPTY_FORM);
   const [docs, setDocs] = useState({}); // { [type]: File }
   const [error, setError] = useState('');
@@ -59,16 +61,16 @@ export default function Register() {
     // Validar documentos obrigatórios antes de submeter.
     const missing = requiredDocs.filter((d) => !docs[d.type]);
     if (missing.length) {
-      setError(`Anexe os documentos: ${missing.map((d) => d.label).join(', ')}.`);
+      setError(t('Anexe os documentos: {docs}.', { docs: missing.map((d) => t(d.label)).join(', ') }));
       return;
     }
     if (isSupplier && !docs.APOLICE_SEGURO) {
-      setError('Anexe o documento da apólice de seguro (Fornecedor→KIXIMA).');
+      setError(t('Anexe o documento da apólice de seguro (Fornecedor→KIXIMA).'));
       return;
     }
 
     if (!termsAccepted) {
-      setError('É necessário aceitar os Termos de Uso e a Política de Privacidade.');
+      setError(t('É necessário aceitar os Termos de Uso e a Política de Privacidade.'));
       return;
     }
 
@@ -103,71 +105,70 @@ export default function Register() {
         <div className="login-card" style={{ maxWidth: 440 }}>
           {done ? (
             <div>
-              <h2>Cadastro submetido</h2>
+              <h2>{t('Cadastro submetido')}</h2>
               <p>
-                O cadastro de <strong>{done.name}</strong> foi recebido e está{' '}
-                <strong>pendente de aprovação (due diligence)</strong>. Assim que a KIXIMA aprovar,
-                poderá entrar com o email e a senha que definiu para o administrador.
+                {t('O cadastro de')} <strong>{done.name}</strong> {t('foi recebido e está')}{' '}
+                <strong>{t('pendente de aprovação (due diligence)')}</strong>. {t('Assim que a KIXIMA aprovar, poderá entrar com o email e a senha que definiu para o administrador.')}
               </p>
               <Link className="btn btn-ghost" to="/login" style={{ marginTop: 18, display: 'inline-flex' }}>
-                Voltar ao login
+                {t('Voltar ao login')}
               </Link>
             </div>
           ) : (
             <>
-              <h2>Cadastro de empresa</h2>
-              <p>Onboarding na KIXIMA — dados, conta de administrador e documentos.</p>
+              <h2>{t('Cadastro de empresa')}</h2>
+              <p>{t('Onboarding na KIXIMA — dados, conta de administrador e documentos.')}</p>
               <form onSubmit={handleSubmit}>
                 <div className="field">
-                  <label>Tipo de empresa</label>
+                  <label>{t('Tipo de empresa')}</label>
                   <select value={form.type} onChange={(e) => update('type', e.target.value)}>
-                    <option value="CLIENTE">Cliente (operadora)</option>
-                    <option value="FORNECEDOR">Fornecedora</option>
+                    <option value="CLIENTE">{t('Cliente (operadora)')}</option>
+                    <option value="FORNECEDOR">{t('Fornecedora')}</option>
                   </select>
                 </div>
                 <div className="field">
-                  <label>Nome da empresa</label>
+                  <label>{t('Nome da empresa')}</label>
                   <input required value={form.name} onChange={(e) => update('name', e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>NIF</label>
+                  <label>{t('NIF')}</label>
                   <input required value={form.taxId} onChange={(e) => update('taxId', e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>Email de contacto da empresa</label>
+                  <label>{t('Email de contacto da empresa')}</label>
                   <input type="email" required value={form.contactEmail} onChange={(e) => update('contactEmail', e.target.value)} />
                 </div>
                 <div className="grid-cols grid-2">
                   <div className="field">
-                    <label>Telefone (opcional)</label>
+                    <label>{t('Telefone (opcional)')}</label>
                     <input value={form.contactPhone} onChange={(e) => update('contactPhone', e.target.value)} />
                   </div>
                   <div className="field">
-                    <label>Morada (opcional)</label>
+                    <label>{t('Morada (opcional)')}</label>
                     <input value={form.address} onChange={(e) => update('address', e.target.value)} />
                   </div>
                 </div>
 
-                <div className="reg-section">Conta de administrador</div>
+                <div className="reg-section">{t('Conta de administrador')}</div>
                 <div className="field">
-                  <label>Nome do administrador</label>
+                  <label>{t('Nome do administrador')}</label>
                   <input required value={form.adminName} onChange={(e) => update('adminName', e.target.value)} />
                 </div>
                 <div className="grid-cols grid-2">
                   <div className="field">
-                    <label>Email (login)</label>
+                    <label>{t('Email (login)')}</label>
                     <input type="email" required value={form.adminEmail} onChange={(e) => update('adminEmail', e.target.value)} />
                   </div>
                   <div className="field">
-                    <label>Senha (mín. 8)</label>
+                    <label>{t('Senha (mín. 8)')}</label>
                     <input type="password" required minLength={8} value={form.adminPassword} onChange={(e) => update('adminPassword', e.target.value)} />
                   </div>
                 </div>
 
-                <div className="reg-section">Documentos de credenciamento</div>
+                <div className="reg-section">{t('Documentos de credenciamento')}</div>
                 {requiredDocs.map((d) => (
                   <div className="field" key={d.type}>
-                    <label>{d.label} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                    <label>{t(d.label)} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
                     <input
                       type="file"
                       accept="application/pdf,image/*"
@@ -176,32 +177,31 @@ export default function Register() {
                     {docs[d.type] ? <small className="helptext">✓ {docs[d.type].name}</small> : null}
                   </div>
                 ))}
-                <small className="helptext">PDF ou imagem, até 10 MB cada.</small>
+                <small className="helptext">{t('PDF ou imagem, até 10 MB cada.')}</small>
 
                 {isSupplier ? (
                   <>
-                    <div className="reg-section">Apólice de seguro (Fornecedor → KIXIMA)</div>
+                    <div className="reg-section">{t('Apólice de seguro (Fornecedor → KIXIMA)')}</div>
                     <p className="helptext" style={{ marginTop: -6, marginBottom: 10 }}>
-                      Obrigatória no credenciamento de fornecedoras — garante a cobertura das
-                      transações realizadas na plataforma.
+                      {t('Obrigatória no credenciamento de fornecedoras — garante a cobertura das transações realizadas na plataforma.')}
                     </p>
                     <div className="grid-cols grid-2">
                       <div className="field">
-                        <label>Seguradora <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                        <label>{t('Seguradora')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
                         <input required value={form.insurer} onChange={(e) => update('insurer', e.target.value)} />
                       </div>
                       <div className="field">
-                        <label>Nº da apólice <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                        <label>{t('Nº da apólice')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
                         <input required value={form.policyNumber} onChange={(e) => update('policyNumber', e.target.value)} />
                       </div>
                     </div>
                     <div className="grid-cols grid-2">
                       <div className="field">
-                        <label>Cobertura <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                        <label>{t('Cobertura')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
                         <input type="number" min="0" step="any" required value={form.coverageAmount} onChange={(e) => update('coverageAmount', e.target.value)} />
                       </div>
                       <div className="field">
-                        <label>Moeda</label>
+                        <label>{t('Moeda')}</label>
                         <select value={form.policyCurrency} onChange={(e) => update('policyCurrency', e.target.value)}>
                           <option value="AOA">AOA</option>
                           <option value="USD">USD</option>
@@ -211,16 +211,16 @@ export default function Register() {
                     </div>
                     <div className="grid-cols grid-2">
                       <div className="field">
-                        <label>Válida de <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                        <label>{t('Válida de')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
                         <input type="date" required value={form.policyValidFrom} onChange={(e) => update('policyValidFrom', e.target.value)} />
                       </div>
                       <div className="field">
-                        <label>Válida até <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                        <label>{t('Válida até')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
                         <input type="date" required value={form.policyValidUntil} onChange={(e) => update('policyValidUntil', e.target.value)} />
                       </div>
                     </div>
                     <div className="field">
-                      <label>Documento da apólice <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                      <label>{t('Documento da apólice')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
                       <input
                         type="file"
                         accept="application/pdf,image/*"
@@ -240,20 +240,20 @@ export default function Register() {
                     style={{ marginTop: 2 }}
                   />
                   <span>
-                    Li e aceito, em nome da empresa, os{' '}
-                    <a href="/termos" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Termos de Uso</a>{' '}
-                    e a{' '}
-                    <a href="/privacidade" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Política de Privacidade</a>.
+                    {t('Li e aceito, em nome da empresa, os')}{' '}
+                    <a href="/termos" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Termos de Uso')}</a>{' '}
+                    {t('e a')}{' '}
+                    <a href="/privacidade" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Política de Privacidade')}</a>.
                   </span>
                 </label>
 
                 {error ? <p className="error-text" style={{ margin: '12px 0' }}>{error}</p> : null}
                 <button className="btn btn-accent" type="submit" disabled={submitting || !termsAccepted} style={{ width: '100%', marginTop: 14 }}>
-                  {submitting ? 'A submeter…' : 'Submeter cadastro'}
+                  {submitting ? t('A submeter…') : t('Submeter cadastro')}
                 </button>
               </form>
               <p className="helptext" style={{ marginTop: 16 }}>
-                Já tem uma conta? <Link to="/login" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Entrar</Link>
+                {t('Já tem uma conta?')} <Link to="/login" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Entrar')}</Link>
               </p>
             </>
           )}

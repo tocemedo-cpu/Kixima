@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, StatCard, Loading, ErrorBanner } from '../../components/Common';
+import { useI18n } from '../../i18n';
 
 export default function AdminHome() {
+  const { t } = useI18n();
   const [companies, setCompanies] = useState(null);
   const [error, setError] = useState('');
 
@@ -30,17 +32,17 @@ export default function AdminHome() {
 
       {pendentes.length > 0 && (
         <div className="banner" style={{ background: 'var(--amber-100)', color: 'var(--amber-600)', border: '1px solid rgba(201,135,31,.25)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Tem {pendentes.length} cadastro(s) de empresa aguardando due diligence.</span>
-          <Link className="btn btn-accent btn-sm" to="/sistema/due-diligence">Rever agora</Link>
+          <span>{t('Tem {n} cadastro(s) de empresa aguardando due diligence.', { n: pendentes.length })}</span>
+          <Link className="btn btn-accent btn-sm" to="/sistema/due-diligence">{t('Rever agora')}</Link>
         </div>
       )}
 
       <div className="card card-pad" style={{ marginTop: 16 }}>
-        <strong style={{ fontSize: 13.5 }}>Apólices</strong>
+        <strong style={{ fontSize: 13.5 }}>{t('Apólices')}</strong>
         <p className="helptext" style={{ marginTop: 8 }}>
-          Emita apólices KIXIMA→Cliente e reveja apólices Fornecedor→KIXIMA em{' '}
-          <Link to="/sistema/apolices" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Gestão de Apólices</Link>.
-          Alertas de expiração (30 dias) são enviados automaticamente ao Company Admin e Financeiro de cada empresa.
+          {t('Emita apólices KIXIMA→Cliente e reveja apólices Fornecedor→KIXIMA em')}{' '}
+          <Link to="/sistema/apolices" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Gestão de Apólices')}</Link>.
+          {' '}{t('Alertas de expiração (30 dias) são enviados automaticamente ao Company Admin e Financeiro de cada empresa.')}
         </p>
       </div>
     </div>

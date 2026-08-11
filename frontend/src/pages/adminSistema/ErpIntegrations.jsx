@@ -8,6 +8,7 @@ import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../component
 import Badge from '../../components/Badge';
 import { Icon } from '../../components/icons';
 import { formatDateTime } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const ERP_LABELS = {
   MANUAL: 'Sem ERP (Manual)',
@@ -18,6 +19,7 @@ const ERP_LABELS = {
 };
 
 export default function ErpIntegrations() {
+  const { t } = useI18n();
   const [companies, setCompanies] = useState(null);
   const [selected, setSelected] = useState(null); // company id
   const [cfg, setCfg] = useState(null); // resposta de /erp-config
@@ -58,7 +60,11 @@ export default function ErpIntegrations() {
     try {
       const data = await api.put(`/api/companies/${selected}/erp-config`, { erp, config: form });
       setCfg(data); setErp(data.erp); setForm(data.config || {});
-      setSuccess(erp === 'MANUAL' ? 'Empresa definida como Sem ERP (Manual).' : `Configuração ${ERP_LABELS[erp]} guardada${data.integrationSynced ? ' e sincronizada' : ''}.`);
+      setSuccess(erp === 'MANUAL'
+        ? t('Empresa definida como Sem ERP (Manual).')
+        : data.integrationSynced
+          ? t('Configuração {erp} guardada e sincronizada.', { erp: ERP_LABELS[erp] })
+          : t('Configuração {erp} guardada.', { erp: ERP_LABELS[erp] }));
       api.get(`/api/companies/${selected}/erp-config/audits`).then(setAudits).catch(() => {});
     } catch (e) { setError(e.message); } finally { setBusy(false); }
   }
@@ -68,7 +74,7 @@ export default function ErpIntegrations() {
     try {
       const r = await api.post(`/api/companies/${selected}/erp-config/test`);
       setCfg((c) => ({ ...c, lastTest: { at: r.at, ok: r.ok, message: r.message } }));
-      setSuccess(r.ok ? `Ligação OK: ${r.message}` : `Falha: ${r.message}`);
+      setSuccess(r.ok ? t('Ligação OK: {msg}', { msg: r.message }) : t('Falha: {msg}', { msg: r.message }));
       api.get(`/api/companies/${selected}/erp-config/audits`).then(setAudits).catch(() => {});
     } catch (e) { setError(e.message); } finally { setBusy(false); }
   }
@@ -85,15 +91,15 @@ export default function ErpIntegrations() {
       <div className="grid-cols grid-2" style={{ alignItems: 'start', gap: 18 }}>
         {/* Empresas aprovadas */}
         <div className="card card-pad">
-          <div className="reg-section" style={{ marginTop: 0 }}>Empresas aprovadas</div>
+          <div className="reg-section" style={{ marginTop: 0 }}>{t('Empresas aprovadas')}</div>
           {!companies ? <Loading /> : list.length === 0 ? (
-            <p className="helptext">Nenhuma empresa aprovada.</p>
+            <p className="helptext">{t('Nenhuma empresa aprovada.')}</p>
           ) : (
             <ul className="pc-cats" style={{ maxHeight: 520 }}>
               {list.map((c) => (
                 <li key={c.id} className={selected === c.id ? 'on' : ''} onClick={() => open(c.id)} style={{ cursor: 'pointer' }}>
                   <span>{c.name}</span>
-                  <span className="pc-c">{c.type === 'FORNECEDOR' ? 'Fornecedor' : 'Cliente'}</span>
+                  <span className="pc-c">{c.type === 'FORNECEDOR' ? t('Fornecedor') : t('Cliente')}</span>
                 </li>
               ))}
             </ul>
@@ -103,22 +109,22 @@ export default function ErpIntegrations() {
         {/* Configuração */}
         <div className="card card-pad">
           {!selected ? (
-            <p className="helptext">Selecione uma empresa à esquerda para configurar o ERP.</p>
+            <p className="helptext">{t('Selecione uma empresa à esquerda para configurar o ERP.')}</p>
           ) : !cfg ? <Loading /> : (
             <>
               <div className="reg-section" style={{ marginTop: 0 }}>
-                {cfg.company.name} — ERP atual: <Badge tone={cfg.erp === 'MANUAL' ? 'neutral' : 'success'}>{ERP_LABELS[cfg.erp]}</Badge>
+                {cfg.company.name} — {t('ERP atual')}: <Badge tone={cfg.erp === 'MANUAL' ? 'neutral' : 'success'}>{ERP_LABELS[cfg.erp]}</Badge>
               </div>
 
               <div className="field">
-                <label>Sistema ERP</label>
+                <label>{t('Sistema ERP')}</label>
                 <select value={erp} onChange={(e) => onErpChange(e.target.value)}>
-                  {(cfg.systems || []).map((s) => <option key={s} value={s}>{ERP_LABELS[s] || s}</option>)}
+                  {(cfg.systems || []).map((s) => <option key={s} value={s}>{t(ERP_LABELS[s] || s)}</option>)}
                 </select>
               </div>
 
               {erp === 'MANUAL' ? (
-                <p className="helptext">Sem integração ERP — a empresa continua a usar o Kixima normalmente.</p>
+                <p className="helptext">{t('Sem integração ERP — a empresa continua a usar o Kixima normalmente.')}</p>
               ) : (
                 <div className="grid-cols grid-2">
                   {fields.map((f) => (
@@ -137,7 +143,7 @@ export default function ErpIntegrations() {
 
               {cfg.lastTest ? (
                 <div className="helptext" style={{ marginTop: 4 }}>
-                  Último teste: {cfg.lastTest.at ? formatDateTime(cfg.lastTest.at) : '—'}{' '}
+                  {t('Último teste')}: {cfg.lastTest.at ? formatDateTime(cfg.lastTest.at) : '—'}{' '}
                   {cfg.lastTest.ok == null ? '' : cfg.lastTest.ok
                     ? <Badge tone="success">OK</Badge>
                     : <Badge tone="danger">Falhou</Badge>}
@@ -147,24 +153,24 @@ export default function ErpIntegrations() {
 
               <div className="prod-form-footer" style={{ marginTop: 12 }}>
                 <button className="btn btn-ghost" type="button" disabled={busy || erp === 'MANUAL'} onClick={test}>
-                  <Icon name="offshore" size={14} /> Testar Conexão
+                  <Icon name="offshore" size={14} /> {t('Testar Conexão')}
                 </button>
                 <button className="btn btn-accent" type="button" disabled={busy} onClick={save}>
-                  {busy ? 'A guardar…' : 'Guardar'}
+                  {busy ? t('A guardar…') : t('Guardar')}
                 </button>
               </div>
 
               {audits.length > 0 ? (
                 <>
-                  <div className="reg-section">Histórico de auditoria</div>
+                  <div className="reg-section">{t('Histórico de auditoria')}</div>
                   <table className="bz-table">
-                    <thead><tr><th>Quando</th><th>Ação</th><th>ERP</th><th>Por</th><th>Resultado</th></tr></thead>
+                    <thead><tr><th>{t('Quando')}</th><th>{t('Ação')}</th><th>ERP</th><th>{t('Por')}</th><th>{t('Resultado')}</th></tr></thead>
                     <tbody>
                       {audits.map((a) => (
                         <tr key={a.id}>
                           <td className="bz-muted">{formatDateTime(a.createdAt)}</td>
                           <td>{a.action}</td>
-                          <td>{ERP_LABELS[a.toErp] || a.toErp || '—'}</td>
+                          <td>{a.toErp ? t(ERP_LABELS[a.toErp] || a.toErp) : '—'}</td>
                           <td>{a.actorName || '—'}</td>
                           <td className="bz-muted">{a.result || '—'}</td>
                         </tr>

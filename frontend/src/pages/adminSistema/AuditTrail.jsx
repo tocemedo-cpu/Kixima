@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, Pill, Toolbar, EmptyRow, Pagination } from '../../components/BuyerUI';
 import { formatDateTime } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const ACTION_LABEL = {
   PO_APROVADA: 'PO aprovada',
@@ -44,15 +45,17 @@ const DETAIL_LABEL = {
 };
 
 function DetailCell({ detail }) {
+  const { t } = useI18n();
   if (!detail || typeof detail !== 'object') return <span className="bz-muted">—</span>;
   const parts = Object.entries(detail)
     .filter(([, v]) => v !== null && v !== undefined && v !== '')
-    .map(([k, v]) => `${DETAIL_LABEL[k] || k}: ${v === true ? 'sim' : v === false ? 'não' : v}`);
+    .map(([k, v]) => `${t(DETAIL_LABEL[k] || k)}: ${v === true ? t('sim') : v === false ? t('não') : v}`);
   if (!parts.length) return <span className="bz-muted">—</span>;
   return <span className="bz-muted">{parts.join(' · ')}</span>;
 }
 
 export default function AuditTrail() {
+  const { t } = useI18n();
   const [data, setData] = useState(null);
   const [page, setPage] = useState(1);
   const [action, setAction] = useState('');
@@ -89,12 +92,12 @@ export default function AuditTrail() {
             className="input"
             value={action}
             onChange={(e) => { setAction(e.target.value); setPage(1); }}
-            aria-label="Filtrar por ação"
+            aria-label={t('Filtrar por ação')}
           >
-            <option value="">Todas as ações</option>
+            <option value="">{t('Todas as ações')}</option>
             {(data?.actions || []).map((a) => (
               <option key={a.action} value={a.action}>
-                {ACTION_LABEL[a.action] || a.action} ({a.count})
+                {t(ACTION_LABEL[a.action] || a.action)} ({a.count})
               </option>
             ))}
           </select>
@@ -107,7 +110,7 @@ export default function AuditTrail() {
             <table className="bz-table">
               <thead>
                 <tr>
-                  <th>Data</th><th>Ação</th><th>Referência</th><th>Ator</th><th>Perfil</th><th>IP</th><th>Detalhe</th>
+                  <th>{t('Data')}</th><th>{t('Ação')}</th><th>{t('Referência')}</th><th>{t('Ator')}</th><th>{t('Perfil')}</th><th>IP</th><th>{t('Detalhe')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -119,7 +122,7 @@ export default function AuditTrail() {
                       <td><Pill tone={ACTION_TONE[l.action] || 'neutral'}>{ACTION_LABEL[l.action] || l.action}</Pill></td>
                       <td className="mono">{l.entityRef || '—'}</td>
                       <td><strong>{l.actorName || '—'}</strong></td>
-                      <td className="bz-muted">{ROLE_LABEL[l.actorRole] || l.actorRole || '—'}</td>
+                      <td className="bz-muted">{l.actorRole ? t(ROLE_LABEL[l.actorRole] || l.actorRole) : '—'}</td>
                       <td className="mono bz-muted">{l.ip || '—'}</td>
                       <td><DetailCell detail={l.detail} /></td>
                     </tr>
