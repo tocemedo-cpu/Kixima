@@ -3,6 +3,7 @@
 // e em execução, a partir das ordens recebidas.
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
+import { useAuth } from '../../auth/AuthContext';
 import { PageHeader, Loading, ErrorBanner, StatCard } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
@@ -13,12 +14,21 @@ const PENDING = new Set(['ACEITE_FORNECEDOR', 'AGUARDANDO_PAGAMENTO']);
 
 export default function Wallet() {
   const { t } = useI18n();
+  const { user } = useAuth();
   const [orders, setOrders] = useState(null);
+  const [feeStatement, setFeeStatement] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     api.get('/api/purchase-orders').then(setOrders).catch((e) => setError(e.message));
   }, []);
+
+  // Extrato da Taxa KIXIMA (o que a empresa deve à plataforma). Não bloqueia a
+  // página se falhar — a carteira continua a funcionar.
+  useEffect(() => {
+    if (!user?.companyId) return;
+    api.get(`/api/companies/${user.companyId}/platform-fees`).then(setFeeStatement).catch(() => {});
+  }, [user?.companyId]);
 
   if (error) return <ErrorBanner message={error} />;
   if (!orders) return <Loading />;
@@ -40,6 +50,23 @@ export default function Wallet() {
         <StatCard label="A receber" value={formatMoney(pending)} sub="Aceites, a aguardar pagamento" />
         <StatCard label="Saldo movimentado" value={formatMoney(received + pending)} />
       </div>
+
+      {feeStatement ? (
+        <div className="card card-pad" style={{ marginBottom: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <strong style={{ fontSize: 13.5 }}>Taxa KIXIMA</strong>
+            <p className="helptext" style={{ margin: '4px 0 0' }}>
+              {feeStatement.kpis.pendentes > 0
+                ? <>Tem <strong>{formatMoney(feeStatement.kpis.pendingAOA)}</strong> por liquidar ({feeStatement.kpis.pendentes} {feeStatement.kpis.pendentes === 1 ? 'taxa pendente' : 'taxas pendentes'}).</>
+                : 'Sem taxas pendentes — está tudo liquidado.'}
+              {' '}Total gerado: {formatMoney(feeStatement.kpis.totalAOA)}.
+            </p>
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/taxas/${user.companyId}`, '_blank')}>
+            Ver extrato completo
+          </button>
+        </div>
+      ) : null}
 
       <div className="card">
         <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}><strong>Últimos recebimentos</strong></div>

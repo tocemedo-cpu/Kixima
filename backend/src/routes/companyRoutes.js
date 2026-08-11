@@ -58,6 +58,10 @@ router.put('/:id/erp-config', requireRole('ADMIN_SISTEMA'), validate(erpConfigSc
 router.post('/:id/erp-config/test', requireRole('ADMIN_SISTEMA'), companyController.testErpConnection);
 router.get('/:id/erp-config/audits', requireRole('ADMIN_SISTEMA'), companyController.listErpAudits);
 
+// Extrato da Taxa KIXIMA da empresa — a própria empresa (fornecedor) vê o que
+// deve e porquê; o Admin do Sistema vê qualquer uma (documento de cobrança).
+router.get('/:id/platform-fees', requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'FINANCEIRO', 'ADMIN_SISTEMA'), companyController.platformFeeStatement);
+
 // Dados bancários da empresa (para pagamentos) — geridos pela própria empresa.
 router.get('/:id/bank-details', requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'FINANCEIRO', 'ADMIN_SISTEMA'), companyController.getBankDetails);
 router.put('/:id/bank-details', requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'ADMIN_SISTEMA'), validate(bankDetailsSchema), companyController.setBankDetails);

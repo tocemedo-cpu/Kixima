@@ -85,13 +85,22 @@ export default function PlatformFees() {
                     <td><Pill tone={STATUS_TONE[f.status] || 'neutral'}>{STATUS_LABEL[f.status] || f.status}</Pill></td>
                     <td className="bz-muted">{formatDateTime(f.createdAt)}</td>
                     <td>
-                      {f.status === 'PENDENTE' ? (
-                        <button className="btn btn-sm" disabled={busy === f.id} onClick={() => charge(f.id)}>
-                          {busy === f.id ? 'A cobrar…' : 'Marcar cobrada'}
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        {f.status === 'PENDENTE' ? (
+                          <button className="btn btn-sm" disabled={busy === f.id} onClick={() => charge(f.id)}>
+                            {busy === f.id ? 'A cobrar…' : 'Marcar cobrada'}
+                          </button>
+                        ) : (
+                          <span className="bz-muted">{formatDateTime(f.chargedAt)}</span>
+                        )}
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          title="Extrato/documento de cobrança do fornecedor"
+                          onClick={() => window.open(`/documento/taxas/${f.companyId}`, '_blank')}
+                        >
+                          Extrato
                         </button>
-                      ) : (
-                        <span className="bz-muted">{formatDateTime(f.chargedAt)}</span>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))}

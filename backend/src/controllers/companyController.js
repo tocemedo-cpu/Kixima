@@ -71,6 +71,13 @@ async function getBankDetails(req, res) {
   res.json(await companyService.getBankDetails(req.params.id));
 }
 
+// Extrato da Taxa KIXIMA — a própria empresa ou o Admin do Sistema.
+async function platformFeeStatement(req, res) {
+  assertOwnCompany(req);
+  const platformFeeService = require('../services/platformFeeService');
+  res.json(await platformFeeService.statementFor(req.params.id));
+}
+
 async function setBankDetails(req, res) {
   assertOwnCompany(req);
   const result = await companyService.updateBankDetails(req.params.id, req.body);
@@ -179,6 +186,7 @@ module.exports = {
   listErpAudits,
   setBudgetLimit,
   getBankDetails,
+  platformFeeStatement,
   setBankDetails,
   createUser,
   listUsers,

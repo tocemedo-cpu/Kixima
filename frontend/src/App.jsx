@@ -22,6 +22,7 @@ const OrderDetail = lazy(() => import('./pages/shared/OrderDetail'));
 const ModulePlaceholder = lazy(() => import('./pages/shared/ModulePlaceholder'));
 const Security = lazy(() => import('./pages/shared/Security'));
 const PrintableDocument = lazy(() => import('./pages/shared/PrintableDocument'));
+const FeeStatement = lazy(() => import('./pages/shared/FeeStatement'));
 
 const CompradorHome = lazy(() => import('./pages/comprador/Home'));
 const Catalog = lazy(() => import('./pages/comprador/Catalog'));
@@ -120,6 +121,7 @@ export default function App() {
         {/* Documentos imprimíveis (folha A4, sem a moldura da app) */}
         <Route path="/documento/po/:id" element={<PrintableDocument kind="po" />} />
         <Route path="/documento/fatura/:id" element={<PrintableDocument kind="invoice" />} />
+        <Route path="/documento/taxas/:companyId" element={<FeeStatement />} />
 
         <Route element={<Shell />}>
           {/* Telas partilhadas / transversais */}

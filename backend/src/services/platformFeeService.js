@@ -37,4 +37,43 @@ async function createForInvoice(tx, { invoice, companyId }) {
   });
 }
 
-module.exports = { PER_PO, PER_INVOICE, CURRENCY, compute, createForInvoice };
+// Extrato de taxas de UMA empresa (fornecedor): lista completa + totais.
+// Serve a página do fornecedor ("quanto devo à KIXIMA e porquê") e o documento
+// de cobrança imprimível do Admin.
+async function statementFor(companyId) {
+  const prisma = require('../config/database');
+  const { NotFoundError } = require('../utils/errors');
+
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { id: true, name: true, taxId: true, address: true, city: true, province: true, country: true, contactEmail: true },
+  });
+  if (!company) throw new NotFoundError('Empresa');
+
+  const fees = await prisma.platformFee.findMany({
+    where: { companyId },
+    orderBy: { createdAt: 'desc' },
+    include: { invoice: { select: { reference: true, amount: true, currency: true } } },
+  });
+
+  const sum = (list) => round2(list.reduce((s, f) => s + Number(f.amount), 0));
+  const pendentes = fees.filter((f) => f.status === 'PENDENTE');
+  const cobradas = fees.filter((f) => f.status === 'COBRADO');
+
+  return {
+    company,
+    fees,
+    kpis: {
+      total: fees.length,
+      totalAOA: sum(fees),
+      pendingAOA: sum(pendentes),
+      chargedAOA: sum(cobradas),
+      pendentes: pendentes.length,
+      cobradas: cobradas.length,
+    },
+    formula: { perPo: PER_PO, perInvoice: PER_INVOICE, currency: CURRENCY },
+    generatedAt: new Date(),
+  };
+}
+
+module.exports = { PER_PO, PER_INVOICE, CURRENCY, compute, createForInvoice, statementFor };
