@@ -21,4 +21,20 @@ async function logout(req, res) {
   res.json({ ok: true });
 }
 
-module.exports = { login, me, changePassword, logout };
+// Endereço público real do serviço (com trust proxy) — para o link do email.
+function publicBaseUrl(req) {
+  return `${req.protocol}://${req.get('host')}`;
+}
+
+// "Esqueci a senha" — resposta SEMPRE igual, exista o email ou não
+// (anti-enumeração de contas).
+async function forgotPassword(req, res) {
+  await authService.requestPasswordReset(req.body.email, publicBaseUrl(req));
+  res.json({ ok: true, message: 'Se o email existir na plataforma, enviámos um link de recuperação.' });
+}
+
+async function resetPassword(req, res) {
+  res.json(await authService.resetPassword(req.body.token, req.body.password));
+}
+
+module.exports = { login, me, changePassword, logout, forgotPassword, resetPassword };

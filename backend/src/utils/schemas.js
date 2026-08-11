@@ -35,6 +35,15 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8, 'A nova senha deve ter pelo menos 8 caracteres.'),
 });
 
+// Recuperação de senha ("Esqueci a senha").
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Indique um email válido.'),
+});
+const resetPasswordSchema = z.object({
+  token: z.string().min(10),
+  password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.'),
+});
+
 const decideCompanySchema = z.object({
   approve: z.boolean(),
   rejectionReason: z.string().optional(),
@@ -269,6 +278,8 @@ const erpConfigSchema = z.object({
 module.exports = {
   loginSchema,
   changePasswordSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   registerCompanySchema,
   decideCompanySchema,
   erpConfigSchema,

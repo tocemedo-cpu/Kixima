@@ -53,6 +53,9 @@ export default function LoginPage() {
             <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%' }}>
               {submitting ? t('A entrar…') : t('Entrar')}
             </button>
+            <p style={{ marginTop: 10, textAlign: 'right' }}>
+              <Link to="/recuperar" style={{ color: 'var(--brand-600)', fontWeight: 600, fontSize: 13 }}>{t('Esqueceu a senha?')}</Link>
+            </p>
           </form>
 
           <p className="helptext" style={{ marginTop: 16 }}>

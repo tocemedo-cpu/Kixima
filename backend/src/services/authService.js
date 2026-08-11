@@ -118,4 +118,92 @@ async function changePassword(userId, currentPassword, newPassword) {
   return { ok: true };
 }
 
-module.exports = { login, createUser, hashPassword, signToken, signInvite, verifyInvite, changePassword, revokeSessions };
+// ---------------------------------------------------------------------------
+// Recuperação de senha ("Esqueci a senha")
+// ---------------------------------------------------------------------------
+// Token assinado de USO ÚNICO, sem estado extra em BD: transporta a tokenVersion
+// atual do utilizador; ao redefinir a senha a tokenVersion incrementa, matando o
+// próprio token de recuperação e todas as sessões antigas de uma só vez.
+const RESET_TTL = '1h';
+
+function signPasswordReset(user) {
+  return jwt.sign(
+    { t: 'pwreset', sub: user.id, tv: user.tokenVersion ?? 0 },
+    config.auth.jwtSecret,
+    { expiresIn: RESET_TTL },
+  );
+}
+
+async function verifyPasswordReset(token) {
+  let payload;
+  try {
+    payload = jwt.verify(token, config.auth.jwtSecret, { algorithms: ['HS256'] });
+  } catch {
+    throw new UnauthorizedError('Link de recuperação inválido ou expirado. Peça um novo.');
+  }
+  if (payload.t !== 'pwreset' || !payload.sub) {
+    throw new UnauthorizedError('Link de recuperação inválido.');
+  }
+  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+  if (!user || (user.tokenVersion ?? 0) !== (payload.tv ?? 0)) {
+    // tokenVersion mudou = o link já foi usado (ou a senha trocou entretanto).
+    throw new UnauthorizedError('Este link de recuperação já foi utilizado ou expirou. Peça um novo.');
+  }
+  return user;
+}
+
+function buildResetEmail({ name, link }) {
+  const subject = 'Recuperação de senha — KIXIMA';
+  const text = [
+    `Olá ${name},`, '',
+    'Recebemos um pedido para redefinir a senha da sua conta KIXIMA.',
+    'Clique no link abaixo para escolher uma nova senha (válido por 1 hora):', link, '',
+    'Se não fez este pedido, ignore este email — a sua senha mantém-se.',
+    '', 'Equipe Kixima.',
+  ].join('\n');
+  const html = `
+    <div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;line-height:1.5">
+      <p>Olá <strong>${name}</strong>,</p>
+      <p>Recebemos um pedido para redefinir a senha da sua conta KIXIMA.</p>
+      <p style="margin:22px 0">
+        <a href="${link}" style="background:#c1121f;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">Redefinir senha</a>
+      </p>
+      <p style="font-size:13px;color:#666">O link é válido por 1 hora e só pode ser usado uma vez.</p>
+      <p style="font-size:13px;color:#666">Se não fez este pedido, ignore este email — a sua senha mantém-se.</p>
+      <p>Equipe Kixima.</p>
+    </div>`;
+  return { subject, text, html };
+}
+
+// Pedido de recuperação. NUNCA revela se o email existe (anti-enumeração): o
+// controller devolve sempre a mesma resposta; aqui apenas não enviamos nada
+// quando a conta não existe/está inativa.
+async function requestPasswordReset(email, baseUrl = null) {
+  const notificationService = require('./notificationService'); // require tardio (evita ciclos)
+  const normEmail = String(email || '').trim().toLowerCase();
+  const user = await prisma.user.findUnique({ where: { email: normEmail } });
+  if (!user || !user.active) return { sent: false };
+  const token = signPasswordReset(user);
+  const base = String(process.env.APP_URL || baseUrl || config.appUrl || '').replace(/\/$/, '');
+  const link = `${base}/recuperar/${token}`;
+  const { subject, text, html } = buildResetEmail({ name: user.name, link });
+  await notificationService.sendEmail(user.email, subject, text, { html });
+  return { sent: true };
+}
+
+// Redefinição efetiva: valida o token, grava a nova senha e revoga tudo o que
+// estava emitido (sessões antigas + o próprio token de recuperação).
+async function resetPassword(token, newPassword) {
+  const user = await verifyPasswordReset(token);
+  const passwordHash = await hashPassword(newPassword);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash, tokenVersion: { increment: 1 } },
+  });
+  return { ok: true };
+}
+
+module.exports = {
+  login, createUser, hashPassword, signToken, signInvite, verifyInvite,
+  changePassword, revokeSessions, requestPasswordReset, resetPassword,
+};
