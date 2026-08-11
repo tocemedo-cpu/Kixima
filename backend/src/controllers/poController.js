@@ -1,4 +1,5 @@
 const poService = require('../services/poService');
+const auditService = require('../services/auditService');
 
 async function create(req, res) {
   const po = await poService.createPurchaseOrder({
@@ -29,16 +30,40 @@ async function getOne(req, res) {
 
 async function approve(req, res) {
   const po = await poService.approvePurchaseOrder(req.params.id, req.user.id);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'PO_APROVADA',
+    entityType: 'PurchaseOrder',
+    entityId: po.id,
+    entityRef: po.reference,
+    detail: { valor: String(po.totalAmount), moeda: po.currency },
+  });
   res.json(po);
 }
 
 async function reject(req, res) {
   const po = await poService.rejectPurchaseOrder(req.params.id, req.user.id, req.body.reason);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'PO_REJEITADA',
+    entityType: 'PurchaseOrder',
+    entityId: po.id,
+    entityRef: po.reference,
+    detail: { motivo: req.body.reason || null },
+  });
   res.json(po);
 }
 
 async function accept(req, res) {
   const po = await poService.acceptPurchaseOrder(req.params.id, req.user.companyId);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'PO_ACEITE',
+    entityType: 'PurchaseOrder',
+    entityId: po.id,
+    entityRef: po.reference,
+    detail: { valor: String(po.totalAmount), moeda: po.currency },
+  });
   res.json(po);
 }
 
@@ -59,6 +84,14 @@ async function delivered(req, res) {
 
 async function receive(req, res) {
   const po = await poService.confirmReception(req.params.id, req.user.companyId, req.body);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'RECECAO_MERCADORIA',
+    entityType: 'PurchaseOrder',
+    entityId: po.id,
+    entityRef: po.reference,
+    detail: { conforme: Boolean(req.body.conforme), notas: req.body.notes || null },
+  });
   res.json(po);
 }
 

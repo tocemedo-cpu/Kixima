@@ -153,6 +153,7 @@ const ADMIN_SISTEMA = [
       { label: 'Segurança', to: '/seguranca' },
       { label: 'Permissões', to: '/sistema/permissoes' },
       { label: 'Gestão de Atividades', to: '/sistema/atividades' },
+      { label: 'Auditoria', to: '/sistema/auditoria' },
       { label: 'Ajuda', to: '/ajuda' },
     ],
   },

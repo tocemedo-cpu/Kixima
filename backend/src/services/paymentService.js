@@ -10,6 +10,7 @@ const notificationService = require('./notificationService');
 const eventBus = require('./eventBus');
 const platformFeeService = require('./platformFeeService');
 const storageService = require('./storageService');
+const auditService = require('./auditService');
 
 async function listPendingInvoices(buyerCompanyId) {
   return prisma.invoice.findMany({
@@ -40,7 +41,7 @@ async function listPaymentHistory(buyerCompanyId) {
   });
 }
 
-async function processPayment(invoiceId, processedById, buyerCompanyId, proofFile = null) {
+async function processPayment(invoiceId, processedById, buyerCompanyId, proofFile = null, actor = null) {
   // Comprovativo da transferência OBRIGATÓRIO — é a prova (visível ao
   // fornecedor) de que o dinheiro saiu; sem ela o "pago" seria só uma palavra.
   if (!proofFile) {
@@ -104,6 +105,21 @@ async function processPayment(invoiceId, processedById, buyerCompanyId, proofFil
       await platformFeeService.createForInvoice(tx, { invoice, companyId: supplierCompanyId });
     }
 
+    // Auditoria DENTRO da transação: um pagamento sem registo não existe.
+    await auditService.record(tx, {
+      actor: actor || { actorId: processedById },
+      action: 'PAGAMENTO_EXECUTADO',
+      entityType: 'Payment',
+      entityId: createdPayment.id,
+      entityRef: createdPayment.reference,
+      detail: {
+        fatura: invoice.reference,
+        valor: String(invoice.amount),
+        moeda: invoice.currency,
+        comprovativo: proofFile.originalname || 'comprovativo',
+      },
+    });
+
     return [createdPayment];
   });
 
@@ -123,7 +139,7 @@ async function processPayment(invoiceId, processedById, buyerCompanyId, proofFil
 
 // O fornecedor confirma que o valor entrou na conta — fecha o ciclo de
 // confiança do "pagamento garantido". Uma vez por pagamento.
-async function confirmReceived(paymentId, user) {
+async function confirmReceived(paymentId, user, actor = null) {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: { invoice: { include: { purchaseOrder: true, contract: true } } },
@@ -139,10 +155,23 @@ async function confirmReceived(paymentId, user) {
     throw new ConflictError('A receção deste pagamento já foi confirmada.');
   }
 
-  return prisma.payment.update({
-    where: { id: paymentId },
-    data: { receivedAt: new Date(), receivedById: user.id },
+  // Confirmação + auditoria na mesma transação (operação de dinheiro).
+  const [updated] = await prisma.$transaction(async (tx) => {
+    const upd = await tx.payment.update({
+      where: { id: paymentId },
+      data: { receivedAt: new Date(), receivedById: user.id },
+    });
+    await auditService.record(tx, {
+      actor: actor || { actorId: user.id, companyId: user.companyId },
+      action: 'RECECAO_VALOR_CONFIRMADA',
+      entityType: 'Payment',
+      entityId: payment.id,
+      entityRef: payment.reference,
+      detail: { fatura: payment.invoice.reference, valor: String(payment.amount), moeda: payment.currency },
+    });
+    return [upd];
   });
+  return updated;
 }
 
 module.exports = { listPendingInvoices, listPaymentHistory, processPayment, confirmReceived };

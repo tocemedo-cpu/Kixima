@@ -883,3 +883,30 @@ model SupportTicket {
   @@index([userId])
   @@map("support_tickets")
 }
+
+// ---------------------------------------------------------------------------
+// Trilho de auditoria financeira — APPEND-ONLY. Regista quem fez o quê, quando
+// e de que IP, nas ações com peso financeiro/legal (aprovações, pagamentos,
+// due diligence, dados bancários…). Sem relações e com o ator DESNORMALIZADO
+// (nome/perfil copiados no momento): o registo fica imutável mesmo que o
+// utilizador mude de nome ou seja removido. O código nunca faz UPDATE/DELETE.
+// ---------------------------------------------------------------------------
+model AuditLog {
+  id         String   @id @default(uuid())
+  action     String   // ex.: PO_APROVADA, PAGAMENTO_EXECUTADO, TAXA_COBRADA
+  entityType String   @map("entity_type") // PurchaseOrder | Invoice | Payment | Company | PlatformFee | User
+  entityId   String?  @map("entity_id")
+  entityRef  String?  @map("entity_ref")  // referência legível (PO-2026-00001, FAT-…)
+  actorId    String?  @map("actor_id")
+  actorName  String?  @map("actor_name")
+  actorRole  String?  @map("actor_role")
+  companyId  String?  @map("company_id")  // empresa do ator
+  ip         String?
+  detail     Json?    // montantes, estado anterior→novo, etc.
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

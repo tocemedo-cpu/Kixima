@@ -1,7 +1,15 @@
 const companyService = require('../services/companyService');
 const authService = require('../services/authService');
 const erpConfigService = require('../services/erpConfigService');
+const auditService = require('../services/auditService');
 const { ForbiddenError } = require('../utils/errors');
+
+// No trilho de auditoria o IBAN nunca fica em claro — só os últimos 4 dígitos.
+function maskIban(iban) {
+  const s = String(iban || '').replace(/\s+/g, '');
+  if (!s) return null;
+  return s.length <= 4 ? s : `••••${s.slice(-4)}`;
+}
 
 const DOCUMENT_TYPES = ['CERTIDAO_COMERCIAL', 'ALVARA_COMERCIAL', 'LICENCA_ANPG'];
 
@@ -35,6 +43,14 @@ async function getOne(req, res) {
 
 async function decide(req, res) {
   const company = await companyService.decideCompanyStatus(req.params.id, req.body);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'EMPRESA_DECIDIDA',
+    entityType: 'Company',
+    entityId: company.id,
+    entityRef: company.name,
+    detail: { decisao: req.body.approve ? 'APROVADA' : 'REJEITADA', motivo: req.body.rejectionReason || null },
+  });
   res.json(company);
 }
 
@@ -57,7 +73,16 @@ async function getBankDetails(req, res) {
 
 async function setBankDetails(req, res) {
   assertOwnCompany(req);
-  res.json(await companyService.updateBankDetails(req.params.id, req.body));
+  const result = await companyService.updateBankDetails(req.params.id, req.body);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'DADOS_BANCARIOS_ALTERADOS',
+    entityType: 'Company',
+    entityId: result.id,
+    entityRef: result.name,
+    detail: { banco: result.bankName || null, iban: maskIban(result.iban), swift: result.swift || null },
+  });
+  res.json(result);
 }
 
 async function createUser(req, res) {

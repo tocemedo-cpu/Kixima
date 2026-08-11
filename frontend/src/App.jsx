@@ -83,6 +83,7 @@ const AdminContracts = lazy(() => import('./pages/adminSistema/Contracts'));
 const Companies = lazy(() => import('./pages/adminSistema/Companies'));
 const ErpIntegrations = lazy(() => import('./pages/adminSistema/ErpIntegrations'));
 const PlatformFees = lazy(() => import('./pages/adminSistema/PlatformFees'));
+const AuditTrail = lazy(() => import('./pages/adminSistema/AuditTrail'));
 
 // Ecrã de recurso enquanto o chunk de uma rota é carregado.
 function PageLoading() {
@@ -216,6 +217,7 @@ export default function App() {
             <Route path="/sistema/permissoes" element={<AdminPermissions />} />
             <Route path="/sistema/atividades" element={<SystemActivities />} />
             <Route path="/sistema/taxas" element={<PlatformFees />} />
+            <Route path="/sistema/auditoria" element={<AuditTrail />} />
           </Route>
         </Route>
       </Route>
