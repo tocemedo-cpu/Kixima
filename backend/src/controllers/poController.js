@@ -82,6 +82,21 @@ async function delivered(req, res) {
   res.json(po);
 }
 
+// Comprador fecha a divergência: aceita a entrega (→ CONCLUIDA) ou pede
+// reposição ao fornecedor (→ EM_EXECUCAO, reabre entrega→receção).
+async function resolveDivergence(req, res) {
+  const po = await poService.resolveDivergence(req.params.id, req.user.companyId, req.body);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'DIVERGENCIA_RESOLVIDA',
+    entityType: 'PurchaseOrder',
+    entityId: po.id,
+    entityRef: po.reference,
+    detail: { desfecho: req.body.outcome, notas: req.body.notes || null },
+  });
+  res.json(po);
+}
+
 async function receive(req, res) {
   const po = await poService.confirmReception(req.params.id, req.user.companyId, req.body);
   await auditService.recordSafe({
@@ -95,4 +110,4 @@ async function receive(req, res) {
   res.json(po);
 }
 
-module.exports = { create, list, getOne, approve, reject, accept, refuse, dispatch, delivered, receive };
+module.exports = { create, list, getOne, approve, reject, accept, refuse, dispatch, delivered, receive, resolveDivergence };

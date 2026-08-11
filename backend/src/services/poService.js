@@ -357,6 +357,44 @@ async function confirmReception(id, buyerCompanyId, { conforme, notes }) {
   return concluida;
 }
 
+// --- 7b. Resolução de divergências ------------------------------------------
+// A divergência não pode ser um beco sem saída: o COMPRADOR fecha-a de uma de
+// duas formas — ACEITE (aceita a entrega como está, ex.: após acordo/desconto
+// negociado, → CONCLUIDA) ou REPOSICAO (o fornecedor corrige/reentrega,
+// → EM_EXECUCAO, reabrindo o ciclo entrega→receção normal).
+
+const DIVERGENCE_OUTCOMES = {
+  ACEITE: { status: 'CONCLUIDA' },
+  REPOSICAO: { status: 'EM_EXECUCAO' },
+};
+
+async function resolveDivergence(id, buyerCompanyId, { outcome, notes }) {
+  const po = await getPurchaseOrder(id);
+  if (po.buyerCompanyId !== buyerCompanyId) {
+    throw new ForbiddenError('Só o comprador da PO pode resolver a divergência.');
+  }
+  if (po.status !== 'RECEBIDA_COM_DIVERGENCIA') {
+    throw new ConflictError(`PO no estado "${po.status}" não tem divergência por resolver.`);
+  }
+  const target = DIVERGENCE_OUTCOMES[outcome];
+  if (!target) {
+    throw new BusinessRuleError('Desfecho inválido — use ACEITE ou REPOSICAO.');
+  }
+
+  const updated = await prisma.purchaseOrder.update({
+    where: { id },
+    data: {
+      status: target.status,
+      divergenceResolution: outcome,
+      divergenceResolutionNotes: notes || null,
+      divergenceResolvedAt: new Date(),
+    },
+  });
+
+  await notificationService.events.divergenciaResolvida(updated);
+  return updated;
+}
+
 module.exports = {
   createPurchaseOrder,
   getPurchaseOrder,
@@ -368,4 +406,5 @@ module.exports = {
   dispatchPurchaseOrder,
   markDelivered,
   confirmReception,
+  resolveDivergence,
 };

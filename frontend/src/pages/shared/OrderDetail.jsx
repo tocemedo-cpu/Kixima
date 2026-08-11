@@ -30,6 +30,8 @@ export default function OrderDetail() {
   const [showReject, setShowReject] = useState(false);
   const [receptionNotes, setReceptionNotes] = useState('');
   const [showDivergence, setShowDivergence] = useState(false);
+  const [resolveOutcome, setResolveOutcome] = useState(null); // 'ACEITE' | 'REPOSICAO'
+  const [resolveNotes, setResolveNotes] = useState('');
 
   const load = useCallback(() => {
     api.get(`/api/purchase-orders/${id}`).then(setPo).catch((e) => setError(e.message));
@@ -64,6 +66,7 @@ export default function OrderDetail() {
   const canDispatch = user.role === 'FORNECEDOR' && ((po.isCallOff && po.status === 'EM_EXECUCAO' && !po.dispatchedAt) || (!po.isCallOff && po.status === 'PAGA'));
   const canMarkDelivered = user.role === 'FORNECEDOR' && po.status === 'EM_EXECUCAO' && po.dispatchedAt;
   const canReceive = user.role === 'COMPRADOR' && ['ENTREGUE', 'EM_EXECUCAO'].includes(po.status);
+  const canResolveDivergence = ['COMPRADOR', 'COMPANY_ADMIN'].includes(user.role) && po.status === 'RECEBIDA_COM_DIVERGENCIA';
 
   return (
     <div>
@@ -130,11 +133,18 @@ export default function OrderDetail() {
             {po.dispatchedAt ? <div>Despachada em: {formatDate(po.dispatchedAt)}</div> : null}
             {po.deliveredAt ? <div>Entregue em: {formatDate(po.deliveredAt)}</div> : null}
             {po.receivedAt ? <div>Receção confirmada em: {formatDate(po.receivedAt)} ({po.receptionStatus})</div> : null}
+            {po.divergenceResolvedAt ? (
+              <div>
+                Divergência resolvida em: {formatDate(po.divergenceResolvedAt)}{' '}
+                ({po.divergenceResolution === 'REPOSICAO' ? 'reposição solicitada' : 'entrega aceite'})
+                {po.divergenceResolutionNotes ? <> — {po.divergenceResolutionNotes}</> : null}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
 
-      {(canApprove || canAcceptRefuse || canDispatch || canMarkDelivered || canReceive) && (
+      {(canApprove || canAcceptRefuse || canDispatch || canMarkDelivered || canReceive || canResolveDivergence) && (
         <div className="card card-pad" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {canApprove && (
             <>
@@ -184,6 +194,57 @@ export default function OrderDetail() {
               </button>
             </>
           )}
+
+          {canResolveDivergence && (
+            <>
+              <button
+                className="btn btn-accent"
+                disabled={busy}
+                onClick={() => setResolveOutcome((v) => (v === 'ACEITE' ? null : 'ACEITE'))}
+              >
+                Aceitar entrega e concluir
+              </button>
+              <button
+                className="btn btn-primary"
+                disabled={busy}
+                onClick={() => setResolveOutcome((v) => (v === 'REPOSICAO' ? null : 'REPOSICAO'))}
+              >
+                Pedir reposição ao fornecedor
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {canResolveDivergence && resolveOutcome && (
+        <div className="card card-pad" style={{ marginTop: 12 }}>
+          <strong style={{ fontSize: 13.5 }}>
+            {resolveOutcome === 'ACEITE' ? 'Aceitar a entrega como está' : 'Pedir reposição/correção'}
+          </strong>
+          <p className="helptext" style={{ margin: '8px 0 10px' }}>
+            {resolveOutcome === 'ACEITE'
+              ? 'A divergência fica registada, mas a entrega é aceite (ex.: após acordo com o fornecedor) e a ordem é CONCLUÍDA.'
+              : 'O fornecedor será notificado para corrigir/reentregar. A ordem volta a "Em execução" e, após a nova entrega, confirma a receção outra vez.'}
+          </p>
+          <div className="field">
+            <label>Notas {resolveOutcome === 'REPOSICAO' ? '(o que deve ser corrigido)' : '(opcional)'}</label>
+            <textarea
+              rows={3}
+              value={resolveNotes}
+              onChange={(e) => setResolveNotes(e.target.value)}
+              placeholder={resolveOutcome === 'REPOSICAO' ? 'Ex.: repor as 3 unidades danificadas…' : 'Ex.: acordado desconto de 10% com o fornecedor…'}
+            />
+          </div>
+          <button
+            className={resolveOutcome === 'ACEITE' ? 'btn btn-accent' : 'btn btn-primary'}
+            disabled={busy || (resolveOutcome === 'REPOSICAO' && !resolveNotes.trim())}
+            onClick={() => runAction(
+              (body) => api.patch(`/api/purchase-orders/${id}/resolve-divergence`, body),
+              { outcome: resolveOutcome, notes: resolveNotes.trim() || undefined },
+            )}
+          >
+            {resolveOutcome === 'ACEITE' ? 'Confirmar: aceitar e concluir' : 'Confirmar: pedir reposição'}
+          </button>
         </div>
       )}
 
@@ -210,7 +271,7 @@ export default function OrderDetail() {
             <textarea rows={3} value={receptionNotes} onChange={(e) => setReceptionNotes(e.target.value)} placeholder="Ex.: quantidade incompleta, item danificado…" />
           </div>
           <p className="helptext" style={{ marginBottom: 10 }}>
-            Isto abre um caso a acompanhar fora da plataforma (sinistro da apólice). A KIXIMA será notificada.
+            A KIXIMA e o fornecedor serão notificados. Depois, resolve a divergência aqui mesmo: aceitar a entrega (após acordo) ou pedir reposição.
           </p>
           <button
             className="btn btn-danger"

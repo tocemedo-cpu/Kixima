@@ -234,6 +234,12 @@ const receptionSchema = z.object({
   notes: z.string().optional(),
 });
 
+// Resolução de divergência: aceitar a entrega como está ou pedir reposição.
+const resolveDivergenceSchema = z.object({
+  outcome: z.enum(['ACEITE', 'REPOSICAO']),
+  notes: z.string().max(1000).optional(),
+});
+
 const supplierPolicySchema = z.object({
   policyNumber: z.string().min(2),
   insurer: z.string().min(2),
@@ -299,6 +305,7 @@ module.exports = {
   createPoSchema,
   rejectPoSchema,
   receptionSchema,
+  resolveDivergenceSchema,
   supplierPolicySchema,
   clientPolicySchema,
   budgetLimitSchema,

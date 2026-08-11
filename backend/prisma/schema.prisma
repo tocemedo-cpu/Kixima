@@ -575,6 +575,13 @@ model PurchaseOrder {
   receivedAt      DateTime? @map("received_at")
   receptionStatus String?   @map("reception_status") // "Conforme" | "Não Entregue" | "Com Divergência"
 
+  // Resolução de divergências: o comprador fecha a divergência aceitando a
+  // entrega (→ CONCLUIDA) ou pedindo reposição ao fornecedor (→ EM_EXECUCAO,
+  // que reabre o ciclo entrega→receção). Fica o registo de quem/quando/como.
+  divergenceResolution      String?   @map("divergence_resolution") // ACEITE | REPOSICAO
+  divergenceResolutionNotes String?   @map("divergence_resolution_notes")
+  divergenceResolvedAt      DateTime? @map("divergence_resolved_at")
+
   approvedAt    DateTime? @map("approved_at")
   rejectedAt    DateTime? @map("rejected_at")
   rejectionReason String? @map("rejection_reason")
@@ -816,6 +823,7 @@ enum NotificationType {
   PAGAMENTO_PROCESSADO
   ENTREGA_DESPACHADA
   RECECAO_COM_DIVERGENCIA
+  DIVERGENCIA_RESOLVIDA
   APOLICE_SUBMETIDA_APROVADA
   APOLICE_A_EXPIRAR
   CADASTRO_EMPRESA_APROVADO

@@ -3,7 +3,7 @@ const poController = require('../controllers/poController');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 const { validate } = require('../utils/validate');
-const { createPoSchema, rejectPoSchema, receptionSchema } = require('../utils/schemas');
+const { createPoSchema, rejectPoSchema, receptionSchema, resolveDivergenceSchema } = require('../utils/schemas');
 
 const router = express.Router();
 
@@ -28,5 +28,8 @@ router.patch('/:id/delivered', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), poCon
 
 // 7. Receção — Comprador confirma ou reporta divergência.
 router.patch('/:id/reception', requireRole('COMPRADOR', 'COMPANY_ADMIN'), validate(receptionSchema), poController.receive);
+
+// 7b. Comprador resolve a divergência (aceitar entrega ou pedir reposição).
+router.patch('/:id/resolve-divergence', requireRole('COMPRADOR', 'COMPANY_ADMIN'), validate(resolveDivergenceSchema), poController.resolveDivergence);
 
 module.exports = router;

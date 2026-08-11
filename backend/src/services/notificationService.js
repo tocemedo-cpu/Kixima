@@ -232,6 +232,33 @@ const events = {
       relatedEntityId: po.id,
     }),
 
+  divergenciaResolvida: (po) =>
+    Promise.all([
+      // O fornecedor precisa de saber o desfecho — sobretudo se há reposição.
+      notifyUsersByRole({
+        companyId: po.supplierCompanyId,
+        roles: ['FORNECEDOR', 'COMPANY_ADMIN'],
+        type: 'DIVERGENCIA_RESOLVIDA',
+        title: po.divergenceResolution === 'REPOSICAO' ? 'Reposição solicitada' : 'Divergência resolvida',
+        message: po.divergenceResolution === 'REPOSICAO'
+          ? `A divergência da PO ${po.reference} foi resolvida com pedido de REPOSIÇÃO: corrija/reentregue a mercadoria e volte a marcar como entregue.${po.divergenceResolutionNotes ? ` Notas: ${po.divergenceResolutionNotes}` : ''}`
+          : `A divergência da PO ${po.reference} foi resolvida: o comprador aceitou a entrega e a ordem foi concluída.`,
+        channel: 'IN_APP_EMAIL',
+        relatedEntityType: 'PurchaseOrder',
+        relatedEntityId: po.id,
+      }),
+      notifyUsersByRole({
+        companyId: null,
+        roles: ['ADMIN_SISTEMA'],
+        type: 'DIVERGENCIA_RESOLVIDA',
+        title: 'Divergência resolvida',
+        message: `A divergência da PO ${po.reference} foi resolvida (${po.divergenceResolution === 'REPOSICAO' ? 'reposição' : 'aceite'}).`,
+        channel: 'IN_APP',
+        relatedEntityType: 'PurchaseOrder',
+        relatedEntityId: po.id,
+      }),
+    ]),
+
   apoliceSubmetidaOuAprovada: (companyId, policyLabel) =>
     notifyUsersByRole({
       companyId,
