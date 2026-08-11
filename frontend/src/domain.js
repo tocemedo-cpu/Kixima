@@ -1,6 +1,8 @@
 // src/domain.js
 // Constantes de domínio partilhadas — mantém os rótulos em português e os
-// mapeamentos de estado num único sítio.
+// mapeamentos de estado num único sítio. Os rótulos são CHAVES i18n: quem os
+// mostra passa-os por t() (os componentes partilhados fazem-no sozinhos).
+import { activeLocale } from './i18n';
 
 export const ROLE_LABELS = {
   COMPRADOR: 'Comprador',
@@ -83,18 +85,18 @@ export function formatMoney(amount, currency = 'AOA') {
   const value = Number(amount ?? 0);
   // O Kwanza angolano mostra-se como "Kz" (a moeda local da plataforma).
   const symbol = currency === 'AOA' ? 'Kz' : currency;
-  return new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value) +
+  return new Intl.NumberFormat(activeLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value) +
     ' ' + symbol;
 }
 
 export function formatDate(value) {
   if (!value) return '—';
-  return new Intl.DateTimeFormat('pt-AO', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
+  return new Intl.DateTimeFormat(activeLocale(), { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
 }
 
 export function formatDateTime(value) {
   if (!value) return '—';
-  return new Intl.DateTimeFormat('pt-AO', {
+  return new Intl.DateTimeFormat(activeLocale(), {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   }).format(new Date(value));
 }

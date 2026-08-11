@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from './Logo';
 import { Icon } from './icons';
-import { useI18n } from '../i18n';
+import { useI18n, LANGS } from '../i18n';
 
 function initials(name = '') {
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
@@ -13,7 +13,7 @@ function initials(name = '') {
 
 export default function Navbar({ user, roleLabel, cartCount = 0, unread = 0, onMenuToggle, onBell, onLogout }) {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang, setLang } = useI18n();
   const [q, setQ] = useState('');
   const [menu, setMenu] = useState(false);
   const ref = useRef(null);
@@ -66,6 +66,19 @@ export default function Navbar({ user, roleLabel, cartCount = 0, unread = 0, onM
             <div className="nav-dropdown">
               <Link to="/perfil" onClick={() => setMenu(false)}>{t('Perfil')}</Link>
               <Link to="/seguranca" onClick={() => setMenu(false)}>{t('Segurança')}</Link>
+              <div className="nav-langs" role="group" aria-label={t('Idioma')}>
+                <span className="nav-langs-label">{t('Idioma')}</span>
+                {LANGS.map((l) => (
+                  <button
+                    key={l.code}
+                    className={`nav-lang${l.code === lang ? ' on' : ''}`}
+                    onClick={() => { setLang(l.code); setMenu(false); }}
+                    title={l.label}
+                  >
+                    {l.flag} {l.label}
+                  </button>
+                ))}
+              </div>
               <button onClick={onLogout}>{t('Sair')}</button>
             </div>
           ) : null}

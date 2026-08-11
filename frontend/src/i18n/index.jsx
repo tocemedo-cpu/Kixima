@@ -1,16 +1,21 @@
 // src/i18n/index.jsx
 // Internacionalização leve (PT / EN / FR). A chave de tradução é o próprio texto
 // em português; `t('Ordens de Compra')` devolve a tradução no idioma ativo, ou
-// o texto original se ainda não estiver traduzido (fallback seguro). O idioma
-// escolhido persiste em localStorage.
-import { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
+// o texto original se ainda não estiver traduzido (fallback seguro para PT).
+// O idioma escolhido persiste em localStorage e aplica-se também à formatação
+// de datas e números (Intl) via `locale`.
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { EN2, FR2 } from './content';
+import { EN3, FR3 } from './content2';
 
 export const LANGS = [
-  { code: 'pt', label: 'Português', flag: '🇵🇹' },
+  { code: 'pt', label: 'Português', flag: '🇦🇴' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
 ];
+
+// Locale Intl por idioma (datas, números, moeda).
+export const LOCALES = { pt: 'pt-AO', en: 'en-GB', fr: 'fr-FR' };
 
 const EN = {
   // Navegação
@@ -64,32 +69,55 @@ const FR = {
   'Registe-a aqui': 'Inscrivez-la ici',
 };
 
-const DICT = { en: { ...EN2, ...EN }, fr: { ...FR2, ...FR } };
+const DICT = { en: { ...EN2, ...EN3, ...EN }, fr: { ...FR2, ...FR3, ...FR } };
 const STORAGE_KEY = 'kixima_lang';
 
 const I18nContext = createContext(null);
 
+function readStored() {
+  try {
+    const v = localStorage.getItem(STORAGE_KEY);
+    return LANGS.some((l) => l.code === v) ? v : 'pt';
+  } catch {
+    return 'pt';
+  }
+}
+
 export function I18nProvider({ children }) {
-  // Plataforma apenas em Português — sem seletor de idioma. O t() mantém-se para
-  // não alterar os componentes, devolvendo sempre o texto em PT (a própria chave).
-  const lang = 'pt';
+  const [lang, setLangState] = useState(readStored);
 
   useEffect(() => {
     document.documentElement.lang = lang;
+  }, [lang]);
+
+  const setLang = useCallback((code) => {
+    if (!LANGS.some((l) => l.code === code)) return;
+    setLangState(code);
+    try { localStorage.setItem(STORAGE_KEY, code); } catch { /* modo privado */ }
   }, []);
 
   const t = useCallback((key, vars) => {
-    let s = key;
+    let s = (lang !== 'pt' && DICT[lang]?.[key]) || key;
     if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, v);
     return s;
-  }, []);
+  }, [lang]);
 
-  const value = useMemo(() => ({ lang, setLang: () => {}, t }), [t]);
+  const locale = LOCALES[lang] || LOCALES.pt;
+  const value = useMemo(() => ({ lang, locale, setLang, t }), [lang, locale, setLang, t]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
 export function useI18n() {
   const ctx = useContext(I18nContext);
-  if (!ctx) return { lang: 'pt', setLang: () => {}, t: (k) => k };
+  if (!ctx) return { lang: 'pt', locale: LOCALES.pt, setLang: () => {}, t: (k) => k };
   return ctx;
+}
+
+// Locale ativo para código FORA de componentes React (formatMoney/formatDate em
+// domain.js). Lê o mesmo storage; o provider mantém o <html lang> em dia.
+export function activeLocale() {
+  return LOCALES[readStored()] || LOCALES.pt;
+}
+export function activeLang() {
+  return readStored();
 }

@@ -129,19 +129,20 @@ function pageNumbers(cur, total) {
 // Paginação reutilizável (server-side): recebe page/pages/total e um onPage.
 // Não renderiza nada se só houver uma página (mostra só a contagem, se dada).
 export function Pagination({ page, pages, total, onPage, unit = 'registos' }) {
+  const { t, locale } = useI18n();
   if (!pages || pages <= 1) {
     return total != null && total > 0
-      ? <div className="bz-pagcount">{total.toLocaleString('pt-PT')} {unit}</div>
+      ? <div className="bz-pagcount">{total.toLocaleString(locale)} {t(unit)}</div>
       : null;
   }
   return (
     <div className="bz-pag">
-      <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>← Anterior</button>
+      <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>← {t('Anterior')}</button>
       {pageNumbers(page, pages).map((n, i) => (n === '…'
         ? <span key={`e${i}`} className="bz-pag-ell">…</span>
         : <button key={n} className={`bz-pagn${n === page ? ' on' : ''}`} onClick={() => onPage(n)}>{n}</button>))}
-      <button className="btn btn-ghost btn-sm" disabled={page >= pages} onClick={() => onPage(page + 1)}>Próximo →</button>
-      {total != null ? <span className="bz-pagcount">{total.toLocaleString('pt-PT')} {unit}</span> : null}
+      <button className="btn btn-ghost btn-sm" disabled={page >= pages} onClick={() => onPage(page + 1)}>{t('Próximo')} →</button>
+      {total != null ? <span className="bz-pagcount">{total.toLocaleString(locale)} {t(unit)}</span> : null}
     </div>
   );
 }

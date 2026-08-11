@@ -4,11 +4,11 @@ import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { ROLE_HOME } from '../../domain';
 import AuthHero from '../../components/AuthHero';
-import { useI18n } from '../../i18n';
+import { useI18n, LANGS } from '../../i18n';
 
 export default function LoginPage() {
   const { user, login, verify2fa } = useAuth();
-  const { t } = useI18n();
+  const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -122,10 +122,22 @@ export default function LoginPage() {
             <Link to="/cadastro" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Registe-a aqui')}</Link>.
           </p>
           <p className="helptext" style={{ marginTop: 10, fontSize: 11.5 }}>
-            <Link to="/termos" style={{ color: 'inherit' }}>Termos de Uso</Link>
+            <Link to="/termos" style={{ color: 'inherit' }}>{t('Termos de Uso')}</Link>
             {' · '}
-            <Link to="/privacidade" style={{ color: 'inherit' }}>Política de Privacidade</Link>
+            <Link to="/privacidade" style={{ color: 'inherit' }}>{t('Política de Privacidade')}</Link>
           </p>
+          <div className="login-langs" role="group" aria-label={t('Idioma')}>
+            {LANGS.map((l) => (
+              <button
+                key={l.code}
+                type="button"
+                className={`login-lang${l.code === lang ? ' on' : ''}`}
+                onClick={() => setLang(l.code)}
+              >
+                {l.flag} {l.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
