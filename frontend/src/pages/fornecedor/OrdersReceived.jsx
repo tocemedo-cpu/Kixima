@@ -6,8 +6,10 @@ import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function OrdersReceived() {
+  const { t } = useI18n();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -27,7 +29,7 @@ export default function OrdersReceived() {
 
       <div className="field" style={{ maxWidth: 260, marginBottom: 16 }}>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="">Todos os estados</option>
+          <option value="">{t('Todos os estados')}</option>
           {Object.entries(PO_STATUS).map(([key, val]) => (
             <option key={key} value={key}>{val.label}</option>
           ))}
@@ -47,7 +49,7 @@ export default function OrdersReceived() {
             columns={[
               { key: 'reference', header: 'Referência', render: (r) => <span className="mono">{r.reference}</span> },
               { key: 'total', header: 'Valor', render: (r) => formatMoney(r.totalAmount, r.currency) },
-              { key: 'callOff', header: 'Tipo', render: (r) => (r.isCallOff ? <Badge tone="info">Call-off</Badge> : 'PO regular') },
+              { key: 'callOff', header: 'Tipo', render: (r) => (r.isCallOff ? <Badge tone="info">Call-off</Badge> : t('PO regular')) },
               { key: 'status', header: 'Estado', render: (r) => <Badge tone={PO_STATUS[r.status]?.tone}>{PO_STATUS[r.status]?.label}</Badge> },
               { key: 'date', header: 'Recebida em', render: (r) => formatDate(r.createdAt) },
             ]}

@@ -29,7 +29,7 @@ export default function OrderHistory() {
     <div>
       <PageHeader title="Pedidos — Histórico" subtitle="Ordens de compra já concluídas ou recebidas." />
       {closed.length === 0 ? (
-        <div className="empty-state"><h3>{t('Sem histórico')}</h3><p>Ordens concluídas aparecem aqui.</p></div>
+        <div className="empty-state"><h3>{t('Sem histórico')}</h3><p>{t('Ordens concluídas aparecem aqui.')}</p></div>
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
           <table>

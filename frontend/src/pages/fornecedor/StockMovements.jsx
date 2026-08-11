@@ -38,12 +38,12 @@ export default function StockMovements() {
     e.preventDefault();
     setError('');
     setSuccess('');
-    if (!form.productId) return setError('Escolha o produto.');
-    if (!form.quantity || Number(form.quantity) <= 0) return setError('Indique uma quantidade válida.');
+    if (!form.productId) return setError(t('Escolha o produto.'));
+    if (!form.quantity || Number(form.quantity) <= 0) return setError(t('Indique uma quantidade válida.'));
     setSaving(true);
     try {
       await api.post('/api/catalog/movements', { productId: form.productId, type, quantity: Number(form.quantity), note: form.note || undefined });
-      setSuccess(`${title === 'Entradas' ? 'Entrada' : 'Saída'} registada. O stock foi atualizado.`);
+      setSuccess(title === 'Entradas' ? t('Entrada registada. O stock foi atualizado.') : t('Saída registada. O stock foi atualizado.'));
       setForm({ productId: '', quantity: '', note: '' });
       loadMovements();
     } catch (err) {
@@ -69,26 +69,26 @@ export default function StockMovements() {
       <div className="card card-pad" style={{ marginBottom: 18, maxWidth: 560 }}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div className="field" style={{ margin: 0, flex: '1 1 220px' }}>
-            <label>Produto</label>
+            <label>{t('Produto')}</label>
             <select value={form.productId} onChange={(e) => update('productId', e.target.value)}>
-              <option value="">— escolher —</option>
-              {products.map((p) => <option key={p.id} value={p.id}>{p.name} (stock: {p.stockQuantity ?? 0})</option>)}
+              <option value="">{t('— escolher —')}</option>
+              {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({t('stock')}: {p.stockQuantity ?? 0})</option>)}
             </select>
           </div>
           <div className="field" style={{ margin: 0, width: 110 }}>
-            <label>Quantidade</label>
+            <label>{t('Quantidade')}</label>
             <input type="number" min="1" value={form.quantity} onChange={(e) => update('quantity', e.target.value)} />
           </div>
           <div className="field" style={{ margin: 0, flex: '1 1 160px' }}>
-            <label>Nota (opcional)</label>
+            <label>{t('Nota (opcional)')}</label>
             <input value={form.note} onChange={(e) => update('note', e.target.value)} />
           </div>
-          <button className="btn btn-accent" type="submit" disabled={saving}>{saving ? 'A registar…' : `Registar ${isEntrada ? 'entrada' : 'saída'}`}</button>
+          <button className="btn btn-accent" type="submit" disabled={saving}>{saving ? t('A registar…') : (isEntrada ? t('Registar entrada') : t('Registar saída'))}</button>
         </form>
       </div>
 
       {movements.length === 0 ? (
-        <div className="empty-state"><h3>Sem {title.toLowerCase()}</h3><p>Os movimentos registados aparecem aqui.</p></div>
+        <div className="empty-state"><h3>{t('Sem {x}', { x: t(title).toLowerCase() })}</h3><p>{t('Os movimentos registados aparecem aqui.')}</p></div>
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
           <table>

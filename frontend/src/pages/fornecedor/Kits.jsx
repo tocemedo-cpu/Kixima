@@ -40,12 +40,12 @@ export default function Kits() {
     e.preventDefault();
     setError(''); setSuccess('');
     const items = lines.filter((l) => l.productId).map((l) => ({ productId: l.productId, quantity: Number(l.quantity) || 1 }));
-    if (!name.trim()) return setError('Indique o nome do kit.');
-    if (items.length === 0) return setError('Adicione pelo menos um produto ao kit.');
+    if (!name.trim()) return setError(t('Indique o nome do kit.'));
+    if (items.length === 0) return setError(t('Adicione pelo menos um produto ao kit.'));
     setSaving(true);
     try {
       await api.post('/api/kits', { name, description: description || undefined, items });
-      setSuccess('Kit criado.');
+      setSuccess(t('Kit criado.'));
       resetForm();
       setShowForm(false);
       loadKits();
@@ -69,7 +69,7 @@ export default function Kits() {
       <PageHeader
         title="Catálogo — Kits"
         subtitle="Agrupe produtos num pacote para venda conjunta."
-        action={<button className="btn btn-accent" onClick={() => { setShowForm((v) => !v); if (showForm) resetForm(); }}>{showForm ? 'Cancelar' : '+ Novo kit'}</button>}
+        action={<button className="btn btn-accent" onClick={() => { setShowForm((v) => !v); if (showForm) resetForm(); }}>{showForm ? t('Cancelar') : t('+ Novo kit')}</button>}
       />
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
@@ -77,33 +77,33 @@ export default function Kits() {
       {showForm && (
         <div className="card card-pad" style={{ marginBottom: 18, maxWidth: 620 }}>
           <form onSubmit={handleSubmit}>
-            <div className="field"><label>Nome do kit</label><input value={name} onChange={(e) => setName(e.target.value)} /></div>
-            <div className="field"><label>Descrição (opcional)</label><textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-            <div className="reg-section">Produtos do kit</div>
+            <div className="field"><label>{t('Nome do kit')}</label><input value={name} onChange={(e) => setName(e.target.value)} /></div>
+            <div className="field"><label>{t('Descrição (opcional)')}</label><textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+            <div className="reg-section">{t('Produtos do kit')}</div>
             {lines.map((l, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 8 }}>
                 <div className="field" style={{ margin: 0, flex: 1 }}>
-                  <label>Produto</label>
+                  <label>{t('Produto')}</label>
                   <select value={l.productId} onChange={(e) => setLine(i, 'productId', e.target.value)}>
-                    <option value="">— escolher —</option>
+                    <option value="">{t('— escolher —')}</option>
                     {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div className="field" style={{ margin: 0, width: 90 }}>
-                  <label>Qtd.</label>
+                  <label>{t('Qtd.')}</label>
                   <input type="number" min="1" value={l.quantity} onChange={(e) => setLine(i, 'quantity', e.target.value)} />
                 </div>
                 {lines.length > 1 ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => removeLine(i)}>×</button> : null}
               </div>
             ))}
-            <button type="button" className="btn btn-ghost btn-sm" onClick={addLine} style={{ marginBottom: 12 }}>+ Adicionar produto</button>
-            <div><button className="btn btn-accent" type="submit" disabled={saving}>{saving ? 'A criar…' : 'Criar kit'}</button></div>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={addLine} style={{ marginBottom: 12 }}>{t('+ Adicionar produto')}</button>
+            <div><button className="btn btn-accent" type="submit" disabled={saving}>{saving ? t('A criar…') : t('Criar kit')}</button></div>
           </form>
         </div>
       )}
 
       {kits.length === 0 ? (
-        <div className="empty-state"><h3>{t('Sem kits')}</h3><p>Crie pacotes de produtos para facilitar a venda conjunta.</p></div>
+        <div className="empty-state"><h3>{t('Sem kits')}</h3><p>{t('Crie pacotes de produtos para facilitar a venda conjunta.')}</p></div>
       ) : (
         <div className="grid-cols grid-2">
           {kits.map((kit) => (
@@ -113,14 +113,14 @@ export default function Kits() {
                   <strong style={{ fontSize: 15 }}>{kit.name}</strong>
                   {kit.description ? <p className="helptext" style={{ marginTop: 2 }}>{kit.description}</p> : null}
                 </div>
-                <button className="btn btn-ghost btn-sm" onClick={() => remove(kit.id)}>Remover</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => remove(kit.id)}>{t('Remover')}</button>
               </div>
               <ul style={{ margin: '10px 0 0', paddingLeft: 18, fontSize: 13.5 }}>
                 {kit.items.map((it) => (
                   <li key={it.id}>{it.quantity}× {it.product?.name || '—'}</li>
                 ))}
               </ul>
-              <div style={{ marginTop: 10, fontWeight: 700 }}>Total: {formatMoney(kitTotal(kit), kit.items[0]?.product?.currency || 'AOA')}</div>
+              <div style={{ marginTop: 10, fontWeight: 700 }}>{t('Total:')} {formatMoney(kitTotal(kit), kit.items[0]?.product?.currency || 'AOA')}</div>
             </div>
           ))}
         </div>

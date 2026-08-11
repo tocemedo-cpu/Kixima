@@ -7,8 +7,10 @@ import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, StatCard } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { PO_STATUS, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function Reports() {
+  const { t } = useI18n();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
 
@@ -37,9 +39,9 @@ export default function Reports() {
       </div>
 
       <div className="card" style={{ marginBottom: 18 }}>
-        <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}><strong>Ordens por estado</strong></div>
+        <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}><strong>{t('Ordens por estado')}</strong></div>
         {statusRows.length === 0 ? (
-          <div className="card-pad"><p className="helptext" style={{ margin: 0 }}>Ainda sem ordens recebidas.</p></div>
+          <div className="card-pad"><p className="helptext" style={{ margin: 0 }}>{t('Ainda sem ordens recebidas.')}</p></div>
         ) : (
           <div className="card-pad" style={{ display: 'grid', gap: 10 }}>
             {statusRows.map(([status, count]) => (
@@ -56,10 +58,10 @@ export default function Reports() {
       </div>
 
       <p className="helptext">
-        Veja os rankings de produtos em{' '}
-        <Link to="/fornecedor/relatorios/mais-vendidos" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Produtos mais vendidos</Link>{' '}
-        e{' '}
-        <Link to="/fornecedor/relatorios/mais-vistos" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Produtos mais vistos</Link>.
+        {t('Veja os rankings de produtos em')}{' '}
+        <Link to="/fornecedor/relatorios/mais-vendidos" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Produtos mais vendidos')}</Link>{' '}
+        {t('e')}{' '}
+        <Link to="/fornecedor/relatorios/mais-vistos" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Produtos mais vistos')}</Link>.
       </p>
     </div>
   );

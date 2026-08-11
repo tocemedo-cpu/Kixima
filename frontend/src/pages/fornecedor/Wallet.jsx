@@ -54,24 +54,24 @@ export default function Wallet() {
       {feeStatement ? (
         <div className="card card-pad" style={{ marginBottom: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div>
-            <strong style={{ fontSize: 13.5 }}>Taxa KIXIMA</strong>
+            <strong style={{ fontSize: 13.5 }}>{t('Taxa KIXIMA')}</strong>
             <p className="helptext" style={{ margin: '4px 0 0' }}>
               {feeStatement.kpis.pendentes > 0
-                ? <>Tem <strong>{formatMoney(feeStatement.kpis.pendingAOA)}</strong> por liquidar ({feeStatement.kpis.pendentes} {feeStatement.kpis.pendentes === 1 ? 'taxa pendente' : 'taxas pendentes'}).</>
-                : 'Sem taxas pendentes — está tudo liquidado.'}
-              {' '}Total gerado: {formatMoney(feeStatement.kpis.totalAOA)}.
+                ? <>{t('Tem')} <strong>{formatMoney(feeStatement.kpis.pendingAOA)}</strong> {t('por liquidar')} ({feeStatement.kpis.pendentes} {feeStatement.kpis.pendentes === 1 ? t('taxa pendente') : t('taxas pendentes')}).</>
+                : t('Sem taxas pendentes — está tudo liquidado.')}
+              {' '}{t('Total gerado:')} {formatMoney(feeStatement.kpis.totalAOA)}.
             </p>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/taxas/${user.companyId}`, '_blank')}>
-            Ver extrato completo
+            {t('Ver extrato completo')}
           </button>
         </div>
       ) : null}
 
       <div className="card">
-        <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}><strong>Últimos recebimentos</strong></div>
+        <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}><strong>{t('Últimos recebimentos')}</strong></div>
         {recentPaid.length === 0 ? (
-          <div className="card-pad"><p className="helptext" style={{ margin: 0 }}>Ainda sem pagamentos recebidos.</p></div>
+          <div className="card-pad"><p className="helptext" style={{ margin: 0 }}>{t('Ainda sem pagamentos recebidos.')}</p></div>
         ) : (
           <table>
             <thead><tr><th>{t('Referência')}</th><th>{t('Cliente')}</th><th>{t('Estado')}</th><th style={{ textAlign: 'right' }}>{t('Valor')}</th></tr></thead>

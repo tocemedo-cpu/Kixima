@@ -48,7 +48,7 @@ export default function Inventory() {
         warehouse: draft.warehouse || undefined,
         availability: draft.availability || undefined,
       });
-      setSuccess('Inventário atualizado.');
+      setSuccess(t('Inventário atualizado.'));
       setEditing(null);
       load();
     } catch (e) {
@@ -78,7 +78,7 @@ export default function Inventory() {
       {products.length === 0 ? (
         <div className="empty-state">
           <h3>{t('Sem produtos')}</h3>
-          <p>Publique itens no catálogo para gerir o respetivo stock.</p>
+          <p>{t('Publique itens no catálogo para gerir o respetivo stock.')}</p>
         </div>
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
@@ -105,12 +105,12 @@ export default function Inventory() {
                         <td><input type="number" min="0" style={{ width: 80 }} value={draft.minStock} onChange={(e) => setDraft((d) => ({ ...d, minStock: e.target.value }))} /></td>
                         <td>
                           <select value={draft.availability} onChange={(e) => setDraft((d) => ({ ...d, availability: e.target.value }))}>
-                            {AVAILABILITY.map((a) => <option key={a} value={a}>{a}</option>)}
+                            {AVAILABILITY.map((a) => <option key={a} value={a}>{t(a)}</option>)}
                           </select>
                         </td>
                         <td style={{ whiteSpace: 'nowrap' }}>
-                          <button className="btn btn-accent btn-sm" disabled={saving} onClick={() => save(p.id)}>Guardar</button>{' '}
-                          <button className="btn btn-ghost btn-sm" onClick={() => setEditing(null)}>Cancelar</button>
+                          <button className="btn btn-accent btn-sm" disabled={saving} onClick={() => save(p.id)}>{t('Guardar')}</button>{' '}
+                          <button className="btn btn-ghost btn-sm" onClick={() => setEditing(null)}>{t('Cancelar')}</button>
                         </td>
                       </>
                     ) : (
@@ -122,7 +122,7 @@ export default function Inventory() {
                         </td>
                         <td>{p.minStock ?? '—'}</td>
                         <td>{p.availability || '—'}</td>
-                        <td><button className="btn btn-ghost btn-sm" onClick={() => startEdit(p)}>Editar</button></td>
+                        <td><button className="btn btn-ghost btn-sm" onClick={() => startEdit(p)}>{t('Editar')}</button></td>
                       </>
                     )}
                   </tr>

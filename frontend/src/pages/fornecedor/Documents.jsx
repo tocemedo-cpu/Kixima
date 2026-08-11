@@ -60,24 +60,24 @@ export default function Documents() {
         <div className="empty-state">
           <div style={{ color: 'var(--brand-600)', marginBottom: 10 }}><Icon name="contract" size={30} /></div>
           <h3>{t('Sem documentos nesta secção')}</h3>
-          <p>Anexe documentos ao publicar/editar produtos (aba Documentos) ou no cadastro da empresa.</p>
+          <p>{t('Anexe documentos ao publicar/editar produtos (aba Documentos) ou no cadastro da empresa.')}</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 18 }}>
           {companyDocs.length > 0 && (
-            <DocSection title="Documentos da empresa">
+            <DocSection title={t('Documentos da empresa')}>
               {companyDocs.map((d) => (
-                <DocLink key={d.id} href={d.fileUrl} label={COMPANY_DOC_LABELS[d.type] || d.type} name={d.originalName} />
+                <DocLink key={d.id} href={d.fileUrl} label={t(COMPANY_DOC_LABELS[d.type] || d.type)} name={d.originalName} />
               ))}
             </DocSection>
           )}
           {productDocs.length > 0 && (
-            <DocSection title="Documentos de produtos">
+            <DocSection title={t('Documentos de produtos')}>
               {productDocs.map((d) => (
                 <DocLink
                   key={d.id}
                   href={d.fileUrl}
-                  label={PRODUCT_DOC_LABELS[d.type] || d.type}
+                  label={t(PRODUCT_DOC_LABELS[d.type] || d.type)}
                   name={d.originalName}
                   meta={d.productName}
                 />

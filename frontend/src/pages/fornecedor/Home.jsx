@@ -6,8 +6,10 @@ import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '../../i18n';
 
 export default function FornecedorHome() {
+  const { t } = useI18n();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -35,7 +37,7 @@ export default function FornecedorHome() {
 
       <div className="card">
         <div className="card-pad" style={{ borderBottom: '1px solid var(--line)' }}>
-          <strong>Ordens de compra recentes</strong>
+          <strong>{t('Ordens de compra recentes')}</strong>
         </div>
         <DataTable
           rows={orders.slice(0, 8)}

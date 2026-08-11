@@ -10,8 +10,10 @@ import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
 import { formatDate, formatDateTime, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function SupplierPayments() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState('');
@@ -29,7 +31,7 @@ export default function SupplierPayments() {
     setConfirming(payment.id); setError('');
     try {
       await api.patch(`/api/payments/${payment.id}/confirm-received`);
-      setToast('Receção do valor confirmada. Obrigado!');
+      setToast(t('Receção do valor confirmada. Obrigado!'));
       setTimeout(() => setToast(''), 3500);
       load();
     } catch (e) { setError(e.message); } finally { setConfirming(null); }
@@ -68,9 +70,9 @@ export default function SupplierPayments() {
                 <button
                   className="btn btn-ghost btn-sm"
                   onClick={(e) => { e.stopPropagation(); window.open(r.invoice.payment.proofUrl, '_blank'); }}
-                  title={r.invoice.payment.proofName || 'comprovativo'}
+                  title={r.invoice.payment.proofName || t('comprovativo')}
                 >
-                  Ver comprovativo
+                  {t('Ver comprovativo')}
                 </button>
               ) : <span className="bz-muted">—</span>,
             },
@@ -79,14 +81,14 @@ export default function SupplierPayments() {
               header: 'Receção do valor',
               render: (r) => {
                 const p = r.invoice.payment;
-                if (p.receivedAt) return <Badge tone="success">Confirmada · {formatDate(p.receivedAt)}</Badge>;
+                if (p.receivedAt) return <Badge tone="success">{t('Confirmada')} · {formatDate(p.receivedAt)}</Badge>;
                 return (
                   <button
                     className="btn btn-accent btn-sm"
                     disabled={confirming === p.id}
                     onClick={(e) => { e.stopPropagation(); confirmReceived(p); }}
                   >
-                    {confirming === p.id ? 'A confirmar…' : 'Confirmar receção'}
+                    {confirming === p.id ? t('A confirmar…') : t('Confirmar receção')}
                   </button>
                 );
               },

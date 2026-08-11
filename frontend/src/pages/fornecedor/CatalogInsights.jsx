@@ -62,19 +62,19 @@ export default function CatalogInsights() {
   return (
     <div>
       <PageHeader title={title} subtitle="Baseado nos produtos publicados pela sua empresa." />
-      {renderView(seg, grouped, title)}
+      {renderView(seg, grouped, title, t)}
     </div>
   );
 }
 
-function renderView(seg, g, title) {
+function renderView(seg, g, title, t) {
   if (seg === 'servicos' || seg === 'promocoes') {
     const rows = g[seg];
     if (rows.length === 0) return <Empty label={title} />;
     return (
       <div className="card" style={{ overflowX: 'auto' }}>
         <table>
-          <thead><tr><th>Produto</th><th>Categoria</th><th style={{ textAlign: 'right' }}>Preço</th></tr></thead>
+          <thead><tr><th>{t('Produto')}</th><th>{t('Categoria')}</th><th style={{ textAlign: 'right' }}>{t('Preço')}</th></tr></thead>
           <tbody>
             {rows.map((p) => (
               <tr key={p.id}>
@@ -106,7 +106,7 @@ function renderView(seg, g, title) {
         <div key={r.key} className="card stat-card">
           <div className="stat-label">{r.key}</div>
           <div className="stat-value">{r.count}</div>
-          <div className="stat-sub">{r.count === 1 ? 'produto' : 'produtos'}{showUnits ? ` · ${r.units} un. em stock` : ''}</div>
+          <div className="stat-sub">{r.count === 1 ? t('produto') : t('produtos')}{showUnits ? ` · ${t('{n} un. em stock', { n: r.units })}` : ''}</div>
         </div>
       ))}
     </div>
@@ -114,10 +114,11 @@ function renderView(seg, g, title) {
 }
 
 function Empty({ label }) {
+  const { t } = useI18n();
   return (
     <div className="empty-state">
-      <h3>Sem {label.toLowerCase()}</h3>
-      <p>Esta vista preenche-se automaticamente à medida que publica produtos com estes dados.</p>
+      <h3>{t('Sem {x}', { x: t(label).toLowerCase() })}</h3>
+      <p>{t('Esta vista preenche-se automaticamente à medida que publica produtos com estes dados.')}</p>
     </div>
   );
 }

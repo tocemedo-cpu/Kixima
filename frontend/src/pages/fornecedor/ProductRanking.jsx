@@ -37,8 +37,8 @@ export default function ProductRanking() {
         <div className="empty-state">
           <h3>{t('Sem dados ainda')}</h3>
           <p>{isViewed
-            ? 'As visualizações contam quando os compradores abrem a ficha dos seus produtos no marketplace.'
-            : 'As vendas contam a partir das ordens de compra recebidas.'}</p>
+            ? t('As visualizações contam quando os compradores abrem a ficha dos seus produtos no marketplace.')
+            : t('As vendas contam a partir das ordens de compra recebidas.')}</p>
         </div>
       ) : (
         <div className="card card-pad" style={{ display: 'grid', gap: 14 }}>
@@ -51,7 +51,7 @@ export default function ProductRanking() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 5 }}>
                     <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</strong>
                     <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
-                      {isViewed ? `${value} visualizações` : `${value} un.`}
+                      {isViewed ? t('{n} visualizações', { n: value }) : t('{n} un.', { n: value })}
                       {!isViewed && r.total != null ? <span style={{ color: 'var(--ink-400)', fontWeight: 400 }}> · {formatMoney(r.total)}</span> : null}
                     </span>
                   </div>

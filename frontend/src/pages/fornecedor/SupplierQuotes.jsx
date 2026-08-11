@@ -42,7 +42,7 @@ export default function SupplierQuotes() {
       <SuccessBanner message={success} />
 
       {list.length === 0 ? (
-        <div className="empty-state"><h3>{t('Nada por aqui')}</h3><p>{isInbox ? 'Sem solicitações por responder.' : 'Ainda não respondeu a cotações.'}</p></div>
+        <div className="empty-state"><h3>{t('Nada por aqui')}</h3><p>{isInbox ? t('Sem solicitações por responder.') : t('Ainda não respondeu a cotações.')}</p></div>
       ) : (
         list.map((q) => (
           <QuoteCard key={q.id} quote={q} respondable={isInbox} onDone={(msg) => { setSuccess(msg); load(); }} onError={setError} />
@@ -53,6 +53,7 @@ export default function SupplierQuotes() {
 }
 
 function QuoteCard({ quote, respondable, onDone, onError }) {
+  const { t } = useI18n();
   const [price, setPrice] = useState('');
   const [leadDays, setLeadDays] = useState('');
   const [note, setNote] = useState('');
@@ -61,11 +62,11 @@ function QuoteCard({ quote, respondable, onDone, onError }) {
   async function respond(e) {
     e.preventDefault();
     onError('');
-    if (!price || Number(price) <= 0) return onError('Indique um preço válido.');
+    if (!price || Number(price) <= 0) return onError(t('Indique um preço válido.'));
     setSaving(true);
     try {
       await api.patch(`/api/quotes/${quote.id}/respond`, { price: Number(price), leadDays: leadDays ? Number(leadDays) : undefined, note: note || undefined });
-      onDone('Cotação enviada ao comprador.');
+      onDone(t('Cotação enviada ao comprador.'));
     } catch (err) {
       onError(err.message);
     } finally {
@@ -77,7 +78,7 @@ function QuoteCard({ quote, respondable, onDone, onError }) {
     <div className="card card-pad" style={{ marginBottom: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
         <div>
-          <strong>{quote.buyerCompany?.name || 'Comprador'}</strong>
+          <strong>{quote.buyerCompany?.name || t('Comprador')}</strong>
           <div style={{ fontSize: 12.5, color: 'var(--ink-600)' }}>{formatDate(quote.createdAt)}</div>
         </div>
         <Badge tone={STATUS[quote.status]?.tone}>{STATUS[quote.status]?.label}</Badge>
@@ -86,22 +87,22 @@ function QuoteCard({ quote, respondable, onDone, onError }) {
       <ul style={{ margin: '10px 0', paddingLeft: 18, fontSize: 13.5 }}>
         {quote.items.map((it) => <li key={it.id}>{it.quantity}× {it.product?.name || '—'}</li>)}
       </ul>
-      {quote.note ? <p className="helptext" style={{ marginTop: 0 }}>Nota do comprador: {quote.note}</p> : null}
+      {quote.note ? <p className="helptext" style={{ marginTop: 0 }}>{t('Nota do comprador:')} {quote.note}</p> : null}
 
       {quote.status !== 'ABERTA' && quote.responsePrice != null ? (
         <div style={{ fontSize: 13.5, marginTop: 6 }}>
-          A sua cotação: <strong>{formatMoney(quote.responsePrice, quote.items[0]?.product?.currency || 'AOA')}</strong>
-          {quote.responseLeadDays != null ? ` · prazo ${quote.responseLeadDays} dias` : ''}
+          {t('A sua cotação:')} <strong>{formatMoney(quote.responsePrice, quote.items[0]?.product?.currency || 'AOA')}</strong>
+          {quote.responseLeadDays != null ? ` · ${t('prazo {n} dias', { n: quote.responseLeadDays })}` : ''}
           {quote.responseNote ? ` · ${quote.responseNote}` : ''}
         </div>
       ) : null}
 
       {respondable && (
         <form onSubmit={respond} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', marginTop: 10, borderTop: '1px solid var(--line)', paddingTop: 12 }}>
-          <div className="field" style={{ margin: 0, width: 160 }}><label>Preço proposto</label><input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} /></div>
-          <div className="field" style={{ margin: 0, width: 120 }}><label>Prazo (dias)</label><input type="number" min="0" value={leadDays} onChange={(e) => setLeadDays(e.target.value)} /></div>
-          <div className="field" style={{ margin: 0, flex: '1 1 160px' }}><label>Nota (opcional)</label><input value={note} onChange={(e) => setNote(e.target.value)} /></div>
-          <button className="btn btn-accent" type="submit" disabled={saving}>{saving ? 'A enviar…' : 'Enviar cotação'}</button>
+          <div className="field" style={{ margin: 0, width: 160 }}><label>{t('Preço proposto')}</label><input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} /></div>
+          <div className="field" style={{ margin: 0, width: 120 }}><label>{t('Prazo (dias)')}</label><input type="number" min="0" value={leadDays} onChange={(e) => setLeadDays(e.target.value)} /></div>
+          <div className="field" style={{ margin: 0, flex: '1 1 160px' }}><label>{t('Nota (opcional)')}</label><input value={note} onChange={(e) => setNote(e.target.value)} /></div>
+          <button className="btn btn-accent" type="submit" disabled={saving}>{saving ? t('A enviar…') : t('Enviar cotação')}</button>
         </form>
       )}
     </div>
