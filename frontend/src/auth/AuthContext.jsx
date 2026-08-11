@@ -29,6 +29,17 @@ export function AuthProvider({ children }) {
 
   async function login(email, password) {
     const result = await api.post('/api/auth/login', { email, password });
+    // Conta com 2FA: a senha não basta — devolve o desafio para o 2º passo
+    // (verify2fa) sem iniciar sessão.
+    if (result.requires2fa) return result;
+    setToken(result.token);
+    setUser(result.user);
+    return result.user;
+  }
+
+  // 2º passo do login com 2FA: desafio + código TOTP → sessão completa.
+  async function verify2fa(challenge, code) {
+    const result = await api.post('/api/auth/2fa/verify', { challenge, code });
     setToken(result.token);
     setUser(result.user);
     return result.user;
@@ -46,7 +57,7 @@ export function AuthProvider({ children }) {
   const updateUser = useCallback((patch) => setUser((u) => (u ? { ...u, ...patch } : u)), []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser: loadMe, updateUser }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, login, verify2fa, logout, refreshUser: loadMe, updateUser }}>{children}</AuthContext.Provider>
   );
 }
 

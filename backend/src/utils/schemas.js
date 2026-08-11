@@ -50,6 +50,14 @@ const resetPasswordSchema = z.object({
   password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.'),
 });
 
+// 2FA (TOTP): código de 6 dígitos; o verify traz também o desafio do login.
+const totpCodeSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, 'O código tem 6 dígitos.'),
+});
+const totpVerifySchema = totpCodeSchema.extend({
+  challenge: z.string().min(10),
+});
+
 const decideCompanySchema = z.object({
   approve: z.boolean(),
   rejectionReason: z.string().optional(),
@@ -294,6 +302,8 @@ module.exports = {
   changePasswordSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  totpCodeSchema,
+  totpVerifySchema,
   registerCompanySchema,
   decideCompanySchema,
   erpConfigSchema,

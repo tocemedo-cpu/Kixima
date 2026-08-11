@@ -76,9 +76,24 @@ async function login({ email, password }) {
     throw new UnauthorizedError('Credenciais inválidas.');
   }
 
-  const token = signToken(user);
+  // 2FA ativo: a senha não basta. Devolve um desafio de curta duração; o token
+  // de sessão só sai no /2fa/verify com um código TOTP válido.
+  if (user.totpEnabledAt) {
+    const challenge = jwt.sign(
+      { t: '2fa', sub: user.id, tv: user.tokenVersion ?? 0 },
+      config.auth.jwtSecret,
+      { expiresIn: TWO_FA_CHALLENGE_TTL },
+    );
+    return { requires2fa: true, challenge };
+  }
+
+  return buildSession(user);
+}
+
+// Sessão completa (token + payload do utilizador) — partilhada por login e 2FA.
+function buildSession(user) {
   return {
-    token,
+    token: signToken(user),
     user: {
       id: user.id,
       name: user.name,
@@ -89,6 +104,70 @@ async function login({ email, password }) {
       avatarUrl: user.avatarUrl ?? null,
     },
   };
+}
+
+// --- 2FA (TOTP) -------------------------------------------------------------
+const totpUtil = require('../utils/totp');
+const TWO_FA_CHALLENGE_TTL = '5m';
+
+async function totpStatus(userId) {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { totpEnabledAt: true } });
+  return { enabled: Boolean(user?.totpEnabledAt), enabledAt: user?.totpEnabledAt ?? null };
+}
+
+// Passo 1 da ativação: gera o segredo (fica pendente até confirmar um código).
+async function setupTotp(userId) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new UnauthorizedError('Sessão inválida.');
+  if (user.totpEnabledAt) throw new ConflictError('A autenticação de dois fatores já está ativa.');
+
+  const secret = totpUtil.generateSecret();
+  await prisma.user.update({ where: { id: userId }, data: { totpSecret: secret, totpEnabledAt: null } });
+  return { secret, otpauthUrl: totpUtil.otpauthUrl({ secret, label: user.email }) };
+}
+
+// Passo 2: o utilizador prova que a app está configurada — só então fica ativo.
+async function enableTotp(userId, code) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user?.totpSecret) throw new ConflictError('Inicie primeiro a ativação (gerar o código QR).');
+  if (user.totpEnabledAt) throw new ConflictError('A autenticação de dois fatores já está ativa.');
+  if (!totpUtil.verify(code, user.totpSecret)) {
+    throw new UnauthorizedError('Código incorreto. Confirme o código atual na app de autenticação.');
+  }
+  const updated = await prisma.user.update({ where: { id: userId }, data: { totpEnabledAt: new Date() } });
+  return { enabled: true, enabledAt: updated.totpEnabledAt };
+}
+
+// Desativar exige um código válido (impede desativação por sessão roubada).
+async function disableTotp(userId, code) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user?.totpEnabledAt) throw new ConflictError('A autenticação de dois fatores não está ativa.');
+  if (!totpUtil.verify(code, user.totpSecret)) {
+    throw new UnauthorizedError('Código incorreto. Confirme o código atual na app de autenticação.');
+  }
+  await prisma.user.update({ where: { id: userId }, data: { totpSecret: null, totpEnabledAt: null } });
+  return { enabled: false };
+}
+
+// 2º passo do login: troca desafio + código TOTP pela sessão completa.
+async function verify2fa(challenge, code) {
+  let payload;
+  try {
+    payload = jwt.verify(challenge, config.auth.jwtSecret);
+  } catch {
+    throw new UnauthorizedError('Desafio expirado — volte a iniciar sessão.');
+  }
+  if (payload.t !== '2fa' || !payload.sub) {
+    throw new UnauthorizedError('Desafio inválido — volte a iniciar sessão.');
+  }
+  const user = await prisma.user.findUnique({ where: { id: payload.sub }, include: { company: true } });
+  if (!user || !user.active || (user.tokenVersion ?? 0) !== payload.tv) {
+    throw new UnauthorizedError('Sessão inválida — volte a iniciar sessão.');
+  }
+  if (!user.totpEnabledAt || !totpUtil.verify(code, user.totpSecret)) {
+    throw new UnauthorizedError('Código incorreto. Confirme o código atual na app de autenticação.');
+  }
+  return buildSession(user);
 }
 
 async function createUser({ name, email, password, role, companyId, approvalCap }) {
@@ -206,4 +285,5 @@ async function resetPassword(token, newPassword) {
 module.exports = {
   login, createUser, hashPassword, signToken, signInvite, verifyInvite,
   changePassword, revokeSessions, requestPasswordReset, resetPassword,
+  totpStatus, setupTotp, enableTotp, disableTotp, verify2fa,
 };

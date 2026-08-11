@@ -237,6 +237,10 @@ model User {
   tokenVersion Int         @default(0) @map("token_version")
   // Aceite individual dos Termos/Privacidade (registo por convite).
   termsAcceptedAt DateTime? @map("terms_accepted_at")
+  // 2FA (TOTP): o segredo é gerado no setup e só fica ATIVO após o utilizador
+  // confirmar um código válido (totpEnabledAt preenchido).
+  totpSecret    String?   @map("totp_secret")
+  totpEnabledAt DateTime? @map("totp_enabled_at")
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
 
