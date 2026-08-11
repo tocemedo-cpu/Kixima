@@ -54,6 +54,9 @@ USER node
 #  - Se a base já existir sem histórico (criada por db push), o 1º deploy dá P3005;
 #    nesse caso faz-se o baseline (resolve --applied 0_init) e tenta de novo.
 #    Numa base fresca, o `migrate deploy` cria tudo à primeira (o fallback não corre).
-# Depois carrega o catálogo de demonstração (idempotente, desligável com
-# SKIP_CATALOG_SEED=1) e inicia a API+SPA.
+# Depois o seed do catálogo de demonstração corre em modo OPT-IN: sem
+# LOAD_DEMO_CATALOG=1 no ambiente é um no-op (produção fica só com dados reais);
+# com a variável, carrega/atualiza os 119 itens fictícios (testes/piloto).
+# Para remover dados de demonstração já existentes: `npm run demo:remove`.
+# Por fim inicia a API+SPA.
 CMD ["sh", "-c", "(npx prisma migrate deploy || (echo 'baseline (1x) da base existente...' && npx prisma migrate resolve --applied 0_init && npx prisma migrate deploy)) && (node prisma/seed.catalog.js || echo 'catalogo: seed ignorado') && node src/server.js"]

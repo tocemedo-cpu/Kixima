@@ -76,12 +76,22 @@ A partir daí, cada nova migração aplica-se sozinha no deploy.
 commit da pasta `prisma/migrations/…` e deploy — o `migrate deploy` aplica-a.
 Confirma o estado com `npm run migrate:status`.
 
-### 5. (Opcional) Dados de exemplo
-No serviço → **Shell**:
-```bash
-cd backend && npm run seed:demo
-```
-Isto cria as 5 personas de demonstração + catálogo, ordens, faturas e documentos (password `Kixima@123`) e um catálogo base.
+### 5. (Opcional) Dados de exemplo — OPT-IN
+Os dados de demonstração **nunca entram sozinhos** em produção: o arranque só
+carrega o catálogo fictício (fornecedor "Catálogo KIXIMA (Demonstração)" + 119
+itens) se a variável `LOAD_DEMO_CATALOG=1` estiver definida no Render.
+
+- **Para um piloto/testes:** define `LOAD_DEMO_CATALOG=1` no Environment e faz
+  deploy — o catálogo de demonstração (re)carrega a cada arranque (idempotente).
+- **Para produção real:** não definas a variável (ou remove-a) e, para limpar os
+  dados de demonstração já carregados antes desta mudança, corre no Shell:
+  ```bash
+  cd backend && npm run demo:remove
+  ```
+  (apaga o fornecedor fictício e os seus produtos; os que já estiverem
+  referenciados por ordens reais são apenas desativados, preservando o histórico).
+- **Personas de teste completas** (5 utilizadores, ordens, faturas — password
+  `Kixima@123`), só para ambientes de teste: `cd backend && npm run seed:demo`.
 
 ## Variáveis de ambiente (já no `render.yaml`, exceto o segredo)
 | Variável | Valor | Notas |

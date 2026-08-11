@@ -68,16 +68,25 @@ function priceFor(item) {
 }
 
 async function ensureSupplier() {
-  const existing = await prisma.company.findUnique({ where: { taxId: DEMO_SUPPLIER.taxId } });
-  if (existing) return existing;
-  return prisma.company.create({ data: { ...DEMO_SUPPLIER, approvedAt: new Date() } });
+  // Upsert que também REPÕE o estado (APROVADA/verificado): se a demo tiver sido
+  // removida parcialmente (empresa SUSPENSA por ter histórico), recarregar volta
+  // a deixá-la utilizável.
+  return prisma.company.upsert({
+    where: { taxId: DEMO_SUPPLIER.taxId },
+    update: { status: 'APROVADA', verified: true },
+    create: { ...DEMO_SUPPLIER, approvedAt: new Date() },
+  });
 }
 
 async function main() {
-  // Permite desligar o carregamento automático (ex.: produção real sem dados de
-  // demonstração): definir SKIP_CATALOG_SEED=1 no ambiente.
-  if (process.env.SKIP_CATALOG_SEED === '1') {
-    console.log('Catálogo: carregamento ignorado (SKIP_CATALOG_SEED=1).');
+  // OPT-IN: os dados de demonstração só entram quando explicitamente pedidos
+  // (LOAD_DEMO_CATALOG=1). Sem a variável, o arranque em produção NÃO cria o
+  // fornecedor fictício nem os 119 produtos — produção fica só com dados reais.
+  // Para carregar em testes/piloto: define LOAD_DEMO_CATALOG=1 no ambiente (ou
+  // corre `npm run seed:catalog`, que já a define). Para remover dados de
+  // demonstração já carregados: `npm run demo:remove`.
+  if (process.env.LOAD_DEMO_CATALOG !== '1') {
+    console.log('Catálogo de demonstração: ignorado (opt-in — define LOAD_DEMO_CATALOG=1 para carregar).');
     return;
   }
   const supplier = await ensureSupplier();
