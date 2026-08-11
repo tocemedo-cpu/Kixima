@@ -11,8 +11,15 @@ async function history(req, res) {
 }
 
 async function pay(req, res) {
-  const payment = await paymentService.processPayment(req.params.invoiceId, req.user.id, req.user.companyId);
+  // multipart: o comprovativo vem em req.file (campo "proof").
+  const payment = await paymentService.processPayment(req.params.invoiceId, req.user.id, req.user.companyId, req.file);
   res.status(201).json(payment);
 }
 
-module.exports = { pendingInvoices, history, pay };
+// Fornecedor confirma que o valor entrou na conta.
+async function confirmReceived(req, res) {
+  const payment = await paymentService.confirmReceived(req.params.paymentId, req.user);
+  res.json(payment);
+}
+
+module.exports = { pendingInvoices, history, pay, confirmReceived };

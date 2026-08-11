@@ -664,6 +664,15 @@ model Payment {
   processedById String      @map("processed_by_id") // utilizador Financeiro que executou
   reference   String        @unique // referência da transação
 
+  // Comprovativo da transferência (obrigatório ao pagar) — prova de que o
+  // dinheiro saiu, visível ao fornecedor.
+  proofUrl    String?       @map("proof_url")
+  proofName   String?       @map("proof_name")
+
+  // Confirmação de receção do valor pelo fornecedor (fecha o ciclo de confiança).
+  receivedAt   DateTime?    @map("received_at")
+  receivedById String?      @map("received_by_id")
+
   processedAt DateTime      @default(now()) @map("processed_at")
 
   @@map("payments")

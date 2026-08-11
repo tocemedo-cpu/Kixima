@@ -5,10 +5,11 @@
 
 const { v4: uuid } = require('uuid');
 const prisma = require('../config/database');
-const { NotFoundError, ConflictError, ForbiddenError } = require('../utils/errors');
+const { NotFoundError, ConflictError, ForbiddenError, ValidationError } = require('../utils/errors');
 const notificationService = require('./notificationService');
 const eventBus = require('./eventBus');
 const platformFeeService = require('./platformFeeService');
+const storageService = require('./storageService');
 
 async function listPendingInvoices(buyerCompanyId) {
   return prisma.invoice.findMany({
@@ -39,7 +40,13 @@ async function listPaymentHistory(buyerCompanyId) {
   });
 }
 
-async function processPayment(invoiceId, processedById, buyerCompanyId) {
+async function processPayment(invoiceId, processedById, buyerCompanyId, proofFile = null) {
+  // Comprovativo da transferência OBRIGATÓRIO — é a prova (visível ao
+  // fornecedor) de que o dinheiro saiu; sem ela o "pago" seria só uma palavra.
+  if (!proofFile) {
+    throw new ValidationError('Anexe o comprovativo da transferência (PDF ou imagem) para confirmar o pagamento.');
+  }
+
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
     include: { purchaseOrder: true, contract: true },
@@ -54,6 +61,15 @@ async function processPayment(invoiceId, processedById, buyerCompanyId) {
     throw new ForbiddenError('Só pode pagar faturas da sua própria empresa.');
   }
 
+  // Guarda o comprovativo antes da transação (upload não é transacional).
+  const proofUrl = await storageService.saveFile({
+    buffer: proofFile.buffer,
+    originalname: proofFile.originalname,
+    mimetype: proofFile.mimetype,
+    keyHint: `comprovativo-${invoice.reference}`,
+    folder: 'proofs',
+  });
+
   const [payment] = await prisma.$transaction(async (tx) => {
     const createdPayment = await tx.payment.create({
       data: {
@@ -63,6 +79,8 @@ async function processPayment(invoiceId, processedById, buyerCompanyId) {
         processedById,
         reference: `PAY-${uuid().slice(0, 8).toUpperCase()}`,
         status: 'PROCESSADO',
+        proofUrl,
+        proofName: proofFile.originalname || 'comprovativo',
       },
     });
 
@@ -103,4 +121,28 @@ async function processPayment(invoiceId, processedById, buyerCompanyId) {
   return payment;
 }
 
-module.exports = { listPendingInvoices, listPaymentHistory, processPayment };
+// O fornecedor confirma que o valor entrou na conta — fecha o ciclo de
+// confiança do "pagamento garantido". Uma vez por pagamento.
+async function confirmReceived(paymentId, user) {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: { invoice: { include: { purchaseOrder: true, contract: true } } },
+  });
+  if (!payment) throw new NotFoundError('Pagamento');
+
+  const supplierCompanyId =
+    payment.invoice.purchaseOrder?.supplierCompanyId ?? payment.invoice.contract?.supplierCompanyId;
+  if (supplierCompanyId !== user.companyId) {
+    throw new ForbiddenError('Só o fornecedor desta fatura pode confirmar a receção.');
+  }
+  if (payment.receivedAt) {
+    throw new ConflictError('A receção deste pagamento já foi confirmada.');
+  }
+
+  return prisma.payment.update({
+    where: { id: paymentId },
+    data: { receivedAt: new Date(), receivedById: user.id },
+  });
+}
+
+module.exports = { listPendingInvoices, listPaymentHistory, processPayment, confirmReceived };

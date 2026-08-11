@@ -62,7 +62,7 @@ describe('Fluxo principal da Purchase Order', () => {
     // 5. Financeiro paga
     const paid = await auth(tokens.financeiro)
       .post(`/api/payments/invoices/${invoice.id}/pay`)
-      .send({ method: 'TRANSFERENCIA' });
+      .attach('proof', Buffer.from('%PDF-1.4 comprovativo de teste'), 'comprovativo.pdf');
     expect(paid.status).toBeLessThan(300);
 
     // 6. Fornecedor despacha e marca entregue
@@ -109,7 +109,7 @@ describe('Fluxo principal da Purchase Order', () => {
     const full = await auth(tokens.financeiro).get(`/api/purchase-orders/${po.id}`);
     await auth(tokens.financeiro)
       .post(`/api/payments/invoices/${full.body.invoice.id}/pay`)
-      .send({ method: 'TRANSFERENCIA' });
+      .attach('proof', Buffer.from('%PDF-1.4 comprovativo de teste'), 'comprovativo.pdf');
     await auth(tokens.fornecedor).patch(`/api/purchase-orders/${po.id}/dispatch`);
     await auth(tokens.fornecedor).patch(`/api/purchase-orders/${po.id}/delivered`);
 

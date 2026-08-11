@@ -28,7 +28,7 @@ async function pagaPO() {
   const invoice = full.body.invoice;
   const paid = await auth(tokens.financeiro)
     .post(`/api/payments/invoices/${invoice.id}/pay`)
-    .send({ method: 'TRANSFERENCIA' });
+    .attach('proof', Buffer.from('%PDF-1.4 comprovativo de teste'), 'comprovativo.pdf');
   expect(paid.status).toBeLessThan(300);
   return { po, invoice };
 }

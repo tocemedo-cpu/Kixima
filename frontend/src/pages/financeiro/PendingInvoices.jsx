@@ -15,14 +15,27 @@ export default function PendingInvoices() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [paying, setPaying] = useState(null);
+  const [payModal, setPayModal] = useState(null); // fatura escolhida para pagar
+  const [proof, setProof] = useState(null);       // ficheiro do comprovativo
 
   function load() { api.get('/api/financeiro/invoices').then(setData).catch((e) => setError(e.message)); }
   useEffect(load, []);
 
-  async function pay(inv) {
+  // Pagamento exige o comprovativo da transferência (PDF/imagem) — é a prova,
+  // visível ao fornecedor, de que o dinheiro saiu.
+  async function confirmPay() {
+    const inv = payModal;
+    if (!inv || !proof) return;
     setPaying(inv.id); setError('');
-    try { await api.post(`/api/payments/invoices/${inv.id}/pay`); setToast(`Fatura ${inv.reference} paga.`); setTimeout(() => setToast(''), 3500); load(); }
-    catch (e) { setError(e.message); } finally { setPaying(null); }
+    try {
+      const fd = new FormData();
+      fd.append('proof', proof);
+      await api.postForm(`/api/payments/invoices/${inv.id}/pay`, fd);
+      setToast(`Fatura ${inv.reference} paga — comprovativo anexado.`);
+      setTimeout(() => setToast(''), 3500);
+      setPayModal(null); setProof(null);
+      load();
+    } catch (e) { setError(e.message); } finally { setPaying(null); }
   }
 
   const k = data?.kpis;
@@ -68,7 +81,7 @@ export default function PendingInvoices() {
                           <Icon name="report" size={14} /> Ver
                         </button>
                       ) : null}
-                      <button className="btn btn-accent btn-sm" style={{ marginLeft: 6 }} disabled={paying === i.id} onClick={() => pay(i)}>{paying === i.id ? 'A pagar…' : 'Pagar'}</button>
+                      <button className="btn btn-accent btn-sm" style={{ marginLeft: 6 }} disabled={paying === i.id} onClick={() => { setPayModal(i); setProof(null); }}>{paying === i.id ? 'A pagar…' : 'Pagar'}</button>
                     </td>
                   </tr>
                 );
@@ -76,6 +89,36 @@ export default function PendingInvoices() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal de pagamento — comprovativo obrigatório */}
+      {payModal ? (
+        <div className="av-modal" onClick={() => { setPayModal(null); setProof(null); }}>
+          <div className="hs-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 460 }}>
+            <div className="hs-modal-head">
+              <h3>Pagar fatura {payModal.reference}</h3>
+              <button className="hs-modal-x" onClick={() => { setPayModal(null); setProof(null); }} aria-label="Fechar">✕</button>
+            </div>
+            <p className="bz-sub" style={{ marginTop: 4 }}>
+              Valor: <strong>{formatMoney(payModal.amount, payModal.currency)}</strong> · Fornecedor: {payModal.supplier}
+            </p>
+            <p className="bz-sub" style={{ marginTop: 8 }}>
+              Faça a transferência bancária e anexe o <strong>comprovativo</strong> (PDF ou imagem).
+              Ele fica visível ao fornecedor como prova do pagamento.
+            </p>
+            <div className="field" style={{ marginTop: 12 }}>
+              <label>Comprovativo da transferência <span className="req">*</span></label>
+              <input type="file" accept=".pdf,image/*" onChange={(e) => setProof(e.target.files?.[0] || null)} />
+              {proof ? <small className="helptext">Selecionado: {proof.name} ({Math.round(proof.size / 1024)} KB)</small> : null}
+            </div>
+            <div className="hs-form-actions">
+              <button className="btn btn-ghost" onClick={() => { setPayModal(null); setProof(null); }}>Cancelar</button>
+              <button className="btn btn-accent" disabled={!proof || paying === payModal.id} onClick={confirmPay}>
+                {paying === payModal.id ? 'A pagar…' : 'Confirmar pagamento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
