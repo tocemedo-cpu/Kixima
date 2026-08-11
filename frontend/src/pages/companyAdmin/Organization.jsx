@@ -13,6 +13,7 @@ import { useI18n } from '../../i18n';
 // Dados bancários da empresa fornecedora — aparecem na secção "Dados para
 // pagamento" das faturas geradas pela plataforma.
 function BankDetailsPanel({ companyId }) {
+  const { t } = useI18n();
   const [bank, setBank] = useState(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null); // { ok, text }
@@ -32,7 +33,7 @@ function BankDetailsPanel({ companyId }) {
     setMsg(null);
     try {
       await api.put(`/api/companies/${companyId}/bank-details`, bank);
-      setMsg({ ok: true, text: 'Dados bancários guardados — passam a aparecer nas faturas.' });
+      setMsg({ ok: true, text: t('Dados bancários guardados — passam a aparecer nas faturas.') });
     } catch (err) {
       setMsg({ ok: false, text: err.message });
     } finally {
@@ -42,14 +43,14 @@ function BankDetailsPanel({ companyId }) {
 
   return (
     <div className="bz-panel" style={{ marginTop: 18 }}>
-      <h3>Dados bancários (para pagamento)</h3>
+      <h3>{t('Dados bancários (para pagamento)')}</h3>
       <p className="bz-sub2" style={{ margin: '4px 0 12px' }}>
-        Aparecem na secção <em>Dados bancários do fornecedor</em> das faturas — preencha para que o cliente saiba para onde pagar.
+        {t('Aparecem na secção')} <em>{t('Dados bancários do fornecedor')}</em> {t('das faturas — preencha para que o cliente saiba para onde pagar.')}
       </p>
       <form onSubmit={save}>
         <div className="field">
-          <label>Banco</label>
-          <input value={bank.bankName} onChange={(e) => update('bankName', e.target.value)} placeholder="Ex.: Banco de Fomento Angola (BFA)" />
+          <label>{t('Banco')}</label>
+          <input value={bank.bankName} onChange={(e) => update('bankName', e.target.value)} placeholder={t('Ex.: Banco de Fomento Angola (BFA)')} />
         </div>
         <div className="grid-cols grid-2">
           <div className="field">
@@ -58,12 +59,12 @@ function BankDetailsPanel({ companyId }) {
           </div>
           <div className="field">
             <label>SWIFT / BIC</label>
-            <input value={bank.swift} onChange={(e) => update('swift', e.target.value)} placeholder="Ex.: BFMXAOLU" />
+            <input value={bank.swift} onChange={(e) => update('swift', e.target.value)} placeholder={t('Ex.: BFMXAOLU')} />
           </div>
         </div>
         {msg ? <p className={msg.ok ? 'helptext' : 'error-text'} style={{ margin: '8px 0' }}>{msg.text}</p> : null}
         <button className="btn btn-accent" disabled={saving} type="submit">
-          {saving ? 'A guardar…' : 'Guardar dados bancários'}
+          {saving ? t('A guardar…') : t('Guardar dados bancários')}
         </button>
       </form>
     </div>
@@ -78,9 +79,9 @@ export default function Organization() {
   useEffect(() => { api.get('/api/company-admin/organizacao').then(setD).catch((e) => setError(e.message)); }, []);
 
   if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
-  if (!d) return <div className="bz-empty">A carregar…</div>;
+  if (!d) return <div className="bz-empty">{t('A carregar…')}</div>;
   const c = d.company;
-  const typeLabel = c.type === 'FORNECEDOR' ? 'Prestadora de Serviços' : 'Empresa Cliente';
+  const typeLabel = c.type === 'FORNECEDOR' ? t('Prestadora de Serviços') : t('Empresa Cliente');
 
   return (
     <div>
@@ -93,14 +94,14 @@ export default function Organization() {
           <table className="bz-table">
             <tbody>
               {[
-                ['Nome da Empresa', c.name], ['Tipo de Atuação', typeLabel], ['NIF', c.taxId],
-                ['Telefone', c.contactPhone || '—'], ['E-mail Corporativo', c.contactEmail],
-                ['Endereço', c.address || '—'], ['Localização', [c.city, c.province, c.country].filter(Boolean).join(', ') || 'Angola'],
-                ['Data de Registo', formatDate(c.createdAt)],
+                [t('Nome da Empresa'), c.name], [t('Tipo de Atuação'), typeLabel], [t('NIF'), c.taxId],
+                [t('Telefone'), c.contactPhone || '—'], [t('E-mail Corporativo'), c.contactEmail],
+                [t('Endereço'), c.address || '—'], [t('Localização'), [c.city, c.province, c.country].filter(Boolean).join(', ') || 'Angola'],
+                [t('Data de Registo'), formatDate(c.createdAt)],
               ].map(([k, v]) => (
                 <tr key={k}><td className="bz-muted" style={{ width: 200 }}>{k}</td><td><strong>{v}</strong></td></tr>
               ))}
-              <tr><td className="bz-muted">Estado</td><td><Pill tone={c.status === 'APROVADA' ? 'success' : 'pending'}>{c.status === 'APROVADA' ? 'Ativa' : c.status}</Pill> {c.verified ? <Pill tone="success">Verificada</Pill> : null}</td></tr>
+              <tr><td className="bz-muted">{t('Estado')}</td><td><Pill tone={c.status === 'APROVADA' ? 'success' : 'pending'}>{c.status === 'APROVADA' ? 'Ativa' : c.status}</Pill> {c.verified ? <Pill tone="success">Verificada</Pill> : null}</td></tr>
             </tbody>
           </table>
         </div>
@@ -125,7 +126,7 @@ export default function Organization() {
         ].map((x) => (
           <div className="hs-quickcard" key={x.s}>
             <span className="hs-quick-ico"><Icon name={x.icon} size={18} /></span>
-            <div><strong style={{ fontSize: 20 }}>{x.t}</strong><span className="bz-sub2">{x.s}</span></div>
+            <div><strong style={{ fontSize: 20 }}>{x.t}</strong><span className="bz-sub2">{t(x.s)}</span></div>
           </div>
         ))}
       </div>

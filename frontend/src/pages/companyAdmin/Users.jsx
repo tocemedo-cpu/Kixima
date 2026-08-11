@@ -69,14 +69,14 @@ export default function Users() {
     try {
       await api.post('/api/companies/invites', { role, name, email });
       setModal(false);
-      flash('Convite enviado com sucesso para o email do funcionário.');
+      flash(t('Convite enviado com sucesso para o email do funcionário.'));
       loadInvites();
     } catch (err) { setFormError(err.message); } finally { setBusy(false); }
   }
-  async function resendInvite(id, to) { try { await api.post(`/api/companies/invites/${id}/resend`); flash(`Convite reenviado para ${to}.`); loadInvites(); } catch (e) { setError(e.message); } }
-  async function cancelInvite(id) { try { await api.post(`/api/companies/invites/${id}/cancel`); flash('Convite cancelado.'); loadInvites(); } catch (e) { setError(e.message); } }
-  async function accept(id, name) { try { await api.patch(`/api/companies/users/${id}/activate`); flash(`Cadastro de ${name} aceite.`); loadUsers(); } catch (e) { setError(e.message); } }
-  async function reject(id, name) { try { await api.del(`/api/companies/users/${id}`); flash(`Cadastro de ${name} removido.`); loadUsers(); } catch (e) { setError(e.message); } }
+  async function resendInvite(id, to) { try { await api.post(`/api/companies/invites/${id}/resend`); flash(t('Convite reenviado para {to}.', { to })); loadInvites(); } catch (e) { setError(e.message); } }
+  async function cancelInvite(id) { try { await api.post(`/api/companies/invites/${id}/cancel`); flash(t('Convite cancelado.')); loadInvites(); } catch (e) { setError(e.message); } }
+  async function accept(id, name) { try { await api.patch(`/api/companies/users/${id}/activate`); flash(t('Cadastro de {name} aceite.', { name })); loadUsers(); } catch (e) { setError(e.message); } }
+  async function reject(id, name) { try { await api.del(`/api/companies/users/${id}`); flash(t('Cadastro de {name} removido.', { name })); loadUsers(); } catch (e) { setError(e.message); } }
 
   const pending = (users || []).filter((u) => !u.active);
   const list = (users || []).filter((u) => !q || u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()));
@@ -86,13 +86,13 @@ export default function Users() {
       {toast ? <div className="svc-toast">{toast}</div> : null}
       <Crumbs trail={['Usuários & Perfis']} />
       <PageHead title="Usuários & Perfis" subtitle="Gerencie os usuários, perfis e permissões da empresa."
-        actions={<button className="btn btn-accent" onClick={openInviteModal}>+ Novo Usuário</button>} />
+        actions={<button className="btn btn-accent" onClick={openInviteModal}>{t('+ Novo Usuário')}</button>} />
 
       {error ? <div className="empty-state" style={{ padding: 14 }}><p>{error}</p></div> : null}
 
       {pending.length > 0 && (
         <div className="bz-card bz-tablewrap" style={{ marginBottom: 16 }}>
-          <div className="ca-panel-title">Cadastros pendentes ({pending.length})</div>
+          <div className="ca-panel-title">{t('Cadastros pendentes')} ({pending.length})</div>
           <table className="bz-table">
             <tbody>
               {pending.map((u) => (
@@ -101,8 +101,8 @@ export default function Users() {
                   <td><Pill tone={ROLE_TONE[u.role]}>{roleLabel(u.role, companyType)}</Pill></td>
                   <td className="r">
                     <div className="bz-actions" style={{ justifyContent: 'flex-end' }}>
-                      <button className="btn btn-accent btn-sm" onClick={() => accept(u.id, u.name)}>Aceitar</button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => reject(u.id, u.name)}>Recusar</button>
+                      <button className="btn btn-accent btn-sm" onClick={() => accept(u.id, u.name)}>{t('Aceitar')}</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => reject(u.id, u.name)}>{t('Recusar')}</button>
                     </div>
                   </td>
                 </tr>
@@ -114,7 +114,7 @@ export default function Users() {
 
       {invites.length > 0 && (
         <div className="bz-card bz-tablewrap" style={{ marginBottom: 16 }}>
-          <div className="ca-panel-title">Convites enviados ({invites.length})</div>
+          <div className="ca-panel-title">{t('Convites enviados')} ({invites.length})</div>
           <table className="bz-table">
             <thead><tr><th>{t('Funcionário')}</th><th>{t('E-mail')}</th><th>{t('Perfil')}</th><th>{t('Status')}</th><th>{t('Enviado')}</th><th></th></tr></thead>
             <tbody>
@@ -128,8 +128,8 @@ export default function Users() {
                   <td className="r">
                     {iv.status !== 'ACEITO' ? (
                       <div className="bz-actions" style={{ justifyContent: 'flex-end' }}>
-                        <button className="btn btn-ghost btn-sm" onClick={() => resendInvite(iv.id, iv.email)}>Reenviar</button>
-                        {iv.status !== 'CANCELADO' ? <button className="btn btn-ghost btn-sm" onClick={() => cancelInvite(iv.id)}>Cancelar</button> : null}
+                        <button className="btn btn-ghost btn-sm" onClick={() => resendInvite(iv.id, iv.email)}>{t('Reenviar')}</button>
+                        {iv.status !== 'CANCELADO' ? <button className="btn btn-ghost btn-sm" onClick={() => cancelInvite(iv.id)}>{t('Cancelar')}</button> : null}
                       </div>
                     ) : null}
                   </td>
@@ -156,7 +156,7 @@ export default function Users() {
                   <td className="bz-muted">{u.createdAt ? formatDateTime(u.createdAt) : '—'}</td>
                   <td>
                     <div className="bz-actions">
-                      {u.role !== 'COMPANY_ADMIN' ? <button className="bz-iconbtn" title="Remover" onClick={() => reject(u.id, u.name)}><Icon name="approvals" size={14} /></button> : null}
+                      {u.role !== 'COMPANY_ADMIN' ? <button className="bz-iconbtn" title={t('Remover')} onClick={() => reject(u.id, u.name)}><Icon name="approvals" size={14} /></button> : null}
                     </div>
                   </td>
                 </tr>
@@ -166,12 +166,12 @@ export default function Users() {
       </div>
 
       <h3 className="pf-h2">{t('Perfis e Permissões')}</h3>
-      <p className="bz-sub" style={{ marginTop: -6 }}>Defina os níveis de acesso e permissões que cada perfil terá na plataforma.</p>
+      <p className="bz-sub" style={{ marginTop: -6 }}>{t('Defina os níveis de acesso e permissões que cada perfil terá na plataforma.')}</p>
       <div className="hs-quick">
         {PERFIS.map((p) => (
           <div className="hs-quickcard" key={p.t}>
             <span className="hs-quick-ico"><Icon name={p.icon} size={18} /></span>
-            <div><strong>{p.t}</strong><span className="bz-sub2">{p.d}</span></div>
+            <div><strong>{t(p.t)}</strong><span className="bz-sub2">{t(p.d)}</span></div>
           </div>
         ))}
       </div>
@@ -180,20 +180,20 @@ export default function Users() {
         <div className="av-modal" onClick={() => setModal(false)}>
           <form className="hs-form" onClick={(e) => e.stopPropagation()} onSubmit={sendInvite}>
             <h3>{t('Adicionar funcionário')}</h3>
-            <p className="bz-sub">Informe o nome, o email e o perfil. O sistema gera o link único e envia o convite automaticamente para o email do funcionário.</p>
-            <label className="field"><span>Nome do funcionário</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Nome completo" />
+            <p className="bz-sub">{t('Informe o nome, o email e o perfil. O sistema gera o link único e envia o convite automaticamente para o email do funcionário.')}</p>
+            <label className="field"><span>{t('Nome do funcionário')}</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} required placeholder={t('Nome completo')} />
             </label>
-            <label className="field"><span>Email do funcionário</span>
+            <label className="field"><span>{t('Email do funcionário')}</span>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="funcionario@empresa.co.ao" />
             </label>
-            <label className="field"><span>Perfil</span>
-              <select value={role} onChange={(e) => setRole(e.target.value)}>{options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
+            <label className="field"><span>{t('Perfil')}</span>
+              <select value={role} onChange={(e) => setRole(e.target.value)}>{options.map((o) => <option key={o.value} value={o.value}>{t(o.label)}</option>)}</select>
             </label>
             {formError ? <p className="av-error" style={{ maxWidth: 'none' }}>{formError}</p> : null}
             <div className="hs-form-actions">
-              <button type="button" className="btn btn-ghost" onClick={() => setModal(false)}>Cancelar</button>
-              <button type="submit" className="btn btn-accent" disabled={busy || !options.length}>{busy ? 'A enviar…' : 'Salvar e enviar convite'}</button>
+              <button type="button" className="btn btn-ghost" onClick={() => setModal(false)}>{t('Cancelar')}</button>
+              <button type="submit" className="btn btn-accent" disabled={busy || !options.length}>{busy ? t('A enviar…') : t('Salvar e enviar convite')}</button>
             </div>
           </form>
         </div>

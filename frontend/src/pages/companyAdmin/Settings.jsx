@@ -27,31 +27,31 @@ export default function Settings() {
   function toggle(key) { setS((v) => ({ ...v, [key]: !v[key] })); }
   async function save() {
     setBusy(true); setError('');
-    try { const saved = await api.put('/api/company-admin/settings', s); setS(saved); setToast('Configurações guardadas.'); setTimeout(() => setToast(''), 3000); }
+    try { const saved = await api.put('/api/company-admin/settings', s); setS(saved); setToast(t('Configurações guardadas.')); setTimeout(() => setToast(''), 3000); }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   }
 
   if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
-  if (!s) return <div className="bz-empty">A carregar…</div>;
+  if (!s) return <div className="bz-empty">{t('A carregar…')}</div>;
 
   return (
     <div>
       {toast ? <div className="svc-toast">{toast}</div> : null}
       <Crumbs trail={['Configurações']} />
       <PageHead title="Configurações" subtitle="Personalize e configure a plataforma de acordo com as necessidades da sua empresa."
-        actions={<button className="btn btn-accent" onClick={save} disabled={busy}>{busy ? 'A guardar…' : 'Salvar Alterações'}</button>} />
+        actions={<button className="btn btn-accent" onClick={save} disabled={busy}>{busy ? t('A guardar…') : t('Salvar Alterações')}</button>} />
 
       <h3 className="pf-h2">{t('Preferências do Sistema')}</h3>
       <div className="set-grid">
         {TOGGLES.map((x) => (
           <div className="set-row" key={x.key}>
             <div className="set-ico"><Icon name="settings" size={16} /></div>
-            <div className="set-body"><strong>{x.t}</strong><span className="bz-sub2">{x.d}</span></div>
+            <div className="set-body"><strong>{t(x.t)}</strong><span className="bz-sub2">{t(x.d)}</span></div>
             <button className={`set-switch${s[x.key] ? ' on' : ''}`} onClick={() => toggle(x.key)} aria-pressed={s[x.key]}><span /></button>
           </div>
         ))}
       </div>
-      <p className="bz-sub" style={{ marginTop: 14 }}><Icon name="shield" size={13} /> Dica: faça backup das suas configurações antes de realizar alterações importantes.</p>
+      <p className="bz-sub" style={{ marginTop: 14 }}><Icon name="shield" size={13} /> {t('Dica: faça backup das suas configurações antes de realizar alterações importantes.')}</p>
     </div>
   );
 }

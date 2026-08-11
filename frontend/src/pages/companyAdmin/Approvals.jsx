@@ -5,8 +5,10 @@ import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import DataTable from '../../components/DataTable';
 import { formatDate, formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 export default function Approvals() {
+  const { t } = useI18n();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -32,7 +34,7 @@ export default function Approvals() {
             { key: 'reference', header: 'Referência', render: (r) => <span className="mono">{r.reference}</span> },
             { key: 'total', header: 'Valor', render: (r) => formatMoney(r.totalAmount, r.currency) },
             { key: 'date', header: 'Emitida em', render: (r) => formatDate(r.createdAt) },
-            { key: 'action', header: '', render: () => <span style={{ color: 'var(--brand-600)', fontWeight: 600 }}>Rever →</span> },
+            { key: 'action', header: '', render: () => <span style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Rever →')}</span> },
           ]}
         />
       </div>

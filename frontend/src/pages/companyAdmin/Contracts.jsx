@@ -63,8 +63,8 @@ export default function Contracts() {
                         <td><span className="bz-mono">{c.reference}</span></td>
                         <td>{counterpart(c)?.name || '—'}</td>
                         <td>{(c.categoriesCovered || []).join(', ') || '—'}</td>
-                        <td className="r"><strong>{formatMoney(c.totalValue, c.currency)}</strong><span className="bz-sub2">usado {formatMoney(c.usedValue, c.currency)}</span></td>
-                        <td>{formatDate(c.validFrom)}<span className="bz-sub2">até {formatDate(c.validUntil)}</span></td>
+                        <td className="r"><strong>{formatMoney(c.totalValue, c.currency)}</strong><span className="bz-sub2">{t('usado')} {formatMoney(c.usedValue, c.currency)}</span></td>
+                        <td>{formatDate(c.validFrom)}<span className="bz-sub2">{t('até')} {formatDate(c.validUntil)}</span></td>
                         <td>{BILLING_PERIODICITY[c.billingPeriodicity] || c.billingPeriodicity}</td>
                         <td><Pill tone={CONTRACT_STATUS[c.status]?.tone}>{CONTRACT_STATUS[c.status]?.label || c.status}</Pill></td>
                       </tr>
@@ -78,9 +78,9 @@ export default function Contracts() {
         <div className="bz-side">
           <div className="bz-panel">
             <h3>{t('Resumo por Status')}</h3>
-            <div className="bz-panel-row"><span>Ativos</span><strong style={{ color: '#16884f' }}>{kpis.ativos}</strong></div>
-            <div className="bz-panel-row"><span>A Vencer</span><strong style={{ color: '#b9740f' }}>{kpis.aVencer}</strong></div>
-            <div className="bz-panel-row"><span>Vencidos</span><strong style={{ color: '#c0392b' }}>{kpis.vencidos}</strong></div>
+            <div className="bz-panel-row"><span>{t('Ativos')}</span><strong style={{ color: '#16884f' }}>{kpis.ativos}</strong></div>
+            <div className="bz-panel-row"><span>{t('A Vencer')}</span><strong style={{ color: '#b9740f' }}>{kpis.aVencer}</strong></div>
+            <div className="bz-panel-row"><span>{t('Vencidos')}</span><strong style={{ color: '#c0392b' }}>{kpis.vencidos}</strong></div>
           </div>
           <div className="bz-panel">
             <h3>{t('Próximos a Vencer')}</h3>

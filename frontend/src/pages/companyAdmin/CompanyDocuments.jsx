@@ -26,7 +26,7 @@ export default function CompanyDocuments() {
   }, [user.companyId]);
 
   if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
-  if (!company) return <div className="bz-empty">A carregar…</div>;
+  if (!company) return <div className="bz-empty">{t('A carregar…')}</div>;
 
   const docs = company.documents || [];
   const policies = [...(company.supplierPolicies || []), ...(company.clientPolicies || [])];
@@ -43,17 +43,17 @@ export default function CompanyDocuments() {
       ]} />
 
       <div className="bz-card bz-tablewrap" style={{ marginBottom: 18 }}>
-        <div className="ca-panel-title">Documentos de Credenciamento</div>
+        <div className="ca-panel-title">{t('Documentos de Credenciamento')}</div>
         <table className="bz-table">
           <thead><tr><th>{t('Tipo')}</th><th>{t('Ficheiro')}</th><th>{t('Submetido em')}</th><th></th></tr></thead>
           <tbody>
             {docs.length === 0 ? <tr><td colSpan={4}><EmptyRow>Sem documentos submetidos.</EmptyRow></td></tr>
               : docs.map((d) => (
                 <tr key={d.id}>
-                  <td><Icon name="contract" size={14} /> {DOC_LABELS[d.type] || d.type}</td>
+                  <td><Icon name="contract" size={14} /> {t(DOC_LABELS[d.type] || d.type)}</td>
                   <td className="bz-muted">{d.originalName}</td>
                   <td className="bz-muted">{formatDate(d.createdAt)}</td>
-                  <td className="r"><a className="btn btn-ghost btn-sm" href={d.fileUrl} target="_blank" rel="noreferrer">Ver / Descarregar</a></td>
+                  <td className="r"><a className="btn btn-ghost btn-sm" href={d.fileUrl} target="_blank" rel="noreferrer">{t('Ver / Descarregar')}</a></td>
                 </tr>
               ))}
           </tbody>
@@ -61,7 +61,7 @@ export default function CompanyDocuments() {
       </div>
 
       <div className="bz-card bz-tablewrap">
-        <div className="ca-panel-title">Apólices de Seguro</div>
+        <div className="ca-panel-title">{t('Apólices de Seguro')}</div>
         <table className="bz-table">
           <thead><tr><th>{t('Nº da Apólice')}</th><th>{t('Seguradora')}</th><th>{t('Validade')}</th><th>{t('Estado')}</th></tr></thead>
           <tbody>

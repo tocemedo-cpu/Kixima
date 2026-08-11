@@ -15,7 +15,7 @@ export default function Reports() {
   useEffect(() => { api.get('/api/company-admin/reports').then(setD).catch((e) => setError(e.message)); }, []);
 
   if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
-  if (!d) return <div className="bz-empty">A carregar…</div>;
+  if (!d) return <div className="bz-empty">{t('A carregar…')}</div>;
   const max = Math.max(1, ...d.series.map((s) => Math.max(s.receitas, s.despesas)));
 
   return (
@@ -32,14 +32,14 @@ export default function Reports() {
 
       <div className="bz-layout">
         <div className="bz-panel">
-          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>{t('Visão Geral de Indicadores')}</h3><span className="bz-muted">Últimos 6 meses</span></div>
-          <div className="rp-legend"><span><i style={{ background: '#16a066' }} /> Receitas</span><span><i style={{ background: '#d94f4f' }} /> Despesas</span></div>
+          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>{t('Visão Geral de Indicadores')}</h3><span className="bz-muted">{t('Últimos 6 meses')}</span></div>
+          <div className="rp-legend"><span><i style={{ background: '#16a066' }} /> {t('Receitas')}</span><span><i style={{ background: '#d94f4f' }} /> {t('Despesas')}</span></div>
           <div className="ca-bars">
             {d.series.map((s) => (
               <div className="ca-bar" key={s.label}>
                 <div className="rp-barpair">
-                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.receitas / max) * 100)}%`, background: '#16a066' }} title={`Receitas ${formatMoney(s.receitas)}`} /></div>
-                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.despesas / max) * 100)}%`, background: '#d94f4f' }} title={`Despesas ${formatMoney(s.despesas)}`} /></div>
+                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.receitas / max) * 100)}%`, background: '#16a066' }} title={`${t('Receitas')} ${formatMoney(s.receitas)}`} /></div>
+                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.despesas / max) * 100)}%`, background: '#d94f4f' }} title={`${t('Despesas')} ${formatMoney(s.despesas)}`} /></div>
                 </div>
                 <span className="bz-muted">{s.label}</span>
               </div>

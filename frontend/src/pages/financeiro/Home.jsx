@@ -15,6 +15,7 @@ import { useI18n } from '../../i18n';
 // Centro Financeiro de uma empresa FORNECEDORA: recebimentos + Taxa KIXIMA,
 // E as compras próprias a pagar (fornecedoras também compram materiais).
 function SupplierFinanceCenter() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const nav = useNavigate();
   const [orders, setOrders] = useState(null);
@@ -29,8 +30,8 @@ function SupplierFinanceCenter() {
     api.get('/api/payments/invoices/pending').then(setPendingInvoices).catch(() => {});
   }, [user.companyId]);
 
-  if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
-  if (!orders) return <div className="bz-empty">A carregar…</div>;
+  if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
+  if (!orders) return <div className="bz-empty">{t('A carregar…')}</div>;
 
   // "Recebimentos": só as ordens em que a empresa é a FORNECEDORA (vende);
   // as compras próprias entram no bloco "a pagar", não nos recebimentos.
@@ -56,17 +57,17 @@ function SupplierFinanceCenter() {
       {pendingInvoices.length > 0 ? (
         <div className="bz-panel" style={{ marginBottom: 16 }}>
           <div className="bz-head" style={{ marginBottom: 6 }}>
-            <h3 style={{ margin: 0 }}>Compras a pagar (prazo de 7 dias)</h3>
-            <a className="pf-link" href="/financeiro/faturas">Ver todas</a>
+            <h3 style={{ margin: 0 }}>{t('Compras a pagar (prazo de 7 dias)')}</h3>
+            <a className="pf-link" href="/financeiro/faturas">{t('Ver todas')}</a>
           </div>
           {pendingInvoices.slice(0, 4).map((i) => (
             <div className="hs-ticket" key={i.id}>
-              <div><strong className="bz-mono">{i.reference}</strong><span className="bz-sub2">vence {formatDate(i.dueAt)}</span></div>
+              <div><strong className="bz-mono">{i.reference}</strong><span className="bz-sub2">{t('vence')} {formatDate(i.dueAt)}</span></div>
               <div className="hs-ticket-meta"><strong>{formatMoney(i.amount, i.currency)}</strong></div>
             </div>
           ))}
           <button className="btn btn-accent" style={{ width: '100%', marginTop: 10 }} onClick={() => nav('/financeiro/faturas')}>
-            <Icon name="invoice" size={14} /> Pagar faturas das compras
+            <Icon name="invoice" size={14} /> {t('Pagar faturas das compras')}
           </button>
         </div>
       ) : null}
@@ -74,36 +75,36 @@ function SupplierFinanceCenter() {
       <div className="bz-layout">
         <div className="bz-panel">
           <div className="bz-head" style={{ marginBottom: 10 }}>
-            <h3 style={{ margin: 0 }}>Por confirmar receção</h3>
-            <a className="pf-link" href="/financeiro/recebidos">Ver todos</a>
+            <h3 style={{ margin: 0 }}>{t('Por confirmar receção')}</h3>
+            <a className="pf-link" href="/financeiro/recebidos">{t('Ver todos')}</a>
           </div>
-          {porConfirmar.length === 0 ? <p className="bz-sub">Nada por confirmar — está tudo em dia.</p> : (
+          {porConfirmar.length === 0 ? <p className="bz-sub">{t('Nada por confirmar — está tudo em dia.')}</p> : (
             porConfirmar.slice(0, 6).map((p) => (
               <div className="hs-ticket" key={p.id}>
-                <div><strong className="bz-mono">{p.reference}</strong><span className="bz-sub2">processado {formatDate(p.processedAt)}</span></div>
+                <div><strong className="bz-mono">{p.reference}</strong><span className="bz-sub2">{t('processado')} {formatDate(p.processedAt)}</span></div>
                 <div className="hs-ticket-meta"><strong>{formatMoney(p.amount, p.currency)}</strong></div>
               </div>
             ))
           )}
           <button className="btn btn-accent" style={{ width: '100%', marginTop: 10 }} onClick={() => nav('/financeiro/recebidos')}>
-            <Icon name="payment" size={14} /> Confirmar receções
+            <Icon name="payment" size={14} /> {t('Confirmar receções')}
           </button>
         </div>
         <div className="bz-panel">
-          <h3 style={{ marginTop: 0 }}>Taxa KIXIMA</h3>
+          <h3 style={{ marginTop: 0 }}>{t('Taxa KIXIMA')}</h3>
           {fees ? (
             <>
               <p className="bz-sub" style={{ marginTop: 8 }}>
                 {fees.kpis.pendentes > 0
-                  ? <>Tem <strong>{formatMoney(fees.kpis.pendingAOA)}</strong> por liquidar à plataforma.</>
-                  : 'Sem taxas pendentes — está tudo liquidado.'}
+                  ? <>{t('Tem')} <strong>{formatMoney(fees.kpis.pendingAOA)}</strong> {t('por liquidar à plataforma.')}</>
+                  : t('Sem taxas pendentes — está tudo liquidado.')}
               </p>
-              <p className="bz-sub2">Total gerado: {formatMoney(fees.kpis.totalAOA)} · Cobrado: {formatMoney(fees.kpis.chargedAOA)}</p>
+              <p className="bz-sub2">{t('Total gerado:')} {formatMoney(fees.kpis.totalAOA)} · {t('Cobrado:')} {formatMoney(fees.kpis.chargedAOA)}</p>
               <button className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} onClick={() => window.open(`/documento/taxas/${user.companyId}`, '_blank')}>
-                Ver extrato completo
+                {t('Ver extrato completo')}
               </button>
             </>
-          ) : <p className="bz-sub">Sem dados de taxas.</p>}
+          ) : <p className="bz-sub">{t('Sem dados de taxas.')}</p>}
         </div>
       </div>
     </div>
@@ -126,7 +127,7 @@ export default function FinanceiroHome() {
   if (isSupplierSide) return <SupplierFinanceCenter />;
 
   if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
-  if (!d) return <div className="bz-empty">A carregar…</div>;
+  if (!d) return <div className="bz-empty">{t('A carregar…')}</div>;
   const max = Math.max(1, ...d.series.map((s) => Math.max(s.faturas, s.pagamentos)));
 
   return (
@@ -143,14 +144,14 @@ export default function FinanceiroHome() {
 
       <div className="bz-layout">
         <div className="bz-panel">
-          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>{t('Visão Geral Financeira')}</h3><span className="bz-muted">Últimos 6 meses</span></div>
-          <div className="rp-legend"><span><i style={{ background: '#2f6fd6' }} /> Faturas</span><span><i style={{ background: '#16a066' }} /> Pagamentos</span></div>
+          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>{t('Visão Geral Financeira')}</h3><span className="bz-muted">{t('Últimos 6 meses')}</span></div>
+          <div className="rp-legend"><span><i style={{ background: '#2f6fd6' }} /> {t('Faturas')}</span><span><i style={{ background: '#16a066' }} /> {t('Pagamentos')}</span></div>
           <div className="ca-bars">
             {d.series.map((s) => (
               <div className="ca-bar" key={s.label}>
                 <div className="rp-barpair">
-                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.faturas / max) * 100)}%`, background: '#2f6fd6' }} title={`Faturas ${formatMoney(s.faturas)}`} /></div>
-                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.pagamentos / max) * 100)}%`, background: '#16a066' }} title={`Pagamentos ${formatMoney(s.pagamentos)}`} /></div>
+                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.faturas / max) * 100)}%`, background: '#2f6fd6' }} title={`${t('Faturas')} ${formatMoney(s.faturas)}`} /></div>
+                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.pagamentos / max) * 100)}%`, background: '#16a066' }} title={`${t('Pagamentos')} ${formatMoney(s.pagamentos)}`} /></div>
                 </div>
                 <span className="bz-muted">{s.label}</span>
               </div>
@@ -158,14 +159,14 @@ export default function FinanceiroHome() {
           </div>
         </div>
         <div className="bz-panel">
-          <div className="bz-head" style={{ marginBottom: 6 }}><h3 style={{ margin: 0 }}>{t('Faturas a Pagar')}</h3><a className="pf-link" href="/financeiro/faturas">Ver todas</a></div>
-          {d.pendentes.length === 0 ? <p className="bz-sub">Sem faturas pendentes.</p> : d.pendentes.map((i) => (
+          <div className="bz-head" style={{ marginBottom: 6 }}><h3 style={{ margin: 0 }}>{t('Faturas a Pagar')}</h3><a className="pf-link" href="/financeiro/faturas">{t('Ver todas')}</a></div>
+          {d.pendentes.length === 0 ? <p className="bz-sub">{t('Sem faturas pendentes.')}</p> : d.pendentes.map((i) => (
             <div className="hs-ticket" key={i.id}>
               <div><strong>{i.supplier}</strong><span className="bz-sub2 bz-mono">{i.reference}</span></div>
-              <div className="hs-ticket-meta"><strong>{formatMoney(i.amount, i.currency)}</strong><span className="bz-sub2">vence {formatDate(i.dueAt)}</span></div>
+              <div className="hs-ticket-meta"><strong>{formatMoney(i.amount, i.currency)}</strong><span className="bz-sub2">{t('vence')} {formatDate(i.dueAt)}</span></div>
             </div>
           ))}
-          <button className="btn btn-accent" style={{ width: '100%', marginTop: 10 }} onClick={() => nav('/financeiro/faturas')}><Icon name="payment" size={14} /> Aprovar Pagamentos</button>
+          <button className="btn btn-accent" style={{ width: '100%', marginTop: 10 }} onClick={() => nav('/financeiro/faturas')}><Icon name="payment" size={14} /> {t('Aprovar Pagamentos')}</button>
         </div>
       </div>
     </div>

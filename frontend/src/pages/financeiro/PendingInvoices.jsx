@@ -31,7 +31,7 @@ export default function PendingInvoices() {
       const fd = new FormData();
       fd.append('proof', proof);
       await api.postForm(`/api/payments/invoices/${inv.id}/pay`, fd);
-      setToast(`Fatura ${inv.reference} paga — comprovativo anexado.`);
+      setToast(t('Fatura {ref} paga — comprovativo anexado.', { ref: inv.reference }));
       setTimeout(() => setToast(''), 3500);
       setPayModal(null); setProof(null);
       load();
@@ -77,11 +77,11 @@ export default function PendingInvoices() {
                     <td><Pill tone={overdue ? 'danger' : 'pending'}>{overdue ? 'Vencida' : 'Pendente'}</Pill></td>
                     <td className="r" style={{ whiteSpace: 'nowrap' }}>
                       {i.poId ? (
-                        <button className="btn btn-ghost btn-sm" title="Ver fatura" onClick={() => window.open(`/documento/fatura/${i.poId}`, '_blank')}>
-                          <Icon name="report" size={14} /> Ver
+                        <button className="btn btn-ghost btn-sm" title={t('Ver fatura')} onClick={() => window.open(`/documento/fatura/${i.poId}`, '_blank')}>
+                          <Icon name="report" size={14} /> {t('Ver')}
                         </button>
                       ) : null}
-                      <button className="btn btn-accent btn-sm" style={{ marginLeft: 6 }} disabled={paying === i.id} onClick={() => { setPayModal(i); setProof(null); }}>{paying === i.id ? 'A pagar…' : 'Pagar'}</button>
+                      <button className="btn btn-accent btn-sm" style={{ marginLeft: 6 }} disabled={paying === i.id} onClick={() => { setPayModal(i); setProof(null); }}>{paying === i.id ? t('A pagar…') : t('Pagar')}</button>
                     </td>
                   </tr>
                 );
@@ -95,25 +95,24 @@ export default function PendingInvoices() {
         <div className="av-modal" onClick={() => { setPayModal(null); setProof(null); }}>
           <div className="hs-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 460 }}>
             <div className="hs-modal-head">
-              <h3>Pagar fatura {payModal.reference}</h3>
-              <button className="hs-modal-x" onClick={() => { setPayModal(null); setProof(null); }} aria-label="Fechar">✕</button>
+              <h3>{t('Pagar fatura')} {payModal.reference}</h3>
+              <button className="hs-modal-x" onClick={() => { setPayModal(null); setProof(null); }} aria-label={t('Fechar')}>✕</button>
             </div>
             <p className="bz-sub" style={{ marginTop: 4 }}>
-              Valor: <strong>{formatMoney(payModal.amount, payModal.currency)}</strong> · Fornecedor: {payModal.supplier}
+              {t('Valor:')} <strong>{formatMoney(payModal.amount, payModal.currency)}</strong> · {t('Fornecedor:')} {payModal.supplier}
             </p>
             <p className="bz-sub" style={{ marginTop: 8 }}>
-              Faça a transferência bancária e anexe o <strong>comprovativo</strong> (PDF ou imagem).
-              Ele fica visível ao fornecedor como prova do pagamento.
+              {t('Faça a transferência bancária e anexe o')} <strong>{t('comprovativo')}</strong> {t('(PDF ou imagem). Ele fica visível ao fornecedor como prova do pagamento.')}
             </p>
             <div className="field" style={{ marginTop: 12 }}>
-              <label>Comprovativo da transferência <span className="req">*</span></label>
+              <label>{t('Comprovativo da transferência')} <span className="req">*</span></label>
               <input type="file" accept=".pdf,image/*" onChange={(e) => setProof(e.target.files?.[0] || null)} />
-              {proof ? <small className="helptext">Selecionado: {proof.name} ({Math.round(proof.size / 1024)} KB)</small> : null}
+              {proof ? <small className="helptext">{t('Selecionado:')} {proof.name} ({Math.round(proof.size / 1024)} KB)</small> : null}
             </div>
             <div className="hs-form-actions">
-              <button className="btn btn-ghost" onClick={() => { setPayModal(null); setProof(null); }}>Cancelar</button>
+              <button className="btn btn-ghost" onClick={() => { setPayModal(null); setProof(null); }}>{t('Cancelar')}</button>
               <button className="btn btn-accent" disabled={!proof || paying === payModal.id} onClick={confirmPay}>
-                {paying === payModal.id ? 'A pagar…' : 'Confirmar pagamento'}
+                {paying === payModal.id ? t('A pagar…') : t('Confirmar pagamento')}
               </button>
             </div>
           </div>

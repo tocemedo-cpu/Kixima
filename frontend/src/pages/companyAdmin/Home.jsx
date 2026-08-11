@@ -19,7 +19,7 @@ export default function CompanyAdminHome() {
   useEffect(() => { api.get('/api/company-admin/dashboard').then(setD).catch((e) => setError(e.message)); }, []);
 
   if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
-  if (!d) return <div className="bz-empty">A carregar…</div>;
+  if (!d) return <div className="bz-empty">{t('A carregar…')}</div>;
 
   const max = Math.max(1, ...d.volume.map((v) => v.value));
   return (
@@ -36,7 +36,7 @@ export default function CompanyAdminHome() {
 
       <div className="bz-layout">
         <div className="bz-panel">
-          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>{t('Volume de Operações')}</h3><span className="bz-muted">Últimos 6 meses</span></div>
+          <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>{t('Volume de Operações')}</h3><span className="bz-muted">{t('Últimos 6 meses')}</span></div>
           <div className="ca-bars">
             {d.volume.map((v) => (
               <div className="ca-bar" key={v.label}>
@@ -47,10 +47,10 @@ export default function CompanyAdminHome() {
           </div>
         </div>
         <div className="bz-panel">
-          <div className="bz-head" style={{ marginBottom: 6 }}><h3 style={{ margin: 0 }}>{t('Atividade Recente')}</h3><a className="pf-link" href="/empresa/atividades">Ver todas</a></div>
+          <div className="bz-head" style={{ marginBottom: 6 }}><h3 style={{ margin: 0 }}>{t('Atividade Recente')}</h3><a className="pf-link" href="/empresa/atividades">{t('Ver todas')}</a></div>
           {d.recent.map((r) => (
             <div className="hs-ticket" key={r.reference}>
-              <div><strong>PO {r.reference}</strong><span className="bz-sub2">{r.party}</span></div>
+              <div><strong>{t('PO')} {r.reference}</strong><span className="bz-sub2">{r.party}</span></div>
               <div className="hs-ticket-meta"><Pill tone={PO_STATUS[r.status]?.tone}>{PO_STATUS[r.status]?.label || r.status}</Pill><span className="bz-sub2">{formatDateTime(r.at)}</span></div>
             </div>
           ))}
@@ -66,11 +66,11 @@ export default function CompanyAdminHome() {
       ]} />
 
       <div className="bz-panel ca-quick">
-        <strong>Ações Rápidas</strong>
+        <strong>{t('Ações Rápidas')}</strong>
         <div className="ca-quick-row">
-          <button className="btn btn-ghost btn-sm" onClick={() => nav('/empresa/utilizadores')}><Icon name="users" size={14} /> Novo Usuário</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => nav('/empresa/aprovacoes')}><Icon name="approvals" size={14} /> Aprovar POs</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => nav('/empresa/relatorios')}><Icon name="report" size={14} /> Relatório Executivo</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => nav('/empresa/utilizadores')}><Icon name="users" size={14} /> {t('Novo Usuário')}</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => nav('/empresa/aprovacoes')}><Icon name="approvals" size={14} /> {t('Aprovar POs')}</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => nav('/empresa/relatorios')}><Icon name="report" size={14} /> {t('Relatório Executivo')}</button>
         </div>
       </div>
     </div>

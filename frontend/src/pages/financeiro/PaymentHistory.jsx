@@ -62,8 +62,8 @@ export default function PaymentHistory() {
                       <td className="r" style={{ whiteSpace: 'nowrap' }}>
                         {i.poId ? (
                           <>
-                            <button className="btn btn-ghost btn-sm" title="Ver fatura" onClick={() => window.open(`/documento/fatura/${i.poId}`, '_blank')}><Icon name="report" size={14} /> Fatura</button>
-                            <button className="btn btn-ghost btn-sm" style={{ marginLeft: 6 }} title="Ver ordem de compra" onClick={() => window.open(`/documento/po/${i.poId}`, '_blank')}><Icon name="report" size={14} /> PO</button>
+                            <button className="btn btn-ghost btn-sm" title={t('Ver fatura')} onClick={() => window.open(`/documento/fatura/${i.poId}`, '_blank')}><Icon name="report" size={14} /> {t('Fatura')}</button>
+                            <button className="btn btn-ghost btn-sm" style={{ marginLeft: 6 }} title={t('Ver ordem de compra')} onClick={() => window.open(`/documento/po/${i.poId}`, '_blank')}><Icon name="report" size={14} /> {t('PO')}</button>
                           </>
                         ) : <span className="bz-muted">—</span>}
                       </td>
