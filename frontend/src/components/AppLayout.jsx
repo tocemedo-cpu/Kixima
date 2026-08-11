@@ -30,7 +30,12 @@ export default function AppLayout() {
 
   if (!user) return null;
 
-  const items = SIDEBAR_MENUS[user.role] || [];
+  // O Financeiro de uma empresa FORNECEDORA vê o menu do lado de quem recebe
+  // (confirmar receção do valor, Taxa KIXIMA) em vez das faturas a pagar.
+  const menuKey = user.role === 'FINANCEIRO' && user.companyType === 'FORNECEDOR'
+    ? 'FINANCEIRO_FORNECEDOR'
+    : user.role;
+  const items = SIDEBAR_MENUS[menuKey] || [];
   const unread = notifications.filter((n) => !n.readAt).length;
 
   return (

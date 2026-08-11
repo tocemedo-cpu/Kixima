@@ -4,6 +4,7 @@
 // fecha o ciclo de confiança do pagamento garantido.
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import DataTable from '../../components/DataTable';
@@ -11,11 +12,15 @@ import Badge from '../../components/Badge';
 import { formatDate, formatDateTime, formatMoney } from '../../domain';
 
 export default function SupplierPayments() {
+  const { user } = useAuth();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [confirming, setConfirming] = useState(null);
   const navigate = useNavigate();
+  // A página também serve o FINANCEIRO de uma empresa fornecedora — o detalhe
+  // da ordem abre na área correspondente ao perfil.
+  const orderPath = user.role === 'FINANCEIRO' ? '/financeiro/ordens' : '/fornecedor/ordens';
 
   function load() { api.get('/api/purchase-orders').then(setOrders).catch((e) => setError(e.message)); }
   useEffect(load, []);
@@ -45,7 +50,7 @@ export default function SupplierPayments() {
         <DataTable
           rows={paid}
           rowKey="id"
-          onRowClick={(row) => navigate(`/fornecedor/ordens/${row.id}`)}
+          onRowClick={(row) => navigate(`${orderPath}/${row.id}`)}
           emptyTitle="Sem pagamentos recebidos ainda"
           emptyBody="Quando o Financeiro do cliente processar um pagamento, ele aparece aqui."
           columns={[

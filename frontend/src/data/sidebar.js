@@ -133,6 +133,15 @@ const FINANCEIRO = [
   ...COMMON_TAIL,
 ];
 
+// Financeiro numa empresa FORNECEDORA — o lado de quem RECEBE: confirma a
+// entrada do valor na conta e acompanha a Taxa KIXIMA. (Selecionado no
+// AppLayout quando user.companyType === 'FORNECEDOR'.)
+const FINANCEIRO_FORNECEDOR = [
+  { label: 'Centro Financeiro', icon: 'wallet', to: '/financeiro', end: true },
+  { label: 'Pagamentos Recebidos', icon: 'payment', to: '/financeiro/recebidos' },
+  ...COMMON_TAIL,
+];
+
 // Admin do Sistema KIXIMA — credenciamento, apólices e contratos-quadro.
 const ADMIN_SISTEMA = [
   { label: 'Dashboard', icon: 'home', to: '/sistema', end: true },
@@ -160,4 +169,4 @@ const ADMIN_SISTEMA = [
   { label: 'Sair', icon: 'logout', action: 'logout' },
 ];
 
-export const SIDEBAR_MENUS = { COMPRADOR, COMPANY_ADMIN, FORNECEDOR, FINANCEIRO, ADMIN_SISTEMA };
+export const SIDEBAR_MENUS = { COMPRADOR, COMPANY_ADMIN, FORNECEDOR, FINANCEIRO, FINANCEIRO_FORNECEDOR, ADMIN_SISTEMA };

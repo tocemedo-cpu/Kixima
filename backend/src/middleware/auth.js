@@ -21,7 +21,10 @@ async function authenticate(req, res, next) {
     throw new UnauthorizedError('Token inválido ou expirado.');
   }
 
-  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+  const user = await prisma.user.findUnique({
+    where: { id: payload.sub },
+    include: { company: { select: { type: true } } },
+  });
   if (!user || !user.active) {
     throw new UnauthorizedError('Utilizador inválido ou inativo.');
   }
@@ -35,6 +38,10 @@ async function authenticate(req, res, next) {
     id: user.id,
     role: user.role,
     companyId: user.companyId,
+    // Tipo da empresa (CLIENTE/FORNECEDOR) — permite adaptar telas ao lado do
+    // negócio (ex.: Financeiro numa fornecedora vê "recebimentos", não "faturas
+    // a pagar").
+    companyType: user.company?.type ?? null,
     approvalCap: user.approvalCap,
     name: user.name,
     email: user.email,

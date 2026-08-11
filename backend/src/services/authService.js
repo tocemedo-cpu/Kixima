@@ -101,6 +101,7 @@ function buildSession(user) {
       role: user.role,
       companyId: user.companyId,
       companyName: user.company?.name ?? null,
+      companyType: user.company?.type ?? null,
       avatarUrl: user.avatarUrl ?? null,
     },
   };

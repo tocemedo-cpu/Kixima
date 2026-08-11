@@ -209,6 +209,9 @@ export default function App() {
             <Route path="/financeiro" element={<FinanceiroHome />} />
             <Route path="/financeiro/faturas" element={<PendingInvoices />} />
             <Route path="/financeiro/historico" element={<PaymentHistory />} />
+            {/* Financeiro numa empresa FORNECEDORA: lado de quem recebe. */}
+            <Route path="/financeiro/recebidos" element={<SupplierPayments />} />
+            <Route path="/financeiro/ordens/:id" element={<OrderDetail />} />
           </Route>
 
           {/* Admin do Sistema KIXIMA */}
