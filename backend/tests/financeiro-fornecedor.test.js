@@ -76,6 +76,49 @@ describe('Financeiro numa empresa fornecedora', () => {
     expect(res.body.company.id).toBe(supplierCompanyId);
   });
 
+  test('a fornecedora também COMPRA: o seu Financeiro vê e PAGA as faturas das compras', async () => {
+    // Compra da Kianda a outra fornecedora (registos mínimos criados diretamente).
+    const otherSupplier = await prisma.company.create({
+      data: { name: 'Fornecedora Materiais Teste', taxId: 'AO-TEST-MAT-001', type: 'FORNECEDOR', contactEmail: 'mat@test.co.ao', status: 'APROVADA', verified: true },
+    });
+    const finUser = await prisma.user.findUnique({ where: { email: EMAIL } });
+    const po = await prisma.purchaseOrder.create({
+      data: {
+        reference: 'PO-TEST-COMPRA-KIANDA',
+        buyerCompanyId: supplierCompanyId,       // a Kianda é a COMPRADORA
+        supplierCompanyId: otherSupplier.id,
+        createdById: finUser.id,
+        totalAmount: 500000,
+        status: 'ACEITE_FORNECEDOR',
+      },
+    });
+    const invoice = await prisma.invoice.create({
+      data: { reference: 'FAT-TEST-COMPRA-KIANDA', purchaseOrderId: po.id, amount: 500000, currency: 'AOA', dueAt: new Date(Date.now() + 7 * 86400000), status: 'PENDENTE' },
+    });
+
+    try {
+      // A fatura da compra aparece na fila de pagamento do Financeiro da Kianda…
+      const pending = await auth(finFornToken).get('/api/payments/invoices/pending');
+      expect(pending.body.some((i) => i.id === invoice.id)).toBe(true);
+
+      // …e ele paga com comprovativo, como qualquer comprador.
+      const paid = await auth(finFornToken)
+        .post(`/api/payments/invoices/${invoice.id}/pay`)
+        .attach('proof', PROOF, 'transferencia-compra.pdf');
+      expect(paid.status).toBe(201);
+      expect(paid.body.proofUrl).toBeTruthy();
+      const dbInvoice = await prisma.invoice.findUnique({ where: { id: invoice.id } });
+      expect(dbInvoice.status).toBe('PAGA');
+    } finally {
+      await prisma.auditLog.deleteMany({ where: { entityType: 'Payment', detail: { path: ['fatura'], equals: invoice.reference } } });
+      await prisma.platformFee.deleteMany({ where: { invoiceId: invoice.id } });
+      await prisma.payment.deleteMany({ where: { invoiceId: invoice.id } });
+      await prisma.invoice.delete({ where: { id: invoice.id } });
+      await prisma.purchaseOrder.delete({ where: { id: po.id } });
+      await prisma.company.delete({ where: { id: otherSupplier.id } });
+    }
+  });
+
   test('continua SEM acesso às faturas a pagar de outras empresas (multi-tenant)', async () => {
     // O overview do lado comprador funciona mas é o da PRÓPRIA empresa (vazio de faturas a pagar,
     // porque a Kianda não compra); pagar faturas de outra empresa é vedado.

@@ -12,38 +12,64 @@ import { Icon } from '../../components/icons';
 import { INVOICE_STATUS, formatMoney, formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
 
-// Centro Financeiro de uma empresa FORNECEDORA: recebimentos + Taxa KIXIMA.
+// Centro Financeiro de uma empresa FORNECEDORA: recebimentos + Taxa KIXIMA,
+// E as compras próprias a pagar (fornecedoras também compram materiais).
 function SupplierFinanceCenter() {
   const { user } = useAuth();
   const nav = useNavigate();
   const [orders, setOrders] = useState(null);
   const [fees, setFees] = useState(null);
+  const [pendingInvoices, setPendingInvoices] = useState([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
     api.get('/api/purchase-orders').then(setOrders).catch((e) => setError(e.message));
     api.get(`/api/companies/${user.companyId}/platform-fees`).then(setFees).catch(() => {});
+    // Compras da própria empresa por pagar (lado comprador do fornecedor).
+    api.get('/api/payments/invoices/pending').then(setPendingInvoices).catch(() => {});
   }, [user.companyId]);
 
   if (error) return <div className="empty-state"><h3>Não foi possível carregar</h3><p>{error}</p></div>;
   if (!orders) return <div className="bz-empty">A carregar…</div>;
 
-  const payments = orders.filter((o) => o.invoice?.payment).map((o) => o.invoice.payment);
+  // "Recebimentos": só as ordens em que a empresa é a FORNECEDORA (vende);
+  // as compras próprias entram no bloco "a pagar", não nos recebimentos.
+  const sales = orders.filter((o) => o.supplierCompanyId === user.companyId);
+  const payments = sales.filter((o) => o.invoice?.payment).map((o) => o.invoice.payment);
   const sum = (list) => list.reduce((s, p) => s + Number(p.amount), 0);
   const confirmados = payments.filter((p) => p.receivedAt);
   const porConfirmar = payments.filter((p) => !p.receivedAt);
+  const aPagar = pendingInvoices.reduce((s, i) => s + Number(i.amount), 0);
 
   return (
     <div>
       <Crumbs trail={['Financeiro', 'Centro Financeiro']} />
-      <PageHead title="Centro Financeiro" subtitle="O lado de quem recebe: pagamentos dos clientes e Taxa KIXIMA." />
+      <PageHead title="Centro Financeiro" subtitle="Recebimentos dos clientes, compras a pagar e Taxa KIXIMA." />
 
       <KpiRow cards={[
         { icon: 'wallet', tone: 'success', label: 'Recebido (confirmado)', value: formatMoney(sum(confirmados)), sub: `${confirmados.length} pagamentos` },
         { icon: 'payment', tone: 'pending', label: 'Por confirmar receção', value: formatMoney(sum(porConfirmar)), sub: `${porConfirmar.length} pagamentos` },
-        { icon: 'invoice', tone: 'info', label: 'Taxa KIXIMA por liquidar', value: fees ? formatMoney(fees.kpis.pendingAOA) : '—', sub: fees ? `${fees.kpis.pendentes} taxas pendentes` : '' },
-        { icon: 'orders', tone: 'neutral', label: 'Pagamentos no total', value: payments.length, sub: 'Histórico completo' },
+        { icon: 'invoice', tone: 'danger', label: 'Compras a pagar', value: formatMoney(aPagar), sub: `${pendingInvoices.length} faturas pendentes` },
+        { icon: 'orders', tone: 'info', label: 'Taxa KIXIMA por liquidar', value: fees ? formatMoney(fees.kpis.pendingAOA) : '—', sub: fees ? `${fees.kpis.pendentes} taxas pendentes` : '' },
       ]} />
+
+      {pendingInvoices.length > 0 ? (
+        <div className="bz-panel" style={{ marginBottom: 16 }}>
+          <div className="bz-head" style={{ marginBottom: 6 }}>
+            <h3 style={{ margin: 0 }}>Compras a pagar (prazo de 7 dias)</h3>
+            <a className="pf-link" href="/financeiro/faturas">Ver todas</a>
+          </div>
+          {pendingInvoices.slice(0, 4).map((i) => (
+            <div className="hs-ticket" key={i.id}>
+              <div><strong className="bz-mono">{i.reference}</strong><span className="bz-sub2">vence {formatDate(i.dueAt)}</span></div>
+              <div className="hs-ticket-meta"><strong>{formatMoney(i.amount, i.currency)}</strong></div>
+            </div>
+          ))}
+          <button className="btn btn-accent" style={{ width: '100%', marginTop: 10 }} onClick={() => nav('/financeiro/faturas')}>
+            <Icon name="invoice" size={14} /> Pagar faturas das compras
+          </button>
+        </div>
+      ) : null}
 
       <div className="bz-layout">
         <div className="bz-panel">

@@ -133,12 +133,15 @@ const FINANCEIRO = [
   ...COMMON_TAIL,
 ];
 
-// Financeiro numa empresa FORNECEDORA — o lado de quem RECEBE: confirma a
-// entrada do valor na conta e acompanha a Taxa KIXIMA. (Selecionado no
-// AppLayout quando user.companyType === 'FORNECEDOR'.)
+// Financeiro numa empresa FORNECEDORA — vê os DOIS lados: recebe dos clientes
+// (confirma a entrada do valor, Taxa KIXIMA) E paga as próprias compras
+// (fornecedoras também compram materiais na plataforma). Selecionado no
+// AppLayout quando user.companyType === 'FORNECEDOR'.
 const FINANCEIRO_FORNECEDOR = [
   { label: 'Centro Financeiro', icon: 'wallet', to: '/financeiro', end: true },
   { label: 'Pagamentos Recebidos', icon: 'payment', to: '/financeiro/recebidos' },
+  { label: 'Faturas a Pagar', icon: 'invoice', to: '/financeiro/faturas' },
+  { label: 'Pagamentos Feitos', icon: 'history', to: '/financeiro/historico' },
   ...COMMON_TAIL,
 ];
 

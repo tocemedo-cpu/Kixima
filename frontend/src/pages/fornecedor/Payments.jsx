@@ -38,7 +38,10 @@ export default function SupplierPayments() {
   if (error && !orders) return <ErrorBanner message={error} />;
   if (!orders) return <Loading />;
 
-  const paid = orders.filter((o) => o.invoice?.payment);
+  // Só as VENDAS da empresa (lado fornecedor): quando a empresa também compra,
+  // as compras pagas não são "pagamentos recebidos" — vivem no histórico de
+  // pagamentos feitos.
+  const paid = orders.filter((o) => o.supplierCompanyId === user.companyId && o.invoice?.payment);
 
   return (
     <div>
