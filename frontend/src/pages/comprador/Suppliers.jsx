@@ -62,8 +62,8 @@ export default function Suppliers() {
                         <td>{s.category}</td>
                         <td>{[s.city, s.country].filter(Boolean).join(', ') || '—'}</td>
                         <td>
-                          <Pill tone={s.status === 'APROVADA' ? 'success' : 'pending'}>{s.status === 'APROVADA' ? 'Ativo' : 'Em Avaliação'}</Pill>
-                          {s.verified ? <span className="bz-sub2">Homologado</span> : null}
+                          <Pill tone={s.status === 'APROVADA' ? 'success' : 'pending'}>{s.status === 'APROVADA' ? t('Ativo') : t('Em Avaliação')}</Pill>
+                          {s.verified ? <span className="bz-sub2">{t('Homologado')}</span> : null}
                         </td>
                         <td>
                           {s.rating ? <span className="svc-ratingrow"><Stars value={s.rating} /> <span className="svc-ratenum">{s.rating.toFixed(1)}</span></span> : <span className="bz-muted">—</span>}
@@ -80,7 +80,7 @@ export default function Suppliers() {
         <div className="bz-side">
           <div className="bz-panel">
             <h3>{t('Top Fornecedores')}</h3>
-            {top.length === 0 ? <p className="bz-sub">Sem dados.</p> : top.map((s, i) => (
+            {top.length === 0 ? <p className="bz-sub">{t('Sem dados.')}</p> : top.map((s, i) => (
               <div className="bz-panel-row" key={s.id}>
                 <span>{i + 1}. {s.name}</span>
                 <strong style={{ color: '#16884f' }}>{s.rating.toFixed(1)}</strong>
@@ -89,8 +89,8 @@ export default function Suppliers() {
           </div>
           <div className="bz-panel">
             <h3>{t('Ações Rápidas')}</h3>
-            <button className="bz-qa"><Icon name="suppliers" size={14} /> Convidar Fornecedor</button>
-            <button className="bz-qa"><Icon name="report" size={14} /> Relatório de Fornecedores</button>
+            <button className="bz-qa"><Icon name="suppliers" size={14} /> {t('Convidar Fornecedor')}</button>
+            <button className="bz-qa"><Icon name="report" size={14} /> {t('Relatório de Fornecedores')}</button>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@
 // Banner de boas-vindas do marketplace — cena Oil & Gas (SVG: plataforma
 // offshore ao entardecer com flare) + proposta de valor + selos de confiança.
 import { Icon } from './icons';
+import { useI18n } from '../i18n';
 
 const PROPS = [
   { icon: 'approvals', label: 'Fornecedores Verificados' },
@@ -11,6 +12,7 @@ const PROPS = [
 ];
 
 export default function MarketHero() {
+  const { t } = useI18n();
   return (
     <section className="mk-hero">
       <svg className="mk-hero-bg" viewBox="0 0 800 320" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -53,12 +55,12 @@ export default function MarketHero() {
       </svg>
 
       <div className="mk-hero-content">
-        <h1 className="mk-hero-title">Bem-vindo à <span className="accent">KIXIMA</span></h1>
-        <p className="mk-hero-sub">A plataforma de Procurement Garantido para a indústria de Oil &amp; Gas.</p>
+        <h1 className="mk-hero-title">{t('Bem-vindo à')} <span className="accent">KIXIMA</span></h1>
+        <p className="mk-hero-sub">{t('A plataforma de Procurement Garantido para a indústria de Oil & Gas.')}</p>
         <div className="mk-hero-props">
           {PROPS.map((p) => (
             <span key={p.label} className="mk-prop">
-              <Icon name={p.icon} size={18} /> {p.label}
+              <Icon name={p.icon} size={18} /> {t(p.label)}
             </span>
           ))}
         </div>

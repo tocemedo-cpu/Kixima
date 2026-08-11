@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, EmptyRow } from './BuyerUI';
 import { ROLE_LABELS, formatDate } from '../domain';
+import { useI18n } from '../i18n';
 
 const ROLE_TONE = { COMPANY_ADMIN: 'danger', COMPRADOR: 'info', FORNECEDOR: 'success', FINANCEIRO: 'pending', ADMIN_SISTEMA: 'neutral' };
 const TABS = [{ key: '', label: 'Todos' }, { key: 'ativos', label: 'Ativos' }, { key: 'bloqueados', label: 'Bloqueados' }];
@@ -12,6 +13,7 @@ const TABS = [{ key: '', label: 'Todos' }, { key: 'ativos', label: 'Ativos' }, {
 function initials(n = '') { return n.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase(); }
 
 export default function PermissionsPanel({ trail, title, subtitle, listUrl, statusUrl, showCompany = false }) {
+  const { t } = useI18n();
   const [users, setUsers] = useState(null);
   const [tab, setTab] = useState('');
   const [q, setQ] = useState('');
@@ -24,7 +26,7 @@ export default function PermissionsPanel({ trail, title, subtitle, listUrl, stat
   function flash(m) { setToast(m); setTimeout(() => setToast(''), 3000); }
   async function setStatus(u, active) {
     setBusy(u.id);
-    try { await api.patch(statusUrl(u.id), { active }); flash(active ? `${u.name} desbloqueado.` : `${u.name} bloqueado.`); load(); }
+    try { await api.patch(statusUrl(u.id), { active }); flash(active ? t('{name} desbloqueado.', { name: u.name }) : t('{name} bloqueado.', { name: u.name })); load(); }
     catch (e) { flash(e.message); } finally { setBusy(null); }
   }
 
@@ -53,7 +55,7 @@ export default function PermissionsPanel({ trail, title, subtitle, listUrl, stat
 
       <div className="bz-card bz-tablewrap">
         <table className="bz-table">
-          <thead><tr><th>Utilizador</th><th>Perfil</th>{showCompany ? <th>Empresa</th> : null}<th>Registado</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th>{t('Utilizador')}</th><th>{t('Perfil')}</th>{showCompany ? <th>{t('Empresa')}</th> : null}<th>{t('Registado')}</th><th>{t('Estado')}</th><th></th></tr></thead>
           <tbody>
             {!users ? <tr><td colSpan={showCompany ? 6 : 5}><EmptyRow>A carregar…</EmptyRow></td></tr>
               : list.length === 0 ? <tr><td colSpan={showCompany ? 6 : 5}><EmptyRow>Sem perfis.</EmptyRow></td></tr>
@@ -63,12 +65,12 @@ export default function PermissionsPanel({ trail, title, subtitle, listUrl, stat
                   <td><Pill tone={ROLE_TONE[u.role]}>{ROLE_LABELS[u.role] || u.role}</Pill></td>
                   {showCompany ? <td className="bz-muted">{u.companyName || '—'}</td> : null}
                   <td className="bz-muted">{u.createdAt ? formatDate(u.createdAt) : '—'}</td>
-                  <td><Pill tone={u.active ? 'success' : 'danger'}>{u.active ? 'Ativo' : 'Bloqueado'}</Pill></td>
+                  <td><Pill tone={u.active ? 'success' : 'danger'}>{u.active ? t('Ativo') : t('Bloqueado')}</Pill></td>
                   <td className="r">
                     {u.role === 'COMPANY_ADMIN' && !showCompany ? null : (
                       u.active
-                        ? <button className="btn btn-ghost btn-sm" disabled={busy === u.id} onClick={() => setStatus(u, false)}>Bloquear</button>
-                        : <button className="btn btn-accent btn-sm" disabled={busy === u.id} onClick={() => setStatus(u, true)}>Desbloquear</button>
+                        ? <button className="btn btn-ghost btn-sm" disabled={busy === u.id} onClick={() => setStatus(u, false)}>{t('Bloquear')}</button>
+                        : <button className="btn btn-accent btn-sm" disabled={busy === u.id} onClick={() => setStatus(u, true)}>{t('Desbloquear')}</button>
                     )}
                   </td>
                 </tr>

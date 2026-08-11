@@ -4,12 +4,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
 import { Icon } from './icons';
+import { useI18n } from '../i18n';
 
 function initials(name = '') {
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
 }
 
 export default function AvatarUploader({ name, avatarUrl, onChange, size = 96 }) {
+  const { t } = useI18n();
   const [menu, setMenu] = useState(false);
   const [cam, setCam] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -40,7 +42,7 @@ export default function AvatarUploader({ name, avatarUrl, onChange, size = 96 })
       streamRef.current = stream;
       setCam(true);
     } catch {
-      setError('Não foi possível aceder à câmera. Verifique as permissões do browser.');
+      setError(t('Não foi possível aceder à câmera. Verifique as permissões do browser.'));
     }
   }
 
@@ -74,14 +76,14 @@ export default function AvatarUploader({ name, avatarUrl, onChange, size = 96 })
     <div className="av-wrap">
       <div className="av-photo" style={{ width: size, height: size }}>
         {avatarUrl ? <img src={avatarUrl} alt={name} /> : <span className="av-initials">{initials(name)}</span>}
-        <button className="av-edit" onClick={() => setMenu((m) => !m)} title="Alterar foto" disabled={busy}>
+        <button className="av-edit" onClick={() => setMenu((m) => !m)} title={t('Alterar foto')} disabled={busy}>
           <Icon name={busy ? 'policy' : 'certification'} size={14} />
         </button>
         {menu && (
           <div className="av-menu">
-            <button onClick={() => fileRef.current?.click()}><Icon name="report" size={14} /> Carregar imagem</button>
-            <button onClick={openCamera}><Icon name="chart" size={14} /> Usar câmera</button>
-            {avatarUrl ? <button onClick={async () => { setBusy(true); try { const u = await api.del('/api/users/me/avatar'); onChange?.(u.avatarUrl); } finally { setBusy(false); setMenu(false); } }}><Icon name="approvals" size={14} /> Remover</button> : null}
+            <button onClick={() => fileRef.current?.click()}><Icon name="report" size={14} /> {t('Carregar imagem')}</button>
+            <button onClick={openCamera}><Icon name="chart" size={14} /> {t('Usar câmera')}</button>
+            {avatarUrl ? <button onClick={async () => { setBusy(true); try { const u = await api.del('/api/users/me/avatar'); onChange?.(u.avatarUrl); } finally { setBusy(false); setMenu(false); } }}><Icon name="approvals" size={14} /> {t('Remover')}</button> : null}
           </div>
         )}
       </div>
@@ -93,8 +95,8 @@ export default function AvatarUploader({ name, avatarUrl, onChange, size = 96 })
           <div className="av-cam" onClick={(e) => e.stopPropagation()}>
             <video ref={videoRef} playsInline muted />
             <div className="av-cam-actions">
-              <button className="btn btn-ghost" onClick={stopCamera}>Cancelar</button>
-              <button className="btn btn-accent" onClick={capture} disabled={busy}>{busy ? 'A enviar…' : 'Capturar foto'}</button>
+              <button className="btn btn-ghost" onClick={stopCamera}>{t('Cancelar')}</button>
+              <button className="btn btn-accent" onClick={capture} disabled={busy}>{busy ? t('A enviar…') : t('Capturar foto')}</button>
             </div>
           </div>
         </div>

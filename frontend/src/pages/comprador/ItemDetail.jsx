@@ -6,6 +6,7 @@ import { Loading, ErrorBanner } from '../../components/Common';
 import { formatMoney } from '../../domain';
 import { useCart } from './CartContext';
 import ProductCover from '../../components/ProductCover';
+import { useI18n } from '../../i18n';
 
 const DOC_LABELS = {
   FICHA_TECNICA: 'Ficha Técnica', DATASHEET: 'Datasheet', MANUAL: 'Manual',
@@ -22,6 +23,7 @@ const IDENT_FIELDS = [
 ];
 
 export default function ItemDetail() {
+  const { t } = useI18n();
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
@@ -52,7 +54,7 @@ export default function ItemDetail() {
   return (
     <div>
       <button className="btn btn-ghost btn-sm" style={{ marginBottom: 14 }} onClick={() => navigate('/comprador/catalogo')}>
-        ← Voltar ao catálogo
+        ← {t('Voltar ao catálogo')}
       </button>
 
       <div className="grid-cols grid-2" style={{ alignItems: 'start' }}>
@@ -74,36 +76,36 @@ export default function ItemDetail() {
           {product.subcategory ? <span className="badge badge-neutral" style={{ marginLeft: 6 }}>{product.subcategory}</span> : null}
           <h1 style={{ fontSize: 22, marginTop: 12 }}>{product.name}</h1>
           <p style={{ fontSize: 14, color: 'var(--ink-600)', marginTop: 10, lineHeight: 1.6 }}>
-            {product.fullDescription || product.description || 'Sem descrição adicional.'}
+            {product.fullDescription || product.description || t('Sem descrição adicional.')}
           </p>
 
-          {product.applications ? <DescBlock title="Aplicações">{product.applications}</DescBlock> : null}
-          {product.benefits ? <DescBlock title="Benefícios">{product.benefits}</DescBlock> : null}
+          {product.applications ? <DescBlock title={t('Aplicações')}>{product.applications}</DescBlock> : null}
+          {product.benefits ? <DescBlock title={t('Benefícios')}>{product.benefits}</DescBlock> : null}
 
           <div style={{ marginTop: 20, display: 'grid', gap: 10, fontSize: 13.5 }}>
-            <Row label="Fornecedor">{product.supplier?.name}</Row>
-            {idents.map(([k, label]) => <Row key={k} label={label}>{product[k]}</Row>)}
-            {product.leadTimeDays ? <Row label="Prazo de entrega">{product.leadTimeDays} dias</Row> : null}
-            {product.availability ? <Row label="Disponibilidade">{product.availability}</Row> : null}
-            {product.warehouse ? <Row label="Armazém">{product.warehouse}</Row> : null}
+            <Row label={t('Fornecedor')}>{product.supplier?.name}</Row>
+            {idents.map(([k, label]) => <Row key={k} label={t(label)}>{product[k]}</Row>)}
+            {product.leadTimeDays ? <Row label={t('Prazo de entrega')}>{product.leadTimeDays} {t('dias')}</Row> : null}
+            {product.availability ? <Row label={t('Disponibilidade')}>{product.availability}</Row> : null}
+            {product.warehouse ? <Row label={t('Armazém')}>{product.warehouse}</Row> : null}
           </div>
 
           {specs.length > 0 && (
             <>
-              <div className="reg-section">Especificações técnicas</div>
+              <div className="reg-section">{t('Especificações técnicas')}</div>
               <div style={{ display: 'grid', gap: 10, fontSize: 13.5 }}>
-                {specs.map(([k, label]) => <Row key={k} label={label}>{product[k]}</Row>)}
+                {specs.map(([k, label]) => <Row key={k} label={t(label)}>{product[k]}</Row>)}
               </div>
             </>
           )}
 
           {docs.length > 0 && (
             <>
-              <div className="reg-section">Documentos</div>
+              <div className="reg-section">{t('Documentos')}</div>
               <div className="doc-list">
                 {docs.map((d) => (
                   <a key={d.id} className="doc-item" href={d.fileUrl} target="_blank" rel="noreferrer">
-                    <span>{DOC_LABELS[d.type] || d.type}</span>
+                    <span>{DOC_LABELS[d.type] ? t(DOC_LABELS[d.type]) : d.type}</span>
                     <span className="doc-name">{d.originalName}</span>
                   </a>
                 ))}
@@ -114,7 +116,7 @@ export default function ItemDetail() {
         </div>
 
         <div className="card card-pad">
-          <div className="stat-label">Preço unitário</div>
+          <div className="stat-label">{t('Preço unitário')}</div>
           {hasPromo ? (
             <div>
               <div className="stat-value" style={{ fontFamily: 'var(--font-mono)', color: 'var(--brand-600)' }}>{formatMoney(product.promoPrice, product.currency)}</div>
@@ -125,12 +127,12 @@ export default function ItemDetail() {
           )}
           {(product.minQuantity || product.maxQuantity) ? (
             <div style={{ fontSize: 12.5, color: 'var(--ink-600)', marginTop: 6 }}>
-              {product.minQuantity ? `Mín. ${product.minQuantity}` : ''}{product.minQuantity && product.maxQuantity ? ' · ' : ''}{product.maxQuantity ? `Máx. ${product.maxQuantity}` : ''} unidades
+              {product.minQuantity ? `${t('Mín.')} ${product.minQuantity}` : ''}{product.minQuantity && product.maxQuantity ? ' · ' : ''}{product.maxQuantity ? `${t('Máx.')} ${product.maxQuantity}` : ''} {t('unidades')}
             </div>
           ) : null}
 
           <div className="field" style={{ marginTop: 20 }}>
-            <label>Quantidade</label>
+            <label>{t('Quantidade')}</label>
             <input
               type="number"
               min={1}
@@ -144,18 +146,18 @@ export default function ItemDetail() {
           </div>
 
           <div style={{ fontSize: 13, color: 'var(--ink-600)', marginBottom: 16 }}>
-            Subtotal: <strong>{formatMoney(Number(product.unitPrice) * quantity, product.currency)}</strong>
+            {t('Subtotal')}: <strong>{formatMoney(Number(product.unitPrice) * quantity, product.currency)}</strong>
           </div>
 
           <button className="btn btn-accent" style={{ width: '100%' }} onClick={handleAdd}>
-            {added ? 'Adicionado à cesta ✓' : 'Adicionar à cesta'}
+            {added ? t('Adicionado à cesta ✓') : t('Adicionar à cesta')}
           </button>
           <Link to={`/comprador/comparar?productId=${product.id}`} className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: 10, justifyContent: 'center' }}>
-            ⇄ Comparar fornecedores
+            ⇄ {t('Comparar fornecedores')}
           </Link>
           {added ? (
             <Link to="/comprador/cesta" className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: 10, justifyContent: 'center' }}>
-              Ver cesta
+              {t('Ver cesta')}
             </Link>
           ) : null}
         </div>

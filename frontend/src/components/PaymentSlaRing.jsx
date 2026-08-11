@@ -3,6 +3,7 @@
 // KIXIMA — pagamento garantido ao fornecedor dentro de N dias após a
 // aceitação da PO. O anel enche à medida que os dias passam e muda de cor
 // (verde-azulado -> âmbar -> terracota) conforme se aproxima o prazo.
+import { useI18n } from '../i18n';
 
 const SIZE = 56;
 const STROKE = 6;
@@ -16,6 +17,7 @@ function colorFor(fraction) {
 }
 
 export default function PaymentSlaRing({ acceptedAt, paymentDueAt, paidAt, totalDays = 7 }) {
+  const { t } = useI18n();
   if (!acceptedAt || !paymentDueAt) {
     return (
       <div className="sla-ring-wrap">
@@ -23,8 +25,8 @@ export default function PaymentSlaRing({ acceptedAt, paymentDueAt, paidAt, total
           <circle className="sla-track" cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} />
         </svg>
         <div>
-          <div className="sla-label">Aguarda aceitação</div>
-          <div className="sla-caption">O relógio dos {totalDays} dias começa quando o fornecedor aceitar a PO.</div>
+          <div className="sla-label">{t('Aguarda aceitação')}</div>
+          <div className="sla-caption">{t('O relógio dos {n} dias começa quando o fornecedor aceitar a PO.', { n: totalDays })}</div>
         </div>
       </div>
     );
@@ -56,12 +58,12 @@ export default function PaymentSlaRing({ acceptedAt, paymentDueAt, paidAt, total
       </svg>
       <div>
         <div className="sla-label" style={{ color }}>
-          {paidAt ? 'Pago' : `Dia ${daysElapsed} de ${totalDays}`}
+          {paidAt ? t('Pago') : t('Dia {a} de {b}', { a: daysElapsed, b: totalDays })}
         </div>
         <div className="sla-caption">
           {paidAt
-            ? 'Pagamento garantido cumprido dentro do prazo.'
-            : `Prazo de pagamento: ${new Intl.DateTimeFormat('pt-AO', { day: '2-digit', month: 'short' }).format(due)}`}
+            ? t('Pagamento garantido cumprido dentro do prazo.')
+            : `${t('Prazo de pagamento')}: ${new Intl.DateTimeFormat('pt-AO', { day: '2-digit', month: 'short' }).format(due)}`}
         </div>
       </div>
     </div>

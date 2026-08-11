@@ -86,14 +86,14 @@ export default function Explore() {
   async function saveSearch() {
     const qs = new URLSearchParams(params).toString();
     const label = q ? `"${q}"` : 'Pesquisa';
-    try { await api.post('/api/marketplace/saved-searches', { label, query: qs }); setToast('Pesquisa guardada.'); }
+    try { await api.post('/api/marketplace/saved-searches', { label, query: qs }); setToast(t('Pesquisa guardada.')); }
     catch (e) { setToast(e.message); }
     setTimeout(() => setToast(''), 3500);
   }
 
   // Chips de filtros ativos.
   const chips = [];
-  if (kind) chips.push({ k: 'kind', label: KIND_LABEL[kind] || kind, clear: () => setKind('') });
+  if (kind) chips.push({ k: 'kind', label: KIND_LABEL[kind] ? t(KIND_LABEL[kind]) : kind, clear: () => setKind('') });
   if (q) chips.push({ k: 'q', label: q, clear: () => { setQ(''); setPendingQ(''); } });
   if (category) chips.push({ k: 'cat', label: category, clear: () => setCategory('') });
   if (country) chips.push({ k: 'country', label: country, clear: () => setCountry('') });
@@ -107,21 +107,21 @@ export default function Explore() {
   return (
     <div>
       {toast ? <div className="svc-toast">{toast}</div> : null}
-      <div className="svc-crumbs">Home <span>›</span> <strong>Explorar / Pesquisa</strong></div>
-      <h1 className="svc-title">Explorar / Pesquisa</h1>
+      <div className="svc-crumbs">{t('Home')} <span>›</span> <strong>{t('Explorar / Pesquisa')}</strong></div>
+      <h1 className="svc-title">{t('Explorar / Pesquisa')}</h1>
 
       <form className="exp-searchbar" onSubmit={doSearch}>
         <span className="svc-search-ico"><Icon name="search" size={18} /></span>
-        <input value={pendingQ} onChange={(e) => setPendingQ(e.target.value)} placeholder="Pesquisar produtos, serviços ou fornecedores…" />
-        <button className="btn btn-accent" type="submit">Pesquisar</button>
-        <button type="button" className="btn btn-ghost exp-save" onClick={saveSearch}><Icon name="policy" size={14} /> Guardar Pesquisa</button>
+        <input value={pendingQ} onChange={(e) => setPendingQ(e.target.value)} placeholder={t('Pesquisar produtos, serviços ou fornecedores…')} />
+        <button className="btn btn-accent" type="submit">{t('Pesquisar')}</button>
+        <button type="button" className="btn btn-ghost exp-save" onClick={saveSearch}><Icon name="policy" size={14} /> {t('Guardar Pesquisa')}</button>
       </form>
 
       <div className="svc-count">
-        {loading ? 'A carregar…' : <>Resultado{q ? ` para "${q}"` : ''} <span className="exp-total">{total.toLocaleString('pt-PT')} resultados</span></>}
-        <span className="svc-sortwrap">Ordenar por{' '}
+        {loading ? t('A carregar…') : <>{q ? `${t('Resultado para')} "${q}"` : t('Resultado')} <span className="exp-total">{total.toLocaleString('pt-PT')} {t('resultados')}</span></>}
+        <span className="svc-sortwrap">{t('Ordenar por')}{' '}
           <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>
-            {SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            {SORTS.map(([v, l]) => <option key={v} value={v}>{t(l)}</option>)}
           </select>
         </span>
       </div>
@@ -131,16 +131,16 @@ export default function Explore() {
           {chips.map((c) => (
             <button key={c.k} className="chip" onClick={() => { c.clear(); setPage(1); }}>{c.label} <span>×</span></button>
           ))}
-          <button className="chip-clear" onClick={clearAll}>Limpar todos</button>
+          <button className="chip-clear" onClick={clearAll}>{t('Limpar todos')}</button>
         </div>
       )}
 
       <div className="svc-layout">
         <aside className="svc-filters">
-          <div className="flt-head"><strong>Filtrar Resultados</strong><button className="flt-clear" onClick={clearAll}>Limpar filtros</button></div>
+          <div className="flt-head"><strong>{t('Filtrar Resultados')}</strong><button className="flt-clear" onClick={clearAll}>{t('Limpar filtros')}</button></div>
 
           <div className="flt-group">
-            <div className="flt-title">Categoria</div>
+            <div className="flt-title">{t('Categoria')}</div>
             {facets.categories.map((c) => (
               <label key={c.name} className="flt-check">
                 <input type="checkbox" checked={category === c.name} onChange={() => { setCategory(category === c.name ? '' : c.name); setPage(1); }} />
@@ -150,17 +150,17 @@ export default function Explore() {
           </div>
 
           <div className="flt-group">
-            <div className="flt-title">Tipo</div>
-            {facets.kinds.map((t) => (
-              <label key={t.name} className="flt-check">
-                <input type="checkbox" checked={kind === t.name} onChange={() => { setKind(kind === t.name ? '' : t.name); setPage(1); }} />
-                <span className="flt-lbl">{KIND_LABEL[t.name] || t.name}</span><span className="flt-num">({t.count})</span>
+            <div className="flt-title">{t('Tipo')}</div>
+            {facets.kinds.map((kd) => (
+              <label key={kd.name} className="flt-check">
+                <input type="checkbox" checked={kind === kd.name} onChange={() => { setKind(kind === kd.name ? '' : kd.name); setPage(1); }} />
+                <span className="flt-lbl">{KIND_LABEL[kd.name] ? t(KIND_LABEL[kd.name]) : kd.name}</span><span className="flt-num">({kd.count})</span>
               </label>
             ))}
           </div>
 
           <div className="flt-group">
-            <div className="flt-title">Localização</div>
+            <div className="flt-title">{t('Localização')}</div>
             {facets.countries.map((c) => (
               <label key={c.name} className="flt-check">
                 <input type="checkbox" checked={country === c.name} onChange={() => { setCountry(country === c.name ? '' : c.name); setPage(1); }} />
@@ -171,7 +171,7 @@ export default function Explore() {
           </div>
 
           <div className="flt-group">
-            <div className="flt-title">Certificações</div>
+            <div className="flt-title">{t('Certificações')}</div>
             {facets.certifications.map((c) => (
               <label key={c.name} className="flt-check">
                 <input type="checkbox" checked={certs.includes(c.name)} onChange={() => toggleCert(c.name)} />
@@ -183,23 +183,23 @@ export default function Explore() {
 
         <div>
           {error ? (
-            <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p><button className="btn btn-accent" onClick={load}>Tentar de novo</button></div>
+            <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p><button className="btn btn-accent" onClick={load}>{t('Tentar de novo')}</button></div>
           ) : loading ? (
             <div className="svc-grid">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="svc-card svc-skel" />)}</div>
           ) : total === 0 ? (
-            <div className="empty-state"><h3>{t('Nenhum resultado')}</h3><p>Ajuste a pesquisa ou os filtros.</p></div>
+            <div className="empty-state"><h3>{t('Nenhum resultado')}</h3><p>{t('Ajuste a pesquisa ou os filtros.')}</p></div>
           ) : (
             <>
               <div className="svc-grid">
                 {data.items.map((p) => <ExploreCard key={p.id} p={p} onFav={toggleFav} onOpen={() => navigate(`/comprador/servicos/${p.slug || p.id}`)} />)}
               </div>
               <div className="svc-pag">
-                <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage((x) => x - 1)}>← Anterior</button>
+                <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage((x) => x - 1)}>← {t('Anterior')}</button>
                 {pageNumbers(page, pages).map((n, i) => n === '…'
                   ? <span key={`e${i}`} className="svc-ellipsis">…</span>
                   : <button key={n} className={`svc-pagn${n === page ? ' on' : ''}`} onClick={() => setPage(n)}>{n}</button>)}
-                <button className="btn btn-ghost btn-sm" disabled={page >= pages} onClick={() => setPage((x) => x + 1)}>Próximo →</button>
-                <span className="exp-perpage">Resultados por página{' '}
+                <button className="btn btn-ghost btn-sm" disabled={page >= pages} onClick={() => setPage((x) => x + 1)}>{t('Próximo')} →</button>
+                <span className="exp-perpage">{t('Resultados por página')}{' '}
                   <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
                     {[12, 24, 48].map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
@@ -218,30 +218,31 @@ function initials(name = '') {
 }
 
 function ExploreCard({ p, onFav, onOpen }) {
+  const { t } = useI18n();
   return (
     <div className="exp-card">
       <div className="exp-media" onClick={onOpen} role="button" tabIndex={0}>
         <ProductCover imageUrl={p.imageUrl} category={p.category} name={p.name} caption={false} />
-        <span className="exp-kind">{KIND_LABEL[p.kind] || ''}</span>
+        <span className="exp-kind">{KIND_LABEL[p.kind] ? t(KIND_LABEL[p.kind]) : ''}</span>
       </div>
       <div className="exp-top">
         <span className="exp-logo">{p.supplier?.logoUrl ? <img src={p.supplier.logoUrl} alt={p.supplier.name} /> : initials(p.supplier?.name)}</span>
-        <button className={`svc-fav${p.isFavorite ? ' on' : ''}`} onClick={() => onFav(p)} aria-label="Favorito">♥</button>
+        <button className={`svc-fav${p.isFavorite ? ' on' : ''}`} onClick={() => onFav(p)} aria-label={t('Favorito')}>♥</button>
       </div>
       <strong className="svc-name" onClick={onOpen}>{p.name}</strong>
       <div className="svc-company">{p.supplier?.name}</div>
       <div className="svc-ratingrow">
-        <Stars value={p.rating || 0} /> <span className="svc-ratenum">{p.rating ? p.rating.toFixed(1) : '—'} {p.reviewCount ? `(${p.reviewCount} avaliações)` : ''}</span>
+        <Stars value={p.rating || 0} /> <span className="svc-ratenum">{p.rating ? p.rating.toFixed(1) : '—'} {p.reviewCount ? `(${p.reviewCount} ${t('avaliações')})` : ''}</span>
         {p.supplier?.verified ? <span className="svc-verified">KIXIMA Verified</span> : null}
       </div>
       <p className="svc-desc">{p.description}</p>
       <div className="svc-metarow">
         <span><Icon name="offshore" size={13} /> {[p.city, p.country].filter(Boolean).join(', ') || '—'}</span>
-        {p.leadTimeDays ? <span>Prazo {p.leadTimeDays} dias</span> : null}
+        {p.leadTimeDays ? <span>{t('Prazo')} {p.leadTimeDays} {t('dias')}</span> : null}
       </div>
       <div className="exp-foot">
-        <div><div className="exp-fromlbl">A partir de</div><div className="exp-price">{formatMoney(p.promoPrice || p.unitPrice, p.currency)}</div></div>
-        <button className="btn btn-accent btn-sm" onClick={onOpen}>Ver Detalhes</button>
+        <div><div className="exp-fromlbl">{t('A partir de')}</div><div className="exp-price">{formatMoney(p.promoPrice || p.unitPrice, p.currency)}</div></div>
+        <button className="btn btn-accent btn-sm" onClick={onOpen}>{t('Ver Detalhes')}</button>
       </div>
     </div>
   );

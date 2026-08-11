@@ -59,7 +59,7 @@ export default function Deliveries() {
                 : data.items.length === 0 ? <tr><td colSpan={7}><EmptyRow>Sem entregas.</EmptyRow></td></tr>
                 : data.items.map((d) => (
                   <tr key={d.id}>
-                    <td><span className="bz-mono">{d.reference}</span><span className="bz-sub2">{d.itemsCount} {d.itemsCount === 1 ? 'item' : 'itens'}</span></td>
+                    <td><span className="bz-mono">{d.reference}</span><span className="bz-sub2">{d.itemsCount} {d.itemsCount === 1 ? t('item') : t('itens')}</span></td>
                     <td><SupplierCell supplier={d.supplier} /></td>
                     <td>{formatDate(d.emittedAt)}</td>
                     <td><Pill tone={STAGE_TONE[d.stage]}>{d.label}</Pill></td>
@@ -72,7 +72,7 @@ export default function Deliveries() {
                     </td>
                     <td>
                       <div className="bz-actions">
-                        <button className="bz-iconbtn" title="Ver ordem" onClick={() => nav(`/comprador/ordens/${d.id}`)}><Icon name="search" size={14} /></button>
+                        <button className="bz-iconbtn" title={t('Ver ordem')} onClick={() => nav(`/comprador/ordens/${d.id}`)}><Icon name="search" size={14} /></button>
                       </div>
                     </td>
                   </tr>

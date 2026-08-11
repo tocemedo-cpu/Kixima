@@ -8,6 +8,7 @@ import { formatMoney, computeCartTotals } from '../domain';
 import { useCart } from '../pages/comprador/CartContext';
 import ProductCover from './ProductCover';
 import { Icon } from './icons';
+import { useI18n } from '../i18n';
 
 const BUCKETS = [
   { label: 'Aguardando pagamento', statuses: ['AGUARDANDO_APROVACAO', 'APROVADA', 'ACEITE_FORNECEDOR', 'AGUARDANDO_PAGAMENTO'], icon: 'payment' },
@@ -17,6 +18,7 @@ const BUCKETS = [
 ];
 
 export default function MarketAside() {
+  const { t } = useI18n();
   const { items, total, updateQuantity, removeItem } = useCart();
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
@@ -32,12 +34,12 @@ export default function MarketAside() {
     <aside className="market-aside">
       <div className="aside-card">
         <div className="aside-head">
-          <span><Icon name="cart" size={16} /> Minha Cesta</span>
+          <span><Icon name="cart" size={16} /> {t('Minha Cesta')}</span>
           <span className="aside-pill">{items.reduce((s, i) => s + i.quantity, 0)}</span>
         </div>
 
         {items.length === 0 ? (
-          <p className="aside-empty">A sua cesta está vazia. Adicione itens do marketplace.</p>
+          <p className="aside-empty">{t('A sua cesta está vazia. Adicione itens do marketplace.')}</p>
         ) : (
           <>
             <div className="aside-items">
@@ -47,10 +49,10 @@ export default function MarketAside() {
                   <div className="aside-item-main">
                     <div className="aside-item-name">{i.product.name}</div>
                     <div className="aside-item-qty">
-                      <button onClick={() => updateQuantity(i.product.id, i.quantity - 1)} aria-label="Menos">−</button>
+                      <button onClick={() => updateQuantity(i.product.id, i.quantity - 1)} aria-label={t('Menos')}>−</button>
                       <span>{i.quantity}</span>
-                      <button onClick={() => updateQuantity(i.product.id, i.quantity + 1)} aria-label="Mais">+</button>
-                      <button className="aside-remove" onClick={() => removeItem(i.product.id)} aria-label="Remover">✕</button>
+                      <button onClick={() => updateQuantity(i.product.id, i.quantity + 1)} aria-label={t('Mais')}>+</button>
+                      <button className="aside-remove" onClick={() => removeItem(i.product.id)} aria-label={t('Remover')}>✕</button>
                     </div>
                   </div>
                   <span className="aside-item-price mono">{formatMoney(Number(i.product.unitPrice) * i.quantity, i.product.currency)}</span>
@@ -59,14 +61,14 @@ export default function MarketAside() {
             </div>
 
             <div className="aside-totals">
-              <div><span>Subtotal</span><span className="mono">{formatMoney(totals.subtotal)}</span></div>
-              <div><span>Taxa KIXIMA (1,5%)</span><span className="mono">{formatMoney(totals.fee)}</span></div>
-              <div><span>IVA (14%)</span><span className="mono">{formatMoney(totals.iva)}</span></div>
-              <div className="aside-total"><span>Total</span><span className="mono">{formatMoney(totals.total)}</span></div>
+              <div><span>{t('Subtotal')}</span><span className="mono">{formatMoney(totals.subtotal)}</span></div>
+              <div><span>{t('Taxa KIXIMA (1,5%)')}</span><span className="mono">{formatMoney(totals.fee)}</span></div>
+              <div><span>{t('IVA (14%)')}</span><span className="mono">{formatMoney(totals.iva)}</span></div>
+              <div className="aside-total"><span>{t('Total')}</span><span className="mono">{formatMoney(totals.total)}</span></div>
             </div>
 
             <button className="btn btn-accent" style={{ width: '100%' }} onClick={() => navigate('/comprador/cesta')}>
-              Finalizar Compra
+              {t('Finalizar Compra')}
             </button>
           </>
         )}
@@ -74,14 +76,14 @@ export default function MarketAside() {
 
       <div className="aside-card">
         <div className="aside-head">
-          <span><Icon name="orders" size={16} /> Ordens em andamento</span>
-          <button className="aside-link" onClick={() => navigate('/comprador/ordens')}>Ver todas →</button>
+          <span><Icon name="orders" size={16} /> {t('Ordens em andamento')}</span>
+          <button className="aside-link" onClick={() => navigate('/comprador/ordens')}>{t('Ver todas')} →</button>
         </div>
         <div className="aside-orders">
           {BUCKETS.map((b) => (
             <div key={b.label} className="aside-order-row" onClick={() => navigate('/comprador/ordens')}>
               <span className="aside-order-ic"><Icon name={b.icon} size={15} /></span>
-              <span className="aside-order-label">{b.label}</span>
+              <span className="aside-order-label">{t(b.label)}</span>
               <span className="aside-order-count">{countFor(b.statuses)}</span>
             </div>
           ))}

@@ -27,15 +27,15 @@ export default function Cart() {
   }
   function saveCart() {
     localStorage.setItem('kixima_saved_cart', JSON.stringify(items.map((i) => ({ id: i.product.id, qty: i.quantity }))));
-    setToast('Cesta guardada.'); setTimeout(() => setToast(''), 3000);
+    setToast(t('Cesta guardada.')); setTimeout(() => setToast(''), 3000);
   }
 
   if (items.length === 0) {
     return (
       <div>
         <Crumbs trail={['Home', 'Minha Cesta']} />
-        <div className="empty-state"><h3>{t('A sua cesta está vazia')}</h3><p>Explore o catálogo e adicione produtos ou serviços.</p>
-          <button className="btn btn-accent" onClick={() => nav('/comprador/catalogo')}>Explorar catálogo</button></div>
+        <div className="empty-state"><h3>{t('A sua cesta está vazia')}</h3><p>{t('Explore o catálogo e adicione produtos ou serviços.')}</p>
+          <button className="btn btn-accent" onClick={() => nav('/comprador/catalogo')}>{t('Explorar catálogo')}</button></div>
       </div>
     );
   }
@@ -44,11 +44,11 @@ export default function Cart() {
     <div>
       {toast ? <div className="svc-toast">{toast}</div> : null}
       <Crumbs trail={['Home', 'Minha Cesta']} />
-      <PageHead title="Minha Cesta" subtitle={`${items.length} ${items.length === 1 ? 'item' : 'itens'} na sua cesta`}
+      <PageHead title="Minha Cesta" subtitle={`${items.length} ${items.length === 1 ? t('item') : t('itens')} ${t('na sua cesta')}`}
         actions={<>
-          <button className="btn btn-ghost btn-sm" onClick={saveCart}><Icon name="policy" size={14} /> Guardar Cesta</button>
-          <button className="btn btn-ghost btn-sm" onClick={exportCart}><Icon name="report" size={14} /> Exportar Cesta</button>
-          <button className="btn btn-ghost btn-sm" onClick={clear}><Icon name="approvals" size={14} /> Limpar Cesta</button>
+          <button className="btn btn-ghost btn-sm" onClick={saveCart}><Icon name="policy" size={14} /> {t('Guardar Cesta')}</button>
+          <button className="btn btn-ghost btn-sm" onClick={exportCart}><Icon name="report" size={14} /> {t('Exportar Cesta')}</button>
+          <button className="btn btn-ghost btn-sm" onClick={clear}><Icon name="approvals" size={14} /> {t('Limpar Cesta')}</button>
         </>} />
 
       <div className="bz-layout">
@@ -75,7 +75,7 @@ export default function Cart() {
                     </div>
                   </td>
                   <td className="r"><strong>{formatMoney(Number(it.product.unitPrice) * it.quantity, it.product.currency)}</strong></td>
-                  <td><button className="bz-iconbtn" title="Remover" onClick={() => removeItem(it.product.id)}><Icon name="approvals" size={14} /></button></td>
+                  <td><button className="bz-iconbtn" title={t('Remover')} onClick={() => removeItem(it.product.id)}><Icon name="approvals" size={14} /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -85,15 +85,15 @@ export default function Cart() {
         <div className="bz-side">
           <div className="bz-panel">
             <h3>{t('Resumo da Cesta')}</h3>
-            <div className="bz-panel-row"><span>Subtotal ({items.length} itens)</span><strong>{formatMoney(subtotal)}</strong></div>
-            <div className="bz-panel-row"><span>Impostos (IVA 14%)</span><strong>{formatMoney(iva)}</strong></div>
-            <div className="bz-panel-row"><span>Taxa KIXIMA (1,5%)</span><strong>{formatMoney(fee)}</strong></div>
-            <div className="bz-panel-row co-total"><span>Total Estimado</span><strong>{formatMoney(total)}</strong></div>
-            <button className="btn btn-accent" style={{ width: '100%', marginTop: 12 }} onClick={() => nav('/comprador/checkout')}>Avançar para Checkout →</button>
-            <button className="btn btn-ghost" style={{ width: '100%', marginTop: 8 }} onClick={() => nav('/comprador/cotacoes')}><Icon name="invoice" size={14} /> Solicitar Cotação</button>
+            <div className="bz-panel-row"><span>{t('Subtotal')} ({items.length} {t('itens')})</span><strong>{formatMoney(subtotal)}</strong></div>
+            <div className="bz-panel-row"><span>{t('Impostos (IVA 14%)')}</span><strong>{formatMoney(iva)}</strong></div>
+            <div className="bz-panel-row"><span>{t('Taxa KIXIMA (1,5%)')}</span><strong>{formatMoney(fee)}</strong></div>
+            <div className="bz-panel-row co-total"><span>{t('Total Estimado')}</span><strong>{formatMoney(total)}</strong></div>
+            <button className="btn btn-accent" style={{ width: '100%', marginTop: 12 }} onClick={() => nav('/comprador/checkout')}>{t('Avançar para Checkout')} →</button>
+            <button className="btn btn-ghost" style={{ width: '100%', marginTop: 8 }} onClick={() => nav('/comprador/cotacoes')}><Icon name="invoice" size={14} /> {t('Solicitar Cotação')}</button>
           </div>
           <div className="bz-panel co-note" style={{ background: '#f3faf4', borderColor: '#cfe8d4', color: '#1c6b2e' }}>
-            <Icon name="shield" size={16} /> Compra 100% Segura — todos os dados são protegidos pela KIXIMA.
+            <Icon name="shield" size={16} /> {t('Compra 100% Segura — todos os dados são protegidos pela KIXIMA.')}
           </div>
         </div>
       </div>

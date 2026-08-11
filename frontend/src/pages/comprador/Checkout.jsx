@@ -55,9 +55,9 @@ export default function Checkout() {
         <Crumbs trail={['Home', 'Minha Cesta', 'Checkout']} />
         <div className="empty-state">
           <div className="pf-avatar" style={{ margin: '0 auto 14px', background: '#16a066' }}><Icon name="reception" size={26} /></div>
-          <h3>{done.length} {done.length === 1 ? 'Ordem de Compra gerada' : 'Ordens de Compra geradas'}</h3>
-          <p>Referências: {done.join(', ')}. Cada fornecedor recebeu uma PO distinta.</p>
-          <button className="btn btn-accent" onClick={() => nav('/comprador/ordens')}>Ver Ordens de Compra</button>
+          <h3>{done.length} {done.length === 1 ? t('Ordem de Compra gerada') : t('Ordens de Compra geradas')}</h3>
+          <p>{t('Referências')}: {done.join(', ')}. {t('Cada fornecedor recebeu uma PO distinta.')}</p>
+          <button className="btn btn-accent" onClick={() => nav('/comprador/ordens')}>{t('Ver Ordens de Compra')}</button>
         </div>
       </div>
     );
@@ -67,8 +67,8 @@ export default function Checkout() {
     return (
       <div>
         <Crumbs trail={['Home', 'Minha Cesta', 'Checkout']} />
-        <div className="empty-state"><h3>{t('A sua cesta está vazia')}</h3><p>Adicione itens antes de finalizar a compra.</p>
-          <button className="btn btn-accent" onClick={() => nav('/comprador/catalogo')}>Explorar catálogo</button></div>
+        <div className="empty-state"><h3>{t('A sua cesta está vazia')}</h3><p>{t('Adicione itens antes de finalizar a compra.')}</p>
+          <button className="btn btn-accent" onClick={() => nav('/comprador/catalogo')}>{t('Explorar catálogo')}</button></div>
       </div>
     );
   }
@@ -78,12 +78,12 @@ export default function Checkout() {
       <Crumbs trail={['Home', 'Minha Cesta', 'Checkout']} />
       <PageHead title="Checkout" subtitle="Revise os itens e confirme a sua compra." />
 
-      <div className="co-banner"><Icon name="shield" size={16} /> Os itens estão agrupados por fornecedor. Cada fornecedor receberá uma Ordem de Compra (PO) diferente.</div>
+      <div className="co-banner"><Icon name="shield" size={16} /> {t('Os itens estão agrupados por fornecedor. Cada fornecedor receberá uma Ordem de Compra (PO) diferente.')}</div>
       {error ? <div className="empty-state" style={{ padding: 16 }}><p>{error}</p></div> : null}
 
       <div className="bz-layout">
         <div>
-          <h3 className="pf-h2">Fornecedores e Itens <span className="bz-muted">({items.length} itens de {groups.length} fornecedores)</span></h3>
+          <h3 className="pf-h2">{t('Fornecedores e Itens')} <span className="bz-muted">({t('{a} itens de {b} fornecedores', { a: items.length, b: groups.length })})</span></h3>
           {groups.map((g) => {
             const gtotal = g.items.reduce((s, i) => s + Number(i.product.unitPrice) * i.quantity, 0);
             return (
@@ -91,9 +91,9 @@ export default function Checkout() {
                 <div className="co-grouphead">
                   <div className="bz-supplier">
                     <span className="bz-supplier-logo">{(g.supplier.name || '?').slice(0, 2).toUpperCase()}</span>
-                    <div><strong>{g.supplier.name}</strong>{g.supplier.verified ? <span className="svc-verified" style={{ marginLeft: 6 }}>Fornecedor Verificado</span> : null}</div>
+                    <div><strong>{g.supplier.name}</strong>{g.supplier.verified ? <span className="svc-verified" style={{ marginLeft: 6 }}>{t('Fornecedor Verificado')}</span> : null}</div>
                   </div>
-                  <div className="co-grouptotal"><span className="bz-muted">Subtotal do Fornecedor</span><strong>{formatMoney(gtotal)}</strong></div>
+                  <div className="co-grouptotal"><span className="bz-muted">{t('Subtotal do Fornecedor')}</span><strong>{formatMoney(gtotal)}</strong></div>
                 </div>
                 {g.items.map((it) => (
                   <div className="co-line" key={it.product.id}>
@@ -104,25 +104,25 @@ export default function Checkout() {
               </div>
             );
           })}
-          <button className="btn btn-ghost" onClick={() => nav('/comprador/cesta')}>← Voltar para a Cesta</button>
+          <button className="btn btn-ghost" onClick={() => nav('/comprador/cesta')}>← {t('Voltar para a Cesta')}</button>
         </div>
 
         <div className="bz-side">
           <div className="bz-panel">
             <h3>{t('Resumo do Checkout')}</h3>
-            <div className="bz-muted" style={{ marginBottom: 6 }}>Resumo por Fornecedor</div>
+            <div className="bz-muted" style={{ marginBottom: 6 }}>{t('Resumo por Fornecedor')}</div>
             {groups.map((g) => {
               const gt = g.items.reduce((s, i) => s + Number(i.product.unitPrice) * i.quantity, 0);
               return <div className="bz-panel-row" key={g.supplier.id}><span>{g.supplier.name}</span><strong>{formatMoney(gt)}</strong></div>;
             })}
             <hr className="co-hr" />
-            <div className="bz-panel-row"><span>Subtotal ({items.length} itens)</span><strong>{formatMoney(subtotal)}</strong></div>
-            <div className="bz-panel-row"><span>Impostos (IVA 14%)</span><strong>{formatMoney(iva)}</strong></div>
-            <div className="bz-panel-row"><span>Taxa KIXIMA (1,5%)</span><strong>{formatMoney(fee)}</strong></div>
-            <div className="bz-panel-row co-total"><span>Total Estimado</span><strong>{formatMoney(total)}</strong></div>
-            <div className="co-note"><Icon name="shield" size={14} /> Serão geradas {groups.length} {groups.length === 1 ? 'Ordem de Compra' : 'Ordens de Compra'} (PO). Uma para cada fornecedor.</div>
+            <div className="bz-panel-row"><span>{t('Subtotal')} ({items.length} {t('itens')})</span><strong>{formatMoney(subtotal)}</strong></div>
+            <div className="bz-panel-row"><span>{t('Impostos (IVA 14%)')}</span><strong>{formatMoney(iva)}</strong></div>
+            <div className="bz-panel-row"><span>{t('Taxa KIXIMA (1,5%)')}</span><strong>{formatMoney(fee)}</strong></div>
+            <div className="bz-panel-row co-total"><span>{t('Total Estimado')}</span><strong>{formatMoney(total)}</strong></div>
+            <div className="co-note"><Icon name="shield" size={14} /> {t('Serão geradas')} {groups.length} {groups.length === 1 ? t('Ordem de Compra') : t('Ordens de Compra')} (PO). {t('Uma para cada fornecedor.')}</div>
             <button className="btn btn-accent" style={{ width: '100%', marginTop: 12 }} disabled={busy} onClick={confirm}>
-              {busy ? 'A gerar…' : 'Continuar para o Pagamento →'}
+              {busy ? t('A gerar…') : <>{t('Continuar para o Pagamento')} →</>}
             </button>
           </div>
         </div>

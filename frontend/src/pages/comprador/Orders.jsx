@@ -63,17 +63,17 @@ export default function Orders() {
                   <tr key={o.id}>
                     <td>
                       <span className="bz-mono">{o.reference}</span>
-                      <span className="bz-sub2">{o.isCallOff ? 'Call-off' : 'Gerada a partir do Checkout'}</span>
+                      <span className="bz-sub2">{o.isCallOff ? 'Call-off' : t('Gerada a partir do Checkout')}</span>
                     </td>
                     <td><SupplierCell supplier={o.supplier} /></td>
                     <td>{formatDate(o.createdAt)}</td>
                     <td>{o.paymentDueAt ? formatDate(o.paymentDueAt) : '—'}</td>
-                    <td>{o.itemsCount} {o.itemsCount === 1 ? 'item' : 'itens'}</td>
+                    <td>{o.itemsCount} {o.itemsCount === 1 ? t('item') : t('itens')}</td>
                     <td className="r"><strong>{formatMoney(o.totalAmount, o.currency)}</strong></td>
                     <td><Pill tone={PO_STATUS[o.status]?.tone}>{PO_STATUS[o.status]?.label || o.status}</Pill></td>
                     <td>
                       <div className="bz-actions">
-                        <button className="bz-iconbtn" title="Ver detalhes" onClick={() => nav(`/comprador/ordens/${o.id}`)}><Icon name="search" size={14} /></button>
+                        <button className="bz-iconbtn" title={t('Ver detalhes')} onClick={() => nav(`/comprador/ordens/${o.id}`)}><Icon name="search" size={14} /></button>
                       </div>
                     </td>
                   </tr>

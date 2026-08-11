@@ -10,6 +10,7 @@ import { Loading, ErrorBanner } from '../../components/Common';
 import { Crumbs, PageHead } from '../../components/BuyerUI';
 import { Stars } from '../../components/icons';
 import { formatMoney } from '../../domain';
+import { useI18n } from '../../i18n';
 
 const BAR = '#5b8def';   // barra (uma só cor por gráfico — série única)
 const BEST = '#16a34a';  // melhor valor (destaque + rótulo, nunca só cor)
@@ -17,6 +18,7 @@ const priceOf = (o) => Number(o.promoPrice ?? o.unitPrice) || 0;
 
 // Gráfico de barras horizontais para UMA medida (série única, menor = melhor).
 function CompareBars({ title, items, fmt }) {
+  const { t } = useI18n();
   const max = Math.max(1, ...items.map((i) => i.value || 0));
   return (
     <div className="cmp-chart">
@@ -34,7 +36,7 @@ function CompareBars({ title, items, fmt }) {
                 title={fmt(i.value)}
               />
               <span className="cmp-bar-val">
-                {i.value != null ? fmt(i.value) : '—'}{i.best ? <span className="cmp-best"> ★ melhor</span> : null}
+                {i.value != null ? fmt(i.value) : '—'}{i.best ? <span className="cmp-best"> ★ {t('melhor')}</span> : null}
               </span>
             </div>
           </div>
@@ -45,6 +47,7 @@ function CompareBars({ title, items, fmt }) {
 }
 
 export default function SupplierCompare() {
+  const { t } = useI18n();
   const [sp] = useSearchParams();
   const navigate = useNavigate();
   const productId = sp.get('productId') || '';
@@ -53,7 +56,7 @@ export default function SupplierCompare() {
 
   useEffect(() => {
     setError(''); setData(null);
-    if (!productId) { setError('Produto não indicado.'); return; }
+    if (!productId) { setError(t('Produto não indicado.')); return; }
     api.get('/api/marketplace/compare', { productId }).then(setData).catch((e) => setError(e.message));
   }, [productId]);
 
@@ -61,7 +64,7 @@ export default function SupplierCompare() {
   if (!data) return <Loading />;
 
   const offers = data.offers || [];
-  const itemName = data.base?.unspscTitle || data.base?.name || 'Item';
+  const itemName = data.base?.unspscTitle || data.base?.name || t('Item');
 
   // Melhores valores (menor preço; menor prazo, ignorando nulos).
   const bestPrice = Math.min(...offers.map(priceOf).filter((n) => n > 0));
@@ -75,27 +78,27 @@ export default function SupplierCompare() {
       <Crumbs trail={['Home', 'Catálogo', 'Comparar fornecedores']} />
       <PageHead
         title="Comparar fornecedores"
-        subtitle={`Ofertas para: ${itemName}${data.base?.unspscCode ? ` · UNSPSC ${data.base.unspscCode}` : ''}`}
-        actions={<button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>← Voltar</button>}
+        subtitle={`${t('Ofertas para')}: ${itemName}${data.base?.unspscCode ? ` · UNSPSC ${data.base.unspscCode}` : ''}`}
+        actions={<button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>← {t('Voltar')}</button>}
       />
 
       {offers.length < 2 ? (
         <div className="empty-state">
-          <h3>Sem comparação disponível</h3>
-          <p>De momento só há {offers.length === 1 ? 'um fornecedor' : 'nenhum fornecedor'} para este item. A comparação aparece quando houver 2 ou mais.</p>
+          <h3>{t('Sem comparação disponível')}</h3>
+          <p>{t('De momento só há')} {offers.length === 1 ? t('um fornecedor') : t('nenhum fornecedor')} {t('para este item. A comparação aparece quando houver 2 ou mais.')}</p>
         </div>
       ) : (
         <>
           {/* Gráficos: preço e prazo (menor = melhor) */}
           <div className="cmp-charts">
             <CompareBars
-              title="Preço (menor é melhor)"
+              title={t('Preço (menor é melhor)')}
               fmt={(v) => formatMoney(v, offers[0]?.currency)}
               items={offers.map((o) => ({ id: o.id, label: shortName(o), value: priceOf(o), best: priceOf(o) === bestPrice }))}
             />
             <CompareBars
-              title="Prazo de entrega (dias — menor é melhor)"
-              fmt={(v) => `${v} dias`}
+              title={t('Prazo de entrega (dias — menor é melhor)')}
+              fmt={(v) => `${v} ${t('dias')}`}
               items={offers.map((o) => ({ id: o.id, label: shortName(o), value: o.leadTimeDays, best: bestLead != null && o.leadTimeDays === bestLead }))}
             />
           </div>
@@ -105,9 +108,9 @@ export default function SupplierCompare() {
             <table className="bz-table cmp-table">
               <thead>
                 <tr>
-                  <th>Fornecedor</th><th>Preço</th><th>Prazo</th><th>Material</th>
-                  <th>Garantia</th><th>Norma / Certificações</th><th>Origem</th>
-                  <th>Incoterm</th><th>Avaliação</th>
+                  <th>{t('Fornecedor')}</th><th>{t('Preço')}</th><th>{t('Prazo')}</th><th>{t('Material')}</th>
+                  <th>{t('Garantia')}</th><th>{t('Norma / Certificações')}</th><th>{t('Origem')}</th>
+                  <th>{t('Incoterm')}</th><th>{t('Avaliação')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -120,14 +123,14 @@ export default function SupplierCompare() {
                         <strong>{o.supplier?.name || '—'}</strong>
                         <span className="bz-sub2">
                           {[o.supplier?.city, o.supplier?.country].filter(Boolean).join(', ')}
-                          {o.supplier?.verified ? ' · ✓ Verificado' : ''}
+                          {o.supplier?.verified ? ` · ✓ ${t('Verificado')}` : ''}
                         </span>
                       </td>
                       <td className={p === bestPrice ? 'cmp-win' : ''}>
-                        {formatMoney(p, o.currency)}{p === bestPrice ? <span className="cmp-tag">melhor</span> : null}
+                        {formatMoney(p, o.currency)}{p === bestPrice ? <span className="cmp-tag">{t('melhor')}</span> : null}
                       </td>
                       <td className={bestLead != null && o.leadTimeDays === bestLead ? 'cmp-win' : ''}>
-                        {o.leadTimeDays != null ? `${o.leadTimeDays} dias` : '—'}
+                        {o.leadTimeDays != null ? `${o.leadTimeDays} ${t('dias')}` : '—'}
                       </td>
                       <td>{o.material || '—'}</td>
                       <td>{o.warranty || '—'}</td>
@@ -142,7 +145,7 @@ export default function SupplierCompare() {
             </table>
           </div>
           <p className="helptext" style={{ marginTop: 10 }}>
-            Comparação de {offers.length} fornecedor{offers.length === 1 ? '' : 'es'} para o mesmo item. Abre o produto de cada fornecedor no catálogo para encomendar.
+            {t('Comparação de')} {offers.length} {offers.length === 1 ? t('fornecedor') : t('fornecedores')} {t('para o mesmo item. Abre o produto de cada fornecedor no catálogo para encomendar.')}
           </p>
         </>
       )}

@@ -71,7 +71,7 @@ export default function Services() {
       cache.set(key, res);
       setData(res);
     } catch (e) {
-      setError(e.message || 'Falha ao carregar serviços.');
+      setError(e.message || t('Falha ao carregar serviços.'));
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ export default function Services() {
   async function solicitarCotacao(p) {
     try {
       await api.post('/api/quotes', { supplierCompanyId: p.supplier?.id, items: [{ productId: p.id, quantity: 1 }] });
-      setToast(`Pedido de cotação enviado a ${p.supplier?.name || 'fornecedor'}.`);
+      setToast(t('Pedido de cotação enviado a {name}.', { name: p.supplier?.name || t('fornecedor') }));
     } catch (e) { setToast(e.message); }
     setTimeout(() => setToast(''), 4000);
   }
@@ -118,21 +118,21 @@ export default function Services() {
     <div>
       {toast ? <div className="svc-toast">{toast}</div> : null}
 
-      <div className="svc-crumbs">Home <span>›</span> Catálogo <span>›</span> <strong>Serviços</strong></div>
-      <h1 className="svc-title">Serviços</h1>
+      <div className="svc-crumbs">{t('Home')} <span>›</span> {t('Catálogo')} <span>›</span> <strong>{t('Serviços')}</strong></div>
+      <h1 className="svc-title">{t('Serviços')}</h1>
 
       {/* Barra de pesquisa + ações */}
       <div className="svc-searchbar">
         <span className="svc-search-ico"><Icon name="search" size={18} /></span>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar serviços por nome, categoria, especialidade…" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Pesquisar serviços por nome, categoria, especialidade…')} />
       </div>
 
       <div className="svc-count">
-        {loading ? 'A carregar…' : `Mostrando ${from} - ${to} de ${total.toLocaleString('pt-PT')} serviços`}
+        {loading ? t('A carregar…') : t('Mostrando {a} - {b} de {n} serviços', { a: from, b: to, n: total.toLocaleString('pt-PT') })}
         <span className="svc-sortwrap">
-          Ordenar por{' '}
+          {t('Ordenar por')}{' '}
           <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>
-            {SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            {SORTS.map(([v, l]) => <option key={v} value={v}>{t(l)}</option>)}
           </select>
         </span>
       </div>
@@ -141,8 +141,8 @@ export default function Services() {
         {/* Filtros */}
         <aside className="svc-filters">
           <div className="flt-group">
-            <div className="flt-title">Categorias</div>
-            <button className={`flt-cat${!category ? ' on' : ''}`} onClick={() => { setCategory(''); setPage(1); }}>Todas</button>
+            <div className="flt-title">{t('Categorias')}</div>
+            <button className={`flt-cat${!category ? ' on' : ''}`} onClick={() => { setCategory(''); setPage(1); }}>{t('Todas')}</button>
             {facets.categories.map((c) => (
               <button key={c.name} className={`flt-cat${category === c.name ? ' on' : ''}`} onClick={() => { setCategory(c.name); setPage(1); }}>
                 <span>{c.name}</span><span className="flt-num">{c.count}</span>
@@ -151,28 +151,28 @@ export default function Services() {
           </div>
 
           <div className="flt-group">
-            <div className="flt-title">Localização</div>
+            <div className="flt-title">{t('Localização')}</div>
             {['Angola', 'Brasil', 'África do Sul', 'Emirados Árabes'].map((c) => (
               <label key={c} className="flt-check">
-                <input type="radio" name="country" checked={country === c} onChange={() => { setCountry(c); setPage(1); }} /> {c}
+                <input type="radio" name="country" checked={country === c} onChange={() => { setCountry(c); setPage(1); }} /> {t(c)}
               </label>
             ))}
-            <label className="flt-check"><input type="radio" name="country" checked={country === ''} onChange={() => { setCountry(''); setPage(1); }} /> Todos</label>
+            <label className="flt-check"><input type="radio" name="country" checked={country === ''} onChange={() => { setCountry(''); setPage(1); }} /> {t('Todos')}</label>
           </div>
 
           <div className="flt-group">
-            <div className="flt-title">Fornecedor Verificado</div>
-            <label className="flt-check"><input type="checkbox" checked={verified} onChange={(e) => { setVerified(e.target.checked); setPage(1); }} /> Apenas Fornecedores Verificados</label>
+            <div className="flt-title">{t('Fornecedor Verificado')}</div>
+            <label className="flt-check"><input type="checkbox" checked={verified} onChange={(e) => { setVerified(e.target.checked); setPage(1); }} /> {t('Apenas Fornecedores Verificados')}</label>
           </div>
 
           <div className="flt-group">
-            <div className="flt-title">Certificações</div>
+            <div className="flt-title">{t('Certificações')}</div>
             {CERTS.map((c) => (
               <label key={c} className="flt-check"><input type="checkbox" checked={certs.includes(c)} onChange={() => toggleCert(c)} /> {c}</label>
             ))}
           </div>
 
-          <button className="btn btn-ghost" style={{ width: '100%', marginTop: 8 }} onClick={clearFilters}>Limpar Filtros</button>
+          <button className="btn btn-ghost" style={{ width: '100%', marginTop: 8 }} onClick={clearFilters}>{t('Limpar Filtros')}</button>
         </aside>
 
         {/* Resultados */}
@@ -180,12 +180,12 @@ export default function Services() {
           {error ? (
             <div className="empty-state">
               <h3>{t('Não foi possível carregar')}</h3><p>{error}</p>
-              <button className="btn btn-accent" onClick={load}>Tentar de novo</button>
+              <button className="btn btn-accent" onClick={load}>{t('Tentar de novo')}</button>
             </div>
           ) : loading ? (
             <div className="svc-grid">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="svc-card svc-skel" />)}</div>
           ) : total === 0 ? (
-            <div className="empty-state"><h3>{t('Nenhum serviço encontrado')}</h3><p>Ajuste a pesquisa ou os filtros.</p></div>
+            <div className="empty-state"><h3>{t('Nenhum serviço encontrado')}</h3><p>{t('Ajuste a pesquisa ou os filtros.')}</p></div>
           ) : (
             <>
               <div className="svc-grid">
@@ -193,11 +193,11 @@ export default function Services() {
               </div>
 
               <div className="svc-pag">
-                <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Anterior</button>
+                <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← {t('Anterior')}</button>
                 {pageNumbers(page, pages).map((n, i) => n === '…'
                   ? <span key={`e${i}`} className="svc-ellipsis">…</span>
                   : <button key={n} className={`svc-pagn${n === page ? ' on' : ''}`} onClick={() => setPage(n)}>{n}</button>)}
-                <button className="btn btn-ghost btn-sm" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>Próximo →</button>
+                <button className="btn btn-ghost btn-sm" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>{t('Próximo')} →</button>
               </div>
             </>
           )}
@@ -208,14 +208,15 @@ export default function Services() {
 }
 
 function ServiceCard({ p, onFav, onQuote, onOpen }) {
-  const avail = p.availability || 'Disponível';
+  const { t } = useI18n();
+  const avail = p.availability || t('Disponível');
   const availClass = /sob/i.test(avail) ? 'sobconsulta' : 'disponivel';
   return (
     <div className="svc-card">
       <div className="svc-card-img">
         <ProductCover imageUrl={p.imageUrl} category={p.category} name={p.name} caption={false} />
         <span className={`svc-avail ${availClass}`}>{avail}</span>
-        <button className={`svc-fav${p.isFavorite ? ' on' : ''}`} onClick={() => onFav(p)} aria-label="Favorito">♥</button>
+        <button className={`svc-fav${p.isFavorite ? ' on' : ''}`} onClick={() => onFav(p)} aria-label={t('Favorito')}>♥</button>
       </div>
       <div className="svc-card-body">
         <div className="svc-company">{p.supplier?.name}</div>
@@ -223,15 +224,15 @@ function ServiceCard({ p, onFav, onQuote, onOpen }) {
         <p className="svc-desc">{p.description}</p>
         <div className="svc-metarow">
           <span><Icon name="offshore" size={13} /> {[p.city, p.country].filter(Boolean).join(', ') || '—'}</span>
-          {p.leadTimeDays ? <span>Prazo {p.leadTimeDays} dias</span> : null}
+          {p.leadTimeDays ? <span>{t('Prazo')} {p.leadTimeDays} {t('dias')}</span> : null}
         </div>
         <div className="svc-ratingrow">
           <Stars value={p.rating || 0} /> <span className="svc-ratenum">{p.rating ? p.rating.toFixed(1) : '—'} {p.reviewCount ? `(${p.reviewCount})` : ''}</span>
-          {p.supplier?.verified ? <span className="svc-verified">Verificado</span> : null}
+          {p.supplier?.verified ? <span className="svc-verified">{t('Verificado')}</span> : null}
         </div>
         <div className="svc-actions">
-          <button className="btn btn-ghost btn-sm" onClick={onOpen}>Ver Detalhes</button>
-          <button className="btn btn-accent btn-sm" onClick={() => onQuote(p)}>Solicitar Cotação</button>
+          <button className="btn btn-ghost btn-sm" onClick={onOpen}>{t('Ver Detalhes')}</button>
+          <button className="btn btn-accent btn-sm" onClick={() => onQuote(p)}>{t('Solicitar Cotação')}</button>
         </div>
       </div>
     </div>

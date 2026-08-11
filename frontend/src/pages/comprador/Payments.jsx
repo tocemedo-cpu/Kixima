@@ -67,7 +67,7 @@ export default function Payments() {
                         <td><Pill tone={INVOICE_STATUS[r.status]?.tone}>{INVOICE_STATUS[r.status]?.label || r.status}</Pill></td>
                         <td>
                           <div className="bz-actions">
-                            <button className="bz-iconbtn" title="Ver ordem" onClick={() => nav(`/comprador/ordens/${r.poId}`)}><Icon name="search" size={14} /></button>
+                            <button className="bz-iconbtn" title={t('Ver ordem')} onClick={() => nav(`/comprador/ordens/${r.poId}`)}><Icon name="search" size={14} /></button>
                           </div>
                         </td>
                       </tr>
@@ -81,15 +81,15 @@ export default function Payments() {
         <div className="bz-side">
           <div className="bz-panel">
             <h3>{t('Resumo Financeiro')}</h3>
-            <div className="bz-panel-row"><span>Valor Total das PO</span><strong>{k ? formatMoney(k.totalPO) : '—'}</strong></div>
-            <div className="bz-panel-row"><span>Total Pago</span><strong>{k ? formatMoney(k.concluidos) : '—'}</strong></div>
-            <div className="bz-panel-row"><span>Total em Aberto</span><strong style={{ color: '#c0392b' }}>{k ? formatMoney(k.aPagar) : '—'}</strong></div>
-            <div className="bz-panel-row"><span>Total Atrasado</span><strong style={{ color: '#c0392b' }}>{k ? formatMoney(k.atrasados) : '—'}</strong></div>
+            <div className="bz-panel-row"><span>{t('Valor Total das PO')}</span><strong>{k ? formatMoney(k.totalPO) : '—'}</strong></div>
+            <div className="bz-panel-row"><span>{t('Total Pago')}</span><strong>{k ? formatMoney(k.concluidos) : '—'}</strong></div>
+            <div className="bz-panel-row"><span>{t('Total em Aberto')}</span><strong style={{ color: '#c0392b' }}>{k ? formatMoney(k.aPagar) : '—'}</strong></div>
+            <div className="bz-panel-row"><span>{t('Total Atrasado')}</span><strong style={{ color: '#c0392b' }}>{k ? formatMoney(k.atrasados) : '—'}</strong></div>
           </div>
           <div className="bz-panel">
             <h3>{t('Precisa de Ajuda?')}</h3>
-            <p className="bz-sub">Fale com a nossa equipa de suporte para qualquer questão sobre pagamentos.</p>
-            <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => nav('/ajuda')}><Icon name="help" size={14} /> Contactar Suporte</button>
+            <p className="bz-sub">{t('Fale com a nossa equipa de suporte para qualquer questão sobre pagamentos.')}</p>
+            <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => nav('/ajuda')}><Icon name="help" size={14} /> {t('Contactar Suporte')}</button>
           </div>
         </div>
       </div>

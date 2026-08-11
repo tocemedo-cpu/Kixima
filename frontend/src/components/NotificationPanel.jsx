@@ -2,8 +2,10 @@
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { formatDateTime } from '../domain';
+import { useI18n } from '../i18n';
 
 export default function NotificationPanel({ notifications, onClose, onRead }) {
+  const { t } = useI18n();
   async function markRead(id) {
     try {
       await api.patch(`/api/notifications/${id}/read`);
@@ -30,12 +32,12 @@ export default function NotificationPanel({ notifications, onClose, onRead }) {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
-        <strong style={{ fontSize: 13.5 }}>Notificações</strong>
-        <button className="btn btn-ghost btn-sm" onClick={onClose}>Fechar</button>
+        <strong style={{ fontSize: 13.5 }}>{t('Notificações')}</strong>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>{t('Fechar')}</button>
       </div>
       {notifications.length === 0 ? (
         <div className="empty-state">
-          <p>Sem notificações por agora.</p>
+          <p>{t('Sem notificações por agora.')}</p>
         </div>
       ) : (
         notifications.map((n) => (
@@ -60,7 +62,7 @@ export default function NotificationPanel({ notifications, onClose, onRead }) {
         onClick={onClose}
         style={{ display: 'block', textAlign: 'center', padding: '10px', fontSize: 12.5, fontWeight: 600, color: 'var(--brand-600)', borderTop: '1px solid var(--line)' }}
       >
-        Ver todas as notificações
+        {t('Ver todas as notificações')}
       </Link>
     </div>
   );

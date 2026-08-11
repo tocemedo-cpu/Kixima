@@ -70,9 +70,9 @@ export default function Receptions() {
                     <td>
                       <div className="bz-actions">
                         {r.status === 'DIVERGENCIA' ? (
-                          <button className="btn btn-danger btn-sm" onClick={() => nav(`/comprador/ordens/${r.poId}`)}>Resolver</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => nav(`/comprador/ordens/${r.poId}`)}>{t('Resolver')}</button>
                         ) : (
-                          <button className="bz-iconbtn" title="Ver ordem" onClick={() => nav(`/comprador/ordens/${r.poId}`)}><Icon name="search" size={14} /></button>
+                          <button className="bz-iconbtn" title={t('Ver ordem')} onClick={() => nav(`/comprador/ordens/${r.poId}`)}><Icon name="search" size={14} /></button>
                         )}
                       </div>
                     </td>

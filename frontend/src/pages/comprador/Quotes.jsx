@@ -44,13 +44,13 @@ export default function Quotes() {
     e.preventDefault();
     setError(''); setSuccess('');
     const items = lines.filter((l) => l.productId).map((l) => ({ productId: l.productId, quantity: Number(l.quantity) || 1 }));
-    if (items.length === 0) return setError('Adicione pelo menos um produto.');
-    if (!sameSupplier) return setError('Todos os produtos do pedido devem ser do mesmo fornecedor.');
+    if (items.length === 0) return setError(t('Adicione pelo menos um produto.'));
+    if (!sameSupplier) return setError(t('Todos os produtos do pedido devem ser do mesmo fornecedor.'));
     const supplierCompanyId = supplierIds[0];
     setSaving(true);
     try {
       await api.post('/api/quotes', { supplierCompanyId, items, note: note || undefined });
-      setSuccess('Pedido de cotação enviado.');
+      setSuccess(t('Pedido de cotação enviado.'));
       resetForm(); setShowForm(false); loadQuotes();
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   }
@@ -66,7 +66,7 @@ export default function Quotes() {
       <PageHeader
         title="Cotações"
         subtitle="Peça preços a fornecedores antes de emitir a ordem de compra."
-        action={<button className="btn btn-accent" onClick={() => { setShowForm((v) => !v); if (showForm) resetForm(); }}>{showForm ? 'Cancelar' : '+ Pedir cotação'}</button>}
+        action={<button className="btn btn-accent" onClick={() => { setShowForm((v) => !v); if (showForm) resetForm(); }}>{showForm ? t('Cancelar') : t('+ Pedir cotação')}</button>}
       />
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
@@ -74,36 +74,36 @@ export default function Quotes() {
       {showForm && (
         <div className="card card-pad" style={{ marginBottom: 18, maxWidth: 620 }}>
           <form onSubmit={submit}>
-            <div className="reg-section" style={{ marginTop: 0 }}>Produtos (do mesmo fornecedor)</div>
+            <div className="reg-section" style={{ marginTop: 0 }}>{t('Produtos (do mesmo fornecedor)')}</div>
             {lines.map((l, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 8 }}>
                 <div className="field" style={{ margin: 0, flex: 1 }}>
-                  <label>Produto</label>
+                  <label>{t('Produto')}</label>
                   <select value={l.productId} onChange={(e) => setLine(i, 'productId', e.target.value)}>
-                    <option value="">— escolher —</option>
+                    <option value="">{t('— escolher —')}</option>
                     {catalog.map((p) => <option key={p.id} value={p.id}>{p.name} — {p.supplier?.name}</option>)}
                   </select>
                 </div>
-                <div className="field" style={{ margin: 0, width: 90 }}><label>Qtd.</label><input type="number" min="1" value={l.quantity} onChange={(e) => setLine(i, 'quantity', e.target.value)} /></div>
+                <div className="field" style={{ margin: 0, width: 90 }}><label>{t('Qtd.')}</label><input type="number" min="1" value={l.quantity} onChange={(e) => setLine(i, 'quantity', e.target.value)} /></div>
                 {lines.length > 1 ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => setLines((ls) => ls.filter((_, idx) => idx !== i))}>×</button> : null}
               </div>
             ))}
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setLines((ls) => [...ls, { productId: '', quantity: 1 }])} style={{ marginBottom: 12 }}>+ Adicionar produto</button>
-            {!sameSupplier ? <p className="error-text" style={{ margin: '0 0 10px' }}>Os produtos escolhidos são de fornecedores diferentes.</p> : null}
-            <div className="field"><label>Nota (opcional)</label><textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} /></div>
-            <button className="btn btn-accent" type="submit" disabled={saving}>{saving ? 'A enviar…' : 'Enviar pedido'}</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setLines((ls) => [...ls, { productId: '', quantity: 1 }])} style={{ marginBottom: 12 }}>{t('+ Adicionar produto')}</button>
+            {!sameSupplier ? <p className="error-text" style={{ margin: '0 0 10px' }}>{t('Os produtos escolhidos são de fornecedores diferentes.')}</p> : null}
+            <div className="field"><label>{t('Nota (opcional)')}</label><textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} /></div>
+            <button className="btn btn-accent" type="submit" disabled={saving}>{saving ? t('A enviar…') : t('Enviar pedido')}</button>
           </form>
         </div>
       )}
 
       {quotes.length === 0 ? (
-        <div className="empty-state"><h3>{t('Sem cotações')}</h3><p>Peça uma cotação para começar.</p></div>
+        <div className="empty-state"><h3>{t('Sem cotações')}</h3><p>{t('Peça uma cotação para começar.')}</p></div>
       ) : (
         quotes.map((q) => (
           <div key={q.id} className="card card-pad" style={{ marginBottom: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
               <div>
-                <strong>{q.supplierCompany?.name || 'Fornecedor'}</strong>
+                <strong>{q.supplierCompany?.name || t('Fornecedor')}</strong>
                 <div style={{ fontSize: 12.5, color: 'var(--ink-600)' }}>{formatDate(q.createdAt)}</div>
               </div>
               <Badge tone={STATUS[q.status]?.tone}>{STATUS[q.status]?.label}</Badge>
@@ -113,13 +113,13 @@ export default function Quotes() {
             </ul>
             {q.status !== 'ABERTA' && q.responsePrice != null ? (
               <div style={{ fontSize: 13.5, background: 'var(--paper-050)', borderRadius: 8, padding: '10px 12px' }}>
-                Cotação: <strong>{formatMoney(q.responsePrice, q.items[0]?.product?.currency || 'AOA')}</strong>
-                {q.responseLeadDays != null ? ` · prazo ${q.responseLeadDays} dias` : ''}
+                {t('Cotação')}: <strong>{formatMoney(q.responsePrice, q.items[0]?.product?.currency || 'AOA')}</strong>
+                {q.responseLeadDays != null ? ` · ${t('prazo')} ${q.responseLeadDays} ${t('dias')}` : ''}
                 {q.responseNote ? ` · ${q.responseNote}` : ''}
               </div>
             ) : null}
             {q.status === 'RESPONDIDA' ? (
-              <div style={{ marginTop: 10 }}><button className="btn btn-ghost btn-sm" onClick={() => close(q.id)}>Encerrar</button></div>
+              <div style={{ marginTop: 10 }}><button className="btn btn-ghost btn-sm" onClick={() => close(q.id)}>{t('Encerrar')}</button></div>
             ) : null}
           </div>
         ))

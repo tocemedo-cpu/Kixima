@@ -16,11 +16,12 @@ function greeting() {
   const h = new Date().getHours();
   return h < 12 ? 'Bom dia' : h < 19 ? 'Boa tarde' : 'Boa noite';
 }
-function timeAgo(iso) {
+function timeAgo(iso, t) {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 3600) return `há ${Math.max(1, Math.floor(s / 60))} min`;
-  if (s < 86400) return `há ${Math.floor(s / 3600)}h`;
-  return `há ${Math.floor(s / 86400)} dia${Math.floor(s / 86400) > 1 ? 's' : ''}`;
+  if (s < 3600) return t('há {n} min', { n: Math.max(1, Math.floor(s / 60)) });
+  if (s < 86400) return t('há {n}h', { n: Math.floor(s / 3600) });
+  const d = Math.floor(s / 86400);
+  return d > 1 ? t('há {n} dias', { n: d }) : t('há {n} dia', { n: d });
 }
 function initials(name = '') {
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
@@ -58,25 +59,25 @@ export default function Home() {
   return (
     <div className="home">
       <div style={{ marginBottom: 20 }}>
-        <h1 className="home-hi">{greeting()}, {firstName}! <span>👋</span></h1>
-        <p className="home-sub">O que pretende comprar hoje?</p>
+        <h1 className="home-hi">{t(greeting())}, {firstName}! <span>👋</span></h1>
+        <p className="home-sub">{t('O que pretende comprar hoje?')}</p>
         <form className="home-search" onSubmit={submitSearch}>
           <span className="home-search-ico"><Icon name="search" size={18} /></span>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar produtos, serviços ou fornecedores…" />
-          <button className="btn btn-accent" type="submit">Pesquisar</button>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Pesquisar produtos, serviços ou fornecedores…')} />
+          <button className="btn btn-accent" type="submit">{t('Pesquisar')}</button>
         </form>
       </div>
 
       <div className="home-kpis">
-        <Kpi icon="invoice" label="Ordens de Compra" value={k.emAndamento} sub="Em andamento" tone="brand" />
-        <Kpi icon="payment" label="Aguardando Pagamento" value={k.aguardandoPagamento.count} sub={`Total: ${formatMoney(k.aguardandoPagamento.total)}`} tone="amber" />
-        <Kpi icon="truck" label="Em Entrega" value={k.emEntrega.count} sub={`Total: ${formatMoney(k.emEntrega.total)}`} tone="teal" />
-        <Kpi icon="reception" label="Recebidas" value={k.recebidasMes} sub="Este mês" tone="info" />
+        <Kpi icon="invoice" label={t('Ordens de Compra')} value={k.emAndamento} sub={t('Em andamento')} tone="brand" />
+        <Kpi icon="payment" label={t('Aguardando Pagamento')} value={k.aguardandoPagamento.count} sub={`${t('Total')}: ${formatMoney(k.aguardandoPagamento.total)}`} tone="amber" />
+        <Kpi icon="truck" label={t('Em Entrega')} value={k.emEntrega.count} sub={`${t('Total')}: ${formatMoney(k.emEntrega.total)}`} tone="teal" />
+        <Kpi icon="reception" label={t('Recebidas')} value={k.recebidasMes} sub={t('Este mês')} tone="info" />
       </div>
 
       <div className="home-row home-row-cats">
         <section className="card card-pad">
-          <SectionHead title="Categorias Principais" to="/comprador/catalogo" />
+          <SectionHead title={t('Categorias Principais')} to="/comprador/catalogo" />
           <div className="cat-grid">
             {d.categories.slice(0, 8).map((c) => {
               const vis = categoryVisual(c.name);
@@ -87,29 +88,29 @@ export default function Home() {
                 </Link>
               );
             })}
-            {d.categories.length === 0 ? <p className="helptext">Sem categorias.</p> : null}
+            {d.categories.length === 0 ? <p className="helptext">{t('Sem categorias.')}</p> : null}
           </div>
         </section>
 
         <section className="protect-card">
           <span className="protect-shield"><Icon name="policy" size={40} /></span>
           <h3>{t('COMPRAS PROTEGIDAS KIXIMA')}</h3>
-          <p>Todas as transações são protegidas pela KIXIMA com fornecedores verificados e seguros de execução.</p>
-          <Link to="/ajuda" className="protect-link">Saiba mais →</Link>
+          <p>{t('Todas as transações são protegidas pela KIXIMA com fornecedores verificados e seguros de execução.')}</p>
+          <Link to="/ajuda" className="protect-link">{t('Saiba mais')} →</Link>
         </section>
       </div>
 
       <div className="home-row home-row-trend">
         <section className="card card-pad">
-          <SectionHead title="Trending na KIXIMA" sub="Mais visualizados" to="/comprador/servicos" />
+          <SectionHead title={t('Trending na KIXIMA')} sub={t('Mais visualizados')} to="/comprador/servicos" />
           <div className="mini-grid">
             {d.trending.map((p) => <MiniCard key={p.id} p={p} onClick={() => navigate(`/comprador/servicos/${p.slug || p.id}`)} />)}
-            {d.trending.length === 0 ? <p className="helptext">Sem dados ainda.</p> : null}
+            {d.trending.length === 0 ? <p className="helptext">{t('Sem dados ainda.')}</p> : null}
           </div>
         </section>
 
         <section className="card card-pad">
-          <SectionHead title="Minhas Ordens" to="/comprador/ordens" />
+          <SectionHead title={t('Minhas Ordens')} to="/comprador/ordens" />
           <ul className="ord-list">
             {d.dash.minhasOrdens.map((o) => (
               <li key={o.label}><span className="ord-dot" /><span>{o.label}</span><strong>{o.count}</strong></li>
@@ -118,13 +119,13 @@ export default function Home() {
         </section>
 
         <section className="card card-pad">
-          <SectionHead title="Atividades Recentes" to="/notificacoes" />
-          {d.notifs.length === 0 ? <p className="helptext">Sem atividades.</p> : (
+          <SectionHead title={t('Atividades Recentes')} to="/notificacoes" />
+          {d.notifs.length === 0 ? <p className="helptext">{t('Sem atividades.')}</p> : (
             <ul className="act-list">
               {d.notifs.map((n) => (
                 <li key={n.id}><span className="act-ico"><Icon name="activities" size={14} /></span>
                   <span className="act-txt">{n.title || n.message}</span>
-                  <span className="act-time">{timeAgo(n.createdAt)}</span></li>
+                  <span className="act-time">{timeAgo(n.createdAt, t)}</span></li>
               ))}
             </ul>
           )}
@@ -133,7 +134,7 @@ export default function Home() {
 
       <div className="home-row home-row-bottom">
         <section className="card card-pad">
-          <SectionHead title="Fornecedores Verificados" to="/comprador/servicos?verified=true" />
+          <SectionHead title={t('Fornecedores Verificados')} to="/comprador/servicos?verified=true" />
           <div className="sup-grid">
             {d.suppliers.map((s) => (
               <div key={s.id} className="sup-card">
@@ -142,15 +143,15 @@ export default function Home() {
                 {s.rating ? <span className="sup-rating">★ {s.rating.toFixed(1)}</span> : null}
               </div>
             ))}
-            {d.suppliers.length === 0 ? <p className="helptext">Sem fornecedores verificados.</p> : null}
+            {d.suppliers.length === 0 ? <p className="helptext">{t('Sem fornecedores verificados.')}</p> : null}
           </div>
         </section>
 
         <section className="card card-pad">
-          <SectionHead title="Compras Frequentes" to="/comprador/catalogo" />
+          <SectionHead title={t('Compras Frequentes')} to="/comprador/catalogo" />
           <div className="mini-grid mini-grid-5">
             {d.frequent.map((p) => <MiniCard key={p.id} p={p} fromPrice onClick={() => navigate(`/comprador/servicos/${p.slug || p.id}`)} />)}
-            {d.frequent.length === 0 ? <p className="helptext">Sem dados ainda.</p> : null}
+            {d.frequent.length === 0 ? <p className="helptext">{t('Sem dados ainda.')}</p> : null}
           </div>
         </section>
       </div>
@@ -159,10 +160,11 @@ export default function Home() {
 }
 
 function SectionHead({ title, sub, to }) {
+  const { t } = useI18n();
   return (
     <div className="sec-head">
       <div><strong>{title}</strong>{sub ? <span className="sec-sub"> · {sub}</span> : null}</div>
-      {to ? <Link to={to} className="sec-link">Ver todas</Link> : null}
+      {to ? <Link to={to} className="sec-link">{t('Ver todas')}</Link> : null}
     </div>
   );
 }
@@ -177,12 +179,13 @@ function Kpi({ icon, label, value, sub, tone }) {
 }
 
 function MiniCard({ p, fromPrice, onClick }) {
+  const { t } = useI18n();
   return (
     <div className="mini-card" onClick={onClick}>
       <div className="mini-img"><ProductCover imageUrl={p.imageUrl} category={p.category} name={p.name} caption={false} /></div>
       <div className="mini-name">{p.name}</div>
       <div className="mini-company">{p.supplier?.name}</div>
-      <div className="mini-price">{fromPrice ? <span className="mini-from">A partir de </span> : null}{formatMoney(p.promoPrice || p.unitPrice, p.currency)}</div>
+      <div className="mini-price">{fromPrice ? <span className="mini-from">{t('A partir de')} </span> : null}{formatMoney(p.promoPrice || p.unitPrice, p.currency)}</div>
       {!fromPrice && p.rating ? <div className="mini-rating"><Stars value={p.rating} /> <span>{p.rating.toFixed(1)} {p.reviewCount ? `(${p.reviewCount})` : ''}</span></div> : null}
     </div>
   );

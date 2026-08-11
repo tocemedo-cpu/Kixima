@@ -65,17 +65,17 @@ export default function Activities() {
             <tbody>
               {!data ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>
                 : items.length === 0 ? <tr><td colSpan={7}><EmptyRow>Sem atividades.</EmptyRow></td></tr>
-                : items.map((t, i) => (
+                : items.map((a, i) => (
                   <tr key={i}>
-                    <td><span className="bz-supplier-logo"><Icon name={ICON[t.type] || 'activities'} size={16} /></span></td>
-                    <td><strong>{t.title}</strong><span className="bz-sub2">{t.desc}</span></td>
-                    <td><span className="bz-mono">{t.relatedTo}</span></td>
-                    <td>{t.supplier || '—'}</td>
-                    <td><span style={{ color: PRIO[t.priority], fontWeight: 700 }}>● {t.priority[0] + t.priority.slice(1).toLowerCase()}</span></td>
-                    <td><Pill tone={ST[t.status]?.tone}>{ST[t.status]?.label || t.status}</Pill></td>
+                    <td><span className="bz-supplier-logo"><Icon name={ICON[a.type] || 'activities'} size={16} /></span></td>
+                    <td><strong>{a.title}</strong><span className="bz-sub2">{a.desc}</span></td>
+                    <td><span className="bz-mono">{a.relatedTo}</span></td>
+                    <td>{a.supplier || '—'}</td>
+                    <td><span style={{ color: PRIO[a.priority], fontWeight: 700 }}>● {a.priority[0] + a.priority.slice(1).toLowerCase()}</span></td>
+                    <td><Pill tone={ST[a.status]?.tone}>{ST[a.status]?.label || a.status}</Pill></td>
                     <td>
                       <div className="bz-actions">
-                        <button className="bz-iconbtn" title="Ver ordem" onClick={() => nav(`/comprador/ordens/${t.poId}`)}><Icon name="search" size={14} /></button>
+                        <button className="bz-iconbtn" title={t('Ver ordem')} onClick={() => nav(`/comprador/ordens/${a.poId}`)}><Icon name="search" size={14} /></button>
                       </div>
                     </td>
                   </tr>
