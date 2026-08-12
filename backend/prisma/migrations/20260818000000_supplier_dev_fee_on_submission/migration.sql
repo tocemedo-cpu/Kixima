@@ -4,6 +4,14 @@
 -- orçamentado caso a caso, agora numa coluna própria.
 --
 -- Idempotente: pode ser corrido mais do que uma vez sem erro.
+--
+-- Colunas de que esta migração depende. Existem à partida quando a migração
+-- anterior correu por inteiro — mas não se assumem: em bases onde a 20260817
+-- foi aplicada antes de lhe serem acrescentadas estas duas colunas, ela fica
+-- marcada como aplicada e nunca mais volta a correr, e sem esta garantia tudo o
+-- que vem a seguir rebenta com «column does not exist».
+ALTER TABLE "supplier_dev_requests" ADD COLUMN IF NOT EXISTS "access_fee_usd" DECIMAL(10,2);
+ALTER TABLE "supplier_dev_requests" ADD COLUMN IF NOT EXISTS "custom_pricing" BOOLEAN NOT NULL DEFAULT false;
 
 -- Estado da cobrança da taxa de acesso (reutiliza o enum das taxas da
 -- plataforma: PENDENTE → COBRADO). O nome do enum depende de como a base foi

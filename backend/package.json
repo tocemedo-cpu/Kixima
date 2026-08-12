@@ -22,6 +22,7 @@
     "migrate:deploy": "prisma migrate deploy",
     "migrate:baseline": "prisma migrate resolve --applied 0_init",
     "migrate:status": "prisma migrate status",
+    "migrations:lock": "node scripts/migration-lock.js",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
