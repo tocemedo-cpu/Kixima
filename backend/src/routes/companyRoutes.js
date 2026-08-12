@@ -72,7 +72,10 @@ router.get('/:id/platform-fees', requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'FIN
 router.get('/:id/bank-details', requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'FINANCEIRO', 'ADMIN_SISTEMA'), companyController.getBankDetails);
 router.put('/:id/bank-details', requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'ADMIN_SISTEMA'), validate(bankDetailsSchema), companyController.setBankDetails);
 
-router.get('/:id', companyController.getOne);
+// Ficha completa da empresa: documentos de credenciamento, apólices, limites e
+// plano. É a tela de Perfil da Empresa — só o Company Admin (a sua) e o Admin do
+// Sistema (qualquer uma, para a due diligence).
+router.get('/:id', requireRole('COMPANY_ADMIN', 'ADMIN_SISTEMA'), companyController.getOne);
 router.patch('/:id/decision', requireRole('ADMIN_SISTEMA'), validate(decideCompanySchema), companyController.decide);
 router.put('/:id/budget-limit', requireRole('COMPANY_ADMIN', 'ADMIN_SISTEMA'), validate(budgetLimitSchema), companyController.setBudgetLimit);
 

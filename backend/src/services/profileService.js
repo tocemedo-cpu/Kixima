@@ -11,7 +11,18 @@ const itemsCount = (po) => po.items.reduce((s, i) => s + i.quantity, 0);
 async function getProfile({ userId, companyId }) {
   const [user, company] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, role: true, avatarUrl: true, createdAt: true } }),
-    companyId ? prisma.company.findUnique({ where: { id: companyId } }) : null,
+    companyId ? prisma.company.findUnique({
+      where: { id: companyId },
+      // Só a IDENTIFICAÇÃO da empresa. A ficha completa — dados bancários,
+      // plano, preço por utilizador, documentos, apólices e limites — é a tela
+      // de Perfil da Empresa e pertence ao Company Admin. Aqui cada persona vê
+      // apenas em que empresa está.
+      select: {
+        id: true, name: true, taxId: true, type: true, status: true,
+        contactEmail: true, contactPhone: true, address: true,
+        city: true, province: true, country: true, logoUrl: true, verified: true,
+      },
+    }) : null,
   ]);
   const now = new Date();
   const yearStart = new Date(now.getFullYear(), 0, 1);

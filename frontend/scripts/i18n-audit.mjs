@@ -21,11 +21,9 @@ function walk(dir, out = []) {
       if (name === 'i18n' || name === 'node_modules') continue;
       walk(p, out);
     } else if (['.jsx', '.js'].includes(extname(p)) && !p.includes('.test.')) {
-      // Exceções deliberadas (ficam em PT): documentos jurídicos e documentos
-      // oficiais A4 (PO/fatura/extrato, já bilingues PT/EN por desenho), e o
-      // navConfig.js (ficheiro legado não usado pela navegação).
-      // legalContent.js: documentos jurídicos completos por idioma (não usa t()).
-      if (/legalContent\.js|navConfig\.js$/.test(p)) continue;
+      // Exceção deliberada (fica em PT): legalContent.js reúne os documentos
+      // jurídicos completos por idioma e não passa por t().
+      if (/legalContent\.js$/.test(p)) continue;
       out.push(p);
     }
   }

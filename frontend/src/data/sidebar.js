@@ -15,7 +15,8 @@ const COMMON_TAIL = [
 // Estrutura ERP completa da visão do Fornecedor (SAP Ariba / Oracle-like).
 const FORNECEDOR = [
   { label: 'Dashboard', icon: 'home', to: '/fornecedor', end: true },
-  { label: 'Perfil da Empresa', icon: 'building', to: '/fornecedor/empresa' },
+  // O Perfil da Empresa é a tela do Company Admin — não aparece aqui. O Vendedor
+  // vê a empresa em que está pelo seu perfil pessoal (/perfil).
   {
     label: 'Catálogo', icon: 'catalog', children: [
       { label: 'Produtos & Serviços', to: '/fornecedor/catalogo' },

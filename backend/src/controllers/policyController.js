@@ -1,4 +1,5 @@
 const policyService = require('../services/policyService');
+const { ForbiddenError } = require('../utils/errors');
 
 async function submitSupplierPolicy(req, res) {
   const policy = await policyService.submitSupplierPolicy(req.user.companyId, req.body);
@@ -18,8 +19,14 @@ async function issueClientPolicy(req, res) {
   res.status(201).json(policy);
 }
 
+// Apólices de uma empresa — parte da ficha da empresa. Sem esta guarda,
+// qualquer utilizador autenticado lia as apólices de QUALQUER empresa passando o
+// id na rota (seguradora, nº, cobertura, validade e o documento).
 async function listForCompany(req, res) {
   const companyId = req.params.companyId || req.user.companyId;
+  if (req.user.role !== 'ADMIN_SISTEMA' && companyId !== req.user.companyId) {
+    throw new ForbiddenError('Não pode aceder às apólices de outra empresa.');
+  }
   const policies = await policyService.listPoliciesForCompany(companyId);
   res.json(policies);
 }

@@ -12,7 +12,10 @@ router.use(authenticate);
 // Perfil da Empresa ("Organização") — a MESMA página serve o Company Admin e o
 // Fornecedor (sempre a própria empresa, via req.user.companyId). Registada
 // antes do guard exclusivo de COMPANY_ADMIN.
-router.get('/organizacao', requireRole('COMPANY_ADMIN', 'FORNECEDOR'), async (req, res) => res.json(await svc.organizacao(req.user.companyId)));
+// Perfil da Empresa. É a tela do Company Admin — dentro da empresa mais ninguém
+// lhe acede, nem o Vendedor: reúne dados de credenciamento, contactos e resumo
+// da organização. Cada persona vê a empresa em que está no seu perfil pessoal.
+router.get('/organizacao', requireRole('COMPANY_ADMIN'), async (req, res) => res.json(await svc.organizacao(req.user.companyId)));
 
 router.use(requireRole('COMPANY_ADMIN'));
 

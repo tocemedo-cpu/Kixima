@@ -205,8 +205,6 @@ export default function App() {
             <Route path="/fornecedor/pedidos/solicitacoes" element={<SupplierQuotes />} />
             <Route path="/fornecedor/pedidos/cotacoes" element={<SupplierQuotes />} />
             <Route path="/fornecedor/financeiro/carteira" element={<Wallet />} />
-            {/* Perfil da Empresa — a MESMA página do Company Admin (Organization). */}
-            <Route path="/fornecedor/empresa" element={<Organization />} />
             {/* Módulos do menu ERP ainda em preparação — evita 404 e mantém a navegação. */}
             <Route path="/fornecedor/*" element={<ModulePlaceholder />} />
           </Route>
