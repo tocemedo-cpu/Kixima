@@ -52,7 +52,7 @@ export default function Reports() {
             <h3>{t('Relatórios Disponíveis')}</h3>
             {d.catalog.map((r) => (
               <div className="hs-ticket" key={r.key}>
-                <div><strong>{r.name}</strong><span className="bz-sub2">{r.desc}</span></div>
+                <div><strong>{t(r.name)}</strong><span className="bz-sub2">{t(r.desc)}</span></div>
                 <div className="hs-ticket-meta"><Pill tone="neutral">{r.module}</Pill><button className="btn btn-ghost btn-sm"><Icon name="report" size={13} /> {r.format}</button></div>
               </div>
             ))}

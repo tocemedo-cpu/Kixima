@@ -68,17 +68,20 @@ export const POLICY_STATUS = {
   EXPIRADA: { label: 'Expirada', tone: 'danger' },
 };
 
-// Taxas apresentadas no resumo da cesta (nível de apresentação/estimativa).
-export const KIXIMA_FEE_RATE = 0.015; // Taxa de serviço KIXIMA
+// Taxas apresentadas ao COMPRADOR no resumo da cesta.
+//
+// A Taxa KIXIMA não está aqui de propósito: é cobrada ao FORNECEDOR, à parte da
+// ordem de compra e da fatura, e é calculada no servidor (8 USD por PO + 15 USD
+// por fatura; acima de 11.500 USD, 0,20% do valor, a cobrir as duas parcelas).
+// O comprador não a paga — logo não a vê, nem entra no total da cesta.
 export const IVA_RATE = 0.14; // IVA Angola (14% sobre tudo)
 // Retenção na Fonte de Imposto Industrial (Lei 26/20): 6,5% sobre SERVIÇOS.
 // Não soma à fatura — é descontada ao fornecedor (o comprador entrega à AGT).
 export const WITHHOLDING_RATE = 0.065;
 
 export function computeCartTotals(subtotal) {
-  const fee = subtotal * KIXIMA_FEE_RATE;
   const iva = subtotal * IVA_RATE;
-  return { subtotal, fee, iva, total: subtotal + fee + iva };
+  return { subtotal, iva, total: subtotal + iva };
 }
 
 export function formatMoney(amount, currency = 'AOA') {

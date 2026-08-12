@@ -91,15 +91,22 @@ function dictKeys(file) {
   return keys;
 }
 const en = new Set(); const fr = new Set();
-for (const file of ['index.jsx', 'content.js', 'content2.js', 'content3.js', 'content4.js', 'content5.js', 'content6.js', 'content7.js']) {
+// Os ficheiros de dicionário são DESCOBERTOS na pasta, não listados à mão: uma
+// lista fixa fica desatualizada em silêncio à primeira adição — foi o que
+// aconteceu com o content8.js, cujas chaves o auditor não via.
+const DICT_FILES = ['index.jsx', ...readdirSync(join(SRC, 'i18n')).filter((f) => /^content\d*\.js$/.test(f)).sort()];
+for (const file of DICT_FILES) {
   const k = dictKeys(file);
   k.en.forEach((x) => en.add(x));
   k.fr.forEach((x) => fr.add(x));
 }
+// Texto de interface criado no SERVIDOR (content5.js: mensagens de erro;
+// content8.js: cartões, tarefas e relatórios) — aplicado dinamicamente, não
+// aparece como t('…') no código e por isso não conta como "não usado".
 // As mensagens do SERVIDOR (content5.js) são aplicadas dinamicamente no cliente
 // da API — não aparecem como t('…') no código, por isso não contam como "não
 // usadas".
-const dynamicKeys = dictKeys('content5.js').en;
+const dynamicKeys = new Set([...dictKeys('content5.js').en, ...dictKeys('content8.js').en]);
 
 // --- 4. Relatório ------------------------------------------------------------
 const usedKeys = [...used.keys()].sort((a, b) => a.localeCompare(b));

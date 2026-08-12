@@ -85,7 +85,10 @@ async function activities(companyId, filter) {
   let items = orders.map((o) => {
     const m = STATUS[o.status] || { type: 'Atualização', status: 'CONCLUIDA', module: 'Ordens de Compra' };
     return {
-      title: `PO ${o.reference}`, desc: `${m.type} — ${o.status.replaceAll('_', ' ').toLowerCase()}`,
+      // A descrição NÃO se compõe aqui: uma frase montada no servidor nunca
+      // pode ser chave de tradução. Vão as partes (tipo + estado da PO) e o
+      // cliente compõe-nas já traduzidas.
+      title: `PO ${o.reference}`, poStatus: o.status,
       module: m.module, type: m.type, status: m.status, relatedTo: o.reference,
       party: o.buyerCompanyId === companyId ? o.supplierCompany?.name : o.buyerCompany?.name,
       responsavel: o.createdBy?.name, at: o.updatedAt,

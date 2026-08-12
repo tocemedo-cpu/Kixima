@@ -1,7 +1,7 @@
 // src/domain.test.js
 import { describe, test, expect } from 'vitest';
 import {
-  formatMoney, computeCartTotals, IVA_RATE, WITHHOLDING_RATE, KIXIMA_FEE_RATE,
+  formatMoney, computeCartTotals, IVA_RATE, WITHHOLDING_RATE,
   ROLE_HOME, PO_STATUS,
 } from './domain';
 
@@ -22,16 +22,17 @@ describe('formatMoney', () => {
 });
 
 describe('taxas (modelo fiscal Angola)', () => {
-  test('IVA 14%, retenção na fonte 6,5%, comissão KIXIMA 1,5%', () => {
+  test('IVA 14% e retenção na fonte 6,5%', () => {
     expect(IVA_RATE).toBe(0.14);
     expect(WITHHOLDING_RATE).toBe(0.065);
-    expect(KIXIMA_FEE_RATE).toBe(0.015);
   });
-  test('computeCartTotals soma IVA e comissão ao subtotal', () => {
+  // A Taxa KIXIMA é cobrada ao FORNECEDOR e calculada no servidor. Não entra na
+  // cesta do comprador — nem como linha, nem no total.
+  test('computeCartTotals soma só o IVA, sem Taxa KIXIMA', () => {
     const r = computeCartTotals(1000000);
     expect(r.iva).toBe(140000);
-    expect(r.fee).toBe(15000);
-    expect(r.total).toBe(1155000);
+    expect(r.total).toBe(1140000);
+    expect(r).not.toHaveProperty('fee');
   });
 });
 

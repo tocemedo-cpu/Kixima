@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Crumbs, PageHead } from '../../components/BuyerUI';
 import { Icon, Stars } from '../../components/icons';
-import { IVA_RATE, KIXIMA_FEE_RATE, formatMoney } from '../../domain';
+import { IVA_RATE, formatMoney } from '../../domain';
 import { useCart } from './CartContext';
 import { useI18n } from '../../i18n';
 
@@ -17,8 +17,7 @@ export default function Cart() {
 
   const subtotal = items.reduce((s, i) => s + Number(i.product.unitPrice) * i.quantity, 0);
   const iva = subtotal * IVA_RATE;
-  const fee = subtotal * KIXIMA_FEE_RATE;
-  const total = subtotal + iva + fee;
+  const total = subtotal + iva;
 
   function exportCart() {
     const blob = new Blob([JSON.stringify(items.map((i) => ({ name: i.product.name, qty: i.quantity, unitPrice: i.product.unitPrice })), null, 2)], { type: 'application/json' });
@@ -87,7 +86,6 @@ export default function Cart() {
             <h3>{t('Resumo da Cesta')}</h3>
             <div className="bz-panel-row"><span>{t('Subtotal')} ({items.length} {t('itens')})</span><strong>{formatMoney(subtotal)}</strong></div>
             <div className="bz-panel-row"><span>{t('Impostos (IVA 14%)')}</span><strong>{formatMoney(iva)}</strong></div>
-            <div className="bz-panel-row"><span>{t('Taxa KIXIMA (1,5%)')}</span><strong>{formatMoney(fee)}</strong></div>
             <div className="bz-panel-row co-total"><span>{t('Total Estimado')}</span><strong>{formatMoney(total)}</strong></div>
             <button className="btn btn-accent" style={{ width: '100%', marginTop: 12 }} onClick={() => nav('/comprador/checkout')}>{t('Avançar para Checkout')} →</button>
             <button className="btn btn-ghost" style={{ width: '100%', marginTop: 8 }} onClick={() => nav('/comprador/cotacoes')}><Icon name="invoice" size={14} /> {t('Solicitar Cotação')}</button>

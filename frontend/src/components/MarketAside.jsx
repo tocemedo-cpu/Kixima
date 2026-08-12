@@ -1,5 +1,5 @@
 // src/components/MarketAside.jsx
-// Coluna direita do marketplace: mini-cesta (com Taxa KIXIMA + IVA + Total) e
+// Coluna direita do marketplace: mini-cesta (subtotal + IVA + total) e
 // "Ordens em andamento" com contagens reais por estado.
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -62,7 +62,6 @@ export default function MarketAside() {
 
             <div className="aside-totals">
               <div><span>{t('Subtotal')}</span><span className="mono">{formatMoney(totals.subtotal)}</span></div>
-              <div><span>{t('Taxa KIXIMA (1,5%)')}</span><span className="mono">{formatMoney(totals.fee)}</span></div>
               <div><span>{t('IVA (14%)')}</span><span className="mono">{formatMoney(totals.iva)}</span></div>
               <div className="aside-total"><span>{t('Total')}</span><span className="mono">{formatMoney(totals.total)}</span></div>
             </div>

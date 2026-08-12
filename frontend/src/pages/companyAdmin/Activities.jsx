@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
-import { formatDateTime } from '../../domain';
+import { formatDateTime, PO_STATUS } from '../../domain';
 import { useI18n } from '../../i18n';
 
 const TABS = [
@@ -27,7 +27,7 @@ export default function Activities() {
   useEffect(() => { api.get('/api/company-admin/activities', { filter: tab }).then(setData).catch((e) => setError(e.message)); }, [tab]);
 
   const k = data?.kpis;
-  const items = (data?.items || []).filter((t) => !q || t.title.toLowerCase().includes(q.toLowerCase()) || (t.party || '').toLowerCase().includes(q.toLowerCase()) || t.module.toLowerCase().includes(q.toLowerCase()));
+  const items = (data?.items || []).filter((a) => !q || a.title.toLowerCase().includes(q.toLowerCase()) || (a.party || '').toLowerCase().includes(q.toLowerCase()) || a.module.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <div>
@@ -52,15 +52,15 @@ export default function Activities() {
             <tbody>
               {!data ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>
                 : items.length === 0 ? <tr><td colSpan={7}><EmptyRow>Sem atividades.</EmptyRow></td></tr>
-                : items.map((t, i) => (
+                : items.map((a, i) => (
                   <tr key={i}>
-                    <td><strong>{t.title}</strong><span className="bz-sub2">{t.desc}</span></td>
-                    <td><Pill tone="neutral">{t.type}</Pill></td>
-                    <td className="bz-muted">{t.module}</td>
-                    <td><span className="bz-mono">{t.relatedTo}</span><span className="bz-sub2">{t.party || ''}</span></td>
-                    <td>{t.responsavel || '—'}</td>
-                    <td className="bz-muted">{formatDateTime(t.at)}</td>
-                    <td><Pill tone={ST[t.status]?.tone}>{ST[t.status]?.label || t.status}</Pill></td>
+                    <td><strong>{t(a.title)}</strong><span className="bz-sub2">{`${t(a.type)} — ${t(PO_STATUS[a.poStatus]?.label || a.poStatus || '')}`}</span></td>
+                    <td><Pill tone="neutral">{t(a.type)}</Pill></td>
+                    <td className="bz-muted">{t(a.module)}</td>
+                    <td><span className="bz-mono">{a.relatedTo}</span><span className="bz-sub2">{a.party || ''}</span></td>
+                    <td>{a.responsavel || '—'}</td>
+                    <td className="bz-muted">{formatDateTime(a.at)}</td>
+                    <td><Pill tone={ST[a.status]?.tone}>{ST[a.status]?.label || a.status}</Pill></td>
                   </tr>
                 ))}
             </tbody>

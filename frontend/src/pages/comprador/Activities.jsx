@@ -68,7 +68,7 @@ export default function Activities() {
                 : items.map((a, i) => (
                   <tr key={i}>
                     <td><span className="bz-supplier-logo"><Icon name={ICON[a.type] || 'activities'} size={16} /></span></td>
-                    <td><strong>{a.title}</strong><span className="bz-sub2">{a.desc}</span></td>
+                    <td><strong>{t(a.title)}</strong><span className="bz-sub2">{t(a.desc)}</span></td>
                     <td><span className="bz-mono">{a.relatedTo}</span></td>
                     <td>{a.supplier || '—'}</td>
                     <td><span style={{ color: PRIO[a.priority], fontWeight: 700 }}>● {a.priority[0] + a.priority.slice(1).toLowerCase()}</span></td>

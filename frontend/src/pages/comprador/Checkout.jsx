@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Crumbs, PageHead } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
-import { IVA_RATE, KIXIMA_FEE_RATE, formatMoney } from '../../domain';
+import { IVA_RATE, formatMoney } from '../../domain';
 import { useCart } from './CartContext';
 import { useI18n } from '../../i18n';
 
@@ -30,8 +30,7 @@ export default function Checkout() {
 
   const subtotal = items.reduce((s, i) => s + Number(i.product.unitPrice) * i.quantity, 0);
   const iva = subtotal * IVA_RATE;
-  const fee = subtotal * KIXIMA_FEE_RATE;
-  const total = subtotal + iva + fee;
+  const total = subtotal + iva;
 
   async function confirm() {
     setBusy(true); setError('');
@@ -118,7 +117,6 @@ export default function Checkout() {
             <hr className="co-hr" />
             <div className="bz-panel-row"><span>{t('Subtotal')} ({items.length} {t('itens')})</span><strong>{formatMoney(subtotal)}</strong></div>
             <div className="bz-panel-row"><span>{t('Impostos (IVA 14%)')}</span><strong>{formatMoney(iva)}</strong></div>
-            <div className="bz-panel-row"><span>{t('Taxa KIXIMA (1,5%)')}</span><strong>{formatMoney(fee)}</strong></div>
             <div className="bz-panel-row co-total"><span>{t('Total Estimado')}</span><strong>{formatMoney(total)}</strong></div>
             <div className="co-note"><Icon name="shield" size={14} /> {t('Serão geradas')} {groups.length} {groups.length === 1 ? t('Ordem de Compra') : t('Ordens de Compra')} (PO). {t('Uma para cada fornecedor.')}</div>
             <button className="btn btn-accent" style={{ width: '100%', marginTop: 12 }} disabled={busy} onClick={confirm}>
