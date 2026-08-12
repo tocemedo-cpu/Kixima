@@ -39,6 +39,9 @@ const config = {
   business: {
     paymentSlaDays: Number(process.env.PAYMENT_SLA_DAYS) || 7,
     policyExpiryAlertDays: Number(process.env.POLICY_EXPIRY_ALERT_DAYS) || 30,
+    // Câmbio USD→AOA usado para aferir o limiar da Taxa KIXIMA (as taxas são
+    // em dólares; as POs em Kwanzas). Configurável — o Kwanza flutua.
+    usdAoaRate: Number(process.env.KIXIMA_USD_AOA_RATE) || 900,
   },
 
   email: {

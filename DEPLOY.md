@@ -104,6 +104,26 @@ itens) se a variável `LOAD_DEMO_CATALOG=1` estiver definida no Render.
 | `POLICY_EXPIRY_ALERT_DAYS` | `30` | alerta de apólice |
 | `EMAIL_PROVIDER` | `console` | troca por `smtp` + credenciais para email real |
 
+### Modelo comercial (Taxa KIXIMA e planos)
+As taxas são definidas **em dólares**; as POs e faturas continuam em Kwanzas. O
+câmbio serve apenas para aferir o limiar dos 0,20% e fica **gravado em cada
+taxa**, para o histórico não mudar quando o câmbio mudar.
+
+| Variável | Valor por omissão | O que faz |
+|---|---|---|
+| `KIXIMA_FEE_PER_PO_USD` | `8` | taxa fixa por ordem de compra (até ao limiar) |
+| `KIXIMA_FEE_PER_INVOICE_USD` | `15` | taxa fixa por fatura |
+| `KIXIMA_FEE_THRESHOLD_USD` | `11500` | limiar por transação |
+| `KIXIMA_FEE_PERCENT_ABOVE` | `0.002` | 0,20% — **substitui** o valor fixo acima do limiar |
+| `KIXIMA_USD_AOA_RATE` | `900` | câmbio USD→AOA para aferir o limiar — **atualiza-o quando o Kwanza mudar** |
+| `KIXIMA_SEAT_PRICE_CAP_USD` | `100` | teto da taxa de acesso por utilizador/mês (plano Básico) |
+
+**Planos:** `BASICO` (micro/pequenas/médias) e `PRO` (obrigatório para grandes
+empresas; inclui a integração com ERPs — SAP, AS400, Ariba, Maximo, Oracle). A
+dimensão é declarada no cadastro (nº de trabalhadores e volume de negócios),
+classificada automaticamente pelo critério MPME e confirmada pelo Admin do
+Sistema em **Planos e Subscrições**.
+
 ## Notas de produção
 - **Imagens de produtos (persistência):** por omissão ficam em disco local, que
   no plano free do Render é **efémero** (perde-se em cada deploy). Para

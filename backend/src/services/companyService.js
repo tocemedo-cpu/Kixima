@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const prisma = require('../config/database');
 const { NotFoundError, BusinessRuleError, ConflictError } = require('../utils/errors');
 const notificationService = require('./notificationService');
+const planService = require('./planService');
 const storageService = require('./storageService');
 const authService = require('./authService');
 const config = require('../config/env');
@@ -40,6 +41,7 @@ async function registerCompany(data, uploadedDocs = [], policyFile = null) {
     name, taxId, type, contactEmail, contactPhone, address,
     adminName, adminEmail, adminPassword,
     policyNumber, insurer, coverageAmount, policyCurrency, policyValidFrom, policyValidUntil,
+    employees, annualRevenueUsd, plan: chosenPlan,
   } = data;
 
   // 1. Documentos obrigatórios presentes?
@@ -103,8 +105,19 @@ async function registerCompany(data, uploadedDocs = [], policyFile = null) {
     // O aceite dos Termos/Privacidade já foi validado no schema (obrigatório);
     // aqui fica apenas o carimbo de QUANDO foi dado.
     const termsAcceptedAt = new Date();
+    // Dimensão declarada → classificação automática (critério MPME angolano).
+    // O plano segue a dimensão: GRANDE exige PRO; as restantes podem subir.
+    const size = planService.classify({ employees, annualRevenueUsd });
+    const minPlan = planService.requiredPlan(size);
+    const plan = chosenPlan === 'PRO' || minPlan === 'PRO' ? 'PRO' : 'BASICO';
     const company = await tx.company.create({
-      data: { name, taxId, type, contactEmail, contactPhone, address, status: 'PENDENTE', termsAcceptedAt },
+      data: {
+        name, taxId, type, contactEmail, contactPhone, address, status: 'PENDENTE', termsAcceptedAt,
+        employees: employees ?? null,
+        annualRevenueUsd: annualRevenueUsd ?? null,
+        size,
+        plan,
+      },
     });
     await tx.user.create({
       data: { name: adminName, email: adminEmail, passwordHash, role: 'COMPANY_ADMIN', companyId: company.id, termsAcceptedAt },
@@ -218,6 +231,58 @@ async function updateBankDetails(companyId, { bankName, iban, swift }) {
     },
     select: { id: true, name: true, bankName: true, iban: true, swift: true },
   });
+}
+
+// Dimensão e plano da empresa — o Admin do Sistema confirma/corrige o que foi
+// declarado no cadastro. Rejeita descer o plano abaixo do exigido pela dimensão
+// (uma GRANDE empresa não pode ficar no BASICO).
+async function updatePlan(companyId, data) {
+  const company = await prisma.company.findUnique({ where: { id: companyId } });
+  if (!company) throw new NotFoundError('Empresa');
+
+  const employees = data.employees ?? company.employees;
+  const annualRevenueUsd = data.annualRevenueUsd ?? (company.annualRevenueUsd != null ? Number(company.annualRevenueUsd) : undefined);
+  const size = data.size || planService.classify({ employees, annualRevenueUsd });
+  const plan = data.plan || company.plan;
+
+  if (!planService.planAllowed(size, plan)) {
+    throw new BusinessRuleError('Empresas de grande dimensão têm de subscrever o plano PRO.');
+  }
+  if (data.seatPriceUsd != null && data.seatPriceUsd > planService.SEAT_PRICE_CAP_USD) {
+    throw new BusinessRuleError(`O preço por utilizador não pode exceder ${planService.SEAT_PRICE_CAP_USD} USD/mês.`);
+  }
+
+  return prisma.company.update({
+    where: { id: companyId },
+    data: {
+      size, plan,
+      employees: employees ?? null,
+      annualRevenueUsd: annualRevenueUsd ?? null,
+      ...(data.seatPriceUsd != null ? { seatPriceUsd: data.seatPriceUsd } : {}),
+      ...(data.planNotes !== undefined ? { planNotes: data.planNotes } : {}),
+    },
+    select: { id: true, name: true, size: true, plan: true, seatPriceUsd: true, employees: true, annualRevenueUsd: true, planNotes: true },
+  });
+}
+
+// Resumo de subscrição de uma empresa: plano, dimensão e custo mensal de acesso
+// (nº de utilizadores ativos × preço por utilizador).
+async function subscriptionFor(companyId) {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { id: true, name: true, type: true, size: true, plan: true, seatPriceUsd: true, employees: true, annualRevenueUsd: true, planNotes: true },
+  });
+  if (!company) throw new NotFoundError('Empresa');
+  const activeUsers = await prisma.user.count({ where: { companyId, active: true } });
+  const cost = planService.monthlyAccessCost({ activeUsers, seatPriceUsd: Number(company.seatPriceUsd) });
+  return {
+    company,
+    activeUsers,
+    monthly: cost,
+    requiredPlan: planService.requiredPlan(company.size),
+    features: planService.features(company.plan),
+    seatPriceCapUsd: planService.SEAT_PRICE_CAP_USD,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -437,6 +502,8 @@ module.exports = {
   setBudgetLimit,
   getBankDetails,
   updateBankDetails,
+  updatePlan,
+  subscriptionFor,
   createInvite,
   listInvites,
   resendInvite,

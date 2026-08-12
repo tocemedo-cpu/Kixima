@@ -59,10 +59,12 @@ describe('A) Dados bancários da empresa', () => {
 });
 
 describe('B) Taxa KIXIMA (platform_fees)', () => {
-  test('compute: (nº POs × PER_PO) + PER_INVOICE', () => {
-    const f = platformFeeService.compute(3);
+  test('compute: (nº POs × PER_PO) + PER_INVOICE, em USD', () => {
+    // Valor abaixo do limiar → parcela fixa por PO (ver pricing-plans.test.js
+    // para o limiar e a regra dos 0,20%).
+    const f = platformFeeService.compute(3, 1000);
     expect(f.amount).toBe(3 * platformFeeService.PER_PO + platformFeeService.PER_INVOICE);
-    expect(f.currency).toBe('AOA');
+    expect(f.currency).toBe('USD');
   });
 
   test('o pagamento gera uma taxa para o fornecedor, à parte da fatura', async () => {

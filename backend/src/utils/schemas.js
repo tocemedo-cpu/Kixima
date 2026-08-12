@@ -28,6 +28,10 @@ const registerCompanySchema = z.object({
   policyCurrency: z.string().optional(),
   policyValidFrom: z.coerce.date().optional(),
   policyValidUntil: z.coerce.date().optional(),
+  // Dimensão da empresa (decide o plano elegível: GRANDE exige o PRO).
+  employees: z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().int().nonnegative().optional()),
+  annualRevenueUsd: z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().nonnegative().optional()),
+  plan: z.enum(['BASICO', 'PRO']).optional(),
   // Aceite obrigatório dos Termos de Uso e Política de Privacidade. Vem por
   // multipart (string "true") ou JSON (boolean) — normalizado antes de validar.
   termsAccepted: z.preprocess(
@@ -56,6 +60,34 @@ const totpCodeSchema = z.object({
 });
 const totpVerifySchema = totpCodeSchema.extend({
   challenge: z.string().min(10),
+});
+
+// Admin do Sistema: dimensão, plano e preço por utilizador de uma empresa.
+const companyPlanSchema = z.object({
+  size: z.enum(['MICRO', 'PEQUENA', 'MEDIA', 'GRANDE']).optional(),
+  plan: z.enum(['BASICO', 'PRO']).optional(),
+  seatPriceUsd: z.coerce.number().nonnegative().max(100).optional(),
+  employees: z.coerce.number().int().nonnegative().optional(),
+  annualRevenueUsd: z.coerce.number().nonnegative().optional(),
+  planNotes: z.string().max(500).optional(),
+});
+
+// Supplier Development — candidatura pública ao programa.
+const supplierDevSchema = z.object({
+  companyName: z.string().min(2, 'Indique o nome da empresa.'),
+  taxId: z.string().max(40).optional(),
+  contactName: z.string().min(2, 'Indique o nome do contacto.'),
+  contactEmail: z.string().email('Indique um email válido.'),
+  contactPhone: z.string().max(40).optional(),
+  province: z.string().max(60).optional(),
+  sector: z.string().max(120).optional(),
+  employees: z.coerce.number().int().nonnegative().optional(),
+  track: z.enum(['BUROCRACIA', 'PARCERIA', 'AMBOS']).optional(),
+  needs: z.string().max(2000).optional(),
+});
+const supplierDevUpdateSchema = z.object({
+  status: z.enum(['RECEBIDA', 'EM_ANALISE', 'EM_ACOMPANHAMENTO', 'CONCLUIDA', 'REJEITADA']).optional(),
+  adminNotes: z.string().max(2000).optional(),
 });
 
 const decideCompanySchema = z.object({
@@ -306,6 +338,9 @@ module.exports = {
   totpVerifySchema,
   registerCompanySchema,
   decideCompanySchema,
+  companyPlanSchema,
+  supplierDevSchema,
+  supplierDevUpdateSchema,
   erpConfigSchema,
   createUserSchema,
   createInviteSchema,

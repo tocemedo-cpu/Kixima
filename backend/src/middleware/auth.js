@@ -51,4 +51,19 @@ async function authenticate(req, res, next) {
   next();
 }
 
-module.exports = { authenticate };
+// Autenticação OPCIONAL: usada em endpoints públicos que ganham contexto se
+// houver sessão (ex.: candidatura ao Supplier Development feita por alguém já
+// dentro da plataforma). Nunca bloqueia — sem token válido, segue sem req.user.
+async function optionalAuthenticate(req, res, next) {
+  const header = req.headers.authorization || '';
+  const [scheme, token] = header.split(' ');
+  if (scheme !== 'Bearer' || !token) return next();
+  try {
+    await authenticate(req, res, () => {});
+  } catch {
+    // Token inválido/expirado num endpoint público: ignora-se.
+  }
+  next();
+}
+
+module.exports = { authenticate, optionalAuthenticate };

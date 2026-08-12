@@ -259,6 +259,18 @@ const events = {
       }),
     ]),
 
+  supplierDevRecebida: (r) =>
+    notifyUsersByRole({
+      companyId: null,
+      roles: ['ADMIN_SISTEMA'],
+      type: 'SUPPLIER_DEV_RECEBIDA',
+      title: 'Nova candidatura ao Supplier Development',
+      message: `${r.companyName} candidatou-se ao programa (${r.reference}). Percurso: ${r.track}. Contacto: ${r.contactName} — ${r.contactEmail}.`,
+      channel: 'IN_APP_EMAIL',
+      relatedEntityType: 'SupplierDevRequest',
+      relatedEntityId: r.id,
+    }),
+
   apoliceSubmetidaOuAprovada: (companyId, policyLabel) =>
     notifyUsersByRole({
       companyId,

@@ -4,6 +4,7 @@
 // mantém trilho de auditoria (CompanyErpConfigAudit) e sincroniza com o
 // microserviço kixima-integration-service (fonte de verdade em runtime).
 const prisma = require('../config/database');
+const planService = require('./planService');
 const logger = require('../config/logger');
 const { NotFoundError, BusinessRuleError } = require('../utils/errors');
 const erpCrypto = require('./erpCrypto');
@@ -110,6 +111,9 @@ async function getConfig(companyId) {
 async function setConfig(companyId, { erp, config = {} }, actor) {
   const company = await prisma.company.findUnique({ where: { id: companyId } });
   if (!company) throw new NotFoundError('Empresa');
+  // A integração com ERPs externos (SAP, AS400, Ariba, Maximo, Oracle…) é uma
+  // funcionalidade do plano PRO.
+  planService.assertFeature(company, 'erpIntegration', 'Integração com ERP');
   if (!ERP_SYSTEMS.includes(erp)) throw new BusinessRuleError(`ERP inválido: ${erp}`);
   if (company.status !== 'APROVADA') {
     throw new BusinessRuleError('Só é possível configurar o ERP de empresas aprovadas.');
@@ -173,6 +177,8 @@ async function setConfig(companyId, { erp, config = {} }, actor) {
 }
 
 async function testConnection(companyId, actor) {
+  const company = await prisma.company.findUnique({ where: { id: companyId }, select: { plan: true } });
+  planService.assertFeature(company, 'erpIntegration', 'Integração com ERP');
   const cfg = await prisma.companyErpConfig.findUnique({ where: { companyId } });
   if (!cfg || !isRealErp(cfg.erp)) {
     throw new BusinessRuleError('Sem ERP configurado para testar (modo Manual).');

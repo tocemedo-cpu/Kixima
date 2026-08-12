@@ -25,6 +25,23 @@ enum CompanyType {
   FORNECEDOR
 }
 
+// Dimensão da empresa (critério MPME angolano, Lei n.º 30/11): decide o plano
+// elegível. GRANDE exige o plano PRO.
+enum CompanySize {
+  MICRO
+  PEQUENA
+  MEDIA
+  GRANDE
+}
+
+// Plano de subscrição. BASICO: versão essencial, taxa de acesso por utilizador.
+// PRO: obrigatório para grandes empresas — inclui integração com ERPs externos
+// (SAP, AS400, Ariba, Maximo, Oracle e outros).
+enum CompanyPlan {
+  BASICO
+  PRO
+}
+
 enum CompanyStatus {
   PENDENTE      // aguarda due diligence
   APROVADA
@@ -74,6 +91,16 @@ model Company {
   // regista aceita em nome da empresa; obrigatório no formulário).
   termsAcceptedAt DateTime? @map("terms_accepted_at")
 
+  // --- Dimensão e plano (modelo comercial) ---------------------------------
+  // Declarados no cadastro e confirmáveis pelo Admin do Sistema na due diligence.
+  employees        Int?        @map("employees")           // nº de trabalhadores
+  annualRevenueUsd Decimal?    @map("annual_revenue_usd") @db.Decimal(16, 2)
+  size             CompanySize @default(PEQUENA)
+  plan             CompanyPlan @default(BASICO)
+  // Preço por utilizador/mês (USD). Teto do plano BASICO: 100 USD.
+  seatPriceUsd     Decimal     @default(100) @map("seat_price_usd") @db.Decimal(10, 2)
+  planNotes        String?     @map("plan_notes")
+
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   approvedAt  DateTime?     @map("approved_at")
@@ -97,6 +124,7 @@ model Company {
   erpConfigAudits    CompanyErpConfigAudit[]
   employeeInvites    EmployeeInvite[]
   platformFees       PlatformFee[]
+  supplierDevRequests SupplierDevRequest[]
 
   @@map("companies")
 }
@@ -121,7 +149,13 @@ model PlatformFee {
   perPo      Decimal           @map("per_po") @db.Decimal(14, 2)
   perInvoice Decimal           @map("per_invoice") @db.Decimal(14, 2)
   amount     Decimal           @db.Decimal(14, 2)
-  currency   String            @default("AOA")
+  currency   String            @default("USD")
+  // Base de cálculo da parcela por PO: FIXO (≤ limiar) ou PERCENTUAL (> limiar).
+  basis      String?           @map("basis")
+  // Valor da transação em USD e câmbio usado — guardados para auditoria, já que
+  // as POs são em Kwanzas e o limiar dos 0,20% está em dólares.
+  poValueUsd Decimal?          @map("po_value_usd") @db.Decimal(16, 2)
+  fxRate     Decimal?          @map("fx_rate") @db.Decimal(14, 4)
   status     PlatformFeeStatus @default(PENDENTE)
   chargedAt  DateTime?         @map("charged_at")
   createdAt  DateTime          @default(now()) @map("created_at")
@@ -834,6 +868,7 @@ enum NotificationType {
   ENTREGA_DESPACHADA
   RECECAO_COM_DIVERGENCIA
   DIVERGENCIA_RESOLVIDA
+  SUPPLIER_DEV_RECEBIDA
   APOLICE_SUBMETIDA_APROVADA
   APOLICE_A_EXPIRAR
   CADASTRO_EMPRESA_APROVADO
@@ -927,4 +962,55 @@ model AuditLog {
   @@index([actorId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Supplier Development — programa de apoio ao fornecedor nacional: acompanha a
+// emancipação burocrática (registos, licenças, certificações) e procura
+// PARCEIROS INTERNACIONAIS para empresas locais, trazendo mais tecnologia e
+// mais participação angolana ao setor. As candidaturas entram pela página
+// pública (login/home) e são tratadas pelo Admin do Sistema.
+// ---------------------------------------------------------------------------
+
+enum SupplierDevTrack {
+  BUROCRACIA        // credenciamento, licenças, certificações, conformidade
+  PARCERIA          // procura de parceiro internacional / transferência de tecnologia
+  AMBOS
+}
+
+enum SupplierDevStatus {
+  RECEBIDA
+  EM_ANALISE
+  EM_ACOMPANHAMENTO
+  CONCLUIDA
+  REJEITADA
+}
+
+model SupplierDevRequest {
+  id            String            @id @default(uuid())
+  reference     String            @unique               // ex: SD-2026-00001
+
+  // A candidatura é PÚBLICA: pode vir de uma empresa ainda não registada.
+  companyId     String?           @map("company_id")
+  company       Company?          @relation(fields: [companyId], references: [id])
+
+  companyName   String            @map("company_name")
+  taxId         String?           @map("tax_id")
+  contactName   String            @map("contact_name")
+  contactEmail  String            @map("contact_email")
+  contactPhone  String?           @map("contact_phone")
+  province      String?
+  sector        String?                                  // área de atividade
+  employees     Int?
+  track         SupplierDevTrack  @default(AMBOS)
+  needs         String?                                  // o que precisa / objetivos
+  status        SupplierDevStatus @default(RECEBIDA)
+  adminNotes    String?           @map("admin_notes")
+  handledById   String?           @map("handled_by_id")
+  handledAt     DateTime?         @map("handled_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("supplier_dev_requests")
 }

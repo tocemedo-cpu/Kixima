@@ -13,6 +13,7 @@ const {
   acceptInviteSchema,
   erpConfigSchema,
   bankDetailsSchema,
+  companyPlanSchema,
 } = require('../utils/schemas');
 
 const router = express.Router();
@@ -57,6 +58,11 @@ router.get('/:id/erp-config', requireRole('ADMIN_SISTEMA'), companyController.ge
 router.put('/:id/erp-config', requireRole('ADMIN_SISTEMA'), validate(erpConfigSchema), companyController.setErpConfig);
 router.post('/:id/erp-config/test', requireRole('ADMIN_SISTEMA'), companyController.testErpConnection);
 router.get('/:id/erp-config/audits', requireRole('ADMIN_SISTEMA'), companyController.listErpAudits);
+
+// Plano e dimensão — o Admin do Sistema define; a empresa consulta a sua
+// subscrição (plano, utilizadores e custo mensal de acesso).
+router.put('/:id/plan', requireRole('ADMIN_SISTEMA'), validate(companyPlanSchema), companyController.setPlan);
+router.get('/:id/subscription', requireRole('COMPANY_ADMIN', 'FORNECEDOR', 'FINANCEIRO', 'ADMIN_SISTEMA'), companyController.getSubscription);
 
 // Extrato da Taxa KIXIMA da empresa — a própria empresa (fornecedor) vê o que
 // deve e porquê; o Admin do Sistema vê qualquer uma (documento de cobrança).

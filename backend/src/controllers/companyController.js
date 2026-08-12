@@ -92,6 +92,25 @@ async function setBankDetails(req, res) {
   res.json(result);
 }
 
+// Plano/dimensão da empresa (Admin do Sistema) e resumo de subscrição.
+async function setPlan(req, res) {
+  const result = await companyService.updatePlan(req.params.id, req.body);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'PLANO_ALTERADO',
+    entityType: 'Company',
+    entityId: result.id,
+    entityRef: result.name,
+    detail: { dimensao: result.size, plano: result.plan, precoPorUtilizador: String(result.seatPriceUsd) },
+  });
+  res.json(result);
+}
+
+async function getSubscription(req, res) {
+  assertOwnCompany(req);
+  res.json(await companyService.subscriptionFor(req.params.id));
+}
+
 async function createUser(req, res) {
   // Company Admin só cria utilizadores da própria empresa; Admin do Sistema cria qualquer um.
   const companyId = req.user.role === 'ADMIN_SISTEMA' ? req.body.companyId : req.user.companyId;
@@ -187,6 +206,8 @@ module.exports = {
   setBudgetLimit,
   getBankDetails,
   platformFeeStatement,
+  setPlan,
+  getSubscription,
   setBankDetails,
   createUser,
   listUsers,
