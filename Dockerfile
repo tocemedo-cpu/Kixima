@@ -49,14 +49,14 @@ EXPOSE 4000
 RUN mkdir -p /app/uploads && chown -R node:node /app
 USER node
 
-# Arranque com migrações AUTO-BASELINE:
-#  - `migrate deploy` aplica as migrações versionadas (prisma/migrations).
-#  - Se a base já existir sem histórico (criada por db push), o 1º deploy dá P3005;
-#    nesse caso faz-se o baseline (resolve --applied 0_init) e tenta de novo.
-#    Numa base fresca, o `migrate deploy` cria tudo à primeira (o fallback não corre).
-# Depois o seed do catálogo de demonstração corre em modo OPT-IN: sem
-# LOAD_DEMO_CATALOG=1 no ambiente é um no-op (produção fica só com dados reais);
-# com a variável, carrega/atualiza os 119 itens fictícios (testes/piloto).
+# Arranque com migrações RECONCILIÁVEIS:
+#  - scripts/migrate-boot.js corre `migrate deploy` e, se falhar, MOSTRA o erro
+#    real e reconcilia os estados conhecidos (base sem histórico, migração
+#    falhada, ficheiro alterado depois de aplicado). Nunca bloqueia o arranque:
+#    uma inconsistência no registo não deve deixar o site em baixo.
+# Depois o seed do catálogo corre em modo OPT-IN: sem LOAD_DEMO_CATALOG=1 no
+# ambiente é um no-op, a não ser que CATALOG_COMPANY=1 esteja definido — nesse
+# caso garante só a empresa dona do catálogo (sem recarregar os itens).
 # Para remover dados de demonstração já existentes: `npm run demo:remove`.
 # Por fim inicia a API+SPA.
-CMD ["sh", "-c", "(npx prisma migrate deploy || (echo 'baseline (1x) da base existente...' && npx prisma migrate resolve --applied 0_init && npx prisma migrate deploy)) && (node prisma/seed.catalog.js || echo 'catalogo: seed ignorado') && node src/server.js"]
+CMD ["sh", "-c", "node scripts/migrate-boot.js; (node prisma/seed.catalog.js || echo 'catalogo: seed ignorado') && node src/server.js"]

@@ -19,7 +19,24 @@ DO $$ BEGIN
   CREATE TYPE "SupplierDevStatus" AS ENUM ('RECEBIDA', 'EM_ANALISE', 'EM_ACOMPANHAMENTO', 'CONCLUIDA', 'REJEITADA');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-ALTER TYPE "NotificationType" ADD VALUE IF NOT EXISTS 'SUPPLIER_DEV_RECEBIDA';
+-- Novo tipo de notificação. O nome do enum na base depende de como ela foi
+-- criada: as migrações do Prisma criam "NotificationType"; o prisma/supabase_setup.sql
+-- (usado por quem manteve o Supabase à mão) cria notification_type. Resolve-se o
+-- nome real em vez de o assumir — caso contrário a migração rebenta com
+-- "type does not exist" numa base que veio do segundo caminho.
+DO $$
+DECLARE tipo text;
+BEGIN
+  SELECT t.typname INTO tipo
+    FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
+   WHERE t.typname IN ('NotificationType', 'notification_type')
+     AND n.nspname = current_schema()
+   ORDER BY (t.typname = 'NotificationType') DESC
+   LIMIT 1;
+  IF tipo IS NOT NULL THEN
+    EXECUTE format('ALTER TYPE %I ADD VALUE IF NOT EXISTS %L', tipo, 'SUPPLIER_DEV_RECEBIDA');
+  END IF;
+END $$;
 
 -- Empresa: dimensão e plano ----------------------------------------------------
 ALTER TABLE "companies" ADD COLUMN IF NOT EXISTS "employees" INTEGER;
