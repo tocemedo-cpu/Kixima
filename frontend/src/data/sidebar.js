@@ -158,6 +158,8 @@ const ADMIN_SISTEMA = [
   { label: 'Integrações ERP', icon: 'offshore', to: '/sistema/integracoes-erp' },
   { label: 'Contratos-Quadro', icon: 'contract', to: '/sistema/contratos' },
   { label: 'Taxa KIXIMA', icon: 'wallet', to: '/sistema/taxas' },
+  { label: 'Planos e Subscrições', icon: 'building', to: '/sistema/planos' },
+  { label: 'Supplier Development', icon: 'suppliers', to: '/sistema/supplier-development' },
   {
     // No Admin do Sistema, o suporte e a ajuda vivem dentro das configurações.
     label: 'Configurações e Suporte', icon: 'settings', children: [

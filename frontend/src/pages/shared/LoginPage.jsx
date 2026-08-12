@@ -4,6 +4,7 @@ import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { ROLE_HOME } from '../../domain';
 import AuthHero from '../../components/AuthHero';
+import { Icon } from '../../components/icons';
 import { useI18n, LANGS } from '../../i18n';
 
 export default function LoginPage() {
@@ -121,6 +122,24 @@ export default function LoginPage() {
             {t('A sua empresa ainda não está na KIXIMA?')}{' '}
             <Link to="/cadastro" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Registe-a aqui')}</Link>.
           </p>
+          {/* Programas KIXIMA — acessíveis sem conta, a partir do login. */}
+          <div className="login-programs">
+            <Link className="login-program" to="/supplier-development">
+              <span className="login-program-ico"><Icon name="suppliers" size={16} /></span>
+              <span>
+                <strong>{t('Supplier Development')}</strong>
+                <span>{t('Apoio burocrático e parceiros internacionais para empresas angolanas')}</span>
+              </span>
+            </Link>
+            <Link className="login-program" to="/planos">
+              <span className="login-program-ico"><Icon name="wallet" size={16} /></span>
+              <span>
+                <strong>{t('Planos e preços')}</strong>
+                <span>{t('Básico e Pro — taxas por transação e acesso por utilizador')}</span>
+              </span>
+            </Link>
+          </div>
+
           <p className="helptext" style={{ marginTop: 10, fontSize: 11.5 }}>
             <Link to="/termos" style={{ color: 'inherit' }}>{t('Termos de Uso')}</Link>
             {' · '}

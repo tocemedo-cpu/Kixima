@@ -16,6 +16,8 @@ const Register = lazy(() => import('./pages/shared/Register'));
 const AcceptInvite = lazy(() => import('./pages/shared/AcceptInvite'));
 const PasswordReset = lazy(() => import('./pages/shared/PasswordReset'));
 const Legal = lazy(() => import('./pages/shared/Legal'));
+const SupplierDevelopment = lazy(() => import('./pages/shared/SupplierDevelopment'));
+const Plans = lazy(() => import('./pages/shared/Plans'));
 const Notifications = lazy(() => import('./pages/shared/Notifications'));
 const Profile = lazy(() => import('./pages/shared/Profile'));
 const Help = lazy(() => import('./pages/shared/Help'));
@@ -85,6 +87,8 @@ const Companies = lazy(() => import('./pages/adminSistema/Companies'));
 const ErpIntegrations = lazy(() => import('./pages/adminSistema/ErpIntegrations'));
 const PlatformFees = lazy(() => import('./pages/adminSistema/PlatformFees'));
 const AuditTrail = lazy(() => import('./pages/adminSistema/AuditTrail'));
+const AdminPlans = lazy(() => import('./pages/adminSistema/Plans'));
+const AdminSupplierDev = lazy(() => import('./pages/adminSistema/SupplierDev'));
 
 // Ecrã de recurso enquanto o chunk de uma rota é carregado.
 function PageLoading() {
@@ -116,6 +120,8 @@ export default function App() {
       <Route path="/convite/:token" element={<AcceptInvite />} />
       <Route path="/recuperar" element={<PasswordReset />} />
       <Route path="/recuperar/:token" element={<PasswordReset />} />
+      <Route path="/supplier-development" element={<SupplierDevelopment />} />
+      <Route path="/planos" element={<Plans />} />
       <Route path="/termos" element={<Legal kind="termos" />} />
       <Route path="/privacidade" element={<Legal kind="privacidade" />} />
 
@@ -226,6 +232,8 @@ export default function App() {
             <Route path="/sistema/atividades" element={<SystemActivities />} />
             <Route path="/sistema/taxas" element={<PlatformFees />} />
             <Route path="/sistema/auditoria" element={<AuditTrail />} />
+            <Route path="/sistema/planos" element={<AdminPlans />} />
+            <Route path="/sistema/supplier-development" element={<AdminSupplierDev />} />
           </Route>
         </Route>
       </Route>

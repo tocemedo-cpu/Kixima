@@ -1,0 +1,176 @@
+// src/pages/shared/SupplierDevelopment.jsx
+// Supplier Development — página PÚBLICA (acessível a partir do login e da home).
+// Duas frentes: (1) emancipação burocrática do fornecedor nacional e (2) procura
+// de parceiros internacionais para empresas locais. A candidatura não exige
+// conta: qualquer empresa angolana se pode candidatar e acompanhar por
+// referência.
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../../api/client';
+import Logo from '../../components/Logo';
+import { Icon } from '../../components/icons';
+import { useI18n, LANGS } from '../../i18n';
+
+const EMPTY = {
+  companyName: '', taxId: '', contactName: '', contactEmail: '', contactPhone: '',
+  province: '', sector: '', employees: '', track: 'AMBOS', needs: '',
+};
+
+const TRACKS = [
+  { key: 'BUROCRACIA', icon: 'contract', title: 'Emancipação burocrática',
+    body: 'Acompanhamento no registo comercial, alvarás, licenças do setor, certificações e conformidade — o percurso completo para se tornar um fornecedor credenciado.' },
+  { key: 'PARCERIA', icon: 'offshore', title: 'Parcerias internacionais',
+    body: 'Ligação a parceiros estrangeiros para transferência de tecnologia e capacitação, para que mais empresas angolanas participem no setor com meios próprios.' },
+];
+
+export default function SupplierDevelopment() {
+  const { t, lang, setLang } = useI18n();
+  const navigate = useNavigate();
+  const [form, setForm] = useState(EMPTY);
+  const [track, setTrack] = useState('AMBOS');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(null);
+
+  const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    try {
+      const payload = { ...form, track, employees: form.employees === '' ? undefined : Number(form.employees) };
+      Object.keys(payload).forEach((k) => payload[k] === '' && delete payload[k]);
+      setDone(await api.post('/api/supplier-development/requests', payload));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="sd-page">
+      <header className="sd-top">
+        <Link to="/login" className="sd-brand"><Logo size={20} mark={44} subtitle /></Link>
+        <div className="sd-top-actions">
+          <select className="input sd-lang" value={lang} onChange={(e) => setLang(e.target.value)} aria-label={t('Idioma')}>
+            {LANGS.map((l) => <option key={l.code} value={l.code}>{l.flag} {l.label}</option>)}
+          </select>
+          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/login')}>{t('Entrar')}</button>
+        </div>
+      </header>
+
+      <section className="sd-hero">
+        <span className="sd-tag">{t('Programa KIXIMA')}</span>
+        <h1>{t('Supplier Development')}</h1>
+        <p>
+          {t('Apoiamos o fornecedor angolano em todo o processo de emancipação burocrática e procuramos parceiros internacionais para empresas locais — mais tecnologia, mais capacidade e mais participação nacional no setor Oil & Gas.')}
+        </p>
+      </section>
+
+      <section className="sd-tracks">
+        {TRACKS.map((x) => (
+          <article className="sd-track" key={x.key}>
+            <span className="sd-track-ico"><Icon name={x.icon} size={22} /></span>
+            <h2>{t(x.title)}</h2>
+            <p>{t(x.body)}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="sd-formwrap">
+        {done ? (
+          <div className="sd-card sd-done">
+            <h2>{t('Candidatura recebida')}</h2>
+            <p>
+              {t('A sua candidatura ficou registada com a referência')}{' '}
+              <strong className="mono">{done.reference}</strong>. {t('A equipa KIXIMA entra em contacto pelo email indicado. Guarde a referência para acompanhar o estado.')}
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+              <Link className="btn btn-accent" to="/login">{t('Ir para o login')}</Link>
+              <button className="btn btn-ghost" onClick={() => { setDone(null); setForm(EMPTY); }}>
+                {t('Nova candidatura')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="sd-card">
+            <h2>{t('Candidatar-se ao programa')}</h2>
+            <p className="helptext">{t('Não é preciso ter conta na KIXIMA. Preencha e a nossa equipa entra em contacto.')}</p>
+
+            <div className="sd-choice" role="group" aria-label={t('Tipo de apoio')}>
+              {[{ k: 'BUROCRACIA', l: 'Apoio burocrático' }, { k: 'PARCERIA', l: 'Parceiro internacional' }, { k: 'AMBOS', l: 'Ambos' }].map((o) => (
+                <button
+                  key={o.k}
+                  type="button"
+                  className={`sd-choice-btn${track === o.k ? ' on' : ''}`}
+                  onClick={() => setTrack(o.k)}
+                >
+                  {t(o.l)}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="grid-cols grid-2">
+                <div className="field">
+                  <label>{t('Nome da empresa')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                  <input required value={form.companyName} onChange={(e) => update('companyName', e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>{t('NIF')}</label>
+                  <input value={form.taxId} onChange={(e) => update('taxId', e.target.value)} />
+                </div>
+              </div>
+              <div className="grid-cols grid-2">
+                <div className="field">
+                  <label>{t('Nome do contacto')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                  <input required value={form.contactName} onChange={(e) => update('contactName', e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>{t('Email')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
+                  <input type="email" required value={form.contactEmail} onChange={(e) => update('contactEmail', e.target.value)} />
+                </div>
+              </div>
+              <div className="grid-cols grid-2">
+                <div className="field">
+                  <label>{t('Telefone')}</label>
+                  <input value={form.contactPhone} onChange={(e) => update('contactPhone', e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>{t('Província')}</label>
+                  <input value={form.province} onChange={(e) => update('province', e.target.value)} />
+                </div>
+              </div>
+              <div className="grid-cols grid-2">
+                <div className="field">
+                  <label>{t('Área de atividade')}</label>
+                  <input value={form.sector} onChange={(e) => update('sector', e.target.value)} placeholder={t('Ex.: Metalomecânica, Logística, Inspeção')} />
+                </div>
+                <div className="field">
+                  <label>{t('Nº de trabalhadores')}</label>
+                  <input type="number" min="0" value={form.employees} onChange={(e) => update('employees', e.target.value)} />
+                </div>
+              </div>
+              <div className="field">
+                <label>{t('O que precisa do programa?')}</label>
+                <textarea rows={4} value={form.needs} onChange={(e) => update('needs', e.target.value)}
+                  placeholder={t('Ex.: apoio no licenciamento e um parceiro para soldadura certificada.')} />
+              </div>
+
+              {error ? <p className="error-text" style={{ margin: '10px 0' }}>{error}</p> : null}
+              <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%' }}>
+                {submitting ? t('A submeter…') : t('Submeter candidatura')}
+              </button>
+            </form>
+          </div>
+        )}
+      </section>
+
+      <footer className="sd-foot">
+        <Link to="/termos">{t('Termos de Uso')}</Link> · <Link to="/privacidade">{t('Política de Privacidade')}</Link>
+      </footer>
+    </div>
+  );
+}

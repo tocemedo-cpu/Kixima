@@ -75,6 +75,24 @@ export default function Home() {
         <Kpi icon="reception" label={t('Recebidas')} value={k.recebidasMes} sub={t('Este mês')} tone="info" />
       </div>
 
+      {/* Programas KIXIMA — abertos a qualquer empresa. */}
+      <div className="home-programs">
+        <a className="home-program" href="/supplier-development">
+          <span className="home-program-ico"><Icon name="suppliers" size={18} /></span>
+          <span>
+            <strong>{t('Supplier Development')}</strong>
+            <span>{t('Apoio burocrático e parceiros internacionais para empresas angolanas')}</span>
+          </span>
+        </a>
+        <a className="home-program" href="/planos">
+          <span className="home-program-ico"><Icon name="wallet" size={18} /></span>
+          <span>
+            <strong>{t('Planos e preços')}</strong>
+            <span>{t('Básico e Pro — taxas por transação e acesso por utilizador')}</span>
+          </span>
+        </a>
+      </div>
+
       <div className="home-row home-row-cats">
         <section className="card card-pad">
           <SectionHead title={t('Categorias Principais')} to="/comprador/catalogo" />

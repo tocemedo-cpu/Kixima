@@ -2575,3 +2575,65 @@ tbody tr:hover {
   .pc-layout { grid-template-columns: 1fr; }
   .pc-aside { position: static; }
 }
+
+/* --- Supplier Development (página pública) ------------------------------- */
+.sd-page { min-height: 100vh; background: var(--paper-050, #f7f7f8); }
+.sd-top { display: flex; justify-content: space-between; align-items: center; padding: 14px 28px; background: var(--navy-900, #14161a); }
+.sd-brand { text-decoration: none; }
+.sd-top-actions { display: flex; gap: 10px; align-items: center; }
+.sd-lang { max-width: 170px; padding: 6px 10px; font-size: 12.5px; }
+.sd-top-actions .btn-ghost { color: #fff; border-color: rgba(255,255,255,0.35); }
+.sd-hero { max-width: 900px; margin: 0 auto; padding: 44px 24px 10px; text-align: center; }
+.sd-tag { display: inline-block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brand-600); font-weight: 700; }
+.sd-hero h1 { font-size: 34px; margin: 8px 0 12px; }
+.sd-hero p { font-size: 15px; line-height: 1.65; color: var(--ink-600, #555); max-width: 760px; margin: 0 auto; }
+.sd-tracks { max-width: 900px; margin: 26px auto 0; padding: 0 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.sd-track { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+.sd-track-ico { display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; background: rgba(225,29,42,0.08); color: var(--brand-600); }
+.sd-track h2 { font-size: 15.5px; margin: 12px 0 6px; }
+.sd-track p { font-size: 13px; line-height: 1.6; color: var(--ink-600, #555); margin: 0; }
+.sd-formwrap { max-width: 780px; margin: 26px auto; padding: 0 24px 40px; }
+.sd-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 24px; box-shadow: var(--shadow-card); }
+.sd-card h2 { font-size: 18px; margin: 0 0 4px; }
+.sd-choice { display: flex; gap: 8px; margin: 14px 0 18px; flex-wrap: wrap; }
+.sd-choice-btn { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 7px 16px; font-size: 13px; cursor: pointer; color: var(--ink-600, #555); }
+.sd-choice-btn.on { border-color: var(--brand-600); color: var(--brand-600); font-weight: 700; background: rgba(225,29,42,0.05); }
+.sd-done h2 { color: var(--ok-600, #16a066); }
+.sd-foot { text-align: center; padding: 0 0 30px; font-size: 12px; color: var(--ink-400, #888); }
+.sd-foot a { color: inherit; }
+@media (max-width: 760px) { .sd-tracks { grid-template-columns: 1fr; } .sd-hero h1 { font-size: 26px; } }
+
+/* Entradas para os programas na página de login. */
+.login-programs { display: grid; gap: 8px; margin-top: 16px; }
+.login-program { display: flex; align-items: center; gap: 10px; text-decoration: none; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; color: var(--ink-900); background: #fff; }
+.login-program:hover { border-color: var(--brand-600); background: var(--paper-050); }
+.login-program-ico { display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center; border-radius: 8px; background: rgba(225,29,42,0.08); color: var(--brand-600); flex-shrink: 0; }
+.login-program strong { font-size: 13px; display: block; }
+.login-program span { font-size: 11.5px; color: var(--ink-600, #666); }
+
+/* --- Planos e preços ------------------------------------------------------ */
+.pl-fees { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
+.pl-fee { border: 1px solid var(--line); border-radius: 10px; padding: 14px; text-align: center; }
+.pl-fee strong { display: block; font-size: 24px; color: var(--brand-600); }
+.pl-fee span { font-size: 12px; color: var(--ink-600, #555); line-height: 1.5; display: block; margin-top: 4px; }
+.pl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pl-card { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 22px; box-shadow: var(--shadow-card); }
+.pl-card-pro { border-color: var(--brand-600); }
+.pl-badge { position: absolute; top: -10px; right: 16px; background: var(--brand-600); color: #fff; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
+.pl-card h2 { font-size: 20px; margin: 0 0 6px; }
+.pl-price strong { font-size: 26px; }
+.pl-price span { font-size: 12.5px; color: var(--ink-600, #555); margin-left: 6px; }
+.pl-for { font-size: 12.5px; color: var(--ink-600, #555); margin: 6px 0 12px; }
+.pl-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.pl-list li { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: var(--ink-900); }
+.pl-list li svg { color: var(--ok-600, #16a066); flex-shrink: 0; margin-top: 2px; }
+@media (max-width: 760px) { .pl-grid, .pl-fees { grid-template-columns: 1fr; } }
+
+/* Cartões dos programas KIXIMA na home. */
+.home-programs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.home-program { display: flex; gap: 12px; align-items: center; text-decoration: none; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; color: var(--ink-900); }
+.home-program:hover { border-color: var(--brand-600); box-shadow: var(--shadow-card); }
+.home-program-ico { display: inline-flex; width: 38px; height: 38px; align-items: center; justify-content: center; border-radius: 10px; background: rgba(225,29,42,0.08); color: var(--brand-600); flex-shrink: 0; }
+.home-program strong { display: block; font-size: 13.5px; }
+.home-program > span > span { font-size: 12px; color: var(--ink-600, #666); line-height: 1.45; }
+@media (max-width: 760px) { .home-programs { grid-template-columns: 1fr; } }

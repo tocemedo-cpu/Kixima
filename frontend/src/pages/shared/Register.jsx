@@ -10,6 +10,8 @@ import { useI18n } from '../../i18n';
 
 const EMPTY_FORM = {
   type: 'CLIENTE',
+  employees: '',
+  annualRevenueUsd: '',
   name: '',
   taxId: '',
   contactEmail: '',
@@ -75,7 +77,7 @@ export default function Register() {
     }
 
     const fd = new FormData();
-    const companyFields = ['type', 'name', 'taxId', 'contactEmail', 'contactPhone', 'address', 'adminName', 'adminEmail', 'adminPassword'];
+    const companyFields = ['type', 'name', 'taxId', 'contactEmail', 'contactPhone', 'address', 'adminName', 'adminEmail', 'adminPassword', 'employees', 'annualRevenueUsd'];
     companyFields.forEach((k) => fd.append(k, form[k]));
     fd.append('termsAccepted', 'true');
     requiredDocs.forEach((d) => docs[d.type] && fd.append(d.type, docs[d.type]));
@@ -230,6 +232,22 @@ export default function Register() {
                     </div>
                   </>
                 ) : null}
+
+                {/* Dimensão da empresa — decide o plano (grandes empresas: PRO). */}
+                <div className="grid-cols grid-2">
+                  <div className="field">
+                    <label>{t('Nº de trabalhadores')}</label>
+                    <input type="number" min="0" value={form.employees} onChange={(e) => update('employees', e.target.value)} />
+                  </div>
+                  <div className="field">
+                    <label>{t('Volume de negócios anual (USD)')}</label>
+                    <input type="number" min="0" step="1000" value={form.annualRevenueUsd} onChange={(e) => update('annualRevenueUsd', e.target.value)} />
+                  </div>
+                </div>
+                <p className="helptext" style={{ marginTop: -4 }}>
+                  {t('Serve para classificar a dimensão da empresa e o plano aplicável. Empresas de grande dimensão subscrevem o plano PRO.')}{' '}
+                  <a href="/planos" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Ver planos')}</a>
+                </p>
 
                 <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 14, fontSize: 12.5, cursor: 'pointer' }}>
                   <input

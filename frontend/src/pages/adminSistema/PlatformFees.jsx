@@ -53,12 +53,12 @@ export default function PlatformFees() {
   return (
     <div>
       <Crumbs trail={['Configurações e Suporte', 'Taxa KIXIMA']} />
-      <PageHead title="Taxa KIXIMA" subtitle="Taxas da plataforma geradas em cada pagamento, à parte da fatura. Fórmula: (nº de POs × valor por PO) + valor fixo por fatura — cobradas ao fornecedor." />
+      <PageHead title="Taxa KIXIMA" subtitle="Taxas da plataforma geradas em cada pagamento, à parte da fatura. 8 USD por PO até 11.500 USD por transação (0,20% acima) + 15 USD por fatura — cobradas ao fornecedor." />
 
       <KpiRow cards={[
         { icon: 'payment', tone: 'info', label: 'Taxas geradas', value: k?.total ?? '—', sub: 'Total de registos' },
-        { icon: 'wallet', tone: 'success', label: 'Valor total', value: k ? formatMoney(k.totalAOA, 'AOA') : '—', sub: 'Acumulado' },
-        { icon: 'invoice', tone: 'pending', label: 'Por cobrar', value: k ? formatMoney(k.pendingAOA, 'AOA') : '—', sub: 'Pendentes' },
+        { icon: 'wallet', tone: 'success', label: 'Valor total', value: k ? formatMoney(k.totalAOA, 'USD') : '—', sub: 'Acumulado' },
+        { icon: 'invoice', tone: 'pending', label: 'Por cobrar', value: k ? formatMoney(k.pendingAOA, 'USD') : '—', sub: 'Pendentes' },
         { icon: 'orders', tone: 'success', label: 'Cobradas', value: k?.cobradas ?? '—', sub: 'Liquidadas' },
       ]} />
 
@@ -82,7 +82,7 @@ export default function PlatformFees() {
                     <td><strong>{f.company?.name || '—'}</strong></td>
                     <td className="mono">{f.invoice?.reference || '—'}</td>
                     <td>{f.poCount}</td>
-                    <td className="bz-muted">{f.poCount} × {formatMoney(f.perPo, f.currency)} + {formatMoney(f.perInvoice, f.currency)}</td>
+                    <td className="bz-muted">{f.poCount} × {formatMoney(f.perPo, f.currency)} + {formatMoney(f.perInvoice, f.currency)}{f.basis === 'PERCENTUAL' ? ` (0,20% ${t('de')} ${formatMoney(f.poValueUsd, 'USD')})` : ''}</td>
                     <td><strong>{formatMoney(f.amount, f.currency)}</strong></td>
                     <td><Pill tone={STATUS_TONE[f.status] || 'neutral'}>{STATUS_LABEL[f.status] || f.status}</Pill></td>
                     <td className="bz-muted">{formatDateTime(f.createdAt)}</td>
