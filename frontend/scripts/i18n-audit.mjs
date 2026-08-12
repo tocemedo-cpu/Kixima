@@ -40,7 +40,9 @@ const looksLikeText = (s) =>
   !s.startsWith('/') && !s.startsWith('#') && !s.startsWith('http') &&
   !/^[a-z0-9_.:-]+$/.test(s) &&              // identificadores/técnicos (minúsculas)
   !/^[A-Z0-9_]+$/.test(s) &&                  // enums técnicos
-  !/^\d/.test(s) && !s.includes('=>');
+  !/^\d/.test(s) && !s.includes('=>') &&
+  !s.startsWith('url(') &&                    // valores CSS (url(#gradiente))
+  !/[<>{}]|className=|\\n/.test(s);           // fragmentos de JSX apanhados por engano
 
 const used = new Map(); // chave -> [ficheiros]
 function addKey(key, file) {
@@ -54,11 +56,13 @@ const PATTERNS = [
   /\bt\(\s*"((?:[^"\\]|\\.)+)"/g,                       // t("…")
   /\btr\(\s*'((?:[^'\\]|\\.)+)'\s*\)/g,                 // tr('…')
   // Props/objetos traduzidos pelos componentes partilhados:
-  /(?:title|subtitle|label|sub|header|emptyTitle|emptyBody|placeholder|unit)\s*[:=]\s*\{?\s*'((?:[^'\\]|\\.)+)'/g,
-  /(?:title|subtitle|label|sub|header|emptyTitle|emptyBody|placeholder|unit)\s*[:=]\s*\{?\s*"((?:[^"\\]|\\.)+)"/g,
+  /(?:title|subtitle|label|sub|header|emptyTitle|emptyBody|placeholder|unit|body|text|desc|description|forWho|price|l|name)\s*[:=]\s*\{?\s*'((?:[^'\\]|\\.)+)'/g,
+  /(?:title|subtitle|label|sub|header|emptyTitle|emptyBody|placeholder|unit|body|text|desc|description|forWho|price|l|name)\s*[:=]\s*\{?\s*"((?:[^"\\]|\\.)+)"/g,
 ];
 const CHILDREN = /<(?:Pill|Badge|EmptyRow)\b[^>]*>\s*([^<{][^<{]*?)\s*</g;   // filhos literais
 const TRAIL = /trail=\{\[([^\]]+)\]\}/g;                            // Crumbs trail
+// Arrays de strings usados como conteúdo traduzido em lote (features: [...]).
+const STR_ARRAY = /(?:features|items|options|bullets|steps)\s*:\s*\[([\s\S]*?)\]/g;
 
 for (const f of files) {
   const src = readFileSync(f, 'utf8');
@@ -68,6 +72,9 @@ for (const f of files) {
   for (const m of src.matchAll(CHILDREN)) addKey(m[1].trim(), f);
   for (const m of src.matchAll(TRAIL)) {
     for (const part of m[1].matchAll(/'((?:[^'\\]|\\.)+)'/g)) addKey(part[1], f);
+  }
+  for (const m of src.matchAll(STR_ARRAY)) {
+    for (const part of m[1].matchAll(/'((?:[^'\\]|\\.)+)'/g)) addKey(part[1].replaceAll("\\'", "'"), f);
   }
 }
 
@@ -86,7 +93,7 @@ function dictKeys(file) {
   return keys;
 }
 const en = new Set(); const fr = new Set();
-for (const file of ['index.jsx', 'content.js', 'content2.js', 'content3.js', 'content4.js', 'content5.js', 'content6.js']) {
+for (const file of ['index.jsx', 'content.js', 'content2.js', 'content3.js', 'content4.js', 'content5.js', 'content6.js', 'content7.js']) {
   const k = dictKeys(file);
   k.en.forEach((x) => en.add(x));
   k.fr.forEach((x) => fr.add(x));

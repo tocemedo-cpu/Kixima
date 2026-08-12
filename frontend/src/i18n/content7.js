@@ -8,6 +8,27 @@
 // Números: EN usa 11,500 USD / 0.20%; FR usa 11 500 USD / 0,20 %.
 
 export const EN8 = {
+  // Planos e Supplier Development — literais em estruturas de dados.
+  'Micro, pequenas e médias empresas': 'Micro, small and medium companies',
+  'Grandes empresas (mais de 200 trabalhadores ou 10 M USD)': 'Large companies (over 200 employees or 10M USD)',
+  'até 100 USD': 'up to 100 USD',
+  'Sob consulta': 'On request',
+  'Pro': 'Pro',
+  'Marketplace completo: catálogo, cesta, ordens de compra e faturas': 'Full marketplace: catalog, cart, purchase orders and invoices',
+  'Pagamento garantido com comprovativo e confirmação de receção': 'Guaranteed payment with payment proof and receipt confirmation',
+  'Comparação de fornecedores para o mesmo produto': 'Supplier comparison for the same product',
+  'Importação de catálogo por Excel': 'Catalog import from Excel',
+  'Trilho de auditoria e documentos imprimíveis (PO, fatura, extrato)': 'Audit trail and printable documents (PO, invoice, statement)',
+  'Tudo o que o plano Básico inclui': 'Everything in the Basic plan',
+  'Integração com ERPs: SAP, AS400, SAP Ariba, IBM Maximo, Oracle e outros': 'ERP integration: SAP, AS400, SAP Ariba, IBM Maximo, Oracle and others',
+  'Contratos-quadro com call-offs automáticos e faturação consolidada': 'Framework contracts with automatic call-offs and consolidated billing',
+  'Acompanhamento dedicado da equipa KIXIMA': 'Dedicated support from the KIXIMA team',
+  'Apoio burocrático': 'Regulatory support',
+  'Parceiro internacional': 'International partner',
+  'Ambos': 'Both',
+  'Acompanhamento no registo comercial, alvarás, licenças do setor, certificações e conformidade — o percurso completo para se tornar um fornecedor credenciado.': 'Guidance through commercial registration, permits, sector licences, certifications and compliance — the full path to becoming an accredited supplier.',
+  'Ligação a parceiros estrangeiros para transferência de tecnologia e capacitação, para que mais empresas angolanas participem no setor com meios próprios.': 'Connection to foreign partners for technology transfer and capacity building, so that more Angolan companies take part in the sector with their own means.',
+
   // --- Planos e preços --------------------------------------------------------
   'Planos e preços': 'Plans and pricing',
   'Planos e Subscrições': 'Plans and Subscriptions',
@@ -112,6 +133,27 @@ export const EN8 = {
 };
 
 export const FR8 = {
+  // Planos e Supplier Development — literais em estruturas de dados.
+  'Micro, pequenas e médias empresas': 'Micro, petites et moyennes entreprises',
+  'Grandes empresas (mais de 200 trabalhadores ou 10 M USD)': 'Grandes entreprises (plus de 200 employés ou 10 M USD)',
+  'até 100 USD': "jusqu'à 100 USD",
+  'Sob consulta': 'Sur demande',
+  'Pro': 'Pro',
+  'Marketplace completo: catálogo, cesta, ordens de compra e faturas': 'Marketplace complète : catalogue, panier, bons de commande et factures',
+  'Pagamento garantido com comprovativo e confirmação de receção': 'Paiement garanti avec justificatif et confirmation de réception',
+  'Comparação de fornecedores para o mesmo produto': 'Comparaison de fournisseurs pour le même produit',
+  'Importação de catálogo por Excel': 'Importation du catalogue depuis Excel',
+  'Trilho de auditoria e documentos imprimíveis (PO, fatura, extrato)': "Piste d'audit et documents imprimables (BC, facture, relevé)",
+  'Tudo o que o plano Básico inclui': 'Tout ce que comprend le plan Basique',
+  'Integração com ERPs: SAP, AS400, SAP Ariba, IBM Maximo, Oracle e outros': 'Intégration ERP : SAP, AS400, SAP Ariba, IBM Maximo, Oracle et autres',
+  'Contratos-quadro com call-offs automáticos e faturação consolidada': 'Contrats-cadres avec call-offs automatiques et facturation consolidée',
+  'Acompanhamento dedicado da equipa KIXIMA': "Accompagnement dédié de l'équipe KIXIMA",
+  'Apoio burocrático': 'Accompagnement administratif',
+  'Parceiro internacional': 'Partenaire international',
+  'Ambos': 'Les deux',
+  'Acompanhamento no registo comercial, alvarás, licenças do setor, certificações e conformidade — o percurso completo para se tornar um fornecedor credenciado.': "Accompagnement pour l'immatriculation commerciale, les permis, les licences du secteur, les certifications et la conformité — le parcours complet pour devenir un fournisseur accrédité.",
+  'Ligação a parceiros estrangeiros para transferência de tecnologia e capacitação, para que mais empresas angolanas participem no setor com meios próprios.': "Mise en relation avec des partenaires étrangers pour le transfert de technologie et le renforcement des capacités, afin que davantage d'entreprises angolaises participent au secteur avec leurs propres moyens.",
+
   // --- Plans et tarifs --------------------------------------------------------
   'Planos e preços': 'Plans et tarifs',
   'Planos e Subscrições': 'Plans et abonnements',

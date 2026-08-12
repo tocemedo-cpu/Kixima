@@ -11,6 +11,7 @@ import { EN4, FR4 } from './content3';
 import { EN5, FR5 } from './content4';
 import { EN6, FR6 } from './content5';
 import { EN7, FR7 } from './content6';
+import { EN8, FR8 } from './content7';
 
 export const LANGS = [
   { code: 'pt', label: 'Português', flag: '🇦🇴' },
@@ -73,7 +74,7 @@ const FR = {
   'Registe-a aqui': 'Inscrivez-la ici',
 };
 
-const DICT = { en: { ...EN2, ...EN3, ...EN4, ...EN5, ...EN6, ...EN7, ...EN }, fr: { ...FR2, ...FR3, ...FR4, ...FR5, ...FR6, ...FR7, ...FR } };
+const DICT = { en: { ...EN2, ...EN3, ...EN4, ...EN5, ...EN6, ...EN7, ...EN8, ...EN }, fr: { ...FR2, ...FR3, ...FR4, ...FR5, ...FR6, ...FR7, ...FR8, ...FR } };
 const STORAGE_KEY = 'kixima_lang';
 
 const I18nContext = createContext(null);
