@@ -113,7 +113,7 @@ export default function Security() {
     e.preventDefault();
     setError('');
     setSuccess('');
-    if (form.newPassword.length < 8) return setError(t('A nova senha deve ter pelo menos 8 caracteres.'));
+    if (form.newPassword.length < 10) return setError(t('A nova senha deve ter pelo menos 10 caracteres.'));
     if (form.newPassword !== form.confirm) return setError(t('A confirmação não coincide com a nova senha.'));
     setSaving(true);
     try {
@@ -140,11 +140,11 @@ export default function Security() {
           </div>
           <div className="field">
             <label>{t('Nova senha (mín. 8)')}</label>
-            <input type="password" required minLength={8} value={form.newPassword} onChange={(e) => update('newPassword', e.target.value)} />
+            <input type="password" required minLength={10} value={form.newPassword} onChange={(e) => update('newPassword', e.target.value)} />
           </div>
           <div className="field">
             <label>{t('Confirmar nova senha')}</label>
-            <input type="password" required minLength={8} value={form.confirm} onChange={(e) => update('confirm', e.target.value)} />
+            <input type="password" required minLength={10} value={form.confirm} onChange={(e) => update('confirm', e.target.value)} />
           </div>
           <button className="btn btn-accent" type="submit" disabled={saving}>{saving ? t('A guardar…') : t('Alterar senha')}</button>
         </form>

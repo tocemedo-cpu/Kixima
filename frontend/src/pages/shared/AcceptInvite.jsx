@@ -106,7 +106,7 @@ export default function AcceptInvite() {
                 </div>
                 <div className="field">
                   <label>{t('Senha (mín. 8)')}</label>
-                  <input type="password" required minLength={8} value={form.password} onChange={(e) => update('password', e.target.value)} />
+                  <input type="password" required minLength={10} value={form.password} onChange={(e) => update('password', e.target.value)} />
                 </div>
                 <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10, fontSize: 12.5, cursor: 'pointer' }}>
                   <input

@@ -12,7 +12,8 @@ const clienteTax = `NIF-CLI-${S}`;
 const fornTax = `NIF-FOR-${S}`;
 const clienteAdmin = `admin.cli.${S}@empresa.co.ao`;
 const fornAdmin = `admin.for.${S}@empresa.co.ao`;
-const PW = 'SenhaForte1';
+// 12+ caracteres: quem se regista fica Company Admin, e esse perfil aprova POs.
+const PW = 'Valvula-Offshore-42';
 
 // Limpa tudo o que a suite cria — mantém a base partilhada estável e a ordem
 // dos ficheiros de teste irrelevante.

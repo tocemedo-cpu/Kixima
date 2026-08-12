@@ -78,6 +78,11 @@ export const EN9 = {
 
   // --- Planos ----------------------------------------------------------------
   '/ utilizador / mês': '/ user / month',
+
+  // --- Política de senhas -----------------------------------------------------
+  'A nova senha deve ter pelo menos 10 caracteres.': 'The new password must be at least 10 characters long.',
+  'Escolha a nova senha da sua conta KIXIMA (mínimo 10 caracteres; 12 se aprovar pagamentos).':
+    'Choose the new password for your KIXIMA account (at least 10 characters; 12 if you approve payments).',
 };
 
 export const FR9 = {
@@ -144,4 +149,9 @@ export const FR9 = {
 
   // --- Formules --------------------------------------------------------------
   '/ utilizador / mês': '/ utilisateur / mois',
+
+  // --- Politique de mots de passe ---------------------------------------------
+  'A nova senha deve ter pelo menos 10 caracteres.': 'Le nouveau mot de passe doit comporter au moins 10 caractères.',
+  'Escolha a nova senha da sua conta KIXIMA (mínimo 10 caracteres; 12 se aprovar pagamentos).':
+    'Choisissez le nouveau mot de passe de votre compte KIXIMA (au moins 10 caractères ; 12 si vous approuvez des paiements).',
 };

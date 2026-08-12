@@ -11,7 +11,8 @@ const compradorEmail = `comprador.${S}@equipa.co.ao`;
 const vendedorEmail = `vendedor.${S}@equipa.co.ao`;
 const canceladoEmail = `cancelado.${S}@equipa.co.ao`;
 const supplierAdminEmail = `admin.forn.${S}@kianda.co.ao`;
-const NEW_PW = 'SenhaNova1';
+// Cumpre a politica: 10+ caracteres, sem sequencias nem senhas de lista.
+const NEW_PW = 'Bomba-Hidraulica-7';
 
 let clientAdminToken;
 let supplierAdminToken;

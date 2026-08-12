@@ -13,6 +13,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 
 const config = require('./config/env');
+const prisma = require('./config/database');
+const logger = require('./config/logger');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { apiLimiter, authLimiter, sensitiveLimiter } = require('./middleware/rateLimit');
 
@@ -78,7 +80,32 @@ if (!config.isTest) {
   app.use(morgan(config.isDevelopment ? 'dev' : 'combined'));
 }
 
+// Liveness — o processo está de pé. Não toca na base: serve para o orquestrador
+// saber se deve reiniciar o contentor, e uma base em baixo não se cura com isso.
 app.get('/health', (req, res) => res.json({ status: 'ok', env: config.env }));
+
+// Readiness — o serviço consegue mesmo servir pedidos. A falha mais provável não
+// é o processo morrer, é a base ficar inacessível; sem esta verificação o Render
+// continuava a encaminhar tráfego para uma aplicação que rebentava em tudo.
+app.get('/ready', async (req, res) => {
+  const inicio = Date.now();
+  try {
+    // Timeout curto: um health check que fica pendurado é tão mau como um que mente.
+    await Promise.race([
+      prisma.$queryRaw`SELECT 1`,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ao contactar a base de dados')), 3000)),
+    ]);
+    res.json({ status: 'ok', database: 'ok', latencyMs: Date.now() - inicio, env: config.env });
+  } catch (err) {
+    logger.error('Readiness: base de dados inacessível', { erro: err.message });
+    res.status(503).json({
+      status: 'degradado',
+      database: 'inacessivel',
+      detail: err.message,
+      latencyMs: Date.now() - inicio,
+    });
+  }
+});
 
 // Rate limiting: limite geral em toda a API + limites apertados nos endpoints
 // sensíveis (login e fluxos públicos de registo/convite).

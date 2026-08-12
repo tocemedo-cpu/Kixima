@@ -33,7 +33,11 @@ const upload = multer({
 // Documentos de credenciamento — aceita PDF e imagens (até 10 MB).
 function documentFilter(req, file, cb) {
   if (/^(image\/(png|jpe?g|webp|gif)|application\/pdf)$/.test(file.mimetype)) cb(null, true);
-  else cb(new Error('Documento inválido — use PDF ou imagem (PNG/JPG).'));
+  // ValidationError e não Error: um formato errado é culpa do pedido (422), não
+  // uma avaria da aplicação. Com o Error genérico, quem enviava um ficheiro no
+  // formato errado recebia "ocorreu um erro interno" e o caso entrava no Sentry
+  // como falha do servidor.
+  else cb(new ValidationError('Documento inválido — use PDF ou imagem (PNG/JPG).'));
 }
 
 const uploadDocuments = multer({

@@ -23,6 +23,15 @@ export const EN6 = {
   'A empresa ainda não foi aprovada no cadastro (due diligence).': 'The company has not yet been approved in the registration process (due diligence).',
   'A senha atual está incorreta.': 'The current password is incorrect.',
   'A senha deve ter pelo menos 8 caracteres.': 'The password must be at least 8 characters long.',
+  'A senha deve ter pelo menos 10 caracteres.': 'The password must be at least 10 characters long.',
+  'A senha deve ter pelo menos 12 caracteres.': 'The password must be at least 12 characters long.',
+  'Esta conta aprova operações com dinheiro, por isso a senha precisa de pelo menos 12 caracteres.':
+    'This account approves money operations, so the password needs at least 12 characters.',
+  'Esta senha é das mais usadas no mundo e é testada em primeiro lugar num ataque. Escolha outra.':
+    'This is one of the most common passwords in the world and is the first one tried in an attack. Choose another.',
+  'A senha não pode ser uma sequência nem um carácter repetido.':
+    'The password cannot be a sequence or a single repeated character.',
+  'A senha não pode conter o seu email.': 'The password cannot contain your email address.',
   'A nova senha deve ter pelo menos 8 caracteres.': 'The new password must be at least 8 characters long.',
   'Link de recuperação inválido.': 'Invalid recovery link.',
   'Link de recuperação inválido ou expirado. Peça um novo.': 'Invalid or expired recovery link. Request a new one.',
@@ -145,6 +154,15 @@ export const FR6 = {
   'A empresa ainda não foi aprovada no cadastro (due diligence).': "L'entreprise n'a pas encore été approuvée lors de l'enregistrement (due diligence).",
   'A senha atual está incorreta.': 'Le mot de passe actuel est incorrect.',
   'A senha deve ter pelo menos 8 caracteres.': 'Le mot de passe doit comporter au moins 8 caractères.',
+  'A senha deve ter pelo menos 10 caracteres.': 'Le mot de passe doit comporter au moins 10 caractères.',
+  'A senha deve ter pelo menos 12 caracteres.': 'Le mot de passe doit comporter au moins 12 caractères.',
+  'Esta conta aprova operações com dinheiro, por isso a senha precisa de pelo menos 12 caracteres.':
+    'Ce compte approuve des opérations financières : le mot de passe doit comporter au moins 12 caractères.',
+  'Esta senha é das mais usadas no mundo e é testada em primeiro lugar num ataque. Escolha outra.':
+    "Ce mot de passe est parmi les plus utilisés au monde et c'est le premier essayé lors d'une attaque. Choisissez-en un autre.",
+  'A senha não pode ser uma sequência nem um carácter repetido.':
+    'Le mot de passe ne peut pas être une suite ni un caractère répété.',
+  'A senha não pode conter o seu email.': 'Le mot de passe ne peut pas contenir votre adresse e-mail.',
   'A nova senha deve ter pelo menos 8 caracteres.': 'Le nouveau mot de passe doit comporter au moins 8 caractères.',
   'Link de recuperação inválido.': 'Lien de récupération invalide.',
   'Link de recuperação inválido ou expirado. Peça um novo.': 'Lien de récupération invalide ou expiré. Demandez-en un nouveau.',

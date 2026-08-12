@@ -22,7 +22,10 @@ services:
     dockerContext: .
     plan: free
     region: frankfurt
-    healthCheckPath: /health
+    # /ready e não /health: o /health só diz que o processo está vivo, e a falha
+    # mais provável é a base ficar inacessível. O /ready confirma que a
+    # aplicação consegue mesmo servir pedidos antes de receber tráfego.
+    healthCheckPath: /ready
     envVars:
       - key: JWT_SECRET
         generateValue: true

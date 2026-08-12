@@ -253,6 +253,19 @@ async function takeOverCatalog(company) {
 async function ensureCatalogCompany() {
   if (PASSWORD.length < 8) throw new Error('CATALOG_COMPANY_PASSWORD deve ter pelo menos 8 caracteres.');
 
+  // A senha é gravada em hash direto, sem passar pela API — logo escapa à
+  // política de senhas. Isso é deliberado (é uma empresa de teste, com a senha
+  // que o titular escolheu), mas não pode ser silencioso: uma destas contas é
+  // Company Admin e aprova ordens de compra.
+  const politica = require('../src/utils/passwordPolicy');
+  const fraca = politica.validar(PASSWORD, { role: 'COMPANY_ADMIN' });
+  if (fraca) {
+    console.warn('\n⚠  ATENÇÃO — a senha destas contas não cumpre a política da plataforma:');
+    console.warn(`   ${fraca}`);
+    console.warn('   Uma delas é Company Admin e aprova ordens de compra.');
+    console.warn('   Defina CATALOG_COMPANY_PASSWORD no ambiente e volte a correr para a trocar.\n');
+  }
+
   const company = await ensureCompany();
   await ensureDocuments(company);
   await ensurePolicy(company);

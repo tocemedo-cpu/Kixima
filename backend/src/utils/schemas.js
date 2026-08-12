@@ -2,6 +2,17 @@
 // Schemas de validação (Zod) para os corpos de pedido de cada endpoint.
 
 const { z } = require('zod');
+const passwordPolicy = require('./passwordPolicy');
+
+// Campo de senha validado pela política única (comprimento, senhas proibidas,
+// sequências e email dentro da senha). `role` fixa o mínimo: os perfis que
+// aprovam dinheiro exigem mais.
+function senha(role) {
+  return z.string().superRefine((valor, ctx) => {
+    const erro = passwordPolicy.validar(valor, { role });
+    if (erro) ctx.addIssue({ code: z.ZodIssueCode.custom, message: erro });
+  });
+}
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -19,7 +30,7 @@ const registerCompanySchema = z.object({
   // aprovação da empresa na due diligence.
   adminName: z.string().min(2),
   adminEmail: z.string().email(),
-  adminPassword: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.'),
+  adminPassword: senha('COMPANY_ADMIN'),
   // Apólice de seguro Fornecedor→KIXIMA — obrigatória para FORNECEDOR (validada
   // no service). Opcional no schema porque CLIENTE não a submete.
   policyNumber: z.string().optional(),
@@ -42,7 +53,7 @@ const registerCompanySchema = z.object({
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(8, 'A nova senha deve ter pelo menos 8 caracteres.'),
+  newPassword: senha(),
 });
 
 // Recuperação de senha ("Esqueci a senha").
@@ -51,7 +62,7 @@ const forgotPasswordSchema = z.object({
 });
 const resetPasswordSchema = z.object({
   token: z.string().min(10),
-  password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.'),
+  password: senha(),
 });
 
 // 2FA (TOTP): código de 6 dígitos; o verify traz também o desafio do login.
@@ -107,10 +118,15 @@ const decideCompanySchema = z.object({
 const createUserSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(8),
+  password: senha(),
   role: z.enum(['COMPRADOR', 'COMPANY_ADMIN', 'FORNECEDOR', 'FINANCEIRO', 'ADMIN_SISTEMA']),
   companyId: z.string().uuid().nullable().optional(),
   approvalCap: z.number().positive().optional(),
+}).superRefine((d, ctx) => {
+  // O mínimo depende do perfil que está a ser criado, e esse só se conhece com o
+  // objeto inteiro — daí a validação ser aqui e não no campo.
+  const erro = passwordPolicy.validar(d.password, { role: d.role, email: d.email });
+  if (erro) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['password'], message: erro });
 });
 
 // Convite de funcionário emitido pelo Company Admin (Vendedor = FORNECEDOR). O
@@ -126,7 +142,7 @@ const createInviteSchema = z.object({
 const acceptInviteSchema = z.object({
   name: z.string().min(2).optional(),
   email: z.string().email().optional(),
-  password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.'),
+  password: senha(),
   // Aceite individual dos Termos/Privacidade ao criar a conta por convite.
   termsAccepted: z.literal(true, { errorMap: () => ({ message: 'É necessário aceitar os Termos de Uso e a Política de Privacidade.' }) }),
 });

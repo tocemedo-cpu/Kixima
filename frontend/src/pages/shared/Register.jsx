@@ -163,7 +163,7 @@ export default function Register() {
                   </div>
                   <div className="field">
                     <label>{t('Senha (mín. 8)')}</label>
-                    <input type="password" required minLength={8} value={form.adminPassword} onChange={(e) => update('adminPassword', e.target.value)} />
+                    <input type="password" required minLength={12} value={form.adminPassword} onChange={(e) => update('adminPassword', e.target.value)} />
                   </div>
                 </div>
 

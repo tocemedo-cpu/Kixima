@@ -3,7 +3,8 @@
 
 const bcrypt = require('bcryptjs');
 const prisma = require('../config/database');
-const { NotFoundError, BusinessRuleError, ConflictError } = require('../utils/errors');
+const { NotFoundError, BusinessRuleError, ConflictError, ValidationError } = require('../utils/errors');
+const passwordPolicy = require('../utils/passwordPolicy');
 const notificationService = require('./notificationService');
 const planService = require('./planService');
 const storageService = require('./storageService');
@@ -448,6 +449,12 @@ async function acceptInvite(token, { name, email, password }) {
   if (await prisma.user.findUnique({ where: { email: finalEmail } })) {
     throw new ConflictError('Já existe uma conta com este email.');
   }
+  // O perfil do convidado vem do CONVITE, não do que ele envia — por isso a
+  // política de senhas só pode ser aferida aqui. Um convite para Financeiro
+  // exige o mesmo que qualquer outra conta que autoriza pagamentos.
+  const erroSenha = passwordPolicy.validar(password, { role, email: finalEmail });
+  if (erroSenha) throw new ValidationError(erroSenha);
+
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
     data: { name: finalName, email: finalEmail, passwordHash, role, companyId, active: false, termsAcceptedAt: new Date() },

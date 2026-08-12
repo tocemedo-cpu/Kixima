@@ -125,15 +125,15 @@ function NewPasswordForm({ token }) {
   return (
     <>
       <h2>{t('Definir nova senha')}</h2>
-      <p>{t('Escolha a nova senha da sua conta KIXIMA (mínimo 8 caracteres).')}</p>
+      <p>{t('Escolha a nova senha da sua conta KIXIMA (mínimo 10 caracteres; 12 se aprovar pagamentos).')}</p>
       <form onSubmit={handleSubmit}>
         <div className="field">
           <label htmlFor="password">{t('Nova senha')}</label>
-          <input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+          <input id="password" type="password" required minLength={10} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
         </div>
         <div className="field">
           <label htmlFor="confirm">{t('Confirmar nova senha')}</label>
-          <input id="confirm" type="password" required minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" />
+          <input id="confirm" type="password" required minLength={10} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" />
         </div>
         {error ? (
           <p className="error-text" style={{ marginBottom: 12 }}>
