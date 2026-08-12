@@ -11,6 +11,16 @@ const eventBus = require('./services/eventBus');
 
 const server = app.listen(config.port, () => {
   logger.info(`KIXIMA API a correr em ${config.appUrl} (${config.env})`);
+  // Onde ficam os ficheiros (documentos de credenciamento, comprovativos de
+  // pagamento, imagens): visível no log do deploy, para não ser preciso
+  // descobri-lo quando um upload falha.
+  const storage = require('./services/storageService');
+  const ativo = storage.providerAtivo();
+  logger.info(
+    ativo === 's3'
+      ? `Armazenamento: S3 (bucket ${config.storage.bucket})`
+      : 'Armazenamento: disco do contentor — os ficheiros NÃO sobrevivem a um reinício',
+  );
   schedulePolicyExpiryJob();
   // Regista nos logs se a integração ERP (RabbitMQ) está ativa.
   eventBus.init();

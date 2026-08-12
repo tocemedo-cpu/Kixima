@@ -86,4 +86,17 @@ const config = {
   },
 };
 
+// Variáveis obrigatórias quando o armazenamento é S3-compatível. Uma string
+// vazia conta como ausente: no painel do Render é fácil criar a variável e
+// deixá-la por preencher, e o SDK só se queixa (mal) na hora do upload.
+const STORAGE_REQUIRED = {
+  STORAGE_BUCKET: config.storage.bucket,
+  STORAGE_ACCESS_KEY: config.storage.accessKey,
+  STORAGE_SECRET_KEY: config.storage.secretKey,
+};
+config.storage.missing =
+  config.storage.provider === 's3'
+    ? Object.entries(STORAGE_REQUIRED).filter(([, v]) => !String(v || '').trim()).map(([k]) => k)
+    : [];
+
 module.exports = config;

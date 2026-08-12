@@ -44,3 +44,52 @@ describe('storageService — S3 (Supabase Storage)', () => {
     expect(sent[0].input.Key).toMatch(/^catalog\/cat-1-\d+\.jpg$/);
   });
 });
+
+describe('storageService — configuração incompleta', () => {
+  const original = { ...config.storage };
+  afterEach(() => { Object.assign(config.storage, original); sent.length = 0; });
+
+  // Foi isto que partiu em produção: STORAGE_PROVIDER=s3 ligado, credenciais em
+  // falta, e o SDK a rebentar no upload com «Resolved credential object is not
+  // valid» — o utilizador via um 500 e o log não dizia que variável faltava.
+  test('sem credenciais não tenta o S3: escreve no disco em vez de rebentar', async () => {
+    Object.assign(config.storage, {
+      provider: 's3', bucket: 'kixima', accessKey: '', secretKey: '',
+      missing: ['STORAGE_ACCESS_KEY', 'STORAGE_SECRET_KEY'],
+    });
+    expect(storageService.providerAtivo()).toBe('local');
+
+    const url = await storageService.saveFile({ buffer: IMG, originalname: 'd.pdf', mimetype: 'application/pdf', keyHint: 'doc', folder: 'documents' });
+    expect(url).toMatch(/^\/api\/uploads\//);
+    expect(sent).toHaveLength(0); // nem chegou a falar com o S3
+  });
+
+  test('uma variável vazia conta como em falta', () => {
+    Object.assign(config.storage, { provider: 's3', missing: ['STORAGE_SECRET_KEY'] });
+    expect(storageService.providerAtivo()).toBe('local');
+  });
+
+  test('com tudo configurado usa mesmo o S3', () => {
+    Object.assign(config.storage, { provider: 's3', bucket: 'kixima', accessKey: 'k', secretKey: 's', missing: [] });
+    expect(storageService.providerAtivo()).toBe('s3');
+  });
+});
+
+describe('storageService — falhas do S3 em execução', () => {
+  const original = { ...config.storage };
+  afterEach(() => { Object.assign(config.storage, original); sent.length = 0; });
+
+  test('a falha do SDK vira uma mensagem que diz o que corrigir', async () => {
+    const { S3Client } = require('@aws-sdk/client-s3');
+    S3Client.mockImplementationOnce(() => ({
+      send: jest.fn(async () => { throw new Error('Resolved credential object is not valid'); }),
+    }));
+    Object.assign(config.storage, {
+      provider: 's3', bucket: 'kixima', accessKey: 'k', secretKey: 's', missing: [],
+      endpoint: 'https://proj.supabase.co/storage/v1/s3', publicUrl: undefined,
+    });
+    await expect(
+      storageService.saveFile({ buffer: IMG, originalname: 'x.png', mimetype: 'image/png', keyHint: 'k', folder: 'catalog' }),
+    ).rejects.toThrow(/STORAGE_ACCESS_KEY e STORAGE_SECRET_KEY/);
+  });
+});
