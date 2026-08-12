@@ -130,6 +130,22 @@ model Company {
 }
 
 // ---------------------------------------------------------------------------
+// Contador de referências (PO-2026-000123, FAT-…, SD-…).
+//
+// Antes o número saía de um COUNT das linhas existentes. Não é atómico — dois
+// pedidos simultâneos contam o mesmo valor e geram a MESMA referência, e o
+// segundo rebenta com conflito — e desfaz-se com qualquer eliminação, porque o
+// número libertado volta a ser atribuído a uma referência que já existe.
+// Aqui o valor é incrementado atomicamente pela base de dados e nunca recua.
+// ---------------------------------------------------------------------------
+model ReferenceCounter {
+  key   String @id            // ex: "PO-2026"
+  value Int    @default(0)
+
+  @@map("reference_counters")
+}
+
+// ---------------------------------------------------------------------------
 // Taxa da plataforma (comissão KIXIMA). Fica À PARTE da PO/Fatura (nenhum dos
 // documentos a mostra) — é gerada na transação do pagamento e cobrada à
 // empresa. Composição: (nº de POs × valor por PO) + valor fixo por fatura.
@@ -601,7 +617,13 @@ model PurchaseOrder {
   approvedBy    User?     @relation("PoApprovedBy", fields: [approvedById], references: [id])
 
   status        PoStatus  @default(AGUARDANDO_APROVACAO)
+  // totalAmount é o que o comprador se compromete a pagar: JÁ COM IVA, igual ao
+  // total da fatura que a PO vai gerar. O líquido e o imposto ficam guardados à
+  // parte para o documento os poder discriminar e para a contabilidade.
   totalAmount   Decimal   @map("total_amount") @db.Decimal(14, 2)
+  netAmount         Decimal? @map("net_amount") @db.Decimal(14, 2)          // subtotal sem IVA
+  taxAmount         Decimal? @map("tax_amount") @db.Decimal(14, 2)          // IVA
+  withholdingAmount Decimal? @map("withholding_amount") @db.Decimal(14, 2)  // retenção na fonte II (serviços)
   currency      String    @default("AOA")
 
   // Call-off: PO emitida ao abrigo de contrato-quadro ativo -> dispensa aprovação e pagamento antecipado por PO

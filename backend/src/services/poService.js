@@ -53,7 +53,13 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
       lineTotal: unitPrice * i.quantity,
     };
   });
-  const totalAmount = lineItems.reduce((sum, li) => sum + li.lineTotal, 0);
+  // IVA no servidor, à imagem do que a fatura faz: o total da PO é o que o
+  // comprador se compromete a pagar (com imposto). Sem isto a ordem mostrava um
+  // valor e a fatura outro, e o limite de orçamento era consumido a menos.
+  const impostos = taxService.summarize(
+    lineItems.map((li) => ({ net: li.lineTotal, kind: products.find((p) => p.id === li.productId)?.kind })),
+  );
+  const totalAmount = impostos.gross;
   const categories = [...new Set(products.map((p) => p.category))];
 
   // Deteção automática de Call-off (secção 5)
@@ -73,6 +79,9 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
       supplierCompanyId,
       createdById,
       totalAmount,
+      netAmount: impostos.net,
+      taxAmount: impostos.tax,
+      withholdingAmount: impostos.withheld,
       isCallOff,
       contractId: contract?.id ?? null,
       // Call-off: a aprovação de negócio já aconteceu na assinatura do contrato.
@@ -86,7 +95,10 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
   if (isCallOff) {
     await prisma.contract.update({
       where: { id: contract.id },
-      data: { usedValue: { increment: totalAmount } },
+      // O tecto do contrato-quadro é um valor COMERCIAL: consome-se com o
+      // líquido, não com o IVA. Antes desta alteração o totalAmount já era o
+      // líquido — manter o net preserva a semântica dos contratos em vigor.
+      data: { usedValue: { increment: impostos.net } },
     });
     // Já aprovada -> segue diretamente para o fornecedor.
     await notificationService.events.poRecebidaPeloFornecedor(po);

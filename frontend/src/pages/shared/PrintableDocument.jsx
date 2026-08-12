@@ -82,11 +82,16 @@ export default function PrintableDocument({ kind }) {
   // Retenção na Fonte de Imposto Industrial (Lei 26/20): 6,5% só sobre serviços.
   const WHT_RATE = 0.065;
   const whtCalc = po.items.reduce((s, it) => s + (it.product?.kind === 'SERVICO' ? Number(it.lineTotal || 0) * WHT_RATE : 0), 0);
-  // Na fatura usa os valores gravados (autoritativos); na PO é uma estimativa.
-  const net = isInvoice ? Number(invoice.netAmount ?? subtotal) : subtotal;
-  const tax = isInvoice ? Number(invoice.taxAmount ?? taxCalc) : taxCalc;
-  const withheld = isInvoice ? Number(invoice.withholdingAmount ?? whtCalc) : whtCalc;
-  const total = isInvoice ? Number(invoice.amount) : subtotal + taxCalc;
+  // Os valores gravados pelo servidor mandam — na fatura e agora também na PO,
+  // que passou a guardar o imposto em vez de o deixar por estimar no cliente.
+  // O cálculo local só serve as ordens antigas, criadas antes dessa alteração.
+  const fonte = isInvoice ? invoice : po;
+  const net = Number(fonte.netAmount ?? subtotal);
+  const tax = Number(fonte.taxAmount ?? taxCalc);
+  const withheld = Number(fonte.withholdingAmount ?? whtCalc);
+  const total = isInvoice ? Number(invoice.amount) : Number(po.totalAmount ?? subtotal + taxCalc);
+  // "Estimado" só quando o valor não veio do servidor.
+  const estimado = !isInvoice && po.taxAmount == null;
   const ref = isInvoice ? invoice.reference : po.reference;
   const delivery = buyer.address || [buyer.city, buyer.province, buyer.country].filter(Boolean).join(', ') || 'A definir na receção';
 
@@ -183,8 +188,8 @@ export default function PrintableDocument({ kind }) {
         {/* Totais */}
         <section className="pdoc-totals">
           <div className="pdoc-total-row"><span>{t('Subtotal (sem IVA)')}</span><span>{money(net, cur)}</span></div>
-          <div className="pdoc-total-row"><span>{t('IVA (14%)')}{isInvoice ? '' : ` — ${t('estimado')}`}</span><span>{money(tax, cur)}</span></div>
-          <div className="pdoc-total-row pdoc-total-grand"><span>{t(isInvoice ? 'TOTAL A PAGAR' : 'TOTAL ESTIMADO (c/ IVA)')}</span><span>{money(total, cur)}</span></div>
+          <div className="pdoc-total-row"><span>{t('IVA (14%)')}{estimado ? ` — ${t('estimado')}` : ''}</span><span>{money(tax, cur)}</span></div>
+          <div className="pdoc-total-row pdoc-total-grand"><span>{t(isInvoice || !estimado ? 'TOTAL A PAGAR' : 'TOTAL ESTIMADO (c/ IVA)')}</span><span>{money(total, cur)}</span></div>
           {withheld > 0 ? (
             <>
               <div className="pdoc-total-row" style={{ marginTop: 6 }}><span>{t('Retenção na fonte II (6,5% s/ serviços)')}</span><span>− {money(withheld, cur)}</span></div>

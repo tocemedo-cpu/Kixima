@@ -1,19 +1,50 @@
 // src/utils/reference.js
-// Gera referências legíveis (PO-2026-000123) com contagem atómica por tabela+ano.
-
+// Gera referências legíveis (PO-2026-000123) com contagem ATÓMICA por prefixo+ano.
+//
+// Antes o número saía de um COUNT das linhas existentes, o que falhava de duas
+// maneiras:
+//   1) não é atómico — dois pedidos simultâneos contam o mesmo valor e geram a
+//      MESMA referência; a segunda gravação rebenta com conflito, e o comprador
+//      leva um 409 ao fechar a cesta;
+//   2) desfaz-se com qualquer eliminação — o número libertado volta a ser
+//      atribuído, colidindo com uma referência que já existe.
+//
+// Agora o valor é incrementado pela própria base de dados (UPDATE … RETURNING),
+// numa única instrução, e nunca recua.
 const prisma = require('../config/database');
 
-async function nextReference(prefix, counterModel, dateField = 'createdAt') {
-  const year = new Date().getFullYear();
-  const start = new Date(`${year}-01-01T00:00:00.000Z`);
-  const end = new Date(`${year + 1}-01-01T00:00:00.000Z`);
-
-  const count = await prisma[counterModel].count({
-    where: { [dateField]: { gte: start, lt: end } },
+// Primeiro uso de um contador: arranca no maior número já emitido nessa tabela,
+// para não repetir referências criadas antes de existir contador.
+async function seedValue(prefix, counterModel, year) {
+  // Ordenar por texto não serve quando há larguras diferentes ("PO-2026-9"
+  // ficaria depois de "PO-2026-000010"): procura-se o máximo NUMÉRICO.
+  const emitidas = await prisma[counterModel].findMany({
+    where: { reference: { startsWith: `${prefix}-${year}-` } },
+    select: { reference: true },
   });
+  const ultimo = emitidas
+    .map((r) => Number(String(r.reference).split('-').pop()))
+    .filter((n) => Number.isFinite(n))
+    .sort((a, b) => b - a)[0];
+  return ultimo > 0 ? ultimo : 0;
+}
 
-  const seq = String(count + 1).padStart(6, '0');
-  return `${prefix}-${year}-${seq}`;
+async function nextReference(prefix, counterModel, dateField = 'createdAt') { // eslint-disable-line no-unused-vars
+  const year = new Date().getFullYear();
+  const key = `${prefix}-${year}`;
+
+  // O INSERT só ganha na primeiríssima vez; a partir daí é sempre o DO UPDATE
+  // que incrementa. As duas metades correm numa instrução — se dois pedidos
+  // chegarem juntos, um insere e o outro incrementa, e saem números distintos.
+  const inicial = (await seedValue(prefix, counterModel, year)) + 1;
+  const [{ value }] = await prisma.$queryRaw`
+    INSERT INTO "reference_counters" ("key", "value")
+    VALUES (${key}, ${inicial})
+    ON CONFLICT ("key") DO UPDATE SET "value" = "reference_counters"."value" + 1
+    RETURNING "value"
+  `;
+
+  return `${prefix}-${year}-${String(value).padStart(6, '0')}`;
 }
 
 module.exports = { nextReference };
