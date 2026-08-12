@@ -11,6 +11,7 @@
     "seed": "cross-env NODE_ENV=development node -r dotenv/config prisma/seed.js",
     "seed:demo": "cross-env NODE_ENV=development node -r dotenv/config prisma/seed.demo.js",
     "seed:catalog": "cross-env LOAD_DEMO_CATALOG=1 node -r dotenv/config prisma/seed.catalog.js",
+    "seed:catalog-company": "node -r dotenv/config prisma/seed.catalog-company.js",
     "demo:remove": "node -r dotenv/config scripts/remove-demo-catalog.js",
     "storage:check": "node -r dotenv/config scripts/storage-check.js",
     "sentry:test": "node -r dotenv/config scripts/sentry-test.js",

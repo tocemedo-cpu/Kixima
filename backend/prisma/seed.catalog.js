@@ -16,18 +16,10 @@ const path = require('path');
 const prisma = new PrismaClient();
 const ITEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'catalog.v2_2.json'), 'utf8'));
 
-// Fornecedor de demonstração que "publica" o catálogo de testes.
-const DEMO_SUPPLIER = {
-  name: 'Catálogo KIXIMA (Demonstração)',
-  taxId: 'AO-DEMO-CAT-001',
-  type: 'FORNECEDOR',
-  contactEmail: 'catalogo.demo@kixima.co.ao',
-  status: 'APROVADA',
-  verified: true,
-  city: 'Luanda',
-  province: 'Luanda',
-  country: 'Angola',
-};
+// O catálogo é publicado pela empresa "Catálogo KIXIMA" — uma fornecedora a
+// sério, credenciada e com uma conta por persona, para o fluxo poder ser testado
+// de ponta a ponta. Ver prisma/seed.catalog-company.js.
+const { ensureCatalogCompany } = require('./seed.catalog-company');
 
 // Preço-base por categoria (AOA). Serviços tendem a ser mais altos. Determinístico
 // (varia com o código) para se manter estável entre execuções — são valores de
@@ -67,15 +59,11 @@ function priceFor(item) {
   return Math.round((base * factor) / 1000) * 1000;
 }
 
+// A empresa dona do catálogo é garantida (criada ou atualizada) antes de os
+// itens entrarem — com documentos, apólice e personas. Repor o catálogo repõe
+// também o credenciamento, se entretanto tiver sido alterado.
 async function ensureSupplier() {
-  // Upsert que também REPÕE o estado (APROVADA/verificado): se a demo tiver sido
-  // removida parcialmente (empresa SUSPENSA por ter histórico), recarregar volta
-  // a deixá-la utilizável.
-  return prisma.company.upsert({
-    where: { taxId: DEMO_SUPPLIER.taxId },
-    update: { status: 'APROVADA', verified: true },
-    create: { ...DEMO_SUPPLIER, approvedAt: new Date() },
-  });
+  return ensureCatalogCompany();
 }
 
 async function main() {
@@ -86,6 +74,13 @@ async function main() {
   // corre `npm run seed:catalog`, que já a define). Para remover dados de
   // demonstração já carregados: `npm run demo:remove`.
   if (process.env.LOAD_DEMO_CATALOG !== '1') {
+    // Mesmo sem recarregar os itens, a empresa dona do catálogo pode ser posta
+    // em dia — é o que permite entrar como fornecedor e testar o fluxo todo sem
+    // acesso à linha de comandos (basta CATALOG_COMPANY=1 no ambiente).
+    if (process.env.CATALOG_COMPANY === '1') {
+      await ensureCatalogCompany();
+      return;
+    }
     console.log('Catálogo de demonstração: ignorado (opt-in — define LOAD_DEMO_CATALOG=1 para carregar).');
     return;
   }
