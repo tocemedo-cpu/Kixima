@@ -166,12 +166,18 @@ describe('Gestão do plano (Admin do Sistema)', () => {
 describe('Supplier Development', () => {
   let reference;
 
-  test('a taxa de acesso ao programa segue a das pequenas empresas (100 USD)', () => {
-    expect(plans.supplierDevAccessFee('PEQUENA')).toMatchObject({ amountUsd: 100, currency: 'USD', custom: false });
-    expect(plans.supplierDevAccessFee('MICRO').amountUsd).toBe(100);
-    // As restantes dimensões são orçamentadas caso a caso.
-    expect(plans.supplierDevAccessFee('MEDIA')).toMatchObject({ amountUsd: null, custom: true });
-    expect(plans.supplierDevAccessFee('GRANDE').custom).toBe(true);
+  test('a taxa de acesso é a das pequenas empresas (100 USD) e é devida na submissão', () => {
+    // No momento da candidatura ainda não há diagnóstico: a taxa de entrada é
+    // sempre a de tabela, seja qual for a dimensão do candidato.
+    expect(plans.supplierDevAccessFee()).toMatchObject({
+      amountUsd: 100, currency: 'USD', dueOnSubmission: true, remainderCustom: true,
+    });
+  });
+
+  test('a taxa é publicada antes da submissão, para o candidato a ver', async () => {
+    const res = await request(app).get('/api/supplier-development/fee');
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ amountUsd: 100, currency: 'USD', dueOnSubmission: true });
   });
 
   test('qualquer empresa se candidata pela página pública (sem conta)', async () => {
@@ -186,19 +192,29 @@ describe('Supplier Development', () => {
         employees: 24,
         track: 'AMBOS',
         needs: 'Precisamos de apoio no licenciamento e de um parceiro internacional para soldadura certificada.',
+        feeAccepted: true,
       });
     expect(res.status).toBe(201);
     expect(res.body.reference).toMatch(/^SD-/);
     expect(res.body.status).toBe('RECEBIDA');
-    // 24 trabalhadores → pequena empresa → taxa de tabela.
-    expect(res.body.accessFee).toMatchObject({ amountUsd: 100, currency: 'USD', custom: false });
+    // A taxa fica cobrada no acto da submissão e emitida por liquidar.
+    expect(res.body.accessFee).toMatchObject({
+      amountUsd: 100, currency: 'USD', dueOnSubmission: true, status: 'PENDENTE',
+    });
     reference = res.body.reference;
   });
 
   test('a candidatura é validada (email e nome obrigatórios)', async () => {
     const res = await request(app)
       .post('/api/supplier-development/requests')
-      .send({ companyName: 'X', contactName: 'Y', contactEmail: 'nao-e-email' });
+      .send({ companyName: 'X', contactName: 'Y', contactEmail: 'nao-e-email', feeAccepted: true });
+    expect(res.status).toBe(422);
+  });
+
+  test('não se submete sem aceitar a taxa cobrada na submissão', async () => {
+    const res = await request(app)
+      .post('/api/supplier-development/requests')
+      .send({ companyName: 'Sem Aceite, Lda', contactName: 'Ana', contactEmail: 'ana@semaceite.co.ao' });
     expect(res.status).toBe(422);
   });
 
@@ -206,6 +222,9 @@ describe('Supplier Development', () => {
     const res = await request(app).get(`/api/supplier-development/requests/${reference}/track`);
     expect(res.status).toBe(200);
     expect(res.body.companyName).toMatch(/Metalúrgica/);
+    // O candidato vê o estado da taxa que lhe foi cobrada na submissão.
+    expect(Number(res.body.accessFeeUsd)).toBe(100);
+    expect(res.body.feeStatus).toBe('PENDENTE');
     // A consulta pública não expõe notas internas nem contactos.
     expect(res.body.adminNotes).toBeUndefined();
     expect(res.body.contactEmail).toBeUndefined();
@@ -227,5 +246,27 @@ describe('Supplier Development', () => {
 
     const barrado = await auth(tokens.comprador).get('/api/supplier-development/requests');
     expect(barrado.status).toBe(403);
+  });
+
+  test('o Admin regista a receção da taxa e orçamenta o restante do programa', async () => {
+    const lista = await auth(tokens.adminSistema).get('/api/supplier-development/requests');
+    const alvo = lista.body.items.find((r) => r.reference === reference);
+    // Antes de a KIXIMA orçamentar, o restante fica marcado como por definir.
+    expect(alvo.customPricing).toBe(true);
+    expect(lista.body.kpis.taxasPendentes).toBeGreaterThan(0);
+
+    const pago = await auth(tokens.adminSistema)
+      .patch(`/api/supplier-development/requests/${alvo.id}`)
+      .send({ feeStatus: 'COBRADO' });
+    expect(pago.status).toBe(200);
+    expect(pago.body.feeStatus).toBe('COBRADO');
+    expect(pago.body.feePaidAt).toBeTruthy();
+
+    const orcamento = await auth(tokens.adminSistema)
+      .patch(`/api/supplier-development/requests/${alvo.id}`)
+      .send({ programFeeUsd: 4500 });
+    expect(orcamento.status).toBe(200);
+    expect(Number(orcamento.body.programFeeUsd)).toBe(4500);
+    expect(orcamento.body.customPricing).toBe(false);
   });
 });

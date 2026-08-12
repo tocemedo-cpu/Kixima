@@ -84,12 +84,19 @@ const supplierDevSchema = z.object({
   employees: z.coerce.number().int().nonnegative().optional(),
   track: z.enum(['BUROCRACIA', 'PARCERIA', 'AMBOS']).optional(),
   needs: z.string().max(2000).optional(),
+  // A taxa de acesso é cobrada no acto da submissão: o candidato tem de
+  // confirmar que a conhece antes de submeter.
+  feeAccepted: z.literal(true, {
+    errorMap: () => ({ message: 'Confirme que aceita a taxa de acesso cobrada na submissão.' }),
+  }),
 });
 const supplierDevUpdateSchema = z.object({
   status: z.enum(['RECEBIDA', 'EM_ANALISE', 'EM_ACOMPANHAMENTO', 'CONCLUIDA', 'REJEITADA']).optional(),
   adminNotes: z.string().max(2000).optional(),
-  // Valor orçamentado da taxa de acesso ao programa (casos personalizados).
-  accessFeeUsd: z.coerce.number().nonnegative().optional(),
+  // Receção da taxa de acesso cobrada na submissão.
+  feeStatus: z.enum(['PENDENTE', 'COBRADO']).optional(),
+  // Valor orçamentado do RESTANTE do programa (serviços prestados).
+  programFeeUsd: z.coerce.number().nonnegative().optional(),
 });
 
 const decideCompanySchema = z.object({

@@ -8,6 +8,10 @@
 // A candidatura é PÚBLICA (entra pela página de login e pela home) — pode vir de
 // uma empresa que ainda nem está registada na plataforma. O Admin do Sistema
 // trata e acompanha cada caso.
+//
+// COBRANÇA: a taxa de acesso ao programa é cobrada LOGO NA SUBMISSÃO DA
+// INTENÇÃO — a candidatura nasce com a taxa emitida (PENDENTE) e o Admin do
+// Sistema regista a receção. O restante do programa é orçamentado à parte.
 const prisma = require('../config/database');
 const { NotFoundError } = require('../utils/errors');
 const { nextReference } = require('../utils/reference');
@@ -15,16 +19,19 @@ const notificationService = require('./notificationService');
 const planService = require('./planService');
 const logger = require('../config/logger');
 
-const PUBLIC_SELECT = { id: true, reference: true, companyName: true, track: true, status: true, createdAt: true };
+const PUBLIC_SELECT = {
+  id: true, reference: true, companyName: true, track: true, status: true, createdAt: true,
+  accessFeeUsd: true, feeStatus: true, feePaidAt: true, programFeeUsd: true, customPricing: true,
+};
 
 // Cria uma candidatura. `companyId` só vem preenchido quando o pedido é feito
 // por alguém já autenticado na plataforma.
 async function create(data, companyId = null) {
   const reference = await nextReference('SD', 'supplierDevRequest');
-  // Taxa de acesso ao programa: segue a taxa das pequenas empresas (100 USD);
-  // as restantes dimensões ficam marcadas como orçamento personalizado.
-  const size = planService.classify({ employees: data.employees });
-  const fee = planService.supplierDevAccessFee(size);
+  // A taxa de acesso ao programa é COBRADA LOGO NA SUBMISSÃO DA INTENÇÃO: a
+  // candidatura nasce com a taxa emitida em estado PENDENTE. O restante do
+  // programa é orçamentado depois da triagem (customPricing = true).
+  const fee = planService.supplierDevAccessFee();
   const request = await prisma.supplierDevRequest.create({
     data: {
       reference,
@@ -40,7 +47,8 @@ async function create(data, companyId = null) {
       track: data.track || 'AMBOS',
       needs: data.needs || null,
       accessFeeUsd: fee.amountUsd,
-      customPricing: fee.custom,
+      feeStatus: 'PENDENTE',
+      customPricing: true,
     },
   });
 
@@ -54,7 +62,14 @@ async function create(data, companyId = null) {
   return {
     reference: request.reference,
     status: request.status,
-    accessFee: { amountUsd: fee.amountUsd, currency: fee.currency, custom: fee.custom },
+    accessFee: {
+      amountUsd: fee.amountUsd,
+      currency: fee.currency,
+      // A taxa fica devida no acto: o candidato paga para o programa arrancar.
+      dueOnSubmission: true,
+      status: request.feeStatus,
+      remainderCustom: true,
+    },
   };
 }
 
@@ -72,10 +87,16 @@ async function list({ page = 1, limit = 25, status, track, q } = {}) {
       { contactEmail: { contains: q, mode: 'insensitive' } },
     ];
   }
-  const [total, items, byStatus] = await Promise.all([
+  const [total, items, byStatus, feePendentes] = await Promise.all([
     prisma.supplierDevRequest.count({ where }),
     prisma.supplierDevRequest.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (current - 1) * take, take }),
     prisma.supplierDevRequest.groupBy({ by: ['status'], _count: { _all: true } }),
+    // Taxas de acesso emitidas na submissão e ainda por receber.
+    prisma.supplierDevRequest.aggregate({
+      where: { feeStatus: 'PENDENTE' },
+      _count: { _all: true },
+      _sum: { accessFeeUsd: true },
+    }),
   ]);
   const counts = Object.fromEntries(byStatus.map((s) => [s.status, s._count._all]));
   return {
@@ -89,12 +110,15 @@ async function list({ page = 1, limit = 25, status, track, q } = {}) {
       emAnalise: counts.EM_ANALISE || 0,
       acompanhamento: counts.EM_ACOMPANHAMENTO || 0,
       concluidas: counts.CONCLUIDA || 0,
+      taxasPendentes: feePendentes._count._all || 0,
+      taxasPendentesUsd: Number(feePendentes._sum.accessFeeUsd || 0),
     },
   };
 }
 
-// Admin atualiza o estado / notas de acompanhamento.
-async function update(id, { status, adminNotes, accessFeeUsd }, user) {
+// Admin atualiza o estado, as notas, a receção da taxa de acesso e o orçamento
+// do restante do programa.
+async function update(id, { status, adminNotes, feeStatus, programFeeUsd }, user) {
   const request = await prisma.supplierDevRequest.findUnique({ where: { id } });
   if (!request) throw new NotFoundError('Candidatura');
   return prisma.supplierDevRequest.update({
@@ -102,7 +126,12 @@ async function update(id, { status, adminNotes, accessFeeUsd }, user) {
     data: {
       ...(status ? { status } : {}),
       ...(adminNotes !== undefined ? { adminNotes } : {}),
-      ...(accessFeeUsd !== undefined ? { accessFeeUsd, customPricing: false } : {}),
+      // Receção da taxa de acesso cobrada na submissão.
+      ...(feeStatus
+        ? { feeStatus, feePaidAt: feeStatus === 'COBRADO' ? request.feePaidAt || new Date() : null }
+        : {}),
+      // Orçamento do restante do programa: deixa de estar por definir.
+      ...(programFeeUsd !== undefined ? { programFeeUsd, customPricing: false } : {}),
       handledById: user?.id ?? request.handledById,
       handledAt: new Date(),
     },

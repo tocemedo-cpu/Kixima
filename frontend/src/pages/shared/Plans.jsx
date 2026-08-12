@@ -72,7 +72,7 @@ export default function Plans() {
             </div>
             <div className="pl-fee">
               <strong>0,20%</strong>
-              <span>{t('do valor da transação, acima de 11.500 USD (substitui os 8 USD)')}</span>
+              <span>{t('do valor da transação, acima de 11.500 USD — cobrado no fim, inclui a PO e a fatura')}</span>
             </div>
             <div className="pl-fee">
               <strong>15 USD</strong>
@@ -102,9 +102,23 @@ export default function Plans() {
         <p className="helptext" style={{ textAlign: 'center', marginTop: 16 }}>
           {t('A dimensão da empresa segue o critério das micro, pequenas e médias empresas e é confirmada pela KIXIMA no credenciamento.')}
         </p>
+
+        {/* Programas: a taxa de acesso é cobrada no acto da candidatura. */}
+        <div className="sd-fee" style={{ marginTop: 18 }}>
+          <div className="sd-fee-head">
+            <span className="sd-fee-ico"><Icon name="wallet" size={18} /></span>
+            <div>
+              <strong>{t('Supplier Development e Parceiros internacionais')}</strong>
+              <span className="sd-fee-amount">{t('100 USD/mês')}</span>
+            </div>
+          </div>
+          <p>{t('A taxa de acesso aos programas é a mesma das pequenas empresas e é cobrada logo na submissão da intenção de candidatura.')}</p>
+          <p>{t('O restante do programa (os serviços efetivamente prestados) é orçamentado caso a caso, depois da triagem da sua candidatura.')}</p>
+        </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 14, flexWrap: 'wrap' }}>
           <Link className="btn btn-accent" to="/cadastro">{t('Registar a minha empresa')}</Link>
           <Link className="btn btn-ghost" to="/supplier-development">{t('Supplier Development')}</Link>
+          <Link className="btn btn-ghost" to="/parcerias">{t('Parceiros internacionais')}</Link>
         </div>
       </section>
 

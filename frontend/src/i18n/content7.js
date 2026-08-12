@@ -8,16 +8,41 @@
 // Números: EN usa 11,500 USD / 0.20%; FR usa 11 500 USD / 0,20 %.
 
 export const EN8 = {
+  // Taxa de acesso aos programas — cobrada no acto da submissão da intenção.
+  'Taxa de acesso ao programa': 'Programme access fee',
+  'Taxa de acesso': 'Access fee',
+  'Taxa de acesso cobrada nesta submissão': 'Access fee charged on this submission',
+  'Esta taxa é cobrada logo na submissão da intenção — é o que dá acesso ao programa. É a mesma taxa de acesso das pequenas empresas.':
+    'This fee is charged as soon as you submit your expression of interest — it is what grants access to the programme. It is the same access fee as for small companies.',
+  'O restante do programa (os serviços efetivamente prestados) é orçamentado caso a caso, depois da triagem da sua candidatura.':
+    'The rest of the programme (the services actually delivered) is quoted case by case, after your application has been screened.',
+  'Li e aceito que a taxa de acesso é cobrada na submissão desta candidatura.':
+    'I have read and accept that the access fee is charged upon submission of this application.',
+  'Submeter candidatura e aceitar a taxa': 'Submit application and accept the fee',
+  'A taxa ficou emitida em seu nome com a referência acima e está por liquidar. A KIXIMA envia as coordenadas de pagamento para o email indicado.':
+    'The fee has been issued in your name under the reference above and is outstanding. KIXIMA will send the payment details to the email you provided.',
+  'O restante do programa é orçamentado caso a caso e enviado com a proposta.':
+    'The rest of the programme is quoted case by case and sent with the proposal.',
+  'Supplier Development e Parceiros internacionais': 'Supplier Development and International partners',
+  'A taxa de acesso aos programas é a mesma das pequenas empresas e é cobrada logo na submissão da intenção de candidatura.':
+    'The access fee for the programmes is the same as for small companies and is charged as soon as the expression of interest is submitted.',
+  // Gestão da taxa pelo Admin do Sistema.
+  'Taxas por receber': 'Fees outstanding',
+  'Cobradas na submissão': 'Charged on submission',
+  'Cobrada na submissão da intenção. O restante do programa é orçamentado aqui.':
+    'Charged when the expression of interest was submitted. The rest of the programme is quoted here.',
+  'Orçamento do restante do programa (USD)': 'Quote for the rest of the programme (USD)',
+  'Por orçamentar': 'Not yet quoted',
+  'Guardar orçamento': 'Save quote',
+  'Registar receção da taxa': 'Record fee receipt',
   'Parceiros internacionais': 'International partners',
   'Candidatura a': 'Applying to',
   'Apoio no processo burocrático para se tornar fornecedor credenciado': 'Support through the regulatory process to become an accredited supplier',
   'Procura de parceiros estrangeiros para tecnologia e capacitação': 'Search for foreign partners for technology and capacity building',
-  'A taxa de acesso ao programa é orçamentada caso a caso — a KIXIMA envia a proposta com o contacto.': 'The programme access fee is quoted case by case — KIXIMA will send the proposal when it gets in touch.',
   'Também procuro parceiros internacionais': 'I am also looking for international partners',
   'Também preciso de apoio no processo burocrático': 'I also need support with the regulatory process',
   'Ligação a parceiros estrangeiros para tecnologia e capacitação.': 'Connection to foreign partners for technology and capacity building.',
   'Acompanhamento no registo, licenças, certificações e conformidade.': 'Guidance through registration, licences, certifications and compliance.',
-  'Taxa de acesso ao programa: {valor} USD/mês, igual à taxa de acesso das pequenas empresas.': 'Programme access fee: {valor} USD/month, the same as the small-company access fee.',
 
   // Planos e Supplier Development — literais em estruturas de dados.
   'Micro, pequenas e médias empresas': 'Micro, small and medium companies',
@@ -71,10 +96,10 @@ export const EN8 = {
   'por ordem de compra, até 11.500 USD por transação':
     'per purchase order, up to 11,500 USD per transaction',
   'por fatura emitida': 'per invoice issued',
-  'do valor da transação, acima de 11.500 USD (substitui os 8 USD)':
-    'of the transaction value, above 11,500 USD (replaces the 8 USD)',
-  '(nº de POs × {perPo}) + {perInvoice} por fatura · acima de {limiar}: {pct} do valor':
-    '(no. of POs × {perPo}) + {perInvoice} per invoice · above {limiar}: {pct} of the value',
+  'do valor da transação, acima de 11.500 USD — cobrado no fim, inclui a PO e a fatura':
+    'of the transaction value, above 11,500 USD — charged at the end, covers both the PO and the invoice',
+  '(nº de POs × {perPo}) + {perInvoice} por fatura · acima de {limiar}: {pct} do valor, tudo incluído':
+    '(no. of POs × {perPo}) + {perInvoice} per invoice · above {limiar}: {pct} of the value, all included',
   'Total faturável/mês': 'Total billable/month',
   'Total recebido': 'Total received',
 
@@ -144,16 +169,41 @@ export const EN8 = {
 };
 
 export const FR8 = {
+  // Frais d'accès aux programmes — facturés dès la soumission de l'intention.
+  'Taxa de acesso ao programa': "Frais d'accès au programme",
+  'Taxa de acesso': "Frais d'accès",
+  'Taxa de acesso cobrada nesta submissão': "Frais d'accès facturés lors de cette soumission",
+  'Esta taxa é cobrada logo na submissão da intenção — é o que dá acesso ao programa. É a mesma taxa de acesso das pequenas empresas.':
+    "Ces frais sont facturés dès la soumission de la déclaration d'intention — c'est ce qui donne accès au programme. Ce sont les mêmes frais d'accès que ceux des petites entreprises.",
+  'O restante do programa (os serviços efetivamente prestados) é orçamentado caso a caso, depois da triagem da sua candidatura.':
+    "Le reste du programme (les services effectivement fournis) est chiffré au cas par cas, après l'examen de votre candidature.",
+  'Li e aceito que a taxa de acesso é cobrada na submissão desta candidatura.':
+    "J'ai lu et j'accepte que les frais d'accès soient facturés lors de la soumission de cette candidature.",
+  'Submeter candidatura e aceitar a taxa': 'Soumettre la candidature et accepter les frais',
+  'A taxa ficou emitida em seu nome com a referência acima e está por liquidar. A KIXIMA envia as coordenadas de pagamento para o email indicado.':
+    "Les frais ont été émis à votre nom sous la référence ci-dessus et restent à régler. KIXIMA enverra les coordonnées de paiement à l'adresse e-mail indiquée.",
+  'O restante do programa é orçamentado caso a caso e enviado com a proposta.':
+    'Le reste du programme est chiffré au cas par cas et transmis avec la proposition.',
+  'Supplier Development e Parceiros internacionais': 'Supplier Development et Partenaires internationaux',
+  'A taxa de acesso aos programas é a mesma das pequenas empresas e é cobrada logo na submissão da intenção de candidatura.':
+    "Les frais d'accès aux programmes sont identiques à ceux des petites entreprises et sont facturés dès la soumission de la déclaration d'intention.",
+  // Gestion des frais par l'Admin Système.
+  'Taxas por receber': 'Frais à encaisser',
+  'Cobradas na submissão': 'Facturés à la soumission',
+  'Cobrada na submissão da intenção. O restante do programa é orçamentado aqui.':
+    "Facturés lors de la soumission de la déclaration d'intention. Le reste du programme se chiffre ici.",
+  'Orçamento do restante do programa (USD)': 'Devis pour le reste du programme (USD)',
+  'Por orçamentar': 'À chiffrer',
+  'Guardar orçamento': 'Enregistrer le devis',
+  'Registar receção da taxa': 'Enregistrer la réception des frais',
   'Parceiros internacionais': 'Partenaires internationaux',
   'Candidatura a': 'Candidature à',
   'Apoio no processo burocrático para se tornar fornecedor credenciado': 'Accompagnement administratif pour devenir un fournisseur accrédité',
   'Procura de parceiros estrangeiros para tecnologia e capacitação': 'Recherche de partenaires étrangers pour la technologie et le renforcement des capacités',
-  'A taxa de acesso ao programa é orçamentada caso a caso — a KIXIMA envia a proposta com o contacto.': "Les frais d'accès au programme sont chiffrés au cas par cas — KIXIMA enverra la proposition lors de la prise de contact.",
   'Também procuro parceiros internacionais': 'Je recherche également des partenaires internationaux',
   'Também preciso de apoio no processo burocrático': "J'ai également besoin d'un accompagnement administratif",
   'Ligação a parceiros estrangeiros para tecnologia e capacitação.': 'Mise en relation avec des partenaires étrangers pour la technologie et le renforcement des capacités.',
   'Acompanhamento no registo, licenças, certificações e conformidade.': "Accompagnement pour l'immatriculation, les licences, les certifications et la conformité.",
-  'Taxa de acesso ao programa: {valor} USD/mês, igual à taxa de acesso das pequenas empresas.': "Frais d'accès au programme : {valor} USD/mois, identiques aux frais d'accès des petites entreprises.",
 
   // Planos e Supplier Development — literais em estruturas de dados.
   'Micro, pequenas e médias empresas': 'Micro, petites et moyennes entreprises',
@@ -207,10 +257,10 @@ export const FR8 = {
   'por ordem de compra, até 11.500 USD por transação':
     'par bon de commande, jusqu’à 11 500 USD par transaction',
   'por fatura emitida': 'par facture émise',
-  'do valor da transação, acima de 11.500 USD (substitui os 8 USD)':
-    'de la valeur de la transaction, au-delà de 11 500 USD (remplace les 8 USD)',
-  '(nº de POs × {perPo}) + {perInvoice} por fatura · acima de {limiar}: {pct} do valor':
-    '(nbre de BC × {perPo}) + {perInvoice} par facture · au-delà de {limiar} : {pct} de la valeur',
+  'do valor da transação, acima de 11.500 USD — cobrado no fim, inclui a PO e a fatura':
+    'de la valeur de la transaction, au-delà de 11 500 USD — facturé à la fin, couvre le BC et la facture',
+  '(nº de POs × {perPo}) + {perInvoice} por fatura · acima de {limiar}: {pct} do valor, tudo incluído':
+    '(nbre de BC × {perPo}) + {perInvoice} par facture · au-delà de {limiar} : {pct} de la valeur, tout compris',
   'Total faturável/mês': 'Total facturable/mois',
   'Total recebido': 'Total reçu',
 

@@ -2647,5 +2647,15 @@ tbody tr:hover {
 .sd-cross strong { display: block; font-size: 13px; }
 .sd-cross > span > span { font-size: 12px; color: var(--ink-600, #666); line-height: 1.45; }
 .sd-cross:hover { border-color: var(--brand-600); }
+/* Taxa de acesso — cobrada no acto da submissão, por isso fica destacada. */
+.sd-fee { border: 1px solid var(--brand-100); background: var(--brand-050); border-radius: 10px; padding: 14px; margin: 18px 0 14px; }
+.sd-fee-head { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+.sd-fee-ico { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: #fff; color: var(--brand-600); flex-shrink: 0; }
+.sd-fee-head strong { display: block; font-size: 13px; }
+.sd-fee-amount { display: block; font-size: 18px; font-weight: 700; color: var(--brand-600); line-height: 1.25; }
+.sd-fee p { font-size: 12px; color: var(--ink-600, #666); line-height: 1.5; margin: 0 0 6px; }
+.sd-fee-accept { display: flex; gap: 10px; align-items: flex-start; margin-top: 10px; font-size: 12px; line-height: 1.45; cursor: pointer; }
+.sd-fee-accept input { margin-top: 2px; flex-shrink: 0; }
+.sd-fee-done { margin-top: 14px; }
 .home-programs { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 1100px) { .home-programs { grid-template-columns: 1fr; } }

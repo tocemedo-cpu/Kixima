@@ -21,6 +21,12 @@ const publicLimiter = rateLimit({
 });
 
 // --- Público -----------------------------------------------------------------
+// Taxa de acesso ao programa, para o formulário a poder mostrar ANTES da
+// submissão — é cobrada no acto de submeter a intenção.
+router.get('/fee', (req, res) => {
+  res.json(require('../services/planService').supplierDevAccessFee());
+});
+
 // Candidatura ao programa. Se houver sessão iniciada, associa à empresa.
 router.post('/requests', publicLimiter, optionalAuthenticate, validate(supplierDevSchema), async (req, res) => {
   res.status(201).json(await svc.create(req.body, req.user?.companyId ?? null));

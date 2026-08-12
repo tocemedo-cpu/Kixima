@@ -97,15 +97,19 @@ function monthlyAccessCost({ activeUsers, seatPriceUsd }) {
   return { seats, seatPriceUsd: price, amountUsd: Math.round(seats * price * 100) / 100, currency: 'USD' };
 }
 
-// Taxa de acesso ao PROGRAMA Supplier Development. Segue a taxa de acesso das
-// pequenas empresas (100 USD/mês); micro/pequenas pagam esse valor de tabela e
-// as restantes dimensões são orçamentadas caso a caso.
-function supplierDevAccessFee(size) {
-  const standard = ['MICRO', 'PEQUENA'].includes(size);
+// Taxa de acesso ao PROGRAMA Supplier Development (e à procura de parceiros
+// internacionais). É a taxa de acesso das pequenas empresas — 100 USD — e é
+// COBRADA LOGO NA SUBMISSÃO DA INTENÇÃO, igual para qualquer candidato: no
+// momento da candidatura ainda não há diagnóstico, por isso o valor de entrada
+// tem de ser o de tabela. O RESTO do programa (os serviços efetivamente
+// prestados) é orçamentado caso a caso depois da triagem.
+function supplierDevAccessFee() {
   return {
-    amountUsd: standard ? SEAT_PRICE_CAP_USD : null,
+    amountUsd: SEAT_PRICE_CAP_USD,
     currency: 'USD',
-    custom: !standard,
+    dueOnSubmission: true,
+    // O restante do programa fica por orçamentar até a KIXIMA fazer a proposta.
+    remainderCustom: true,
   };
 }
 

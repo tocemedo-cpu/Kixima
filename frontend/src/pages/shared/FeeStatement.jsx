@@ -75,7 +75,7 @@ export default function FeeStatement() {
         <section className="pdoc-boxes">
           <div className="pdoc-box">
             <div className="pdoc-lbl">{t('FÓRMULA DA TAXA')}</div>
-            <strong>{t('(nº de POs × {perPo}) + {perInvoice} por fatura · acima de {limiar}: {pct} do valor', { perPo: money(formula.perPo, cur), perInvoice: money(formula.perInvoice, cur), limiar: money(formula.thresholdUsd || 11500, cur), pct: `${((formula.percentAbove || 0.002) * 100).toFixed(2).replace('.', ',')}%` })}</strong>
+            <strong>{t('(nº de POs × {perPo}) + {perInvoice} por fatura · acima de {limiar}: {pct} do valor, tudo incluído', { perPo: money(formula.perPo, cur), perInvoice: money(formula.perInvoice, cur), limiar: money(formula.thresholdUsd || 11500, cur), pct: `${((formula.percentAbove || 0.002) * 100).toFixed(2).replace('.', ',')}%` })}</strong>
           </div>
           <div className="pdoc-box">
             <div className="pdoc-lbl">{t('TOTAL POR COBRAR')}</div>

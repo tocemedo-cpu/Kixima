@@ -265,7 +265,7 @@ const events = {
       roles: ['ADMIN_SISTEMA'],
       type: 'SUPPLIER_DEV_RECEBIDA',
       title: 'Nova candidatura ao Supplier Development',
-      message: `${r.companyName} candidatou-se ao programa (${r.reference}). Percurso: ${r.track}. Contacto: ${r.contactName} — ${r.contactEmail}.`,
+      message: `${r.companyName} candidatou-se ao programa (${r.reference}). Percurso: ${r.track}. Contacto: ${r.contactName} — ${r.contactEmail}. Taxa de acesso de ${r.accessFeeUsd} USD emitida na submissão — por receber.`,
       channel: 'IN_APP_EMAIL',
       relatedEntityType: 'SupplierDevRequest',
       relatedEntityId: r.id,

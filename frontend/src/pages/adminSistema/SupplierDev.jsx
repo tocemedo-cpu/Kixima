@@ -34,6 +34,7 @@ export default function AdminSupplierDev() {
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(null);
   const [notes, setNotes] = useState('');
+  const [programFee, setProgramFee] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -45,14 +46,20 @@ export default function AdminSupplierDev() {
   }
   useEffect(load, [page, status, q]);
 
-  async function setRequestStatus(id, next) {
+  async function patchRequest(id, body, close = true) {
     setSaving(true); setError('');
     try {
-      await api.patch(`/api/supplier-development/requests/${id}`, { status: next, adminNotes: notes || undefined });
-      setOpen(null); setNotes('');
+      await api.patch(`/api/supplier-development/requests/${id}`, { adminNotes: notes || undefined, ...body });
+      if (close) { setOpen(null); setNotes(''); setProgramFee(''); }
       load();
     } catch (e) { setError(e.message); } finally { setSaving(false); }
   }
+
+  const setRequestStatus = (id, status) => patchRequest(id, { status });
+  // Receção da taxa de acesso que foi cobrada na submissão da intenção.
+  const markFeePaid = (id) => patchRequest(id, { feeStatus: 'COBRADO' }, false);
+  // Orçamento do restante do programa (os serviços prestados).
+  const saveProgramFee = (id) => patchRequest(id, { programFeeUsd: Number(programFee) }, false);
 
   const k = data?.kpis;
   const items = data?.items || [];
@@ -70,6 +77,8 @@ export default function AdminSupplierDev() {
         { icon: 'approvals', tone: 'pending', label: 'Por analisar', value: k?.recebidas ?? '—', sub: 'Aguardam triagem' },
         { icon: 'activities', tone: 'info', label: 'Em acompanhamento', value: k?.acompanhamento ?? '—', sub: 'Casos ativos' },
         { icon: 'reception', tone: 'success', label: 'Concluídas', value: k?.concluidas ?? '—', sub: 'Processos fechados' },
+        { icon: 'wallet', tone: 'pending', label: 'Taxas por receber', value: k?.taxasPendentes ?? '—',
+          sub: k ? t('{valor} USD emitidos na submissão', { valor: k.taxasPendentesUsd }) : t('Cobradas na submissão') },
       ]} />
 
       <Tabs tabs={STATUS} value={status} onChange={(v) => { setStatus(v); setPage(1); }} />
@@ -82,12 +91,12 @@ export default function AdminSupplierDev() {
           <thead>
             <tr>
               <th>{t('Referência')}</th><th>{t('Empresa')}</th><th>{t('Contacto')}</th>
-              <th>{t('Percurso')}</th><th>{t('Recebida em')}</th><th>{t('Estado')}</th><th></th>
+              <th>{t('Percurso')}</th><th>{t('Recebida em')}</th><th>{t('Taxa de acesso')}</th><th>{t('Estado')}</th><th></th>
             </tr>
           </thead>
           <tbody>
-            {!data ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>
-              : items.length === 0 ? <tr><td colSpan={7}><EmptyRow>Ainda não há candidaturas ao programa.</EmptyRow></td></tr>
+            {!data ? <tr><td colSpan={8}><EmptyRow>A carregar…</EmptyRow></td></tr>
+              : items.length === 0 ? <tr><td colSpan={8}><EmptyRow>Ainda não há candidaturas ao programa.</EmptyRow></td></tr>
               : items.map((r) => (
                 <tr key={r.id}>
                   <td className="mono">{r.reference}</td>
@@ -98,9 +107,15 @@ export default function AdminSupplierDev() {
                   <td>{r.contactName}<span className="bz-sub2">{r.contactEmail}</span></td>
                   <td className="bz-muted">{t(TRACK_LABEL[r.track] || r.track)}</td>
                   <td className="bz-muted">{formatDate(r.createdAt)}</td>
+                  <td>
+                    <Pill tone={r.feeStatus === 'COBRADO' ? 'success' : 'pending'}>
+                      {r.feeStatus === 'COBRADO' ? 'Recebida' : 'Por receber'}
+                    </Pill>
+                    <span className="bz-sub2">{r.accessFeeUsd ? `${r.accessFeeUsd} USD` : '—'}</span>
+                  </td>
                   <td><Pill tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status] || r.status}</Pill></td>
                   <td>
-                    <button className="btn btn-ghost btn-sm" onClick={() => { setOpen(open === r.id ? null : r.id); setNotes(r.adminNotes || ''); }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setOpen(open === r.id ? null : r.id); setNotes(r.adminNotes || ''); setProgramFee(r.programFeeUsd ?? ''); }}>
                       {open === r.id ? t('Fechar') : t('Ver / Acompanhar')}
                     </button>
                   </td>
@@ -129,6 +144,34 @@ export default function AdminSupplierDev() {
                 <p style={{ fontSize: 13, lineHeight: 1.6 }}>{r.needs || '—'}</p>
               </div>
             </div>
+            {/* A taxa de acesso foi cobrada no acto da submissão: aqui regista-se
+                a receção e orçamenta-se o restante do programa. */}
+            <div className="bz-card" style={{ padding: 14, marginBottom: 12 }}>
+              <p className="bz-sub2" style={{ marginTop: 0 }}>
+                <strong>{t('Taxa de acesso')}:</strong>{' '}
+                {r.accessFeeUsd ? `${r.accessFeeUsd} USD` : '—'} ·{' '}
+                <Pill tone={r.feeStatus === 'COBRADO' ? 'success' : 'pending'}>
+                  {r.feeStatus === 'COBRADO' ? 'Recebida' : 'Por receber'}
+                </Pill>
+                {r.feePaidAt ? ` · ${formatDate(r.feePaidAt)}` : ''}
+              </p>
+              <p className="bz-sub2">{t('Cobrada na submissão da intenção. O restante do programa é orçamentado aqui.')}</p>
+              <div className="grid-cols grid-2" style={{ alignItems: 'end' }}>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label>{t('Orçamento do restante do programa (USD)')}</label>
+                  <input type="number" min="0" step="0.01" value={programFee}
+                    onChange={(e) => setProgramFee(e.target.value)}
+                    placeholder={r.customPricing ? t('Por orçamentar') : ''} />
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 2 }}>
+                  <button className="btn btn-ghost btn-sm" disabled={saving || programFee === ''}
+                    onClick={() => saveProgramFee(r.id)}>{t('Guardar orçamento')}</button>
+                  <button className="btn btn-primary btn-sm" disabled={saving || r.feeStatus === 'COBRADO'}
+                    onClick={() => markFeePaid(r.id)}>{t('Registar receção da taxa')}</button>
+                </div>
+              </div>
+            </div>
+
             <div className="field">
               <label>{t('Notas de acompanhamento (internas)')}</label>
               <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />

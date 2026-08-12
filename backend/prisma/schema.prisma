@@ -1004,11 +1004,16 @@ model SupplierDevRequest {
   employees     Int?
   track         SupplierDevTrack  @default(AMBOS)
   needs         String?                                  // o que precisa / objetivos
-  // Taxa de acesso ao programa (USD/mês). Segue a taxa de acesso das pequenas
-  // empresas (100 USD); os restantes casos são orçamentados caso a caso e o
-  // valor fica aqui quando a KIXIMA o define (customPricing = true).
+  // TAXA DE ACESSO ao programa (USD/mês) — igual à taxa de acesso das pequenas
+  // empresas e COBRADA LOGO NA SUBMISSÃO DA INTENÇÃO. Fica emitida como
+  // PENDENTE no momento da candidatura; o Admin do Sistema regista a receção.
   accessFeeUsd  Decimal?          @map("access_fee_usd") @db.Decimal(10, 2)
-  customPricing Boolean           @default(false) @map("custom_pricing")
+  feeStatus     PlatformFeeStatus @default(PENDENTE) @map("fee_status")
+  feePaidAt     DateTime?         @map("fee_paid_at")
+  // O RESTANTE do programa é orçamentado caso a caso após a triagem.
+  // customPricing = true enquanto esse orçamento ainda não foi definido.
+  programFeeUsd Decimal?          @map("program_fee_usd") @db.Decimal(12, 2)
+  customPricing Boolean           @default(true) @map("custom_pricing")
   status        SupplierDevStatus @default(RECEBIDA)
   adminNotes    String?           @map("admin_notes")
   handledById   String?           @map("handled_by_id")

@@ -4,7 +4,7 @@
 // de parceiros internacionais para empresas locais. A candidatura não exige
 // conta: qualquer empresa angolana se pode candidatar e acompanhar por
 // referência.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../api/client';
 import Logo from '../../components/Logo';
@@ -39,6 +39,12 @@ export default function SupplierDevelopment({ initialTrack = 'BUROCRACIA' }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(null);
+  // A taxa de acesso é cobrada no acto de submeter — tem de estar à vista ANTES
+  // de o candidato submeter, e ele tem de a aceitar expressamente.
+  const [fee, setFee] = useState(null);
+  const [feeAccepted, setFeeAccepted] = useState(false);
+
+  useEffect(() => { api.get('/api/supplier-development/fee').then(setFee).catch(() => setFee(null)); }, []);
 
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -47,7 +53,10 @@ export default function SupplierDevelopment({ initialTrack = 'BUROCRACIA' }) {
     setError('');
     setSubmitting(true);
     try {
-      const payload = { ...form, track, employees: form.employees === '' ? undefined : Number(form.employees) };
+      const payload = {
+        ...form, track, feeAccepted: true,
+        employees: form.employees === '' ? undefined : Number(form.employees),
+      };
       Object.keys(payload).forEach((k) => payload[k] === '' && delete payload[k]);
       setDone(await api.post('/api/supplier-development/requests', payload));
     } catch (err) {
@@ -96,11 +105,19 @@ export default function SupplierDevelopment({ initialTrack = 'BUROCRACIA' }) {
               <strong className="mono">{done.reference}</strong>. {t('A equipa KIXIMA entra em contacto pelo email indicado. Guarde a referência para acompanhar o estado.')}
             </p>
             {done.accessFee ? (
-              <p className="helptext" style={{ marginTop: 10 }}>
-                {done.accessFee.custom
-                  ? t('A taxa de acesso ao programa é orçamentada caso a caso — a KIXIMA envia a proposta com o contacto.')
-                  : t('Taxa de acesso ao programa: {valor} USD/mês, igual à taxa de acesso das pequenas empresas.', { valor: done.accessFee.amountUsd })}
-              </p>
+              <div className="sd-fee sd-fee-done">
+                <div className="sd-fee-head">
+                  <span className="sd-fee-ico"><Icon name="wallet" size={18} /></span>
+                  <div>
+                    <strong>{t('Taxa de acesso cobrada nesta submissão')}</strong>
+                    <span className="sd-fee-amount">{t('{valor} USD/mês', { valor: done.accessFee.amountUsd })}</span>
+                  </div>
+                </div>
+                <p>
+                  {t('A taxa ficou emitida em seu nome com a referência acima e está por liquidar. A KIXIMA envia as coordenadas de pagamento para o email indicado.')}
+                </p>
+                <p>{t('O restante do programa é orçamentado caso a caso e enviado com a proposta.')}</p>
+              </div>
             ) : null}
             <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
               <Link className="btn btn-accent" to="/login">{t('Ir para o login')}</Link>
@@ -183,9 +200,32 @@ export default function SupplierDevelopment({ initialTrack = 'BUROCRACIA' }) {
                   placeholder={t('Ex.: apoio no licenciamento e um parceiro para soldadura certificada.')} />
               </div>
 
+              {/* A taxa é cobrada no acto: tem de estar à vista antes de submeter. */}
+              <div className="sd-fee">
+                <div className="sd-fee-head">
+                  <span className="sd-fee-ico"><Icon name="wallet" size={18} /></span>
+                  <div>
+                    <strong>{t('Taxa de acesso ao programa')}</strong>
+                    <span className="sd-fee-amount">
+                      {fee ? t('{valor} USD/mês', { valor: fee.amountUsd }) : '—'}
+                    </span>
+                  </div>
+                </div>
+                <p>
+                  {t('Esta taxa é cobrada logo na submissão da intenção — é o que dá acesso ao programa. É a mesma taxa de acesso das pequenas empresas.')}
+                </p>
+                <p>
+                  {t('O restante do programa (os serviços efetivamente prestados) é orçamentado caso a caso, depois da triagem da sua candidatura.')}
+                </p>
+                <label className="sd-fee-accept">
+                  <input type="checkbox" required checked={feeAccepted} onChange={(e) => setFeeAccepted(e.target.checked)} />
+                  <span>{t('Li e aceito que a taxa de acesso é cobrada na submissão desta candidatura.')}</span>
+                </label>
+              </div>
+
               {error ? <p className="error-text" style={{ margin: '10px 0' }}>{error}</p> : null}
-              <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%' }}>
-                {submitting ? t('A submeter…') : t('Submeter candidatura')}
+              <button className="btn btn-accent" type="submit" disabled={submitting || !feeAccepted} style={{ width: '100%' }}>
+                {submitting ? t('A submeter…') : t('Submeter candidatura e aceitar a taxa')}
               </button>
             </form>
           </div>
