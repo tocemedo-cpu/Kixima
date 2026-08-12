@@ -79,6 +79,12 @@ export const EN9 = {
   // --- Planos ----------------------------------------------------------------
   '/ utilizador / mês': '/ user / month',
 
+  // --- 2FA obrigatória --------------------------------------------------------
+  'Ative a verificação em dois passos': 'Turn on two-step verification',
+  'o seu perfil aprova operações com dinheiro, por isso a senha deixou de bastar.':
+    'your role approves money operations, so a password is no longer enough.',
+  'Ativar agora': 'Turn it on now',
+
   // --- Política de senhas -----------------------------------------------------
   'A nova senha deve ter pelo menos 10 caracteres.': 'The new password must be at least 10 characters long.',
   'Escolha a nova senha da sua conta KIXIMA (mínimo 10 caracteres; 12 se aprovar pagamentos).':
@@ -149,6 +155,12 @@ export const FR9 = {
 
   // --- Formules --------------------------------------------------------------
   '/ utilizador / mês': '/ utilisateur / mois',
+
+  // --- 2FA obligatoire --------------------------------------------------------
+  'Ative a verificação em dois passos': 'Activez la vérification en deux étapes',
+  'o seu perfil aprova operações com dinheiro, por isso a senha deixou de bastar.':
+    "votre profil approuve des opérations financières : le mot de passe ne suffit plus.",
+  'Ativar agora': 'Activer maintenant',
 
   // --- Politique de mots de passe ---------------------------------------------
   'A nova senha deve ter pelo menos 10 caracteres.': 'Le nouveau mot de passe doit comporter au moins 10 caractères.',

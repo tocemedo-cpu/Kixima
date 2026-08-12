@@ -1,9 +1,35 @@
 const authService = require('../services/authService');
 const auditService = require('../services/auditService');
 
+// Entrar. O trilho de auditoria cobria as operações com dinheiro mas nada sobre
+// AUTENTICAÇÃO: numa transação disputada conseguia-se provar o que aconteceu com
+// a ordem, mas não quem estava na conta. Fica registado o sucesso e a falha —
+// uma sequência de falhas é o primeiro sinal de um ataque a uma conta concreta.
 async function login(req, res) {
-  const result = await authService.login(req.body);
-  res.json(result);
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  try {
+    const result = await authService.login(req.body);
+    await auditService.recordSafe({
+      actor: { ...auditService.anonimoFrom(req), actorId: result.user?.id ?? null, actorName: result.user?.name ?? null, actorRole: result.user?.role ?? null, companyId: result.user?.companyId ?? null },
+      action: result.mfaRequired ? 'LOGIN_2FA_PEDIDO' : 'LOGIN_SUCESSO',
+      entityType: 'User',
+      entityId: result.user?.id ?? null,
+      entityRef: email,
+      detail: auditService.contextoFrom(req),
+    });
+    res.json(result);
+  } catch (err) {
+    // Regista a tentativa e deixa o erro seguir — a resposta ao utilizador não
+    // muda, para não revelar se o email existe.
+    await auditService.recordSafe({
+      actor: auditService.anonimoFrom(req),
+      action: 'LOGIN_FALHADO',
+      entityType: 'User',
+      entityRef: email,
+      detail: { ...auditService.contextoFrom(req), motivo: err.code || err.name || 'CREDENCIAIS' },
+    });
+    throw err;
+  }
 }
 
 async function me(req, res) {
@@ -13,12 +39,28 @@ async function me(req, res) {
 async function changePassword(req, res) {
   const { currentPassword, newPassword } = req.body;
   const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'SENHA_ALTERADA',
+    entityType: 'User',
+    entityId: req.user.id,
+    entityRef: req.user.email || req.user.name,
+    detail: auditService.contextoFrom(req),
+  });
   res.json(result);
 }
 
 // Termina a sessão em todos os dispositivos (revoga os JWT emitidos).
 async function logout(req, res) {
   await authService.revokeSessions(req.user.id);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'SESSOES_TERMINADAS',
+    entityType: 'User',
+    entityId: req.user.id,
+    entityRef: req.user.email || req.user.name,
+    detail: auditService.contextoFrom(req),
+  });
   res.json({ ok: true });
 }
 
@@ -31,11 +73,29 @@ function publicBaseUrl(req) {
 // (anti-enumeração de contas).
 async function forgotPassword(req, res) {
   await authService.requestPasswordReset(req.body.email, publicBaseUrl(req));
+  // Regista-se sempre, exista ou não a conta: a resposta ao utilizador é igual
+  // nos dois casos, mas o trilho tem de mostrar quem pediu o quê e de onde.
+  await auditService.recordSafe({
+    actor: auditService.anonimoFrom(req),
+    action: 'SENHA_RECUPERACAO_PEDIDA',
+    entityType: 'User',
+    entityRef: String(req.body?.email || '').trim().toLowerCase(),
+    detail: auditService.contextoFrom(req),
+  });
   res.json({ ok: true, message: 'Se o email existir na plataforma, enviámos um link de recuperação.' });
 }
 
 async function resetPassword(req, res) {
-  res.json(await authService.resetPassword(req.body.token, req.body.password));
+  const result = await authService.resetPassword(req.body.token, req.body.password);
+  await auditService.recordSafe({
+    actor: { ...auditService.anonimoFrom(req), actorId: result?.userId ?? null },
+    action: 'SENHA_REPOSTA',
+    entityType: 'User',
+    entityId: result?.userId ?? null,
+    entityRef: result?.email ?? null,
+    detail: auditService.contextoFrom(req),
+  });
+  res.json(result);
 }
 
 // --- 2FA (TOTP) -------------------------------------------------------------

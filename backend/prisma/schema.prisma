@@ -7,9 +7,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   // App: pooler de TRANSAÇÃO do Supabase (porta 6543, pgbouncer=true).
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
   // Migrações/DDL: pooler de SESSÃO (porta 5432, mesmo host `...pooler.supabase.com`,
   // IPv4). NÃO usar o host direto `db.<ref>.supabase.co` (só IPv6 → P1001). Em
   // dev/teste local pode ser igual ao DATABASE_URL (Postgres local direto).
@@ -43,7 +43,7 @@ enum CompanyPlan {
 }
 
 enum CompanyStatus {
-  PENDENTE      // aguarda due diligence
+  PENDENTE // aguarda due diligence
   APROVADA
   REJEITADA
   SUSPENSA
@@ -67,25 +67,25 @@ enum PersonaRole {
 }
 
 model Company {
-  id          String        @id @default(uuid())
-  name        String
-  taxId       String        @unique @map("tax_id")
-  type        CompanyType
-  status      CompanyStatus @default(PENDENTE)
-  contactEmail String       @map("contact_email")
-  contactPhone String?      @map("contact_phone")
-  address     String?
-  verified    Boolean       @default(false) // selo "Fornecedor Verificado"
-  logoUrl     String?       @map("logo_url")
-  city        String?
-  province    String?
-  country     String?       @default("Angola")
-  settings    Json?         // preferências da empresa (tela Configurações do Company Admin)
+  id           String        @id @default(uuid())
+  name         String
+  taxId        String        @unique @map("tax_id")
+  type         CompanyType
+  status       CompanyStatus @default(PENDENTE)
+  contactEmail String        @map("contact_email")
+  contactPhone String?       @map("contact_phone")
+  address      String?
+  verified     Boolean       @default(false) // selo "Fornecedor Verificado"
+  logoUrl      String?       @map("logo_url")
+  city         String?
+  province     String?
+  country      String?       @default("Angola")
+  settings     Json? // preferências da empresa (tela Configurações do Company Admin)
 
   // Dados bancários do fornecedor (para pagamento; aparecem na fatura/PDF).
-  bankName    String?       @map("bank_name")
-  iban        String?
-  swift       String?
+  bankName String? @map("bank_name")
+  iban     String?
+  swift    String?
 
   // Aceite dos Termos de Uso e Política de Privacidade no cadastro (quem
   // regista aceita em nome da empresa; obrigatório no formulário).
@@ -93,7 +93,7 @@ model Company {
 
   // --- Dimensão e plano (modelo comercial) ---------------------------------
   // Declarados no cadastro e confirmáveis pelo Admin do Sistema na due diligence.
-  employees        Int?        @map("employees")           // nº de trabalhadores
+  employees        Int?        @map("employees") // nº de trabalhadores
   annualRevenueUsd Decimal?    @map("annual_revenue_usd") @db.Decimal(16, 2)
   size             CompanySize @default(PEQUENA)
   plan             CompanyPlan @default(BASICO)
@@ -101,29 +101,29 @@ model Company {
   seatPriceUsd     Decimal     @default(100) @map("seat_price_usd") @db.Decimal(10, 2)
   planNotes        String?     @map("plan_notes")
 
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  approvedAt  DateTime?     @map("approved_at")
-  rejectedAt  DateTime?     @map("rejected_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  approvedAt DateTime? @map("approved_at")
+  rejectedAt DateTime? @map("rejected_at")
 
-  users              User[]
-  productsOffered    Product[]              @relation("SupplierProducts")
-  purchaseOrdersMade PurchaseOrder[]        @relation("BuyerCompanyOrders")
-  purchaseOrdersRecv PurchaseOrder[]        @relation("SupplierCompanyOrders")
-  contractsAsClient  Contract[]             @relation("ClientContracts")
-  contractsAsSupplier Contract[]            @relation("SupplierContracts")
-  supplierPolicies   SupplierToKiximaPolicy[]
-  clientPolicies     KiximaToClientPolicy[]
-  notifications      Notification[]
-  budgetLimit        BudgetLimit?
-  documents          CompanyDocument[]
-  kits               Kit[]                  @relation("SupplierKits")
-  quotesAsBuyer      QuoteRequest[]         @relation("BuyerQuotes")
-  quotesAsSupplier   QuoteRequest[]         @relation("SupplierQuotes")
-  erpConfig          CompanyErpConfig?
-  erpConfigAudits    CompanyErpConfigAudit[]
-  employeeInvites    EmployeeInvite[]
-  platformFees       PlatformFee[]
+  users               User[]
+  productsOffered     Product[]                @relation("SupplierProducts")
+  purchaseOrdersMade  PurchaseOrder[]          @relation("BuyerCompanyOrders")
+  purchaseOrdersRecv  PurchaseOrder[]          @relation("SupplierCompanyOrders")
+  contractsAsClient   Contract[]               @relation("ClientContracts")
+  contractsAsSupplier Contract[]               @relation("SupplierContracts")
+  supplierPolicies    SupplierToKiximaPolicy[]
+  clientPolicies      KiximaToClientPolicy[]
+  notifications       Notification[]
+  budgetLimit         BudgetLimit?
+  documents           CompanyDocument[]
+  kits                Kit[]                    @relation("SupplierKits")
+  quotesAsBuyer       QuoteRequest[]           @relation("BuyerQuotes")
+  quotesAsSupplier    QuoteRequest[]           @relation("SupplierQuotes")
+  erpConfig           CompanyErpConfig?
+  erpConfigAudits     CompanyErpConfigAudit[]
+  employeeInvites     EmployeeInvite[]
+  platformFees        PlatformFee[]
   supplierDevRequests SupplierDevRequest[]
 
   @@map("companies")
@@ -139,7 +139,7 @@ model Company {
 // Aqui o valor é incrementado atomicamente pela base de dados e nunca recua.
 // ---------------------------------------------------------------------------
 model ReferenceCounter {
-  key   String @id            // ex: "PO-2026"
+  key   String @id // ex: "PO-2026"
   value Int    @default(0)
 
   @@map("reference_counters")
@@ -193,19 +193,19 @@ enum InviteStatus {
 }
 
 model EmployeeInvite {
-  id         String       @id @default(uuid())
-  companyId  String       @map("company_id")
-  company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  name       String
-  email      String
-  role       PersonaRole
-  token      String       @unique
-  status     InviteStatus @default(PENDENTE)
-  expiresAt  DateTime     @map("expires_at")
-  acceptedAt DateTime?    @map("accepted_at")
-  createdById String?     @map("created_by_id")
-  createdAt  DateTime     @default(now()) @map("created_at")
-  updatedAt  DateTime     @updatedAt @map("updated_at")
+  id          String       @id @default(uuid())
+  companyId   String       @map("company_id")
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name        String
+  email       String
+  role        PersonaRole
+  token       String       @unique
+  status      InviteStatus @default(PENDENTE)
+  expiresAt   DateTime     @map("expires_at")
+  acceptedAt  DateTime?    @map("accepted_at")
+  createdById String?      @map("created_by_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
 
   @@index([companyId])
   @@index([email])
@@ -266,6 +266,7 @@ model CompanyDocument {
   originalName String       @map("original_name")
   createdAt    DateTime     @default(now()) @map("created_at")
 
+  @@index([companyId])
   @@map("company_documents")
 }
 
@@ -277,30 +278,31 @@ model User {
   role         PersonaRole
   approvalCap  Decimal?    @map("approval_cap") @db.Decimal(14, 2) // teto para aprovações delegadas (Comprador)
 
-  companyId    String?     @map("company_id") // null para ADMIN_SISTEMA
-  company      Company?    @relation(fields: [companyId], references: [id])
+  companyId String?  @map("company_id") // null para ADMIN_SISTEMA
+  company   Company? @relation(fields: [companyId], references: [id])
 
-  avatarUrl    String?     @map("avatar_url") // foto de perfil (upload ou câmera)
-  active       Boolean     @default(true)
+  avatarUrl       String?   @map("avatar_url") // foto de perfil (upload ou câmera)
+  active          Boolean   @default(true)
   // Versão de sessão: incrementar invalida imediatamente todos os tokens JWT
   // já emitidos para este utilizador (logout global, troca de senha, etc.).
-  tokenVersion Int         @default(0) @map("token_version")
+  tokenVersion    Int       @default(0) @map("token_version")
   // Aceite individual dos Termos/Privacidade (registo por convite).
   termsAcceptedAt DateTime? @map("terms_accepted_at")
   // 2FA (TOTP): o segredo é gerado no setup e só fica ATIVO após o utilizador
   // confirmar um código válido (totpEnabledAt preenchido).
-  totpSecret    String?   @map("totp_secret")
-  totpEnabledAt DateTime? @map("totp_enabled_at")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
+  totpSecret      String?   @map("totp_secret")
+  totpEnabledAt   DateTime? @map("totp_enabled_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  purchaseOrdersCreated PurchaseOrder[]  @relation("PoCreatedBy")
+  purchaseOrdersCreated  PurchaseOrder[] @relation("PoCreatedBy")
   purchaseOrdersApproved PurchaseOrder[] @relation("PoApprovedBy")
   notifications          Notification[]
   favorites              Favorite[]
   reviews                Review[]
   savedSearches          SavedSearch[]
 
+  @@index([companyId])
   @@map("users")
 }
 
@@ -310,7 +312,7 @@ model SavedSearch {
   userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   label     String
-  query     String   // querystring (ex.: q=UT&kind=SERVICO&country=Angola)
+  query     String // querystring (ex.: q=UT&kind=SERVICO&country=Angola)
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
@@ -322,41 +324,41 @@ model SavedSearch {
 // ---------------------------------------------------------------------------
 
 model Product {
-  id          String   @id @default(uuid())
-  supplierId  String   @map("supplier_id")
-  supplier    Company  @relation("SupplierProducts", fields: [supplierId], references: [id])
+  id         String  @id @default(uuid())
+  supplierId String  @map("supplier_id")
+  supplier   Company @relation("SupplierProducts", fields: [supplierId], references: [id])
 
   // --- Identificação ---
-  name            String
-  sku             String?  // referência interna do fornecedor
+  name             String
+  sku              String? // referência interna do fornecedor
   manufacturerCode String? @map("manufacturer_code") // código do fabricante
-  category        String
-  subcategory     String?
-  brand           String?
-  manufacturer    String?
-  model           String?
-  countryOfOrigin String?  @map("country_of_origin")
+  category         String
+  subcategory      String?
+  brand            String?
+  manufacturer     String?
+  model            String?
+  countryOfOrigin  String? @map("country_of_origin")
 
   // --- Descrição ---
-  description     String?  // descrição curta (usada nos cartões do marketplace)
-  fullDescription String?  @map("full_description")
+  description     String? // descrição curta (usada nos cartões do marketplace)
+  fullDescription String? @map("full_description")
   applications    String?
   benefits        String?
   keywords        String?
 
   // --- Classificação (UNSPSC, preenchida via dropdown em cascata) ---
-  unspscCode      String?  @map("unspsc_code")    // ex.: 40141607
-  unspscTitle     String?  @map("unspsc_title")   // título oficial (EN)
-  unspscSegment   String?  @map("unspsc_segment") // 2 dígitos
-  unspscFamily    String?  @map("unspsc_family")  // 4 dígitos
-  unspscClass     String?  @map("unspsc_class")   // 6 dígitos
+  unspscCode    String? @map("unspsc_code") // ex.: 40141607
+  unspscTitle   String? @map("unspsc_title") // título oficial (EN)
+  unspscSegment String? @map("unspsc_segment") // 2 dígitos
+  unspscFamily  String? @map("unspsc_family") // 4 dígitos
+  unspscClass   String? @map("unspsc_class") // 6 dígitos
 
   // --- Atributos universais (livres, comuns a qualquer produto/serviço) ---
-  keySpec         String?  @map("key_spec")       // Especificação principal
-  standard        String?                          // Norma / Certificação
-  warranty        String?                          // Garantia / Validade
-  incoterm        String?                          // Incoterm (ex.: DAP, EXW, CIF) — comparação de fornecedores
-  supplierNotes   String?  @map("supplier_notes") // Comentários do fornecedor
+  keySpec       String? @map("key_spec") // Especificação principal
+  standard      String? // Norma / Certificação
+  warranty      String? // Garantia / Validade
+  incoterm      String? // Incoterm (ex.: DAP, EXW, CIF) — comparação de fornecedores
+  supplierNotes String? @map("supplier_notes") // Comentários do fornecedor
 
   // --- Especificações técnicas (texto livre — os valores variam muito) ---
   material        String?
@@ -368,7 +370,7 @@ model Product {
   temperature     String?
   power           String?
   voltage         String?
-  measurementUnit String?  @map("measurement_unit")
+  measurementUnit String? @map("measurement_unit")
 
   // --- Preço ---
   unitPrice   Decimal  @map("unit_price") @db.Decimal(14, 2)
@@ -385,37 +387,38 @@ model Product {
   minStock      Int?    @map("min_stock")
 
   // --- Marketplace (Serviços/Produtos) ---
-  slug        String?  @unique // URL amigável (ex.: inspecao-por-ultrassom-ut)
-  kind        ProductKind @default(PRODUTO) // PRODUTO | SERVICO
-  specialty   String?  // especialidade (serviços)
-  city        String?
-  province    String?
-  country     String?  @default("Angola")
-  certifications String[] @default([]) // ex.: ISO 9001, API Q1
-  tags        String[]  @default([])
+  slug           String?     @unique // URL amigável (ex.: inspecao-por-ultrassom-ut)
+  kind           ProductKind @default(PRODUTO) // PRODUTO | SERVICO
+  specialty      String? // especialidade (serviços)
+  city           String?
+  province       String?
+  country        String?     @default("Angola")
+  certifications String[]    @default([]) // ex.: ISO 9001, API Q1
+  tags           String[]    @default([])
 
-  active      Boolean  @default(true)
+  active Boolean @default(true)
 
   // Reputação (marketplace) — média de avaliações e nº de avaliações.
   rating      Float?
-  reviewCount Int      @default(0) @map("review_count")
-  viewCount   Int      @default(0) @map("view_count") // nº de visualizações por compradores
-  imageUrl    String?  @map("image_url") // imagem principal (destaque no marketplace)
+  reviewCount Int     @default(0) @map("review_count")
+  viewCount   Int     @default(0) @map("view_count") // nº de visualizações por compradores
+  imageUrl    String? @map("image_url") // imagem principal (destaque no marketplace)
 
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  poItems     PurchaseOrderItem[]
-  images      ProductImage[]
-  documents   ProductDocument[]
-  movements   StockMovement[]
-  kitItems    KitItem[]
-  quoteItems  QuoteItem[]
-  favorites   Favorite[]
-  reviews     Review[]
+  poItems    PurchaseOrderItem[]
+  images     ProductImage[]
+  documents  ProductDocument[]
+  movements  StockMovement[]
+  kitItems   KitItem[]
+  quoteItems QuoteItem[]
+  favorites  Favorite[]
+  reviews    Review[]
 
   @@index([category])
   @@index([kind])
+  @@index([supplierId])
   @@map("products")
 }
 
@@ -434,6 +437,7 @@ model Favorite {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([userId, productId])
+  @@index([productId])
   @@map("favorites")
 }
 
@@ -444,42 +448,43 @@ model Review {
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id])
-  rating    Int      // 1..5
+  rating    Int // 1..5
   comment   String?
   createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([productId, userId])
   @@index([productId])
+  @@index([userId])
   @@map("reviews")
 }
 
 enum QuoteStatus {
-  ABERTA       // pedido enviado, a aguardar resposta do fornecedor
-  RESPONDIDA   // fornecedor respondeu com preço/prazo
-  FECHADA      // comprador encerrou o pedido
+  ABERTA // pedido enviado, a aguardar resposta do fornecedor
+  RESPONDIDA // fornecedor respondeu com preço/prazo
+  FECHADA // comprador encerrou o pedido
 }
 
 // Pedido de cotação (RFQ): comprador pede preço a um fornecedor por itens.
 model QuoteRequest {
-  id                String      @id @default(uuid())
-  buyerCompanyId    String      @map("buyer_company_id")
-  buyerCompany      Company     @relation("BuyerQuotes", fields: [buyerCompanyId], references: [id])
-  supplierCompanyId String      @map("supplier_company_id")
-  supplierCompany   Company     @relation("SupplierQuotes", fields: [supplierCompanyId], references: [id])
-  createdById       String      @map("created_by_id")
+  id                String  @id @default(uuid())
+  buyerCompanyId    String  @map("buyer_company_id")
+  buyerCompany      Company @relation("BuyerQuotes", fields: [buyerCompanyId], references: [id])
+  supplierCompanyId String  @map("supplier_company_id")
+  supplierCompany   Company @relation("SupplierQuotes", fields: [supplierCompanyId], references: [id])
+  createdById       String  @map("created_by_id")
 
-  status            QuoteStatus @default(ABERTA)
-  note              String?
+  status QuoteStatus @default(ABERTA)
+  note   String?
 
-  responsePrice     Decimal?    @map("response_price") @db.Decimal(14, 2)
-  responseLeadDays  Int?        @map("response_lead_days")
-  responseNote      String?     @map("response_note")
-  respondedAt       DateTime?   @map("responded_at")
+  responsePrice    Decimal?  @map("response_price") @db.Decimal(14, 2)
+  responseLeadDays Int?      @map("response_lead_days")
+  responseNote     String?   @map("response_note")
+  respondedAt      DateTime? @map("responded_at")
 
-  createdAt         DateTime    @default(now()) @map("created_at")
-  updatedAt         DateTime    @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  items             QuoteItem[]
+  items QuoteItem[]
 
   @@index([buyerCompanyId])
   @@index([supplierCompanyId])
@@ -494,6 +499,8 @@ model QuoteItem {
   product        Product      @relation(fields: [productId], references: [id])
   quantity       Int          @default(1)
 
+  @@index([productId])
+  @@index([quoteRequestId])
   @@map("quote_items")
 }
 
@@ -521,6 +528,8 @@ model KitItem {
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int     @default(1)
 
+  @@index([kitId])
+  @@index([productId])
   @@map("kit_items")
 }
 
@@ -589,7 +598,7 @@ enum PoStatus {
   AGUARDANDO_APROVACAO
   APROVADA
   REJEITADA
-  ACEITE_FORNECEDOR      // fornecedor aceitou -> relógio dos 7 dias começa
+  ACEITE_FORNECEDOR // fornecedor aceitou -> relógio dos 7 dias começa
   RECUSADA_FORNECEDOR
   AGUARDANDO_PAGAMENTO
   PAGA
@@ -601,40 +610,40 @@ enum PoStatus {
 }
 
 model PurchaseOrder {
-  id            String    @id @default(uuid())
-  reference     String    @unique // ex: PO-2026-00001
+  id        String @id @default(uuid())
+  reference String @unique // ex: PO-2026-00001
 
-  buyerCompanyId    String  @map("buyer_company_id")
-  buyerCompany      Company @relation("BuyerCompanyOrders", fields: [buyerCompanyId], references: [id])
+  buyerCompanyId String  @map("buyer_company_id")
+  buyerCompany   Company @relation("BuyerCompanyOrders", fields: [buyerCompanyId], references: [id])
 
   supplierCompanyId String  @map("supplier_company_id")
   supplierCompany   Company @relation("SupplierCompanyOrders", fields: [supplierCompanyId], references: [id])
 
-  createdById   String    @map("created_by_id")
-  createdBy     User      @relation("PoCreatedBy", fields: [createdById], references: [id])
+  createdById String @map("created_by_id")
+  createdBy   User   @relation("PoCreatedBy", fields: [createdById], references: [id])
 
-  approvedById  String?   @map("approved_by_id")
-  approvedBy    User?     @relation("PoApprovedBy", fields: [approvedById], references: [id])
+  approvedById String? @map("approved_by_id")
+  approvedBy   User?   @relation("PoApprovedBy", fields: [approvedById], references: [id])
 
-  status        PoStatus  @default(AGUARDANDO_APROVACAO)
+  status            PoStatus @default(AGUARDANDO_APROVACAO)
   // totalAmount é o que o comprador se compromete a pagar: JÁ COM IVA, igual ao
   // total da fatura que a PO vai gerar. O líquido e o imposto ficam guardados à
   // parte para o documento os poder discriminar e para a contabilidade.
-  totalAmount   Decimal   @map("total_amount") @db.Decimal(14, 2)
-  netAmount         Decimal? @map("net_amount") @db.Decimal(14, 2)          // subtotal sem IVA
-  taxAmount         Decimal? @map("tax_amount") @db.Decimal(14, 2)          // IVA
-  withholdingAmount Decimal? @map("withholding_amount") @db.Decimal(14, 2)  // retenção na fonte II (serviços)
-  currency      String    @default("AOA")
+  totalAmount       Decimal  @map("total_amount") @db.Decimal(14, 2)
+  netAmount         Decimal? @map("net_amount") @db.Decimal(14, 2) // subtotal sem IVA
+  taxAmount         Decimal? @map("tax_amount") @db.Decimal(14, 2) // IVA
+  withholdingAmount Decimal? @map("withholding_amount") @db.Decimal(14, 2) // retenção na fonte II (serviços)
+  currency          String   @default("AOA")
 
   // Call-off: PO emitida ao abrigo de contrato-quadro ativo -> dispensa aprovação e pagamento antecipado por PO
-  isCallOff     Boolean   @default(false) @map("is_call_off")
-  contractId    String?   @map("contract_id")
-  contract      Contract? @relation(fields: [contractId], references: [id])
+  isCallOff  Boolean   @default(false) @map("is_call_off")
+  contractId String?   @map("contract_id")
+  contract   Contract? @relation(fields: [contractId], references: [id])
 
   // Relógio dos 7 dias (ou prazo do contrato, se call-off)
-  acceptedAt      DateTime? @map("accepted_at")       // gatilho do prazo de pagamento
-  paymentDueAt    DateTime? @map("payment_due_at")    // acceptedAt + PAYMENT_SLA_DAYS (ou prazo do contrato)
-  paidAt          DateTime? @map("paid_at")
+  acceptedAt   DateTime? @map("accepted_at") // gatilho do prazo de pagamento
+  paymentDueAt DateTime? @map("payment_due_at") // acceptedAt + PAYMENT_SLA_DAYS (ou prazo do contrato)
+  paidAt       DateTime? @map("paid_at")
 
   dispatchedAt    DateTime? @map("dispatched_at")
   deliveredAt     DateTime? @map("delivered_at")
@@ -648,19 +657,22 @@ model PurchaseOrder {
   divergenceResolutionNotes String?   @map("divergence_resolution_notes")
   divergenceResolvedAt      DateTime? @map("divergence_resolved_at")
 
-  approvedAt    DateTime? @map("approved_at")
-  rejectedAt    DateTime? @map("rejected_at")
-  rejectionReason String? @map("rejection_reason")
+  approvedAt      DateTime? @map("approved_at")
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectionReason String?   @map("rejection_reason")
 
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  items         PurchaseOrderItem[]
-  invoice       Invoice?
+  items   PurchaseOrderItem[]
+  invoice Invoice?
 
   @@index([status])
   @@index([buyerCompanyId])
   @@index([supplierCompanyId])
+  @@index([approvedById])
+  @@index([contractId])
+  @@index([createdById])
   @@map("purchase_orders")
 }
 
@@ -669,13 +681,15 @@ model PurchaseOrderItem {
   purchaseOrderId String        @map("purchase_order_id")
   purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
 
-  productId       String        @map("product_id")
-  product         Product       @relation(fields: [productId], references: [id])
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
 
-  quantity        Int
-  unitPrice       Decimal       @map("unit_price") @db.Decimal(14, 2)
-  lineTotal       Decimal       @map("line_total") @db.Decimal(14, 2)
+  quantity  Int
+  unitPrice Decimal @map("unit_price") @db.Decimal(14, 2)
+  lineTotal Decimal @map("line_total") @db.Decimal(14, 2)
 
+  @@index([productId])
+  @@index([purchaseOrderId])
   @@map("purchase_order_items")
 }
 
@@ -691,33 +705,34 @@ enum InvoiceStatus {
 }
 
 model Invoice {
-  id              String        @id @default(uuid())
-  reference       String        @unique // ex: FAT-2026-00001
+  id        String @id @default(uuid())
+  reference String @unique // ex: FAT-2026-00001
 
-  purchaseOrderId String?       @unique @map("purchase_order_id") // null se fatura consolidada de call-offs
+  purchaseOrderId String?        @unique @map("purchase_order_id") // null se fatura consolidada de call-offs
   purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
 
   // Faturamento consolidado de call-offs de um contrato (periódico)
-  contractId      String?       @map("contract_id")
-  contract        Contract?     @relation(fields: [contractId], references: [id])
-  consolidatedPoIds String[]    @default([]) @map("consolidated_po_ids")
+  contractId        String?   @map("contract_id")
+  contract          Contract? @relation(fields: [contractId], references: [id])
+  consolidatedPoIds String[]  @default([]) @map("consolidated_po_ids")
 
-  amount             Decimal    @db.Decimal(14, 2)          // total a pagar pelo comprador (com IVA)
-  netAmount          Decimal?   @map("net_amount") @db.Decimal(14, 2) // subtotal sem IVA
-  taxAmount          Decimal?   @map("tax_amount") @db.Decimal(14, 2) // IVA (14%)
-  withholdingAmount  Decimal?   @map("withholding_amount") @db.Decimal(14, 2) // retenção na fonte II (6,5% serviços)
-  currency        String        @default("AOA")
-  status          InvoiceStatus @default(PENDENTE)
+  amount            Decimal       @db.Decimal(14, 2) // total a pagar pelo comprador (com IVA)
+  netAmount         Decimal?      @map("net_amount") @db.Decimal(14, 2) // subtotal sem IVA
+  taxAmount         Decimal?      @map("tax_amount") @db.Decimal(14, 2) // IVA (14%)
+  withholdingAmount Decimal?      @map("withholding_amount") @db.Decimal(14, 2) // retenção na fonte II (6,5% serviços)
+  currency          String        @default("AOA")
+  status            InvoiceStatus @default(PENDENTE)
 
-  issuedAt        DateTime      @default(now()) @map("issued_at")
-  dueAt           DateTime      @map("due_at")
+  issuedAt DateTime @default(now()) @map("issued_at")
+  dueAt    DateTime @map("due_at")
 
-  payment         Payment?
-  platformFee     PlatformFee?
+  payment     Payment?
+  platformFee PlatformFee?
 
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([contractId])
   @@map("invoices")
 }
 
@@ -727,35 +742,35 @@ enum PaymentStatus {
 }
 
 model Payment {
-  id          String        @id @default(uuid())
-  invoiceId   String        @unique @map("invoice_id")
-  invoice     Invoice       @relation(fields: [invoiceId], references: [id])
+  id        String  @id @default(uuid())
+  invoiceId String  @unique @map("invoice_id")
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
 
-  amount      Decimal       @db.Decimal(14, 2)
-  currency    String        @default("AOA")
-  status      PaymentStatus @default(PROCESSADO)
-  processedById String      @map("processed_by_id") // utilizador Financeiro que executou
-  reference   String        @unique // referência da transação
+  amount        Decimal       @db.Decimal(14, 2)
+  currency      String        @default("AOA")
+  status        PaymentStatus @default(PROCESSADO)
+  processedById String        @map("processed_by_id") // utilizador Financeiro que executou
+  reference     String        @unique // referência da transação
 
   // Comprovativo da transferência (obrigatório ao pagar) — prova de que o
   // dinheiro saiu, visível ao fornecedor.
-  proofUrl    String?       @map("proof_url")
-  proofName   String?       @map("proof_name")
+  proofUrl  String? @map("proof_url")
+  proofName String? @map("proof_name")
 
   // Confirmação de receção do valor pelo fornecedor (fecha o ciclo de confiança).
-  receivedAt   DateTime?    @map("received_at")
-  receivedById String?      @map("received_by_id")
+  receivedAt   DateTime? @map("received_at")
+  receivedById String?   @map("received_by_id")
 
-  processedAt DateTime      @default(now()) @map("processed_at")
+  processedAt DateTime @default(now()) @map("processed_at")
 
   @@map("payments")
 }
 
 // Limite de orçamento simples por empresa/centro de custo (opcional, MVP)
 model BudgetLimit {
-  id        String   @id @default(uuid())
-  companyId String   @unique @map("company_id")
-  company   Company  @relation(fields: [companyId], references: [id])
+  id        String  @id @default(uuid())
+  companyId String  @unique @map("company_id")
+  company   Company @relation(fields: [companyId], references: [id])
 
   periodMonthly Decimal @map("period_monthly") @db.Decimal(14, 2)
   currency      String  @default("AOA")
@@ -778,48 +793,50 @@ enum PolicyStatus {
 
 // Fornecedor → KIXIMA: submetida no onboarding, condição para credenciamento
 model SupplierToKiximaPolicy {
-  id            String       @id @default(uuid())
-  companyId     String       @map("company_id")
-  company       Company      @relation(fields: [companyId], references: [id])
+  id        String  @id @default(uuid())
+  companyId String  @map("company_id")
+  company   Company @relation(fields: [companyId], references: [id])
 
-  policyNumber  String       @map("policy_number")
-  insurer       String
-  coverageAmount Decimal     @map("coverage_amount") @db.Decimal(14, 2)
-  currency      String       @default("AOA")
-  status        PolicyStatus @default(SUBMETIDA)
+  policyNumber   String       @map("policy_number")
+  insurer        String
+  coverageAmount Decimal      @map("coverage_amount") @db.Decimal(14, 2)
+  currency       String       @default("AOA")
+  status         PolicyStatus @default(SUBMETIDA)
 
-  validFrom     DateTime     @map("valid_from")
-  validUntil    DateTime     @map("valid_until")
-  documentUrl   String?      @map("document_url") // PDF/imagem da apólice submetida no cadastro
+  validFrom   DateTime @map("valid_from")
+  validUntil  DateTime @map("valid_until")
+  documentUrl String?  @map("document_url") // PDF/imagem da apólice submetida no cadastro
 
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([companyId])
   @@map("supplier_to_kixima_policies")
 }
 
 // KIXIMA → Cliente: emitida pelo Admin do Sistema após due diligence, escopo por empresa
 model KiximaToClientPolicy {
-  id            String       @id @default(uuid())
-  companyId     String       @map("company_id")
-  company       Company      @relation(fields: [companyId], references: [id])
+  id        String  @id @default(uuid())
+  companyId String  @map("company_id")
+  company   Company @relation(fields: [companyId], references: [id])
 
-  policyNumber  String       @map("policy_number")
-  insurer       String
-  coverageAmount Decimal     @map("coverage_amount") @db.Decimal(14, 2)
-  currency      String       @default("AOA")
-  status        PolicyStatus @default(APROVADA)
+  policyNumber   String       @map("policy_number")
+  insurer        String
+  coverageAmount Decimal      @map("coverage_amount") @db.Decimal(14, 2)
+  currency       String       @default("AOA")
+  status         PolicyStatus @default(APROVADA)
 
-  issuedById    String       @map("issued_by_id") // Admin do Sistema KIXIMA
+  issuedById String @map("issued_by_id") // Admin do Sistema KIXIMA
 
-  validFrom     DateTime     @map("valid_from")
-  validUntil    DateTime     @map("valid_until")
+  validFrom  DateTime @map("valid_from")
+  validUntil DateTime @map("valid_until")
 
   expiryAlertSentAt DateTime? @map("expiry_alert_sent_at") // evita reenviar alerta dos 30 dias
 
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([companyId])
   @@map("kixima_to_client_policies")
 }
 
@@ -839,34 +856,36 @@ enum BillingPeriodicity {
 }
 
 model Contract {
-  id              String             @id @default(uuid())
-  reference       String             @unique // ex: CTR-2026-0001
+  id        String @id @default(uuid())
+  reference String @unique // ex: CTR-2026-0001
 
-  clientCompanyId String             @map("client_company_id")
-  clientCompany   Company            @relation("ClientContracts", fields: [clientCompanyId], references: [id])
+  clientCompanyId String  @map("client_company_id")
+  clientCompany   Company @relation("ClientContracts", fields: [clientCompanyId], references: [id])
 
-  supplierCompanyId String           @map("supplier_company_id")
-  supplierCompany Company            @relation("SupplierContracts", fields: [supplierCompanyId], references: [id])
+  supplierCompanyId String  @map("supplier_company_id")
+  supplierCompany   Company @relation("SupplierContracts", fields: [supplierCompanyId], references: [id])
 
-  categoriesCovered String[]         @map("categories_covered") // categorias/itens cobertos pelo contrato
+  categoriesCovered String[] @map("categories_covered") // categorias/itens cobertos pelo contrato
 
-  totalValue      Decimal            @map("total_value") @db.Decimal(14, 2)
-  currency         String            @default("AOA")
-  usedValue        Decimal           @default(0) @map("used_value") @db.Decimal(14, 2)
+  totalValue Decimal @map("total_value") @db.Decimal(14, 2)
+  currency   String  @default("AOA")
+  usedValue  Decimal @default(0) @map("used_value") @db.Decimal(14, 2)
 
   billingPeriodicity BillingPeriodicity @map("billing_periodicity")
-  paymentTermDays    Int              @map("payment_term_days") // prazo próprio do contrato (substitui os 7 dias padrão)
+  paymentTermDays    Int                @map("payment_term_days") // prazo próprio do contrato (substitui os 7 dias padrão)
 
-  status          ContractStatus     @default(ATIVO)
-  validFrom       DateTime           @map("valid_from")
-  validUntil      DateTime           @map("valid_until")
+  status     ContractStatus @default(ATIVO)
+  validFrom  DateTime       @map("valid_from")
+  validUntil DateTime       @map("valid_until")
 
-  createdAt       DateTime           @default(now()) @map("created_at")
-  updatedAt       DateTime           @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  callOffs        PurchaseOrder[]
+  callOffs             PurchaseOrder[]
   consolidatedInvoices Invoice[]
 
+  @@index([clientCompanyId])
+  @@index([supplierCompanyId])
   @@map("contracts")
 }
 
@@ -898,24 +917,24 @@ enum NotificationType {
 }
 
 model Notification {
-  id        String              @id @default(uuid())
+  id String @id @default(uuid())
 
-  userId    String?             @map("user_id")
-  user      User?               @relation(fields: [userId], references: [id])
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id])
 
-  companyId String?             @map("company_id")
-  company   Company?            @relation(fields: [companyId], references: [id])
+  companyId String?  @map("company_id")
+  company   Company? @relation(fields: [companyId], references: [id])
 
-  type      NotificationType
-  channel   NotificationChannel @default(IN_APP)
-  title     String
-  message   String
-  readAt    DateTime?           @map("read_at")
+  type    NotificationType
+  channel NotificationChannel @default(IN_APP)
+  title   String
+  message String
+  readAt  DateTime?           @map("read_at")
 
-  relatedEntityType String?     @map("related_entity_type") // "PurchaseOrder" | "Invoice" | "Policy" | "Company" ...
-  relatedEntityId   String?     @map("related_entity_id")
+  relatedEntityType String? @map("related_entity_type") // "PurchaseOrder" | "Invoice" | "Policy" | "Company" ...
+  relatedEntityId   String? @map("related_entity_id")
 
-  createdAt DateTime            @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
   @@index([companyId])
@@ -944,16 +963,16 @@ model SupportCategoryImage {
 }
 
 model SupportTicket {
-  id          String        @id @default(uuid())
-  reference   String        @unique // ex: SUP-2026-00001
-  userId      String        @map("user_id")
-  companyId   String?       @map("company_id")
-  subject     String
-  category    String
-  message     String
-  status      SupportStatus @default(ABERTO)
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  id        String        @id @default(uuid())
+  reference String        @unique // ex: SUP-2026-00001
+  userId    String        @map("user_id")
+  companyId String?       @map("company_id")
+  subject   String
+  category  String
+  message   String
+  status    SupportStatus @default(ABERTO)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
 
   @@index([userId])
   @@map("support_tickets")
@@ -968,16 +987,16 @@ model SupportTicket {
 // ---------------------------------------------------------------------------
 model AuditLog {
   id         String   @id @default(uuid())
-  action     String   // ex.: PO_APROVADA, PAGAMENTO_EXECUTADO, TAXA_COBRADA
+  action     String // ex.: PO_APROVADA, PAGAMENTO_EXECUTADO, TAXA_COBRADA
   entityType String   @map("entity_type") // PurchaseOrder | Invoice | Payment | Company | PlatformFee | User
   entityId   String?  @map("entity_id")
-  entityRef  String?  @map("entity_ref")  // referência legível (PO-2026-00001, FAT-…)
+  entityRef  String?  @map("entity_ref") // referência legível (PO-2026-00001, FAT-…)
   actorId    String?  @map("actor_id")
   actorName  String?  @map("actor_name")
   actorRole  String?  @map("actor_role")
-  companyId  String?  @map("company_id")  // empresa do ator
+  companyId  String?  @map("company_id") // empresa do ator
   ip         String?
-  detail     Json?    // montantes, estado anterior→novo, etc.
+  detail     Json? // montantes, estado anterior→novo, etc.
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([entityType, entityId])
@@ -995,8 +1014,8 @@ model AuditLog {
 // ---------------------------------------------------------------------------
 
 enum SupplierDevTrack {
-  BUROCRACIA        // credenciamento, licenças, certificações, conformidade
-  PARCERIA          // procura de parceiro internacional / transferência de tecnologia
+  BUROCRACIA // credenciamento, licenças, certificações, conformidade
+  PARCERIA // procura de parceiro internacional / transferência de tecnologia
   AMBOS
 }
 
@@ -1009,12 +1028,12 @@ enum SupplierDevStatus {
 }
 
 model SupplierDevRequest {
-  id            String            @id @default(uuid())
-  reference     String            @unique               // ex: SD-2026-00001
+  id        String @id @default(uuid())
+  reference String @unique // ex: SD-2026-00001
 
   // A candidatura é PÚBLICA: pode vir de uma empresa ainda não registada.
-  companyId     String?           @map("company_id")
-  company       Company?          @relation(fields: [companyId], references: [id])
+  companyId String?  @map("company_id")
+  company   Company? @relation(fields: [companyId], references: [id])
 
   companyName   String            @map("company_name")
   taxId         String?           @map("tax_id")
@@ -1022,10 +1041,10 @@ model SupplierDevRequest {
   contactEmail  String            @map("contact_email")
   contactPhone  String?           @map("contact_phone")
   province      String?
-  sector        String?                                  // área de atividade
+  sector        String? // área de atividade
   employees     Int?
   track         SupplierDevTrack  @default(AMBOS)
-  needs         String?                                  // o que precisa / objetivos
+  needs         String? // o que precisa / objetivos
   // TAXA DE ACESSO ao programa (USD/mês) — igual à taxa de acesso das pequenas
   // empresas e COBRADA LOGO NA SUBMISSÃO DA INTENÇÃO. Fica emitida como
   // PENDENTE no momento da candidatura; o Admin do Sistema regista a receção.

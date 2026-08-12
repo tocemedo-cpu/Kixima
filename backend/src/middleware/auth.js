@@ -4,7 +4,8 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/env');
 const prisma = require('../config/database');
-const { UnauthorizedError } = require('../utils/errors');
+const { UnauthorizedError, ForbiddenError } = require('../utils/errors');
+const mfaPolicy = require('../services/mfaPolicy');
 
 async function authenticate(req, res, next) {
   const header = req.headers.authorization || '';
@@ -47,6 +48,23 @@ async function authenticate(req, res, next) {
     email: user.email,
     avatarUrl: user.avatarUrl,
   };
+
+  // 2FA obrigatória para os perfis que aprovam dinheiro ou credenciam empresas.
+  // Passado o prazo, a sessão fica RESTRITA em vez de ser recusada: barrar o
+  // login trancaria o administrador fora da própria conta, já que ativar a 2FA
+  // exige estar dentro. Assim entra, mas só chega ao que precisa para a ativar.
+  const mfa = mfaPolicy.estadoPara(user);
+  req.user.mfaPendente = mfa.pendente;
+  req.user.mfaRestrita = mfa.restrita;
+  // req.path é relativo ao router onde o middleware corre (/me e não
+  // /api/auth/me) — a lista de permitidos é sobre o caminho completo.
+  const caminho = String(req.originalUrl || req.path).split('?')[0];
+  if (mfa.restrita && !mfaPolicy.caminhoPermitido(caminho)) {
+    throw new ForbiddenError(
+      'A verificação em dois passos passou a ser obrigatória para o seu perfil. '
+      + 'Ative-a em Segurança para voltar a usar a plataforma.',
+    );
+  }
 
   next();
 }

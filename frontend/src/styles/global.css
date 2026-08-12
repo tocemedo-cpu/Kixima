@@ -683,6 +683,17 @@ tbody tr:hover {
   margin-bottom: 18px;
 }
 
+/* Aviso de 2FA por ativar — fica no topo do conteúdo, em todas as páginas, até
+   a verificação estar ligada. Depois do prazo a conta fica limitada, por isso o
+   aviso tem de se ver. */
+.banner-warn {
+  background: var(--amber-050, #fff7e6);
+  color: var(--amber-700, #8a5a00);
+  border: 1px solid var(--amber-200, #f0d9a8);
+}
+.mfa-aviso { display: flex; gap: 10px; align-items: flex-start; line-height: 1.5; }
+.mfa-aviso a { color: inherit; font-weight: 600; text-decoration: underline; }
+
 .banner-error {
   background: var(--terracotta-100);
   color: var(--terracotta-600);

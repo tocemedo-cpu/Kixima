@@ -1,7 +1,7 @@
 // src/components/AppLayout.jsx
 // Shell do mockup: navbar full-width no topo, menu escuro numerado à esquerda,
 // conteúdo à direita. Aplicado a todas as personas.
-import { Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { ROLE_LABELS } from '../domain';
@@ -11,8 +11,11 @@ import NotificationPanel from './NotificationPanel';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import { useCart } from '../pages/comprador/CartContext';
+import { Icon } from './icons';
+import { useI18n } from '../i18n';
 
 export default function AppLayout() {
+  const { t } = useI18n();
   const { user, logout } = useAuth();
   const location = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
@@ -61,6 +64,23 @@ export default function AppLayout() {
             onRead={(id) => setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)))}
           />
         ) : null}
+
+        {/* A 2FA é obrigatória para quem aprova ordens e credencia empresas. O
+            aviso aparece enquanto não estiver ativa — depois do prazo, a conta
+            fica limitada a esta configuração, por isso vale a pena não esperar. */}
+        {user?.mfaPendente ? (
+          <div className="banner banner-warn mfa-aviso">
+            <Icon name="shield" size={16} />
+            <span>
+              <strong>{t('Ative a verificação em dois passos')}</strong>
+              {' — '}
+              {t('o seu perfil aprova operações com dinheiro, por isso a senha deixou de bastar.')}
+              {' '}
+              <Link to="/seguranca">{t('Ativar agora')}</Link>
+            </span>
+          </div>
+        ) : null}
+
         <Outlet />
       </main>
     </div>

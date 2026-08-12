@@ -14,6 +14,8 @@
     "seed:catalog-company": "node -r dotenv/config prisma/seed.catalog-company.js",
     "demo:remove": "node -r dotenv/config scripts/remove-demo-catalog.js",
     "storage:check": "node -r dotenv/config scripts/storage-check.js",
+    "backup": "node -r dotenv/config scripts/backup.js",
+    "backup:restore-test": "node -r dotenv/config scripts/restore-test.js",
     "sentry:test": "node -r dotenv/config scripts/sentry-test.js",
     "prisma:generate": "prisma generate",
     "db:push": "prisma db push",

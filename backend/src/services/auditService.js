@@ -25,6 +25,29 @@ function actorFrom(req) {
   };
 }
 
+// Ator de um pedido AINDA NÃO autenticado (tentativa de login, recuperação de
+// senha). Não há utilizador — o que identifica a tentativa é a origem, por isso
+// vai o IP e o agente. Sem isto, uma sequência de tentativas falhadas não deixa
+// rasto nenhum.
+function anonimoFrom(req) {
+  return {
+    actorId: null,
+    actorName: null,
+    actorRole: null,
+    companyId: null,
+    ip: req.ip ?? null,
+  };
+}
+
+// Contexto do pedido para o campo `detail`: user agent truncado (é livre e vem
+// do cliente) e origem.
+function contextoFrom(req) {
+  return {
+    ip: req.ip ?? null,
+    agente: String(req.get?.('user-agent') || '').slice(0, 180) || null,
+  };
+}
+
 /**
  * Escreve um registo de auditoria.
  * @param client prisma ou tx (para escrever dentro de uma transação)
@@ -70,4 +93,4 @@ async function list({ page = 1, limit = 25, action, q } = {}) {
   };
 }
 
-module.exports = { actorFrom, record, recordSafe, list };
+module.exports = { actorFrom, anonimoFrom, contextoFrom, record, recordSafe, list };

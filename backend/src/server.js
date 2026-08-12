@@ -7,6 +7,7 @@ const config = require('./config/env');
 const logger = require('./config/logger');
 const prisma = require('./config/database');
 const { schedulePolicyExpiryJob } = require('./jobs/policyExpiryJob');
+const { scheduleBackupJob } = require('./jobs/backupJob');
 const eventBus = require('./services/eventBus');
 
 const server = app.listen(config.port, () => {
@@ -22,6 +23,7 @@ const server = app.listen(config.port, () => {
       : 'Armazenamento: disco do contentor — os ficheiros NÃO sobrevivem a um reinício',
   );
   schedulePolicyExpiryJob();
+  scheduleBackupJob();
   // Regista nos logs se a integração ERP (RabbitMQ) está ativa.
   eventBus.init();
 });

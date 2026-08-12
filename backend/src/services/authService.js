@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../config/database');
 const config = require('../config/env');
+const mfaPolicy = require('./mfaPolicy');
 const { UnauthorizedError, ForbiddenError, ConflictError } = require('../utils/errors');
 
 // Custo do bcrypt. 12 é o mínimo recomendado atualmente (mais lento = mais
@@ -92,8 +93,14 @@ async function login({ email, password }) {
 
 // Sessão completa (token + payload do utilizador) — partilhada por login e 2FA.
 function buildSession(user) {
+  // Estado da 2FA obrigatória: a interface precisa de saber se deve avisar
+  // (pendente) ou se a conta já está limitada até a ativar (restrita).
+  const mfa = mfaPolicy.estadoPara(user);
   return {
     token: signToken(user),
+    mfaPendente: mfa.pendente,
+    mfaRestrita: mfa.restrita,
+    mfaPrazo: mfa.prazo,
     user: {
       id: user.id,
       name: user.name,
@@ -280,7 +287,9 @@ async function resetPassword(token, newPassword) {
     where: { id: user.id },
     data: { passwordHash, tokenVersion: { increment: 1 } },
   });
-  return { ok: true };
+  // userId/email devolvidos para o trilho de auditoria poder identificar a conta:
+  // quem repõe a senha não está autenticado, logo não há req.user.
+  return { ok: true, userId: user.id, email: user.email };
 }
 
 module.exports = {

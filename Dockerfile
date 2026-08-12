@@ -22,7 +22,11 @@ RUN npm run build
 # ---------------------------------------------------------------------------
 FROM node:20-alpine
 # O Prisma precisa de openssl no Alpine.
-RUN apk add --no-cache openssl
+# openssl: exigido pelo Prisma no Alpine.
+# postgresql-client: o pg_dump da cópia de segurança automática (BACKUP_CRON).
+#   Sem ele o job arranca e falha todas as noites — a base ficaria sem cópia com
+#   a aplicação a dar sinal de estar tudo bem.
+RUN apk add --no-cache openssl postgresql-client
 WORKDIR /app
 
 # Dependências do backend (mantém devDependencies: a CLI do Prisma vive nelas).

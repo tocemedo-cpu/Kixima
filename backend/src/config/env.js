@@ -33,6 +33,18 @@ const config = {
     // Validade curta do access token (revogável via tokenVersion). 1 dia é um
     // compromisso entre segurança e não obrigar a login constante.
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
+
+    // --- 2FA obrigatória ------------------------------------------------------
+    // Perfis para quem a senha não basta: aprovam ordens de compra, autorizam
+    // pagamentos e credenciam empresas. Uma senha comprometida numa destas
+    // contas chega para tudo.
+    mfaRequiredRoles: (process.env.MFA_REQUIRED_ROLES || 'ADMIN_SISTEMA,COMPANY_ADMIN')
+      .split(',').map((r) => r.trim().toUpperCase()).filter(Boolean),
+    // A partir desta data a 2FA deixa de ser um aviso e passa a ser exigida.
+    // Antes dela, quem ainda não a configurou entra na mesma e é avisado — dar
+    // prazo é o que evita trancar administradores fora no dia do lançamento.
+    // Sem a variável definida, fica só o aviso (nunca bloqueia).
+    mfaEnforceFrom: process.env.MFA_ENFORCE_FROM ? new Date(process.env.MFA_ENFORCE_FROM) : null,
   },
 
   // Regras de negócio — configuráveis por ambiente, nunca hardcoded no código.

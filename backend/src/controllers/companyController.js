@@ -116,6 +116,14 @@ async function createUser(req, res) {
   const companyId = req.user.role === 'ADMIN_SISTEMA' ? req.body.companyId : req.user.companyId;
   const user = await authService.createUser({ ...req.body, companyId });
   const { passwordHash, ...safeUser } = user;
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'UTILIZADOR_CRIADO',
+    entityType: 'User',
+    entityId: user.id,
+    entityRef: user.email,
+    detail: { perfil: user.role, empresa: companyId, ...auditService.contextoFrom(req) },
+  });
   res.status(201).json(safeUser);
 }
 
@@ -157,21 +165,55 @@ async function resolveInvite(req, res) {
 
 async function acceptInvite(req, res) {
   const user = await companyService.acceptInvite(req.params.token, req.body);
+  // Quem aceita ainda não tem sessão: o ator é anónimo, mas a conta criada fica
+  // identificada. É por aqui que entram utilizadores novos numa empresa.
+  await auditService.recordSafe({
+    actor: { ...auditService.anonimoFrom(req), actorId: user.id, actorName: user.name, companyId: user.companyId },
+    action: 'CONVITE_ACEITE',
+    entityType: 'User',
+    entityId: user.id,
+    entityRef: user.email,
+    detail: { perfil: user.role, ...auditService.contextoFrom(req) },
+  });
   res.status(201).json(user);
 }
 
 async function activateUser(req, res) {
   const user = await companyService.activateCompanyUser(req.user.companyId, req.params.id);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'UTILIZADOR_ATIVADO',
+    entityType: 'User',
+    entityId: user.id,
+    entityRef: user.email,
+    detail: auditService.contextoFrom(req),
+  });
   res.json(user);
 }
 
 async function removeUser(req, res) {
   const result = await companyService.removeCompanyUser(req.user.companyId, req.params.id);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'UTILIZADOR_REMOVIDO',
+    entityType: 'User',
+    entityId: req.params.id,
+    entityRef: result?.email ?? null,
+    detail: auditService.contextoFrom(req),
+  });
   res.json(result);
 }
 
 async function setUserStatus(req, res) {
   const user = await companyService.setCompanyUserStatus(req.user.companyId, req.params.id, req.body.active, req.user.id);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: user.active ? 'UTILIZADOR_DESBLOQUEADO' : 'UTILIZADOR_BLOQUEADO',
+    entityType: 'User',
+    entityId: user.id,
+    entityRef: user.email,
+    detail: auditService.contextoFrom(req),
+  });
   res.json(user);
 }
 

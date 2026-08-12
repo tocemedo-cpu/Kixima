@@ -33,7 +33,9 @@ export function AuthProvider({ children }) {
     // (verify2fa) sem iniciar sessão.
     if (result.requires2fa) return result;
     setToken(result.token);
-    setUser(result.user);
+    // A 2FA é obrigatória para quem aprova dinheiro; o servidor diz se está por
+    // ativar, para a interface poder avisar antes de o prazo esgotar.
+    setUser({ ...result.user, mfaPendente: result.mfaPendente, mfaPrazo: result.mfaPrazo });
     return result.user;
   }
 
@@ -41,7 +43,7 @@ export function AuthProvider({ children }) {
   async function verify2fa(challenge, code) {
     const result = await api.post('/api/auth/2fa/verify', { challenge, code });
     setToken(result.token);
-    setUser(result.user);
+    setUser({ ...result.user, mfaPendente: result.mfaPendente, mfaPrazo: result.mfaPrazo });
     return result.user;
   }
 
