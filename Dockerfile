@@ -36,6 +36,10 @@ RUN npx prisma generate
 # Código do backend.
 COPY backend/src ./src
 
+# Scripts de manutenção. O arranque usa scripts/migrate-boot.js — sem esta cópia
+# o contentor arranca sem ele e as migrações nunca correm.
+COPY backend/scripts ./scripts
+
 # Frontend compilado da etapa 1 — copiado para dentro da imagem.
 COPY --from=frontend /fe/dist ./frontend/dist
 
