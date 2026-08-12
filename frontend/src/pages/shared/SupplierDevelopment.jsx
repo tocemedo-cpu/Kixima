@@ -5,7 +5,7 @@
 // conta: qualquer empresa angolana se pode candidatar e acompanhar por
 // referência.
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../api/client';
 import Logo from '../../components/Logo';
 import { Icon } from '../../components/icons';
@@ -23,11 +23,19 @@ const TRACKS = [
     body: 'Ligação a parceiros estrangeiros para transferência de tecnologia e capacitação, para que mais empresas angolanas participem no setor com meios próprios.' },
 ];
 
-export default function SupplierDevelopment() {
+export default function SupplierDevelopment({ initialTrack = 'BUROCRACIA' }) {
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // A página serve as duas portas de entrada: /supplier-development e
+  // /parcerias. O percurso entra pré-selecionado, mas o OUTRO fica sempre
+  // disponível — quem procura parceiros pode precisar de apoio burocrático e
+  // vice-versa.
+  const base = pathname.startsWith('/parcerias') ? 'PARCERIA' : initialTrack;
+  const other = base === 'PARCERIA' ? 'BUROCRACIA' : 'PARCERIA';
   const [form, setForm] = useState(EMPTY);
-  const [track, setTrack] = useState('AMBOS');
+  const [alsoOther, setAlsoOther] = useState(false);
+  const track = alsoOther ? 'AMBOS' : base;
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(null);
@@ -63,7 +71,7 @@ export default function SupplierDevelopment() {
 
       <section className="sd-hero">
         <span className="sd-tag">{t('Programa KIXIMA')}</span>
-        <h1>{t('Supplier Development')}</h1>
+        <h1>{t(base === 'PARCERIA' ? 'Parceiros internacionais' : 'Supplier Development')}</h1>
         <p>
           {t('Apoiamos o fornecedor angolano em todo o processo de emancipação burocrática e procuramos parceiros internacionais para empresas locais — mais tecnologia, mais capacidade e mais participação nacional no setor Oil & Gas.')}
         </p>
@@ -87,6 +95,13 @@ export default function SupplierDevelopment() {
               {t('A sua candidatura ficou registada com a referência')}{' '}
               <strong className="mono">{done.reference}</strong>. {t('A equipa KIXIMA entra em contacto pelo email indicado. Guarde a referência para acompanhar o estado.')}
             </p>
+            {done.accessFee ? (
+              <p className="helptext" style={{ marginTop: 10 }}>
+                {done.accessFee.custom
+                  ? t('A taxa de acesso ao programa é orçamentada caso a caso — a KIXIMA envia a proposta com o contacto.')
+                  : t('Taxa de acesso ao programa: {valor} USD/mês, igual à taxa de acesso das pequenas empresas.', { valor: done.accessFee.amountUsd })}
+              </p>
+            ) : null}
             <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
               <Link className="btn btn-accent" to="/login">{t('Ir para o login')}</Link>
               <button className="btn btn-ghost" onClick={() => { setDone(null); setForm(EMPTY); }}>
@@ -99,18 +114,27 @@ export default function SupplierDevelopment() {
             <h2>{t('Candidatar-se ao programa')}</h2>
             <p className="helptext">{t('Não é preciso ter conta na KIXIMA. Preencha e a nossa equipa entra em contacto.')}</p>
 
-            <div className="sd-choice" role="group" aria-label={t('Tipo de apoio')}>
-              {[{ k: 'BUROCRACIA', l: 'Apoio burocrático' }, { k: 'PARCERIA', l: 'Parceiro internacional' }, { k: 'AMBOS', l: 'Ambos' }].map((o) => (
-                <button
-                  key={o.k}
-                  type="button"
-                  className={`sd-choice-btn${track === o.k ? ' on' : ''}`}
-                  onClick={() => setTrack(o.k)}
-                >
-                  {t(o.l)}
-                </button>
-              ))}
+            <div className="sd-selected">
+              <span className="sd-selected-tag">{t('Candidatura a')}</span>
+              <strong>{t(base === 'PARCERIA' ? 'Parceiros internacionais' : 'Supplier Development')}</strong>
             </div>
+
+            {/* Opção cruzada: os dois programas complementam-se. */}
+            <label className="sd-cross">
+              <input type="checkbox" checked={alsoOther} onChange={(e) => setAlsoOther(e.target.checked)} />
+              <span>
+                <strong>
+                  {t(other === 'PARCERIA'
+                    ? 'Também procuro parceiros internacionais'
+                    : 'Também preciso de apoio no processo burocrático')}
+                </strong>
+                <span>
+                  {t(other === 'PARCERIA'
+                    ? 'Ligação a parceiros estrangeiros para tecnologia e capacitação.'
+                    : 'Acompanhamento no registo, licenças, certificações e conformidade.')}
+                </span>
+              </span>
+            </label>
 
             <form onSubmit={handleSubmit}>
               <div className="grid-cols grid-2">

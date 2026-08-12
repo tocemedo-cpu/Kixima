@@ -8,6 +8,17 @@
 // Números: EN usa 11,500 USD / 0.20%; FR usa 11 500 USD / 0,20 %.
 
 export const EN8 = {
+  'Parceiros internacionais': 'International partners',
+  'Candidatura a': 'Applying to',
+  'Apoio no processo burocrático para se tornar fornecedor credenciado': 'Support through the regulatory process to become an accredited supplier',
+  'Procura de parceiros estrangeiros para tecnologia e capacitação': 'Search for foreign partners for technology and capacity building',
+  'A taxa de acesso ao programa é orçamentada caso a caso — a KIXIMA envia a proposta com o contacto.': 'The programme access fee is quoted case by case — KIXIMA will send the proposal when it gets in touch.',
+  'Também procuro parceiros internacionais': 'I am also looking for international partners',
+  'Também preciso de apoio no processo burocrático': 'I also need support with the regulatory process',
+  'Ligação a parceiros estrangeiros para tecnologia e capacitação.': 'Connection to foreign partners for technology and capacity building.',
+  'Acompanhamento no registo, licenças, certificações e conformidade.': 'Guidance through registration, licences, certifications and compliance.',
+  'Taxa de acesso ao programa: {valor} USD/mês, igual à taxa de acesso das pequenas empresas.': 'Programme access fee: {valor} USD/month, the same as the small-company access fee.',
+
   // Planos e Supplier Development — literais em estruturas de dados.
   'Micro, pequenas e médias empresas': 'Micro, small and medium companies',
   'Grandes empresas (mais de 200 trabalhadores ou 10 M USD)': 'Large companies (over 200 employees or 10M USD)',
@@ -133,6 +144,17 @@ export const EN8 = {
 };
 
 export const FR8 = {
+  'Parceiros internacionais': 'Partenaires internationaux',
+  'Candidatura a': 'Candidature à',
+  'Apoio no processo burocrático para se tornar fornecedor credenciado': 'Accompagnement administratif pour devenir un fournisseur accrédité',
+  'Procura de parceiros estrangeiros para tecnologia e capacitação': 'Recherche de partenaires étrangers pour la technologie et le renforcement des capacités',
+  'A taxa de acesso ao programa é orçamentada caso a caso — a KIXIMA envia a proposta com o contacto.': "Les frais d'accès au programme sont chiffrés au cas par cas — KIXIMA enverra la proposition lors de la prise de contact.",
+  'Também procuro parceiros internacionais': 'Je recherche également des partenaires internationaux',
+  'Também preciso de apoio no processo burocrático': "J'ai également besoin d'un accompagnement administratif",
+  'Ligação a parceiros estrangeiros para tecnologia e capacitação.': 'Mise en relation avec des partenaires étrangers pour la technologie et le renforcement des capacités.',
+  'Acompanhamento no registo, licenças, certificações e conformidade.': "Accompagnement pour l'immatriculation, les licences, les certifications et la conformité.",
+  'Taxa de acesso ao programa: {valor} USD/mês, igual à taxa de acesso das pequenas empresas.': "Frais d'accès au programme : {valor} USD/mois, identiques aux frais d'accès des petites entreprises.",
+
   // Planos e Supplier Development — literais em estruturas de dados.
   'Micro, pequenas e médias empresas': 'Micro, petites et moyennes entreprises',
   'Grandes empresas (mais de 200 trabalhadores ou 10 M USD)': 'Grandes entreprises (plus de 200 employés ou 10 M USD)',

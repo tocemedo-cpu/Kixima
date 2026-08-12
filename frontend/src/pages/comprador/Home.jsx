@@ -84,6 +84,13 @@ export default function Home() {
             <span>{t('Apoio burocrático e parceiros internacionais para empresas angolanas')}</span>
           </span>
         </a>
+        <a className="home-program" href="/parcerias">
+          <span className="home-program-ico"><Icon name="offshore" size={18} /></span>
+          <span>
+            <strong>{t('Parceiros internacionais')}</strong>
+            <span>{t('Procura de parceiros estrangeiros para tecnologia e capacitação')}</span>
+          </span>
+        </a>
         <a className="home-program" href="/planos">
           <span className="home-program-ico"><Icon name="wallet" size={18} /></span>
           <span>

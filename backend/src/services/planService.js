@@ -97,7 +97,20 @@ function monthlyAccessCost({ activeUsers, seatPriceUsd }) {
   return { seats, seatPriceUsd: price, amountUsd: Math.round(seats * price * 100) / 100, currency: 'USD' };
 }
 
+// Taxa de acesso ao PROGRAMA Supplier Development. Segue a taxa de acesso das
+// pequenas empresas (100 USD/mês); micro/pequenas pagam esse valor de tabela e
+// as restantes dimensões são orçamentadas caso a caso.
+function supplierDevAccessFee(size) {
+  const standard = ['MICRO', 'PEQUENA'].includes(size);
+  return {
+    amountUsd: standard ? SEAT_PRICE_CAP_USD : null,
+    currency: 'USD',
+    custom: !standard,
+  };
+}
+
 module.exports = {
+  supplierDevAccessFee,
   SEAT_PRICE_CAP_USD, SIZE_RULES, FEATURES,
   classify, requiredPlan, planAllowed, features, hasFeature, assertFeature, monthlyAccessCost,
 };

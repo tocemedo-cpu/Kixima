@@ -25,11 +25,12 @@ describe('Taxa KIXIMA (USD, com limiar)', () => {
     expect(fees.compute(1, 11500)).toMatchObject({ perPo: 8, amount: 23, basis: 'FIXO' });
   });
 
-  test('acima de 11.500 USD: 0,20% do valor substitui o fixo (+15 USD da fatura)', () => {
+  test('acima de 11.500 USD: 0,20% cobrado no fim, INCLUINDO a PO e a fatura', () => {
     const f = fees.compute(1, 20000);
     expect(f.basis).toBe('PERCENTUAL');
-    expect(f.perPo).toBe(40);      // 0,20% × 20.000
-    expect(f.amount).toBe(55);     // 40 + 15
+    expect(f.perPo).toBe(40);        // 0,20% × 20.000
+    expect(f.perInvoice).toBe(0);    // a percentagem já inclui a parcela da fatura
+    expect(f.amount).toBe(40);       // não se somam os 8 USD nem os 15 USD
   });
 
   test('fatura consolidada: a parcela por PO conta N vezes, a da fatura só uma', () => {
@@ -61,7 +62,9 @@ describe('Taxa KIXIMA (USD, com limiar)', () => {
     expect(['FIXO', 'PERCENTUAL']).toContain(fee.basis);
     expect(Number(fee.fxRate)).toBeGreaterThan(0);
     expect(Number(fee.poValueUsd)).toBeGreaterThan(0);
-    expect(Number(fee.perInvoice)).toBe(15);
+    // Abaixo do limiar cobra-se a parcela da fatura; acima, ela vem incluída
+    // nos 0,20% e fica a zero.
+    expect(Number(fee.perInvoice)).toBe(fee.basis === 'PERCENTUAL' ? 0 : 15);
   });
 });
 
@@ -163,6 +166,14 @@ describe('Gestão do plano (Admin do Sistema)', () => {
 describe('Supplier Development', () => {
   let reference;
 
+  test('a taxa de acesso ao programa segue a das pequenas empresas (100 USD)', () => {
+    expect(plans.supplierDevAccessFee('PEQUENA')).toMatchObject({ amountUsd: 100, currency: 'USD', custom: false });
+    expect(plans.supplierDevAccessFee('MICRO').amountUsd).toBe(100);
+    // As restantes dimensões são orçamentadas caso a caso.
+    expect(plans.supplierDevAccessFee('MEDIA')).toMatchObject({ amountUsd: null, custom: true });
+    expect(plans.supplierDevAccessFee('GRANDE').custom).toBe(true);
+  });
+
   test('qualquer empresa se candidata pela página pública (sem conta)', async () => {
     const res = await request(app)
       .post('/api/supplier-development/requests')
@@ -179,6 +190,8 @@ describe('Supplier Development', () => {
     expect(res.status).toBe(201);
     expect(res.body.reference).toMatch(/^SD-/);
     expect(res.body.status).toBe('RECEBIDA');
+    // 24 trabalhadores → pequena empresa → taxa de tabela.
+    expect(res.body.accessFee).toMatchObject({ amountUsd: 100, currency: 'USD', custom: false });
     reference = res.body.reference;
   });
 

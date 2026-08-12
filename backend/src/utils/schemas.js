@@ -88,6 +88,8 @@ const supplierDevSchema = z.object({
 const supplierDevUpdateSchema = z.object({
   status: z.enum(['RECEBIDA', 'EM_ANALISE', 'EM_ACOMPANHAMENTO', 'CONCLUIDA', 'REJEITADA']).optional(),
   adminNotes: z.string().max(2000).optional(),
+  // Valor orçamentado da taxa de acesso ao programa (casos personalizados).
+  accessFeeUsd: z.coerce.number().nonnegative().optional(),
 });
 
 const decideCompanySchema = z.object({

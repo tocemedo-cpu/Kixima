@@ -1004,6 +1004,11 @@ model SupplierDevRequest {
   employees     Int?
   track         SupplierDevTrack  @default(AMBOS)
   needs         String?                                  // o que precisa / objetivos
+  // Taxa de acesso ao programa (USD/mês). Segue a taxa de acesso das pequenas
+  // empresas (100 USD); os restantes casos são orçamentados caso a caso e o
+  // valor fica aqui quando a KIXIMA o define (customPricing = true).
+  accessFeeUsd  Decimal?          @map("access_fee_usd") @db.Decimal(10, 2)
+  customPricing Boolean           @default(false) @map("custom_pricing")
   status        SupplierDevStatus @default(RECEBIDA)
   adminNotes    String?           @map("admin_notes")
   handledById   String?           @map("handled_by_id")

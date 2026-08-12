@@ -12,6 +12,7 @@ const prisma = require('../config/database');
 const { NotFoundError } = require('../utils/errors');
 const { nextReference } = require('../utils/reference');
 const notificationService = require('./notificationService');
+const planService = require('./planService');
 const logger = require('../config/logger');
 
 const PUBLIC_SELECT = { id: true, reference: true, companyName: true, track: true, status: true, createdAt: true };
@@ -20,6 +21,10 @@ const PUBLIC_SELECT = { id: true, reference: true, companyName: true, track: tru
 // por alguém já autenticado na plataforma.
 async function create(data, companyId = null) {
   const reference = await nextReference('SD', 'supplierDevRequest');
+  // Taxa de acesso ao programa: segue a taxa das pequenas empresas (100 USD);
+  // as restantes dimensões ficam marcadas como orçamento personalizado.
+  const size = planService.classify({ employees: data.employees });
+  const fee = planService.supplierDevAccessFee(size);
   const request = await prisma.supplierDevRequest.create({
     data: {
       reference,
@@ -34,6 +39,8 @@ async function create(data, companyId = null) {
       employees: data.employees ?? null,
       track: data.track || 'AMBOS',
       needs: data.needs || null,
+      accessFeeUsd: fee.amountUsd,
+      customPricing: fee.custom,
     },
   });
 
@@ -44,7 +51,11 @@ async function create(data, companyId = null) {
     logger.error('Supplier Development: falha ao notificar a equipa', { reference, message: err.message });
   }
 
-  return { reference: request.reference, status: request.status };
+  return {
+    reference: request.reference,
+    status: request.status,
+    accessFee: { amountUsd: fee.amountUsd, currency: fee.currency, custom: fee.custom },
+  };
 }
 
 // Lista para o Admin do Sistema (paginada, filtrável por estado/percurso).
@@ -83,7 +94,7 @@ async function list({ page = 1, limit = 25, status, track, q } = {}) {
 }
 
 // Admin atualiza o estado / notas de acompanhamento.
-async function update(id, { status, adminNotes }, user) {
+async function update(id, { status, adminNotes, accessFeeUsd }, user) {
   const request = await prisma.supplierDevRequest.findUnique({ where: { id } });
   if (!request) throw new NotFoundError('Candidatura');
   return prisma.supplierDevRequest.update({
@@ -91,6 +102,7 @@ async function update(id, { status, adminNotes }, user) {
     data: {
       ...(status ? { status } : {}),
       ...(adminNotes !== undefined ? { adminNotes } : {}),
+      ...(accessFeeUsd !== undefined ? { accessFeeUsd, customPricing: false } : {}),
       handledById: user?.id ?? request.handledById,
       handledAt: new Date(),
     },

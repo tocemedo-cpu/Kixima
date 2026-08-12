@@ -2,12 +2,13 @@
 // Taxa da plataforma (comissão KIXIMA), à parte da PO/Fatura, cobrada ao
 // fornecedor. Modelo comercial (agosto/2026):
 //
-//   • por ORDEM DE COMPRA: 8 USD fixos até ao limiar de 11.500 USD de valor da
-//     transação; ACIMA do limiar passa a 0,20% do valor da transação (a
-//     percentagem SUBSTITUI o valor fixo).
-//   • por FATURA: 15 USD fixos, sempre.
-//
-//   taxa = (nº de POs × parcela por PO) + 15 USD
+//   • ATÉ ao limiar de 11.500 USD por transação: 8 USD por ordem de compra
+//     + 15 USD por fatura.
+//         taxa = (nº de POs × 8 USD) + 15 USD
+//   • ACIMA do limiar: cobra-se 0,20% do valor da transação UMA SÓ VEZ, no
+//     fim, e essa percentagem INCLUI já a parcela da PO e a da fatura — não
+//     se soma nem os 8 USD nem os 15 USD.
+//         taxa = 0,20% × valor da transação
 //
 // MOEDA: as taxas são definidas, calculadas e cobradas em USD. As POs e faturas
 // continuam em Kwanzas — para comparar o valor da transação com o limiar em
@@ -52,11 +53,16 @@ function poFee(poValueUsd) {
 function compute(poCount, poValueUsd = 0) {
   const count = Math.max(1, Number(poCount) || 1);
   const { perPo, basis } = poFee(poValueUsd);
+
+  // Acima do limiar, os 0,20% são cobrados no fim e já INCLUEM a parcela da
+  // PO e a da fatura — por isso a parcela por fatura não se soma.
+  const perInvoice = basis === 'PERCENTUAL' ? 0 : PER_INVOICE;
+
   return {
     poCount: count,
     perPo,
-    perInvoice: PER_INVOICE,
-    amount: round2(count * perPo + PER_INVOICE),
+    perInvoice,
+    amount: round2(count * perPo + perInvoice),
     currency: CURRENCY,
     basis,
     poValueUsd: round2(poValueUsd),

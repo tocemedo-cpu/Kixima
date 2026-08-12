@@ -67,3 +67,8 @@ DO $$ BEGIN
     ADD CONSTRAINT "supplier_dev_requests_company_id_fkey"
     FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- Taxa de acesso ao programa Supplier Development (100 USD para pequenas
+-- empresas; restantes casos orçamentados).
+ALTER TABLE "supplier_dev_requests" ADD COLUMN IF NOT EXISTS "access_fee_usd" DECIMAL(10,2);
+ALTER TABLE "supplier_dev_requests" ADD COLUMN IF NOT EXISTS "custom_pricing" BOOLEAN NOT NULL DEFAULT false;

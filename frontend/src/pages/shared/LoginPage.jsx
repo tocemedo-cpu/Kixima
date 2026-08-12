@@ -122,13 +122,22 @@ export default function LoginPage() {
             {t('A sua empresa ainda não está na KIXIMA?')}{' '}
             <Link to="/cadastro" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>{t('Registe-a aqui')}</Link>.
           </p>
-          {/* Programas KIXIMA — acessíveis sem conta, a partir do login. */}
+          {/* Programas KIXIMA — logo abaixo do registo, acessíveis sem conta.
+              Duas portas de entrada distintas; cada formulário permite pedir
+              também o outro programa. */}
           <div className="login-programs">
             <Link className="login-program" to="/supplier-development">
               <span className="login-program-ico"><Icon name="suppliers" size={16} /></span>
               <span>
                 <strong>{t('Supplier Development')}</strong>
-                <span>{t('Apoio burocrático e parceiros internacionais para empresas angolanas')}</span>
+                <span>{t('Apoio no processo burocrático para se tornar fornecedor credenciado')}</span>
+              </span>
+            </Link>
+            <Link className="login-program" to="/parcerias">
+              <span className="login-program-ico"><Icon name="offshore" size={16} /></span>
+              <span>
+                <strong>{t('Parceiros internacionais')}</strong>
+                <span>{t('Procura de parceiros estrangeiros para tecnologia e capacitação')}</span>
               </span>
             </Link>
             <Link className="login-program" to="/planos">

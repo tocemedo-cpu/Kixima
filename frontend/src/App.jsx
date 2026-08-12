@@ -120,7 +120,8 @@ export default function App() {
       <Route path="/convite/:token" element={<AcceptInvite />} />
       <Route path="/recuperar" element={<PasswordReset />} />
       <Route path="/recuperar/:token" element={<PasswordReset />} />
-      <Route path="/supplier-development" element={<SupplierDevelopment />} />
+      <Route path="/supplier-development" element={<SupplierDevelopment initialTrack="BUROCRACIA" />} />
+      <Route path="/parcerias" element={<SupplierDevelopment initialTrack="PARCERIA" />} />
       <Route path="/planos" element={<Plans />} />
       <Route path="/termos" element={<Legal kind="termos" />} />
       <Route path="/privacidade" element={<Legal kind="privacidade" />} />

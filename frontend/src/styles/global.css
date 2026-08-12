@@ -2637,3 +2637,15 @@ tbody tr:hover {
 .home-program strong { display: block; font-size: 13.5px; }
 .home-program > span > span { font-size: 12px; color: var(--ink-600, #666); line-height: 1.45; }
 @media (max-width: 760px) { .home-programs { grid-template-columns: 1fr; } }
+
+/* Candidatura: percurso escolhido + opção cruzada do outro programa. */
+.sd-selected { display: flex; align-items: baseline; gap: 8px; margin: 14px 0 10px; }
+.sd-selected-tag { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-400, #999); }
+.sd-selected strong { font-size: 15px; color: var(--brand-600); }
+.sd-cross { display: flex; gap: 10px; align-items: flex-start; border: 1px dashed var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; cursor: pointer; background: var(--paper-050, #fafafa); }
+.sd-cross input { margin-top: 3px; flex-shrink: 0; }
+.sd-cross strong { display: block; font-size: 13px; }
+.sd-cross > span > span { font-size: 12px; color: var(--ink-600, #666); line-height: 1.45; }
+.sd-cross:hover { border-color: var(--brand-600); }
+.home-programs { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 1100px) { .home-programs { grid-template-columns: 1fr; } }
