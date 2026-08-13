@@ -243,13 +243,13 @@ function verEmail() {
     : { id: 'email-from', titulo: 'Remetente (EMAIL_FROM)', estado: FALHA, detalhe: 'Não está definido.',
       acao: 'Defina EMAIL_FROM com um remetente verificado na conta Brevo.' });
 
-  // O APP_URL importa MENOS do que este aviso dizia, e exagerá-lo mandava
-  // resolver o problema errado: os links dos convites são construídos a partir
-  // do host REAL do pedido (publicBaseUrl, em companyController), pelo que saem
-  // certos mesmo com o APP_URL por definir. E não há fluxo de recuperação de
-  // senha nenhum — o aviso anterior invocava um que não existe.
-  // O que o APP_URL faz mesmo: é a única entrada da allow-list de CORS, e é o
-  // valor que manda quando houver domínio próprio.
+  // O APP_URL importa MENOS do que o aviso original dizia. Tanto o link do
+  // convite como o da recuperação de senha usam a mesma cadeia —
+  // `APP_URL || host real do pedido || fallback` — e o host real do pedido faz
+  // com que saiam certos mesmo sem o APP_URL definido.
+  // O que o APP_URL faz mesmo: é a única entrada da allow-list de CORS, é o
+  // valor que manda quando houver domínio próprio, e é o único que serve se
+  // algum dia um email for enviado fora do contexto de um pedido (um job).
   const app = String(config.appUrl || '');
   if (/localhost|127\.0\.0\.1/.test(app)) {
     checks.push({ id: 'app-url', titulo: 'Endereço público (APP_URL)', estado: AVISO, detalhe: app,
