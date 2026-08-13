@@ -120,13 +120,36 @@ async function verCopias() {
   const checks = [];
 
   if (!expressao) {
+    // "Em falta" aqui significa uma coisa muito precisa: esta VARIÁVEL NÃO
+    // CHEGOU A ESTE PROCESSO. Quem já a definiu no painel e vê esta mensagem
+    // está quase sempre num de dois casos — o serviço não reiniciou depois de
+    // guardar, ou a variável foi para outro sítio. Dizer só "em falta" manda a
+    // pessoa redefinir uma variável que já está definida.
     checks.push({ id: 'backup-cron', titulo: 'Cópia de segurança automática', estado: FALHA,
-      detalhe: 'Não está agendada (BACKUP_CRON em falta).',
-      acao: 'Defina BACKUP_CRON, por exemplo "0 3 * * *" para uma cópia diária às 03:00 UTC. Sem isto, o histórico de ordens, faturas e pagamentos existe num único sítio.' });
+      detalhe: 'Não está agendada — a variável BACKUP_CRON não chegou a este processo.',
+      acao: 'Se ainda não a definiu: BACKUP_CRON=0 3 * * * (cinco campos, sem aspas) dá uma cópia '
+        + 'diária às 03:00 UTC. Se JÁ a definiu no Render e continua a ver isto, a variável é lida '
+        + 'uma única vez no arranque: guardar no painel não basta, o serviço tem de reiniciar '
+        + '(Manual Deploy → Deploy latest commit, ou Restart service). Confirme também que ficou no '
+        + 'serviço certo e que o nome não tem espaços nem letras minúsculas.' });
   } else if (!cron.validate(expressao)) {
+    // A causa mais comum, de longe: aspas copiadas junto com o exemplo. O
+    // Render guarda o valor literalmente, aspas incluídas, e o node-cron
+    // rejeita-o — sem que se perceba porquê, porque no painel "parece" certo.
+    const temAspas = /["']/.test(expressao);
+    const temTravessao = /[–—∗]/.test(expressao);
     checks.push({ id: 'backup-cron', titulo: 'Cópia de segurança automática', estado: FALHA,
-      detalhe: `A expressão "${expressao}" não é válida.`,
-      acao: 'Use o formato de 5 campos: minuto hora dia mês dia-da-semana. Ex.: "0 3 * * *".' });
+      detalhe: `A expressão ${JSON.stringify(expressao)} não é válida — a cópia automática não corre.`,
+      acao: (temAspas
+        ? 'O valor tem ASPAS. O Render guarda-as como parte do valor e a expressão deixa de ser válida — '
+          + 'escreva 0 3 * * * sem aspas nenhumas. '
+        : temTravessao
+          ? 'O valor tem caracteres que não são asteriscos simples (provavelmente autocorreção ao copiar). '
+            + 'Reescreva à mão: 0 3 * * * . '
+          : '')
+        + 'Formato: cinco campos separados por espaços — minuto hora dia-do-mês mês dia-da-semana. '
+        + 'Não são aceites @daily nem o caractere ? — o node-cron rejeita ambos. '
+        + 'Depois de corrigir, reinicie o serviço: a expressão só é lida no arranque.' });
   } else {
     checks.push({ id: 'backup-cron', titulo: 'Cópia de segurança automática', estado: OK,
       detalhe: `Agendada: ${expressao} (UTC).` });

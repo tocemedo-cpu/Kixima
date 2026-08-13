@@ -9,7 +9,11 @@
 // OPT-IN: só corre com BACKUP_CRON definido. Sem essa variável não faz nada —
 // não se impõe carga a quem já tenha os backups tratados do lado do Supabase.
 //
-//   BACKUP_CRON="0 3 * * *"   → todos os dias às 03:00 (hora do servidor, UTC)
+//   BACKUP_CRON=0 3 * * *   → todos os dias às 03:00 (hora do servidor, UTC)
+//
+// SEM ASPAS. No painel do Render o valor é guardado literalmente: umas aspas
+// copiadas junto com o exemplo entram no valor, o node-cron rejeita-o e a cópia
+// deixa de ser agendada — com a variável a "parecer" certa no painel.
 //
 // A cópia vai para o armazenamento S3 configurado. Sem S3, o job recusa-se a
 // correr: escrever para o disco do contentor seria uma cópia que desaparece com

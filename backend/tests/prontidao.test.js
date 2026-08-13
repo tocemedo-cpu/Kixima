@@ -83,6 +83,63 @@ describe('Prontidão para produção', () => {
   });
 });
 
+// Um BACKUP_CRON mal escrito é a falha mais fácil de ter e a mais difícil de
+// ver: no painel do Render o valor "parece" certo, o serviço arranca sem se
+// queixar ao utilizador, e a cópia simplesmente nunca corre. O diagnóstico tem
+// de nomear a causa concreta — dizer só "inválido" faz a pessoa olhar para um
+// valor que lhe parece bem e não ver nada.
+describe('Diagnóstico do BACKUP_CRON', () => {
+  const original = process.env.BACKUP_CRON;
+  afterAll(() => {
+    if (original === undefined) delete process.env.BACKUP_CRON;
+    else process.env.BACKUP_CRON = original;
+  });
+
+  async function verificarCron(valor) {
+    if (valor === undefined) delete process.env.BACKUP_CRON;
+    else process.env.BACKUP_CRON = valor;
+    const r = await prontidao.verificar();
+    return r.grupos.find((g) => g.grupo === 'Cópias de segurança').checks.find((c) => c.id === 'backup-cron');
+  }
+
+  test('ausente: manda reiniciar, porque a variável só é lida no arranque', async () => {
+    const c = await verificarCron(undefined);
+    expect(c.estado).toBe('falha');
+    expect(c.detalhe).toMatch(/não chegou a este processo/);
+    expect(c.acao).toMatch(/reiniciar|Restart|arranque/i);
+  });
+
+  // A causa mais comum de todas: copiar o exemplo com as aspas incluídas.
+  test('com aspas: diz que o problema são as aspas', async () => {
+    const c = await verificarCron('"0 3 * * *"');
+    expect(c.estado).toBe('falha');
+    expect(c.acao).toMatch(/ASPAS/);
+  });
+
+  test('com asterisco trocado por autocorreção: diz que os caracteres não são asteriscos', async () => {
+    const c = await verificarCron('0 3 ∗ * *');
+    expect(c.estado).toBe('falha');
+    expect(c.acao).toMatch(/asteriscos simples/);
+  });
+
+  test('@daily não serve — o node-cron rejeita-o', async () => {
+    const c = await verificarCron('@daily');
+    expect(c.estado).toBe('falha');
+    expect(c.acao).toMatch(/@daily/);
+  });
+
+  test('cinco campos válidos: agendada', async () => {
+    const c = await verificarCron('0 3 * * *');
+    expect(c.estado).toBe('ok');
+    expect(c.detalhe).toBe('Agendada: 0 3 * * * (UTC).');
+  });
+
+  test('seis campos também servem — o node-cron aceita segundos', async () => {
+    const c = await verificarCron('0 0 3 * * *');
+    expect(c.estado).toBe('ok');
+  });
+});
+
 describe('Cópia de segurança a pedido', () => {
   let tokens;
   beforeAll(async () => { tokens = await loginAll(); });
