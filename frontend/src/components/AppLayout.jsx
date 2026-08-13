@@ -68,21 +68,40 @@ export default function AppLayout() {
         {/* A 2FA é obrigatória para quem aprova ordens e credencia empresas. O
             aviso aparece enquanto não estiver ativa — depois do prazo, a conta
             fica limitada a esta configuração, por isso vale a pena não esperar. */}
-        {user?.mfaPendente ? (
-          <div className="banner banner-warn mfa-aviso">
-            <Icon name="shield" size={16} />
-            <span>
-              <strong>{t('Ative a verificação em dois passos')}</strong>
-              {' — '}
-              {t('o seu perfil aprova operações com dinheiro, por isso a senha deixou de bastar.')}
-              {' '}
-              <Link to="/seguranca">{t('Ativar agora')}</Link>
-            </span>
-          </div>
-        ) : null}
+        {user?.mfaPendente ? <AvisoMfa prazo={user.mfaPrazo} t={t} /> : null}
 
         <Outlet />
       </main>
+    </div>
+  );
+}
+
+// Aviso da 2FA por ativar.
+//
+// Antes dizia só "ative" — um pedido sem data é um pedido que se adia, e foi o
+// que aconteceu: oito contas com poder continuaram sem 2FA. Agora diz quantos
+// dias faltam e o que acontece quando acabarem, e fica vermelho na última
+// semana. A consequência é o que move isto, não a recomendação.
+function AvisoMfa({ prazo, t }) {
+  const dias = prazo
+    ? Math.ceil((new Date(prazo).getTime() - Date.now()) / 86400000)
+    : null;
+  const urgente = dias !== null && dias <= 7;
+
+  return (
+    <div className={`banner ${urgente ? 'banner-danger' : 'banner-warn'} mfa-aviso`}>
+      <Icon name="shield" size={16} />
+      <span>
+        <strong>{t('Ative a verificação em dois passos')}</strong>
+        {' — '}
+        {dias === null
+          ? t('o seu perfil aprova operações com dinheiro, por isso a senha deixou de bastar.')
+          : dias > 0
+            ? `${dias === 1 ? t('falta 1 dia') : t('faltam {n} dias', { n: dias })}. ${t('Depois disso, a sua conta só dá acesso a este ecrã de ativação.')}`
+            : t('o prazo terminou: a sua conta só dá acesso ao ecrã de ativação até isto ficar feito.')}
+        {' '}
+        <Link to="/seguranca">{t('Ativar agora')}</Link>
+      </span>
     </div>
   );
 }

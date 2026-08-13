@@ -28,9 +28,15 @@ export default function Prontidao() {
   const [email, setEmail] = useState(null);
   const [erroEmail, setErroEmail] = useState('');
   const [aEnviar, setAEnviar] = useState(false);
+  const [pendentes, setPendentes] = useState(null);
+  const [lembrete, setLembrete] = useState(null);
+  const [erroLembrete, setErroLembrete] = useState('');
+  const [aLembrar, setALembrar] = useState(false);
 
   function load() {
     api.get('/api/admin/prontidao').then(setData).catch((e) => setError(e.message));
+    // Quem são, e não só quantos: um número não se persegue.
+    api.get('/api/admin/mfa-pendentes').then(setPendentes).catch(() => setPendentes([]));
   }
   useEffect(load, []);
 
@@ -62,6 +68,23 @@ export default function Prontidao() {
       setAEnviar(false);
     }
   }
+
+  // Não se pode ativar a 2FA por outra pessoa — se um administrador o fizesse,
+  // ficaria com os dois fatores e deixava de haver dois. O que se pode fazer é
+  // pedir-lhe, com o prazo à frente.
+  async function enviarLembretes() {
+    setALembrar(true); setErroLembrete(''); setLembrete(null);
+    try {
+      setLembrete(await api.post('/api/admin/mfa-lembrete'));
+      load();
+    } catch (e) {
+      setErroLembrete(e.message);
+    } finally {
+      setALembrar(false);
+    }
+  }
+
+  const diasDesde = (d) => (d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null);
 
   const r = data?.resumo;
 
@@ -116,6 +139,70 @@ export default function Prontidao() {
                 </p>
               ) : null}
               {erroCopia ? <p className="error-text" style={{ margin: '8px 0 0', fontSize: 12.5 }}>{erroCopia}</p> : null}
+            </div>
+          ) : null}
+
+          {g.grupo === 'Autenticação de dois fatores' && pendentes?.length ? (
+            <div style={{ borderTop: '1px solid var(--line, #f0f0f0)', background: 'var(--surface-2, #fafafa)' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table className="bz-table" style={{ margin: 0 }}>
+                  <thead>
+                    <tr>
+                      <th>{t('Pessoa')}</th><th>{t('Perfil')}</th><th>{t('Empresa')}</th>
+                      <th>{t('Último acesso')}</th><th>{t('Último lembrete')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendentes.map((u) => {
+                      const dias = diasDesde(u.ultimoLogin);
+                      return (
+                        <tr key={u.id}>
+                          <td><strong>{u.nome}</strong><br /><span className="bz-muted" style={{ fontSize: 12 }}>{u.email}</span></td>
+                          <td className="bz-muted">{u.perfil}</td>
+                          <td className="bz-muted">{u.empresa || '—'}</td>
+                          {/* Quem não entra há muito tempo pode ser uma conta que
+                              já ninguém usa — essa desativa-se, em vez de se
+                              andar atrás dela. */}
+                          {/* Frases completas, não fragmentos: "há 2 dias" e
+                              "2 days ago" não têm a mesma ordem de palavras. */}
+                          <td className="bz-muted">
+                            {dias === null ? t('nunca entrou')
+                              : dias === 0 ? t('hoje')
+                                : dias === 1 ? t('há 1 dia')
+                                  : t('há {n} dias', { n: dias })}
+                          </td>
+                          <td className="bz-muted">
+                            {u.ultimoLembrete
+                              ? (diasDesde(u.ultimoLembrete) === 0 ? t('hoje')
+                                : diasDesde(u.ultimoLembrete) === 1 ? t('há 1 dia')
+                                  : t('há {n} dias', { n: diasDesde(u.ultimoLembrete) }))
+                              : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ padding: '12px 16px' }}>
+                <button className="btn btn-accent btn-sm" onClick={enviarLembretes} disabled={aLembrar}>
+                  {aLembrar ? t('A enviar…') : t('Pedir a todos que ativem')}
+                </button>
+                <p className="bz-muted" style={{ margin: '8px 0 0', fontSize: 12.5 }}>
+                  {t('Envia um email a cada pessoa com o prazo e o que acontece quando ele passar. Ninguém é lembrado duas vezes no mesmo dia.')}
+                </p>
+                {lembrete ? (
+                  <p style={{ margin: '8px 0 0', fontSize: 12.5 }}>
+                    ✅ {lembrete.enviados.length} {t('enviado(s)')}
+                    {lembrete.ignorados.length ? ` · ${lembrete.ignorados.length} ${t('já avisado(s) hoje')}` : ''}
+                    {lembrete.falhas.length ? ` · ${lembrete.falhas.length} ${t('falharam')}` : ''}
+                    {lembrete.falhas.length ? (
+                      <><br /><span className="error-text">{lembrete.falhas.map((f) => `${f.email}: ${f.erro}`).join(' · ')}</span></>
+                    ) : null}
+                  </p>
+                ) : null}
+                {erroLembrete ? <p className="error-text" style={{ margin: '8px 0 0', fontSize: 12.5 }}>{erroLembrete}</p> : null}
+              </div>
             </div>
           ) : null}
 

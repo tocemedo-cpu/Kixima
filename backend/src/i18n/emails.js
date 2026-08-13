@@ -28,6 +28,13 @@ const EN = {
   'Código para ativar a verificação em dois passos': 'Code to turn on two-step verification',
   'O seu código é {codigo}. É válido durante {minutos} minutos e só pode ser usado uma vez. Se não foi você a pedi-lo, alguém sabe a sua senha — mude-a assim que puder.':
     'Your code is {codigo}. It is valid for {minutos} minutes and can only be used once. If you did not request it, someone knows your password — change it as soon as you can.',
+  'Falta ativar a verificação em dois passos': 'Two-step verification is still not on',
+  'A sua conta KIXIMA aprova operações com dinheiro, por isso a senha deixou de bastar. Falta ativar a verificação em dois passos.':
+    'Your KIXIMA account approves money operations, so a password is no longer enough. Two-step verification is still not turned on.',
+  'A partir de {data}, sem isto configurado a sua conta só dá acesso ao ecrã de ativação — não conseguirá aprovar ordens nem consultar o resto da plataforma.':
+    'From {data}, without this set up your account will only reach the activation screen — you will not be able to approve orders or view the rest of the platform.',
+  'Entre na plataforma e vá a Configurações → Segurança. Demora menos de um minuto: enviamos-lhe um código por email e é só confirmá-lo.':
+    'Sign in and go to Settings → Security. It takes less than a minute: we email you a code and you just confirm it.',
   'Apólice atualizada': 'Policy updated',
 };
 
@@ -49,6 +56,13 @@ const FR = {
   'Código para ativar a verificação em dois passos': 'Code pour activer la vérification en deux étapes',
   'O seu código é {codigo}. É válido durante {minutos} minutos e só pode ser usado uma vez. Se não foi você a pedi-lo, alguém sabe a sua senha — mude-a assim que puder.':
     'Votre code est {codigo}. Il est valable {minutos} minutes et ne peut servir qu’une seule fois. Si vous ne l’avez pas demandé, quelqu’un connaît votre mot de passe — changez-le dès que possible.',
+  'Falta ativar a verificação em dois passos': 'La vérification en deux étapes n’est toujours pas activée',
+  'A sua conta KIXIMA aprova operações com dinheiro, por isso a senha deixou de bastar. Falta ativar a verificação em dois passos.':
+    'Votre compte KIXIMA approuve des opérations financières, le mot de passe ne suffit donc plus. La vérification en deux étapes n’est toujours pas activée.',
+  'A partir de {data}, sem isto configurado a sua conta só dá acesso ao ecrã de ativação — não conseguirá aprovar ordens nem consultar o resto da plataforma.':
+    'À partir du {data}, sans cette configuration votre compte n’accédera qu’à l’écran d’activation — vous ne pourrez ni approuver de bons de commande ni consulter le reste de la plateforme.',
+  'Entre na plataforma e vá a Configurações → Segurança. Demora menos de um minuto: enviamos-lhe um código por email e é só confirmá-lo.':
+    'Connectez-vous et allez dans Paramètres → Sécurité. Cela prend moins d’une minute : nous vous envoyons un code par e-mail, il suffit de le confirmer.',
   'Apólice atualizada': 'Police mise à jour',
 };
 

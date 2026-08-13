@@ -143,6 +143,24 @@ export const EN9 = {
   'Contas com poder sem 2FA': 'Privileged accounts without 2FA',
   // --- 2FA: instruções de ativação -------------------------------------------
   // --- Verificação em dois passos (email + app) -------------------------------
+  // --- Contas com poder sem 2FA ----------------------------------------------
+  'Pessoa': 'Person',
+  'Último acesso': 'Last sign-in',
+  'Último lembrete': 'Last reminder',
+  'nunca entrou': 'never signed in',
+  'há 1 dia': '1 day ago',
+  'há {n} dias': '{n} days ago',
+  'falta 1 dia': '1 day left',
+  'faltam {n} dias': '{n} days left',
+  'Pedir a todos que ativem': 'Ask everyone to turn it on',
+  'Envia um email a cada pessoa com o prazo e o que acontece quando ele passar. Ninguém é lembrado duas vezes no mesmo dia.':
+    'Emails each person the deadline and what happens once it passes. Nobody is reminded twice on the same day.',
+  'enviado(s)': 'sent',
+  'já avisado(s) hoje': 'already reminded today',
+  'Depois disso, a sua conta só dá acesso a este ecrã de ativação.':
+    'After that, your account will only reach this activation screen.',
+  'o prazo terminou: a sua conta só dá acesso ao ecrã de ativação até isto ficar feito.':
+    'the deadline has passed: your account only reaches the activation screen until this is done.',
   'Verificação em dois passos': 'Two-step verification',
   'Além da senha, entrar passa a pedir um código de 6 dígitos. Assim, quem descobrir a sua senha não entra na mesma. Recomendado sobretudo para perfis que aprovam e pagam.':
     'On top of your password, signing in will ask for a 6-digit code. That way, someone who finds out your password still cannot get in. Recommended above all for roles that approve and pay.',
@@ -314,6 +332,24 @@ export const FR9 = {
   'Contas com poder sem 2FA': 'Comptes à pouvoir sans 2FA',
   // --- 2FA : instructions d’activation ----------------------------------------
   // --- Vérification en deux étapes (e-mail + application) ---------------------
+  // --- Comptes à pouvoir sans 2FA ---------------------------------------------
+  'Pessoa': 'Personne',
+  'Último acesso': 'Dernière connexion',
+  'Último lembrete': 'Dernier rappel',
+  'nunca entrou': 'jamais connecté',
+  'há 1 dia': 'il y a 1 jour',
+  'há {n} dias': 'il y a {n} jours',
+  'falta 1 dia': 'il reste 1 jour',
+  'faltam {n} dias': 'il reste {n} jours',
+  'Pedir a todos que ativem': 'Demander à tous de l’activer',
+  'Envia um email a cada pessoa com o prazo e o que acontece quando ele passar. Ninguém é lembrado duas vezes no mesmo dia.':
+    'Envoie à chacun un e-mail avec l’échéance et ce qui se passera une fois passée. Personne n’est relancé deux fois le même jour.',
+  'enviado(s)': 'envoyé(s)',
+  'já avisado(s) hoje': 'déjà relancé(s) aujourd’hui',
+  'Depois disso, a sua conta só dá acesso a este ecrã de ativação.':
+    'Ensuite, votre compte n’accédera qu’à cet écran d’activation.',
+  'o prazo terminou: a sua conta só dá acesso ao ecrã de ativação até isto ficar feito.':
+    'le délai est écoulé : votre compte n’accède qu’à l’écran d’activation tant que ce n’est pas fait.',
   'Verificação em dois passos': 'Vérification en deux étapes',
   'Além da senha, entrar passa a pedir um código de 6 dígitos. Assim, quem descobrir a sua senha não entra na mesma. Recomendado sobretudo para perfis que aprovam e pagam.':
     'En plus du mot de passe, la connexion demandera un code à 6 chiffres. Ainsi, qui découvre votre mot de passe n’entre pas pour autant. Recommandé surtout pour les profils qui approuvent et paient.',

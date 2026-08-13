@@ -9,6 +9,7 @@ const auditService = require('../services/auditService');
 const prontidaoService = require('../services/prontidaoService');
 const backupJob = require('../jobs/backupJob');
 const notificationService = require('../services/notificationService');
+const mfaLembreteService = require('../services/mfaLembreteService');
 
 const router = express.Router();
 router.use(authenticate);
@@ -115,6 +116,23 @@ router.post('/email-teste', async (req, res) => {
   } catch (err) {
     res.status(err.status || 502).json({ error: { message: err.message } });
   }
+});
+
+// --- Contas com poder que ainda não têm 2FA ---------------------------------
+// A Prontidão dava um número, e um número não se persegue. Aqui ficam os nomes,
+// com o último login — que muda o que se faz a seguir: quem entra todas as
+// semanas precisa de um empurrão; quem não entra há meses pode ser uma conta que
+// já ninguém usa, e essa desativa-se em vez de se andar atrás dela.
+router.get('/mfa-pendentes', async (req, res) => res.json(await mfaLembreteService.pendentes()));
+
+// Pedir a essas pessoas que a ativem. Não se pode ativar por elas — se um
+// administrador o fizesse, ficaria com os dois fatores e deixava de haver dois.
+router.post('/mfa-lembrete', async (req, res) => {
+  const r = await mfaLembreteService.enviarLembretes({
+    userIds: Array.isArray(req.body?.userIds) ? req.body.userIds : null,
+    actor: auditService.actorFrom(req),
+  });
+  res.json(r);
 });
 
 module.exports = router;

@@ -691,6 +691,13 @@ tbody tr:hover {
   color: var(--amber-700, #8a5a00);
   border: 1px solid var(--amber-200, #f0d9a8);
 }
+/* Na última semana antes do prazo, o aviso deixa de ser amarelo: a conta está
+   mesmo a dias de ficar limitada ao ecrã de ativação. */
+.banner-danger {
+  background: var(--brand-050, #fdecee);
+  color: var(--brand-700, #b3141f);
+  border: 1px solid var(--brand-100, #fbdadd);
+}
 .mfa-aviso { display: flex; gap: 10px; align-items: flex-start; line-height: 1.5; }
 .mfa-aviso a { color: inherit; font-weight: 600; text-decoration: underline; }
 

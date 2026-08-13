@@ -56,6 +56,9 @@ async function authenticate(req, res, next) {
   const mfa = mfaPolicy.estadoPara(user);
   req.user.mfaPendente = mfa.pendente;
   req.user.mfaRestrita = mfa.restrita;
+  // O prazo vai junto: sem ele, o aviso na interface diz "ative" sem dizer até
+  // quando — e um pedido sem data é um pedido que se adia.
+  req.user.mfaPrazo = mfa.prazo;
   // req.path é relativo ao router onde o middleware corre (/me e não
   // /api/auth/me) — a lista de permitidos é sobre o caminho completo.
   const caminho = String(req.originalUrl || req.path).split('?')[0];
