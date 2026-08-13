@@ -73,10 +73,57 @@ function verify(code, secretB32, { at = Date.now(), window = 1 } = {}) {
   return false;
 }
 
+/**
+ * Se o código NÃO foi aceite, procura-o numa janela larga para descobrir se o
+ * problema é o relógio. Devolve o desvio em segundos (positivo = telemóvel
+ * adiantado) ou null se o código não bate em lado nenhum.
+ *
+ * Porquê existir: "Código incorreto" é verdade e não ajuda nada. A causa quase
+ * sempre é o relógio do telemóvel fora de horas — o TOTP é a hora, e 40 segundos
+ * de desvio chegam para falhar tudo. Sem isto, a pessoa reinstala a app, volta a
+ * ler o QR e falha na mesma, porque o problema nunca esteve no segredo.
+ *
+ * NÃO se usa para ACEITAR o código: aceitar com o relógio errado deixaria a
+ * pessoa ativar a 2FA e depois falhar em todos os logins seguintes. O desvio
+ * tem de ser corrigido, não contornado.
+ *
+ * A janela larga não enfraquece nada — o código continua a ser recusado — e
+ * /api/auth está limitado a 20 tentativas falhadas por 15 minutos.
+ */
+const DESVIO_MAX_PASSOS = 20; // ±10 minutos
+
+function desvioDeRelogio(code, secretB32, { at = Date.now(), window = 1 } = {}) {
+  const c = String(code || '').replace(/\D/g, '');
+  if (c.length !== 6 || !secretB32) return null;
+  const counter = Math.floor(at / 1000 / STEP_SECONDS);
+  for (let i = -DESVIO_MAX_PASSOS; i <= DESVIO_MAX_PASSOS; i++) {
+    if (Math.abs(i) <= window) continue;         // dentro do aceite: não é desvio
+    if (hotp(secretB32, counter + i) === c) return i * STEP_SECONDS;
+  }
+  return null;
+}
+
+// Frase pronta para o utilizador a partir do desvio detetado.
+function explicarFalha(code, secretB32, opcoes) {
+  const desvio = desvioDeRelogio(code, secretB32, opcoes);
+  if (desvio === null) {
+    return 'Código incorreto. Confirme que está a ler a entrada KIXIMA correta na app — se leu o '
+      + 'código QR mais do que uma vez, ficaram várias entradas com o mesmo nome e só a última serve.';
+  }
+  const segundos = Math.abs(desvio);
+  const sentido = desvio > 0 ? 'adiantado' : 'atrasado';
+  return `O código corresponde, mas o relógio do seu telemóvel está cerca de ${segundos} segundos `
+    + `${sentido}. Ative a hora automática no telemóvel (ou, no Google Authenticator: Definições → `
+    + 'Correção horária dos códigos → Sincronizar agora) e tente outra vez.';
+}
+
 // URL otpauth:// que as apps de autenticação leem (via QR ou colada à mão).
 function otpauthUrl({ secret, label, issuer = 'KIXIMA' }) {
   const params = new URLSearchParams({ secret, issuer, algorithm: 'SHA1', digits: '6', period: String(STEP_SECONDS) });
   return `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(label)}?${params}`;
 }
 
-module.exports = { generateSecret, totp, verify, otpauthUrl, base32Encode, base32Decode };
+module.exports = {
+  generateSecret, totp, verify, otpauthUrl, base32Encode, base32Decode,
+  desvioDeRelogio, explicarFalha,
+};

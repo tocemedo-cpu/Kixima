@@ -140,7 +140,10 @@ async function enableTotp(userId, code) {
   if (!user?.totpSecret) throw new ConflictError('Inicie primeiro a ativação (gerar o código QR).');
   if (user.totpEnabledAt) throw new ConflictError('A autenticação de dois fatores já está ativa.');
   if (!totpUtil.verify(code, user.totpSecret)) {
-    throw new UnauthorizedError('Código incorreto. Confirme o código atual na app de autenticação.');
+    // "Código incorreto" é verdade e não ajuda: a causa quase sempre é o relógio
+    // do telemóvel fora de horas. Aqui diz-se qual é o desvio, em vez de deixar
+    // a pessoa a reinstalar a app e a falhar na mesma.
+    throw new UnauthorizedError(totpUtil.explicarFalha(code, user.totpSecret));
   }
   const updated = await prisma.user.update({ where: { id: userId }, data: { totpEnabledAt: new Date() } });
   return { enabled: true, enabledAt: updated.totpEnabledAt };
@@ -151,7 +154,7 @@ async function disableTotp(userId, code) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user?.totpEnabledAt) throw new ConflictError('A autenticação de dois fatores não está ativa.');
   if (!totpUtil.verify(code, user.totpSecret)) {
-    throw new UnauthorizedError('Código incorreto. Confirme o código atual na app de autenticação.');
+    throw new UnauthorizedError(totpUtil.explicarFalha(code, user.totpSecret));
   }
   await prisma.user.update({ where: { id: userId }, data: { totpSecret: null, totpEnabledAt: null } });
   return { enabled: false };
@@ -173,7 +176,11 @@ async function verify2fa(challenge, code) {
     throw new UnauthorizedError('Sessão inválida — volte a iniciar sessão.');
   }
   if (!user.totpEnabledAt || !totpUtil.verify(code, user.totpSecret)) {
-    throw new UnauthorizedError('Código incorreto. Confirme o código atual na app de autenticação.');
+    throw new UnauthorizedError(
+      user.totpEnabledAt
+        ? totpUtil.explicarFalha(code, user.totpSecret)
+        : 'Código incorreto. Confirme o código atual na app de autenticação.',
+    );
   }
   return buildSession(user);
 }

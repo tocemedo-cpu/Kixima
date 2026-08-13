@@ -92,3 +92,58 @@ describe('Autenticação de dois fatores (TOTP)', () => {
     expect(res.status).toBe(401);
   });
 });
+
+// O relógio do telemóvel fora de horas é a causa mais comum de "código
+// incorreto" — e a mensagem antiga não dava pista nenhuma, o que levava as
+// pessoas a reinstalar a app e a ler o QR outra vez, falhando na mesma porque o
+// problema nunca esteve no segredo.
+describe('Quando o código falha, a mensagem diz porquê', () => {
+  const totpUtil = require('../src/utils/totp');
+  const segredo = totpUtil.generateSecret();
+  const agora = Date.now();
+
+  test('desvio até ±30s continua a ser aceite — não é problema nenhum', () => {
+    for (const seg of [0, 25, -25]) {
+      expect(totpUtil.verify(totpUtil.totp(segredo, { at: agora + seg * 1000 }), segredo, { at: agora })).toBe(true);
+    }
+  });
+
+  test('acima disso é recusado, mas diz o desvio e o sentido', () => {
+    const adiantado = totpUtil.totp(segredo, { at: agora + 90 * 1000 });
+    expect(totpUtil.verify(adiantado, segredo, { at: agora })).toBe(false);
+    expect(totpUtil.explicarFalha(adiantado, segredo, { at: agora })).toMatch(/90 segundos adiantado/);
+
+    const atrasado = totpUtil.totp(segredo, { at: agora - 300 * 1000 });
+    expect(totpUtil.explicarFalha(atrasado, segredo, { at: agora })).toMatch(/300 segundos atrasado/);
+  });
+
+  // O ponto que não se pode perder: diagnosticar não é aceitar. Se o código
+  // fosse aceite com o relógio errado, a pessoa ativava a 2FA e depois falhava
+  // em TODOS os logins seguintes — o desvio tem de ser corrigido, não contornado.
+  test('um desvio detetado NÃO faz o código passar', () => {
+    const fora = totpUtil.totp(segredo, { at: agora + 120 * 1000 });
+    expect(totpUtil.desvioDeRelogio(fora, segredo, { at: agora })).toBe(120);
+    expect(totpUtil.verify(fora, segredo, { at: agora })).toBe(false);
+  });
+
+  test('um código que não bate em lado nenhum aponta para as entradas duplicadas', () => {
+    expect(totpUtil.explicarFalha('123456', segredo, { at: agora })).toMatch(/mais do que uma vez/);
+  });
+
+  test('fora de ±10 minutos deixa de se procurar desvio', () => {
+    const longe = totpUtil.totp(segredo, { at: agora + 900 * 1000 });
+    expect(totpUtil.desvioDeRelogio(longe, segredo, { at: agora })).toBeNull();
+  });
+
+  test('a API devolve a explicação, não um "código incorreto" seco', async () => {
+    const login = await request(app).post('/api/auth/login').send({ email: EMAIL, password: PASSWORD });
+    const setup = await authed(login.body.token).post('/api/auth/2fa/setup');
+    const desfasado = totpUtil.totp(setup.body.secret, { at: Date.now() + 120 * 1000 });
+
+    const res = await authed(login.body.token).post('/api/auth/2fa/enable').send({ code: desfasado });
+    expect(res.status).toBe(401);
+    expect(res.body.error.message).toMatch(/relógio do seu telemóvel/);
+
+    await prisma.user.update({ where: { email: EMAIL }, data: { totpSecret: null, totpEnabledAt: null } });
+  });
+});
