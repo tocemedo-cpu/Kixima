@@ -139,7 +139,7 @@ export default function Security() {
             <input type="password" required value={form.currentPassword} onChange={(e) => update('currentPassword', e.target.value)} />
           </div>
           <div className="field">
-            <label>{t('Nova senha (mín. 8)')}</label>
+            <label>{t('Nova senha (mín. 10)')}</label>
             <input type="password" required minLength={10} value={form.newPassword} onChange={(e) => update('newPassword', e.target.value)} />
           </div>
           <div className="field">
@@ -151,6 +151,89 @@ export default function Security() {
       </div>
 
       <TwoFactorSection />
+      <DadosPessoaisSection />
+    </div>
+  );
+}
+
+// Direitos do titular dos dados (Lei 22/11 de Proteção de Dados Pessoais):
+// aceder aos seus dados e pedir a eliminação. Vive na página de Segurança
+// porque é aqui que a pessoa gere a sua própria conta.
+function DadosPessoaisSection() {
+  const { t } = useI18n();
+  const [aExportar, setAExportar] = useState(false);
+  const [confirmar, setConfirmar] = useState(false);
+  const [senha, setSenha] = useState('');
+  const [erro, setErro] = useState('');
+  const [feito, setFeito] = useState(null);
+
+  async function exportar() {
+    setAExportar(true); setErro('');
+    try {
+      const doc = await api.get('/api/users/me/dados-pessoais');
+      // Descarrega como ficheiro, para a pessoa ficar mesmo com uma cópia.
+      const url = URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = 'kixima-os-meus-dados.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { setErro(e.message); } finally { setAExportar(false); }
+  }
+
+  async function anonimizar(e) {
+    e.preventDefault();
+    setErro('');
+    try {
+      setFeito(await api.post('/api/users/me/anonimizar', { password: senha }));
+    } catch (err) { setErro(err.message); }
+  }
+
+  if (feito) {
+    return (
+      <div className="card card-pad" style={{ maxWidth: 420, marginTop: 16 }}>
+        <strong style={{ fontSize: 13.5 }}>{t('Dados eliminados')}</strong>
+        <p className="helptext" style={{ margin: '6px 0 0' }}>
+          {t('Os seus dados pessoais foram removidos e a conta foi fechada. O histórico de ordens e pagamentos foi preservado sem o identificar, por obrigação legal de conservação contabilística.')}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card card-pad" style={{ maxWidth: 420, marginTop: 16 }}>
+      <strong style={{ fontSize: 13.5 }}>{t('Os meus dados pessoais')}</strong>
+      <p className="helptext" style={{ margin: '6px 0 0' }}>
+        {t('Tem o direito de aceder aos dados que a KIXIMA guarda sobre si e de pedir a sua eliminação.')}
+      </p>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+        <button className="btn btn-ghost" onClick={exportar} disabled={aExportar}>
+          {aExportar ? t('A preparar…') : t('Descarregar os meus dados')}
+        </button>
+        {!confirmar ? (
+          <button className="btn btn-danger" onClick={() => setConfirmar(true)}>{t('Eliminar os meus dados')}</button>
+        ) : null}
+      </div>
+
+      {confirmar ? (
+        <form onSubmit={anonimizar} style={{ marginTop: 14 }}>
+          <p className="helptext" style={{ margin: '0 0 10px' }}>
+            <strong>{t('Isto não tem volta.')}</strong>{' '}
+            {t('O seu nome, email e foto são apagados e a conta é fechada. As ordens, faturas e pagamentos em que participou continuam a existir, mas deixam de o identificar — a lei fiscal obriga a conservá-los.')}
+          </p>
+          <div className="field">
+            <label>{t('Confirme a sua senha atual')}</label>
+            <input type="password" required value={senha} onChange={(ev) => setSenha(ev.target.value)} />
+          </div>
+          {erro ? <p className="error-text">{erro}</p> : null}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-danger" type="submit">{t('Eliminar definitivamente')}</button>
+            <button className="btn btn-ghost" type="button" onClick={() => { setConfirmar(false); setSenha(''); setErro(''); }}>
+              {t('Cancelar')}
+            </button>
+          </div>
+        </form>
+      ) : erro ? <p className="error-text" style={{ marginTop: 10 }}>{erro}</p> : null}
     </div>
   );
 }

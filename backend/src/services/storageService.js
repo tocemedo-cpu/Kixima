@@ -76,11 +76,14 @@ function getS3() {
   return s3Client;
 }
 
-function publicUrlFor(key) {
+function publicUrlFor(key, bucketAlvo) {
   const { publicUrl, endpoint, bucket, region } = config.storage;
-  if (publicUrl) return `${publicUrl.replace(/\/+$/, '')}/${key}`;
-  if (endpoint) return `${endpoint.replace(/\/+$/, '')}/${bucket}/${key}`;
-  return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+  const b = bucketAlvo || bucket;
+  // O STORAGE_PUBLIC_URL só vale para o bucket público das imagens; num bucket
+  // diferente (as cópias de segurança) construir-se-ia um URL errado.
+  if (publicUrl && b === bucket) return `${publicUrl.replace(/\/+$/, '')}/${key}`;
+  if (endpoint) return `${endpoint.replace(/\/+$/, '')}/${b}/${key}`;
+  return `https://${b}.s3.${region}.amazonaws.com/${key}`;
 }
 
 // Traduz as falhas do SDK em algo acionável. A mensagem crua («Resolved
@@ -96,9 +99,9 @@ function explicar(err) {
   return m;
 }
 
-async function saveS3(key, buffer, mimetype) {
+async function saveS3(key, buffer, mimetype, bucket = config.storage.bucket) {
   try {
-    return await enviarS3(key, buffer, mimetype);
+    return await enviarS3(key, buffer, mimetype, bucket);
   } catch (err) {
     const motivo = explicar(err);
     logger.error(`Armazenamento S3: falha ao enviar ${key} — ${motivo}`, { erro: err.message });
@@ -110,27 +113,28 @@ async function saveS3(key, buffer, mimetype) {
   }
 }
 
-async function enviarS3(key, buffer, mimetype) {
+async function enviarS3(key, buffer, mimetype, bucket = config.storage.bucket) {
   const { PutObjectCommand } = require('@aws-sdk/client-s3');
   await getS3().send(
     new PutObjectCommand({
-      Bucket: config.storage.bucket,
+      Bucket: bucket,
       Key: key,
       Body: buffer,
       ContentType: mimetype || 'application/octet-stream',
       CacheControl: 'public, max-age=31536000, immutable',
     })
   );
-  return publicUrlFor(key);
+  return publicUrlFor(key, bucket);
 }
 
 // --- API pública ------------------------------------------------------------
 // folder organiza os ficheiros (ex.: 'products', 'documents').
-async function saveFile({ buffer, originalname, mimetype, keyHint, folder = 'products' }) {
+async function saveFile({ buffer, originalname, mimetype, keyHint, folder = 'products', bucket }) {
   const filename = buildFilename(keyHint, originalname);
   if (providerAtivo() === 's3') {
-    logger.info(`Storage S3: a enviar ${folder}/${filename} para o bucket ${config.storage.bucket}`);
-    return saveS3(`${folder}/${filename}`, buffer, mimetype);
+    const alvo = bucket || config.storage.bucket;
+    logger.info(`Storage S3: a enviar ${folder}/${filename} para o bucket ${alvo}`);
+    return saveS3(`${folder}/${filename}`, buffer, mimetype, alvo);
   }
   return saveLocal(filename, buffer);
 }

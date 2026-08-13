@@ -22,6 +22,24 @@ const server = app.listen(config.port, () => {
       ? `Armazenamento: S3 (bucket ${config.storage.bucket})`
       : 'Armazenamento: disco do contentor — os ficheiros NÃO sobrevivem a um reinício',
   );
+
+  // Estado do email. Sem isto, uma configuração em falta só se descobre quando
+  // alguém se queixa de nunca ter recebido o convite ou o link de recuperação —
+  // e aí já passaram dias.
+  if (config.email.apenasLog) {
+    logger.error(
+      'Email: NENHUM envio real está configurado (EMAIL_PROVIDER=console). Convites, recuperação '
+      + 'de senha, avisos de fatura e confirmações ficam apenas no log — o utilizador não vê erro '
+      + 'nenhum e simplesmente nunca recebe nada. Defina EMAIL_PROVIDER=brevo + BREVO_API_KEY.',
+    );
+  } else if (config.email.missing.length) {
+    logger.error(
+      `Email: provider "${config.email.provider}" ativo mas mal configurado — faltam: `
+      + `${config.email.missing.join(', ')}. Os envios vão falhar em silêncio.`,
+    );
+  } else {
+    logger.info(`Email: ${config.email.provider} (remetente ${config.email.from})`);
+  }
   schedulePolicyExpiryJob();
   scheduleBackupJob();
   // Regista nos logs se a integração ERP (RabbitMQ) está ativa.

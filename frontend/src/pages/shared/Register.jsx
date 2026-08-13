@@ -162,7 +162,7 @@ export default function Register() {
                     <input type="email" required value={form.adminEmail} onChange={(e) => update('adminEmail', e.target.value)} />
                   </div>
                   <div className="field">
-                    <label>{t('Senha (mín. 8)')}</label>
+                    <label>{t('Senha (mín. 12)')}</label>
                     <input type="password" required minLength={12} value={form.adminPassword} onChange={(e) => update('adminPassword', e.target.value)} />
                   </div>
                 </div>

@@ -19,6 +19,7 @@ const { execFile } = require('child_process');
 const { promisify } = require('util');
 const zlib = require('zlib');
 const cron = require('node-cron');
+const config = require('../config/env');
 const logger = require('../config/logger');
 const storage = require('../services/storageService');
 
@@ -47,6 +48,8 @@ async function copiar() {
     mimetype: 'application/gzip',
     keyHint: 'kixima-backup',
     folder: 'backups',
+    // Bucket PRIVADO, separado do das imagens (que é público por necessidade).
+    bucket: config.storage.backupBucket,
   });
 
   return { destino, bytes: comprimido.length, segundos: (Date.now() - inicio) / 1000 };
@@ -65,6 +68,22 @@ function scheduleBackupJob() {
       'BACKUP_CRON definido mas sem armazenamento S3 — a cópia automática não vai correr. ' +
       'Uma cópia no disco do contentor desaparece com ele, o que é pior do que não ter cópia: ' +
       'dá a impressão de estar protegido. Configure STORAGE_* e reinicie.',
+    );
+    return;
+  }
+  if (!config.storage.backupBucket) {
+    logger.error(
+      'BACKUP_CRON definido mas STORAGE_BACKUP_BUCKET em falta — a cópia automática não vai correr. ' +
+      'As cópias NÃO podem ir para o bucket das imagens: esse é público (é de lá que o marketplace ' +
+      'serve as fotos do catálogo), e um dump da base tem hashes de senha, os dados de todas as ' +
+      'empresas e o histórico financeiro. Crie um bucket PRIVADO só para cópias e indique-o aqui.',
+    );
+    return;
+  }
+  if (config.storage.backupBucket === config.storage.bucket) {
+    logger.error(
+      'STORAGE_BACKUP_BUCKET é o MESMO bucket das imagens — a cópia automática não vai correr. ' +
+      'O bucket das imagens é público; as cópias precisam de um bucket privado só delas.',
     );
     return;
   }

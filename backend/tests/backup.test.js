@@ -45,15 +45,34 @@ describe('Cópia de segurança automática', () => {
 
   test('uma expressão inválida não passa em silêncio', () => {
     process.env.BACKUP_CRON = 'todos os dias por favor';
-    Object.assign(config.storage, { provider: 's3', bucket: 'b', accessKey: 'k', secretKey: 's', missing: [] });
+    Object.assign(config.storage, { provider: 's3', bucket: 'b', accessKey: 'k', secretKey: 's', missing: [], backupBucket: 'copias' });
     scheduleBackupJob();
     expect(agendar).not.toHaveBeenCalled();
     expect(erro.mock.calls[0][0]).toMatch(/BACKUP_CRON inválido/);
   });
 
-  test('com S3 e expressão válida, agenda', () => {
+  // As cópias NÃO podem partilhar o bucket das imagens: esse é público (o
+  // marketplace serve dele as fotos do catálogo) e um dump da base tem hashes de
+  // senha, dados de todas as empresas e o histórico financeiro.
+  test('sem bucket próprio para cópias, recusa-se a correr', () => {
     process.env.BACKUP_CRON = '0 3 * * *';
-    Object.assign(config.storage, { provider: 's3', bucket: 'b', accessKey: 'k', secretKey: 's', missing: [] });
+    Object.assign(config.storage, { provider: 's3', bucket: 'imagens', accessKey: 'k', secretKey: 's', missing: [], backupBucket: undefined });
+    scheduleBackupJob();
+    expect(agendar).not.toHaveBeenCalled();
+    expect(erro.mock.calls[0][0]).toMatch(/STORAGE_BACKUP_BUCKET/);
+  });
+
+  test('recusa-se se o bucket das cópias for o das imagens', () => {
+    process.env.BACKUP_CRON = '0 3 * * *';
+    Object.assign(config.storage, { provider: 's3', bucket: 'imagens', accessKey: 'k', secretKey: 's', missing: [], backupBucket: 'imagens' });
+    scheduleBackupJob();
+    expect(agendar).not.toHaveBeenCalled();
+    expect(erro.mock.calls[0][0]).toMatch(/MESMO bucket/);
+  });
+
+  test('com S3, bucket privado e expressão válida, agenda', () => {
+    process.env.BACKUP_CRON = '0 3 * * *';
+    Object.assign(config.storage, { provider: 's3', bucket: 'imagens', accessKey: 'k', secretKey: 's', missing: [], backupBucket: 'copias-privadas' });
     scheduleBackupJob();
     expect(agendar).toHaveBeenCalledTimes(1);
     expect(agendar.mock.calls[0][0]).toBe('0 3 * * *');

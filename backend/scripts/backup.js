@@ -82,19 +82,25 @@ async function main() {
   // Guarda FORA do Supabase sempre que houver armazenamento configurado; caso
   // contrário fica em disco, com aviso — no Render esse disco é efémero.
   let destino;
-  if (storage.providerAtivo() === 's3') {
+  if (storage.providerAtivo() === 's3' && config.storage.backupBucket) {
     destino = await storage.saveFile({
       buffer: comprimido,
       originalname: nome,
       mimetype: 'application/gzip',
       keyHint: 'kixima-backup',
       folder: 'backups',
+      bucket: config.storage.backupBucket,
     });
   } else {
     fs.mkdirSync(DESTINO_LOCAL, { recursive: true });
     destino = path.join(DESTINO_LOCAL, nome);
     fs.writeFileSync(destino, comprimido);
-    console.warn('⚠  Sem armazenamento S3 configurado: a cópia ficou em disco.');
+    if (storage.providerAtivo() === 's3') {
+      console.warn('⚠  STORAGE_BACKUP_BUCKET em falta: a cópia NÃO foi para o S3.');
+      console.warn('   As cópias não podem ir para o bucket das imagens, que é público.');
+      console.warn('   Crie um bucket PRIVADO só para cópias e indique-o em STORAGE_BACKUP_BUCKET.');
+    }
+    console.warn('⚠  A cópia ficou em disco.');
     console.warn('   No Render esse disco é APAGADO a cada reinício — configure STORAGE_* ou');
     console.warn('   copie o ficheiro para fora antes de reiniciar.');
   }

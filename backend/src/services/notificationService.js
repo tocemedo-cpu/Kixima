@@ -10,6 +10,7 @@ const logger = require('../config/logger');
 // apenas regista no log — trocar por um provider real (SMTP/SES/SendGrid)
 // sem tocar no resto do código.
 const config = require('../config/env');
+const emailI18n = require('../i18n/emails');
 
 // Separa o EMAIL_FROM ("Nome <email>" ou "email") em nome + email.
 function parseFrom(from) {
@@ -94,7 +95,7 @@ async function sendEmail(to, subject, body, opts) {
   return dispatchEmail(to, subject, body, opts);
 }
 
-async function notifyUser({ userId, type, title, message, channel = 'IN_APP', relatedEntityType, relatedEntityId, emailTo }) {
+async function notifyUser({ userId, type, title, message, channel = 'IN_APP', relatedEntityType, relatedEntityId, emailTo, locale }) {
   const notification = await prisma.notification.create({
     data: {
       userId,
@@ -108,7 +109,9 @@ async function notifyUser({ userId, type, title, message, channel = 'IN_APP', re
   });
 
   if (channel === 'IN_APP_EMAIL' && emailTo) {
-    await dispatchEmail(emailTo, title, message);
+    // O EMAIL sai na língua do destinatário; a notificação in-app fica em
+    // português porque a interface a traduz do lado do cliente.
+    await dispatchEmail(emailTo, emailI18n.t(title, locale), emailI18n.t(message, locale));
   }
 
   return notification;
@@ -130,6 +133,7 @@ async function notifyUsersByRole({ companyId, roles, type, title, message, chann
         relatedEntityType,
         relatedEntityId,
         emailTo: u.email,
+        locale: u.locale,
       })
     )
   );

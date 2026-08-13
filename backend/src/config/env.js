@@ -82,6 +82,13 @@ const config = {
     // URL público base para servir as imagens (CDN / bucket público). Se vazio,
     // é construído a partir do endpoint/bucket ou do host AWS.
     publicUrl: process.env.STORAGE_PUBLIC_URL || undefined,
+    // Bucket SEPARADO para as cópias de segurança. O bucket das imagens tem de
+    // ser público (é dele que o marketplace serve as fotos do catálogo) — e um
+    // dump da base guardado num bucket público fica descarregável por quem
+    // souber o URL, com hashes de senha, dados de todas as empresas e o
+    // histórico financeiro lá dentro. Sem esta variável a cópia automática
+    // recusa-se a correr.
+    backupBucket: process.env.STORAGE_BACKUP_BUCKET,
     // path-style é necessário para a maioria dos S3-compatíveis (Supabase/MinIO).
     forcePathStyle: process.env.STORAGE_FORCE_PATH_STYLE
       ? process.env.STORAGE_FORCE_PATH_STYLE === 'true'
@@ -106,6 +113,21 @@ const STORAGE_REQUIRED = {
   STORAGE_ACCESS_KEY: config.storage.accessKey,
   STORAGE_SECRET_KEY: config.storage.secretKey,
 };
+// Configuração de email em falta. Sem provider definido, TUDO o que é email
+// fica só no log — convites, recuperação de senha, aviso de fatura pendente,
+// confirmação de candidatura — e o utilizador não vê erro nenhum: simplesmente
+// nunca recebe nada. É a falha mais silenciosa que a plataforma pode ter.
+const EMAIL_REQUIRED = {
+  brevo: { BREVO_API_KEY: config.email.brevoApiKey },
+  'brevo-api': { BREVO_API_KEY: config.email.brevoApiKey },
+  smtp: { SMTP_HOST: config.email.smtp.host, SMTP_USER: config.email.smtp.user, SMTP_PASSWORD: config.email.smtp.password },
+};
+config.email.missing = Object.entries(EMAIL_REQUIRED[config.email.provider] || {})
+  .filter(([, v]) => !String(v || '').trim())
+  .map(([k]) => k);
+// 'console' não é um provider a sério: escreve no log e segue.
+config.email.apenasLog = config.email.provider === 'console';
+
 config.storage.missing =
   config.storage.provider === 's3'
     ? Object.entries(STORAGE_REQUIRED).filter(([, v]) => !String(v || '').trim()).map(([k]) => k)

@@ -8,6 +8,12 @@ import { api } from '../../api/client';
 import Logo from '../../components/Logo';
 import { useI18n } from '../../i18n';
 
+// Perfis que movem dinheiro: o servidor exige-lhes uma senha mais longa
+// (backend/src/utils/passwordPolicy.js). O rótulo tem de dizer o mesmo número
+// que a validação, senão a pessoa só descobre o mínimo real ao ser recusada.
+const PERFIS_SENSIVEIS = ['COMPANY_ADMIN', 'FINANCEIRO', 'ADMIN_SISTEMA'];
+const minimoSenha = (role) => (PERFIS_SENSIVEIS.includes(role) ? 12 : 10);
+
 // Rótulo do perfil no contexto da empresa (Vendedor = FORNECEDOR).
 function roleLabel(role, companyType) {
   if (role === 'FORNECEDOR') return 'Vendedor';
@@ -105,8 +111,8 @@ export default function AcceptInvite() {
                   <input type="email" required value={form.email} onChange={(e) => update('email', e.target.value)} readOnly={!!invite.email} />
                 </div>
                 <div className="field">
-                  <label>{t('Senha (mín. 8)')}</label>
-                  <input type="password" required minLength={10} value={form.password} onChange={(e) => update('password', e.target.value)} />
+                  <label>{minimoSenha(invite.role) === 12 ? t('Senha (mín. 12)') : t('Senha (mín. 10)')}</label>
+                  <input type="password" required minLength={minimoSenha(invite.role)} value={form.password} onChange={(e) => update('password', e.target.value)} />
                 </div>
                 <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10, fontSize: 12.5, cursor: 'pointer' }}>
                   <input

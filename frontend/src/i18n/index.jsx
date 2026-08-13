@@ -101,6 +101,17 @@ export function I18nProvider({ children }) {
     if (!LANGS.some((l) => l.code === code)) return;
     setLangState(code);
     try { localStorage.setItem(STORAGE_KEY, code); } catch { /* modo privado */ }
+    // Guarda também no SERVIDOR: os emails são escritos lá, e o localStorage do
+    // browser não lhe chega. Sem sessão iniciada o pedido falha e ignora-se —
+    // a escolha local vale na mesma.
+    fetch('/api/users/me/locale', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('kixima_token') ? { Authorization: `Bearer ${localStorage.getItem('kixima_token')}` } : {}),
+      },
+      body: JSON.stringify({ locale: code }),
+    }).catch(() => { /* sem sessão ou offline: a escolha local basta */ });
   }, []);
 
   const t = useCallback((key, vars) => {

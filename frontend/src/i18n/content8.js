@@ -79,6 +79,22 @@ export const EN9 = {
   // --- Planos ----------------------------------------------------------------
   '/ utilizador / mês': '/ user / month',
 
+  // --- Direitos do titular dos dados (Lei 22/11) ------------------------------
+  'Os meus dados pessoais': 'My personal data',
+  'Tem o direito de aceder aos dados que a KIXIMA guarda sobre si e de pedir a sua eliminação.':
+    'You have the right to access the data KIXIMA holds about you and to request its deletion.',
+  'Descarregar os meus dados': 'Download my data',
+  'A preparar…': 'Preparing…',
+  'Eliminar os meus dados': 'Delete my data',
+  'Isto não tem volta.': 'This cannot be undone.',
+  'O seu nome, email e foto são apagados e a conta é fechada. As ordens, faturas e pagamentos em que participou continuam a existir, mas deixam de o identificar — a lei fiscal obriga a conservá-los.':
+    'Your name, email and photo are erased and the account is closed. The orders, invoices and payments you took part in still exist but no longer identify you — tax law requires them to be kept.',
+  'Confirme a sua senha atual': 'Confirm your current password',
+  'Eliminar definitivamente': 'Delete permanently',
+  'Dados eliminados': 'Data deleted',
+  'Os seus dados pessoais foram removidos e a conta foi fechada. O histórico de ordens e pagamentos foi preservado sem o identificar, por obrigação legal de conservação contabilística.':
+    'Your personal data has been removed and the account closed. The history of orders and payments was preserved without identifying you, as accounting records must be kept by law.',
+
   // --- 2FA obrigatória --------------------------------------------------------
   'Ative a verificação em dois passos': 'Turn on two-step verification',
   'o seu perfil aprova operações com dinheiro, por isso a senha deixou de bastar.':
@@ -155,6 +171,22 @@ export const FR9 = {
 
   // --- Formules --------------------------------------------------------------
   '/ utilizador / mês': '/ utilisateur / mois',
+
+  // --- Droits de la personne concernée (Loi 22/11) ----------------------------
+  'Os meus dados pessoais': 'Mes données personnelles',
+  'Tem o direito de aceder aos dados que a KIXIMA guarda sobre si e de pedir a sua eliminação.':
+    'Vous avez le droit d’accéder aux données que KIXIMA détient sur vous et d’en demander la suppression.',
+  'Descarregar os meus dados': 'Télécharger mes données',
+  'A preparar…': 'Préparation…',
+  'Eliminar os meus dados': 'Supprimer mes données',
+  'Isto não tem volta.': 'Cette action est irréversible.',
+  'O seu nome, email e foto são apagados e a conta é fechada. As ordens, faturas e pagamentos em que participou continuam a existir, mas deixam de o identificar — a lei fiscal obriga a conservá-los.':
+    'Votre nom, votre e-mail et votre photo sont effacés et le compte est fermé. Les bons de commande, factures et paiements auxquels vous avez participé subsistent mais ne vous identifient plus — la loi fiscale impose de les conserver.',
+  'Confirme a sua senha atual': 'Confirmez votre mot de passe actuel',
+  'Eliminar definitivamente': 'Supprimer définitivement',
+  'Dados eliminados': 'Données supprimées',
+  'Os seus dados pessoais foram removidos e a conta foi fechada. O histórico de ordens e pagamentos foi preservado sem o identificar, por obrigação legal de conservação contabilística.':
+    'Vos données personnelles ont été supprimées et le compte fermé. L’historique des commandes et des paiements a été conservé sans vous identifier, en raison de l’obligation légale de conservation comptable.',
 
   // --- 2FA obligatoire --------------------------------------------------------
   'Ative a verificação em dois passos': 'Activez la vérification en deux étapes',

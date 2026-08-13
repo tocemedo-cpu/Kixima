@@ -282,6 +282,10 @@ model User {
   company   Company? @relation(fields: [companyId], references: [id])
 
   avatarUrl       String?   @map("avatar_url") // foto de perfil (upload ou câmera)
+  // Idioma escolhido na plataforma (pt/en/fr). Guardado no servidor para os
+  // EMAILS saírem na língua do destinatário — o localStorage do browser não
+  // serve para nada quando é o servidor a escrever a mensagem.
+  locale          String?   @map("locale")
   active          Boolean   @default(true)
   // Versão de sessão: incrementar invalida imediatamente todos os tokens JWT
   // já emitidos para este utilizador (logout global, troca de senha, etc.).
