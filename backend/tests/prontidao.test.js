@@ -109,9 +109,17 @@ describe('Diagnóstico do BACKUP_CRON', () => {
     expect(c.acao).toMatch(/reiniciar|Restart|arranque/i);
   });
 
-  // A causa mais comum de todas: copiar o exemplo com as aspas incluídas.
-  test('com aspas: diz que o problema são as aspas', async () => {
-    const c = await verificarCron('"0 3 * * *"');
+  // A causa mais comum de todas: copiar o exemplo com as aspas incluídas, ou o
+  // rótulo "Value:" do próprio formulário do Render. Passaram a ser tolerados —
+  // recusar era tecnicamente correto e inútil na prática.
+  test('aspas e o rótulo do painel são tolerados', async () => {
+    expect((await verificarCron('"0 3 * * *"')).estado).toBe('ok');
+    expect((await verificarCron('Value:\n0 3 * * *')).estado).toBe('ok');
+    expect((await verificarCron('  0 3 * * *  ')).estado).toBe('ok');
+  });
+
+  test('aspas NO MEIO do valor continuam a ser assinaladas', async () => {
+    const c = await verificarCron('0 3 " * *');
     expect(c.estado).toBe('falha');
     expect(c.acao).toMatch(/ASPAS/);
   });

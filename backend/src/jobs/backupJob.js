@@ -117,8 +117,17 @@ function motivoParaNaoCorrer() {
 }
 
 function scheduleBackupJob() {
-  const expressao = process.env.BACKUP_CRON;
+  // A mesma limpeza do resto do ambiente: o painel do Render guarda o que lá for
+  // colado, aspas e rótulos incluídos.
+  const expressao = config.limparValor(process.env.BACKUP_CRON);
   if (!expressao) return;
+
+  if (config.precisouDeLimpeza(process.env.BACKUP_CRON)) {
+    logger.warn(
+      `BACKUP_CRON tinha espaços, aspas ou texto a mais; foi lido como "${expressao}". `
+      + 'Vale a pena arrumar o valor no painel.',
+    );
+  }
 
   if (!cron.validate(expressao)) {
     logger.error(`BACKUP_CRON inválido ("${expressao}") — a cópia automática NÃO vai correr.`);

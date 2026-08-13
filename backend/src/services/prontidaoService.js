@@ -116,7 +116,7 @@ async function versaoDoServidor() {
 }
 
 async function verCopias() {
-  const expressao = process.env.BACKUP_CRON;
+  const expressao = config.limparValor(process.env.BACKUP_CRON);
   const checks = [];
 
   if (!expressao) {

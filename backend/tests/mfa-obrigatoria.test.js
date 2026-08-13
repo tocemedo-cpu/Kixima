@@ -130,3 +130,34 @@ describe('MFA_ENFORCE_FROM mal escrita', () => {
     }
   });
 });
+
+// O painel do Render guarda o que lá for colado, LITERALMENTE. Já partiu três
+// variáveis desta forma: a chave do S3 em branco, o BACKUP_CRON com aspas, e o
+// MFA_ENFORCE_FROM com o rótulo "Value:" copiado junto com o valor. Nenhum
+// destes casos dá erro no painel — todos parecem certos a quem olha.
+describe('Valores colados do painel do Render', () => {
+  const { limparValor, precisouDeLimpeza } = require('../src/config/env');
+
+  test('o rótulo do formulário copiado com o valor', () => {
+    expect(limparValor('Value:\n2026-09-15T00:00:00Z')).toBe('2026-09-15T00:00:00Z');
+    expect(limparValor('Value:\n0 3 * * *')).toBe('0 3 * * *');
+  });
+
+  test('aspas e espaços', () => {
+    expect(limparValor('"2026-09-15T00:00:00Z"')).toBe('2026-09-15T00:00:00Z');
+    expect(limparValor('  0 3 * * *  ')).toBe('0 3 * * *');
+    expect(limparValor("'kixima-backups'")).toBe('kixima-backups');
+  });
+
+  test('um valor já limpo fica exatamente como está', () => {
+    expect(limparValor('0 3 * * *')).toBe('0 3 * * *');
+    expect(precisouDeLimpeza('0 3 * * *')).toBe(false);
+    expect(precisouDeLimpeza('Value:\n0 3 * * *')).toBe(true);
+  });
+
+  test('vazio continua vazio — não se inventa valor nenhum', () => {
+    expect(limparValor('')).toBe('');
+    expect(limparValor(undefined)).toBe('');
+    expect(limparValor('   \n  \n ')).toBe('');
+  });
+});

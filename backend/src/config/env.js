@@ -5,12 +5,31 @@
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 /**
- * Limpa um valor colado no painel do Render: espaços à volta e aspas que
- * tenham vindo agarradas ao exemplo. O painel guarda o valor LITERALMENTE, e
- * `"2026-09-15T00:00:00Z"` — com as aspas — não é uma data.
+ * Limpa um valor colado no painel do Render.
+ *
+ * O painel guarda o que lá for posto, LITERALMENTE, e a colagem traz lixo com
+ * uma regularidade que já não é acidente: aspas agarradas ao exemplo
+ * (`"2026-09-15T00:00:00Z"`), espaços à volta, e o próprio rótulo do formulário
+ * copiado com o valor —
+ *
+ *     Value:
+ *     2026-09-15T00:00:00Z
+ *
+ * Nenhum destes valores é uma data, um cron ou uma chave; todos parecem certos
+ * a quem olha para o painel. Como nenhuma destas definições é multi-linha, fica
+ * a última linha com conteúdo — que é sempre o valor de facto.
  */
 function limpar(valor) {
-  return String(valor ?? '').trim().replace(/^["']|["']$/g, '').trim();
+  const linhas = String(valor ?? '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const ultima = linhas.length ? linhas[linhas.length - 1] : '';
+  return ultima.replace(/^["']|["']$/g, '').trim();
+}
+
+// O valor foi mesmo alterado pela limpeza? Serve para o assinalar em vez de o
+// corrigir em silêncio — quem definiu a variável deve arrumá-la.
+function precisouDeLimpeza(valor) {
+  const cru = String(valor ?? '');
+  return Boolean(cru) && cru !== limpar(cru);
 }
 
 // Data vinda do ambiente, ou null se não existir/não for uma data.
@@ -170,5 +189,10 @@ config.storage.missing =
   config.storage.provider === 's3'
     ? Object.entries(STORAGE_REQUIRED).filter(([, v]) => !String(v || '').trim()).map(([k]) => k)
     : [];
+
+// Exportado para as poucas definições lidas fora daqui (BACKUP_CRON é lida no
+// momento do agendamento, não no arranque) poderem passar pela mesma limpeza.
+config.limparValor = limpar;
+config.precisouDeLimpeza = precisouDeLimpeza;
 
 module.exports = config;
