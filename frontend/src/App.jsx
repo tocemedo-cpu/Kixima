@@ -89,6 +89,7 @@ const PlatformFees = lazy(() => import('./pages/adminSistema/PlatformFees'));
 const AuditTrail = lazy(() => import('./pages/adminSistema/AuditTrail'));
 const AdminPlans = lazy(() => import('./pages/adminSistema/Plans'));
 const AdminSupplierDev = lazy(() => import('./pages/adminSistema/SupplierDev'));
+const Prontidao = lazy(() => import('./pages/adminSistema/Prontidao'));
 
 // Ecrã de recurso enquanto o chunk de uma rota é carregado.
 function PageLoading() {
@@ -233,6 +234,7 @@ export default function App() {
             <Route path="/sistema/auditoria" element={<AuditTrail />} />
             <Route path="/sistema/planos" element={<AdminPlans />} />
             <Route path="/sistema/supplier-development" element={<AdminSupplierDev />} />
+            <Route path="/sistema/prontidao" element={<Prontidao />} />
           </Route>
         </Route>
       </Route>

@@ -26,6 +26,10 @@ const config = {
 
   database: {
     url: process.env.DATABASE_URL,
+    // Pooler de SESSÃO (porta 5432). As migrações e o pg_dump da cópia de
+    // segurança precisam de uma sessão estável — nenhum dos dois funciona
+    // através do pooler de transação.
+    directUrl: process.env.DIRECT_URL,
   },
 
   auth: {

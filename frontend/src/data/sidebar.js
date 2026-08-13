@@ -169,6 +169,7 @@ const ADMIN_SISTEMA = [
       { label: 'Permissões', to: '/sistema/permissoes' },
       { label: 'Gestão de Atividades', to: '/sistema/atividades' },
       { label: 'Auditoria', to: '/sistema/auditoria' },
+      { label: 'Prontidão para produção', to: '/sistema/prontidao' },
       { label: 'Ajuda', to: '/ajuda' },
     ],
   },

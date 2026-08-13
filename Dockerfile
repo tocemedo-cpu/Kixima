@@ -21,12 +21,19 @@ RUN npm run build
 # Etapa 2 — backend Node + Express + Prisma, servindo também o SPA
 # ---------------------------------------------------------------------------
 FROM node:20-alpine
-# O Prisma precisa de openssl no Alpine.
 # openssl: exigido pelo Prisma no Alpine.
-# postgresql-client: o pg_dump da cópia de segurança automática (BACKUP_CRON).
+# postgresql17-client: o pg_dump da cópia de segurança automática (BACKUP_CRON).
 #   Sem ele o job arranca e falha todas as noites — a base ficaria sem cópia com
 #   a aplicação a dar sinal de estar tudo bem.
-RUN apk add --no-cache openssl postgresql-client
+#   A versão é explícita porque o pg_dump RECUSA-SE a copiar um servidor mais
+#   recente do que ele ("server version mismatch"), e o Supabase corre o
+#   PostgreSQL 15 ou 17 conforme a idade do projeto. Um cliente 17 copia
+#   qualquer um dos dois; o meta-pacote `postgresql-client` segue a versão por
+#   omissão do Alpine e pode ficar atrás numa atualização da imagem base.
+#   O fallback evita que uma remoção do pacote no Alpine quebre o build — e a
+#   página Prontidão compara as duas versões e assinala se ficarem incompatíveis.
+RUN apk add --no-cache openssl \
+  && (apk add --no-cache postgresql17-client || apk add --no-cache postgresql-client)
 WORKDIR /app
 
 # Dependências do backend (mantém devDependencies: a CLI do Prisma vive nelas).

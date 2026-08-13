@@ -22,14 +22,27 @@ const cron = require('node-cron');
 const config = require('../config/env');
 const logger = require('../config/logger');
 const storage = require('../services/storageService');
+const auditService = require('../services/auditService');
 
 const execFileAsync = promisify(execFile);
 
 function urlDeDump() {
-  return process.env.DIRECT_URL || process.env.DATABASE_URL;
+  return config.database.directUrl || config.database.url;
 }
 
+// Uma cópia de cada vez. O pg_dump carrega a base inteira em memória e o plano
+// gratuito tem 512 MB: duas em paralelo — o agendamento e alguém a carregar no
+// botão — derrubavam o serviço. Quem chega a meio de uma cópia recebe a que já
+// está a correr, em vez de iniciar outra.
+let emCurso = null;
+
 async function copiar() {
+  if (emCurso) return emCurso;
+  emCurso = executar().finally(() => { emCurso = null; });
+  return emCurso;
+}
+
+async function executar() {
   const url = urlDeDump();
   if (!url) throw new Error('DIRECT_URL/DATABASE_URL não definido');
 
@@ -52,7 +65,51 @@ async function copiar() {
     bucket: config.storage.backupBucket,
   });
 
-  return { destino, bytes: comprimido.length, segundos: (Date.now() - inicio) / 1000 };
+  const resultado = { destino, bytes: comprimido.length, segundos: (Date.now() - inicio) / 1000 };
+  await registar('COPIA_SEGURANCA_CONCLUIDA', {
+    megabytes: Number((resultado.bytes / 1024 / 1024).toFixed(2)),
+    segundos: Number(resultado.segundos.toFixed(1)),
+    bucket: config.storage.backupBucket,
+  });
+  return resultado;
+}
+
+// A cópia fica no trilho de auditoria, e não só no registo do serviço. O
+// registo do Render é rotativo e some ao fim de uns dias; a pergunta "quando é
+// que a última cópia correu mesmo?" tem de continuar a ter resposta meses
+// depois. É também o que permite dar por uma cópia que deixou de correr.
+async function registar(action, detail) {
+  await auditService.recordSafe({
+    actor: { actorId: null, actorName: 'Sistema', actorRole: null, companyId: null, ip: null },
+    action,
+    entityType: 'Backup',
+    entityRef: detail.bucket || null,
+    detail,
+  });
+}
+
+/**
+ * Porque é que uma cópia NÃO pode correr agora — ou null, se puder.
+ *
+ * A mesma função serve o agendamento e o botão "Fazer cópia agora". Se o botão
+ * aceitasse condições que o agendamento recusa, seria pior do que não ter
+ * botão: dava por confirmado um caminho que à noite não existe.
+ */
+function motivoParaNaoCorrer() {
+  if (storage.providerAtivo() !== 's3') {
+    return 'Sem armazenamento S3 configurado. Uma cópia no disco do contentor desaparece com ele, '
+      + 'o que é pior do que não ter cópia: dá a impressão de estar protegido. Configure STORAGE_* e reinicie.';
+  }
+  if (!config.storage.backupBucket) {
+    return 'STORAGE_BACKUP_BUCKET em falta. As cópias NÃO podem ir para o bucket das imagens: esse é '
+      + 'público (é de lá que o marketplace serve as fotos do catálogo), e um dump da base tem hashes de '
+      + 'senha, os dados de todas as empresas e o histórico financeiro. Crie um bucket PRIVADO só para cópias.';
+  }
+  if (config.storage.backupBucket === config.storage.bucket) {
+    return 'STORAGE_BACKUP_BUCKET é o MESMO bucket das imagens, que é público. '
+      + 'As cópias precisam de um bucket privado só delas.';
+  }
+  return null;
 }
 
 function scheduleBackupJob() {
@@ -63,28 +120,9 @@ function scheduleBackupJob() {
     logger.error(`BACKUP_CRON inválido ("${expressao}") — a cópia automática NÃO vai correr.`);
     return;
   }
-  if (storage.providerAtivo() !== 's3') {
-    logger.error(
-      'BACKUP_CRON definido mas sem armazenamento S3 — a cópia automática não vai correr. ' +
-      'Uma cópia no disco do contentor desaparece com ele, o que é pior do que não ter cópia: ' +
-      'dá a impressão de estar protegido. Configure STORAGE_* e reinicie.',
-    );
-    return;
-  }
-  if (!config.storage.backupBucket) {
-    logger.error(
-      'BACKUP_CRON definido mas STORAGE_BACKUP_BUCKET em falta — a cópia automática não vai correr. ' +
-      'As cópias NÃO podem ir para o bucket das imagens: esse é público (é de lá que o marketplace ' +
-      'serve as fotos do catálogo), e um dump da base tem hashes de senha, os dados de todas as ' +
-      'empresas e o histórico financeiro. Crie um bucket PRIVADO só para cópias e indique-o aqui.',
-    );
-    return;
-  }
-  if (config.storage.backupBucket === config.storage.bucket) {
-    logger.error(
-      'STORAGE_BACKUP_BUCKET é o MESMO bucket das imagens — a cópia automática não vai correr. ' +
-      'O bucket das imagens é público; as cópias precisam de um bucket privado só delas.',
-    );
+  const motivo = motivoParaNaoCorrer();
+  if (motivo) {
+    logger.error(`BACKUP_CRON definido mas a cópia automática não vai correr. ${motivo}`);
     return;
   }
 
@@ -99,8 +137,9 @@ function scheduleBackupJob() {
     } catch (err) {
       // Uma cópia que falha em silêncio é o mesmo que não existir.
       logger.error('FALHA NA CÓPIA DE SEGURANÇA — a base ficou sem cópia hoje', { erro: err.message });
+      await registar('COPIA_SEGURANCA_FALHOU', { erro: String(err.message).slice(0, 500) });
     }
   });
 }
 
-module.exports = { scheduleBackupJob, copiar };
+module.exports = { scheduleBackupJob, copiar, motivoParaNaoCorrer };

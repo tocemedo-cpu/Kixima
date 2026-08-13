@@ -105,6 +105,43 @@ export const EN9 = {
   'A nova senha deve ter pelo menos 10 caracteres.': 'The new password must be at least 10 characters long.',
   'Escolha a nova senha da sua conta KIXIMA (mínimo 10 caracteres; 12 se aprovar pagamentos).':
     'Choose the new password for your KIXIMA account (at least 10 characters; 12 if you approve payments).',
+  // --- Prontidão para produção -----------------------------------------------
+  // Inclui os títulos dos grupos e das verificações, que são escritos pelo
+  // SERVIDOR — o auditor estático não os vê, por isso ficam aqui de propósito.
+  'Prontidão para produção': 'Production readiness',
+  'O que está mesmo configurado no servidor onde a plataforma está a correr. As definições vivem em variáveis de ambiente e uma que falte não dá erro — a aplicação arranca à mesma e parece estar tudo bem.':
+    'What is actually configured on the server running the platform. Settings live in environment variables, and a missing one raises no error — the application still starts and looks fine.',
+  'Verificações': 'Checks',
+  'Prontas': 'Ready',
+  'Nada a fazer': 'Nothing to do',
+  'A merecer atenção': 'Needs attention',
+  'Funciona, mas não é o ideal': 'Works, but not ideal',
+  'Por fazer': 'Outstanding',
+  'Antes de abrir a operadoras': 'Before opening to operators',
+  'A verificar…': 'Checking…',
+  'Fazer cópia agora': 'Back up now',
+  'A copiar… (pode demorar)': 'Backing up… (may take a while)',
+  'Cópia concluída': 'Backup complete',
+  'Confirma de uma vez que o pg_dump existe, que a ligação direta serve, que as credenciais são aceites e que o bucket privado recebe o ficheiro — antes de confiar no agendamento.':
+    'Confirms in one go that pg_dump exists, that the direct connection works, that the credentials are accepted and that the private bucket receives the file — before trusting the schedule.',
+  'Base de dados': 'Database',
+  'Armazenamento': 'Storage',
+  'Cópias de segurança': 'Backups',
+  'Autenticação de dois fatores': 'Two-factor authentication',
+  'Segredos': 'Secrets',
+  'Ligação da aplicação (DATABASE_URL)': 'Application connection (DATABASE_URL)',
+  'Ligação direta (DIRECT_URL)': 'Direct connection (DIRECT_URL)',
+  'Armazenamento de ficheiros': 'File storage',
+  'Cópia de segurança automática': 'Automatic backup',
+  'Bucket das cópias (STORAGE_BACKUP_BUCKET)': 'Backup bucket (STORAGE_BACKUP_BUCKET)',
+  'Ferramenta de cópia (pg_dump)': 'Backup tool (pg_dump)',
+  'Última cópia com sucesso': 'Last successful backup',
+  'Envio de email': 'Email delivery',
+  'Remetente (EMAIL_FROM)': 'Sender (EMAIL_FROM)',
+  'Endereço público (APP_URL)': 'Public address (APP_URL)',
+  '2FA obrigatória (MFA_ENFORCE_FROM)': 'Mandatory 2FA (MFA_ENFORCE_FROM)',
+  'Contas com poder sem 2FA': 'Privileged accounts without 2FA',
+  'Chave de assinatura das sessões (JWT_SECRET)': 'Session signing key (JWT_SECRET)',
 };
 
 export const FR9 = {
@@ -198,4 +235,39 @@ export const FR9 = {
   'A nova senha deve ter pelo menos 10 caracteres.': 'Le nouveau mot de passe doit comporter au moins 10 caractères.',
   'Escolha a nova senha da sua conta KIXIMA (mínimo 10 caracteres; 12 se aprovar pagamentos).':
     'Choisissez le nouveau mot de passe de votre compte KIXIMA (au moins 10 caractères ; 12 si vous approuvez des paiements).',
+  // --- Préparation à la production -------------------------------------------
+  'Prontidão para produção': 'Préparation à la production',
+  'O que está mesmo configurado no servidor onde a plataforma está a correr. As definições vivem em variáveis de ambiente e uma que falte não dá erro — a aplicação arranca à mesma e parece estar tudo bem.':
+    'Ce qui est réellement configuré sur le serveur qui exécute la plateforme. Les réglages vivent dans des variables d’environnement, et s’il en manque une, aucune erreur n’apparaît — l’application démarre quand même et semble aller bien.',
+  'Verificações': 'Vérifications',
+  'Prontas': 'Prêtes',
+  'Nada a fazer': 'Rien à faire',
+  'A merecer atenção': 'À surveiller',
+  'Funciona, mas não é o ideal': 'Fonctionne, mais pas idéal',
+  'Por fazer': 'À faire',
+  'Antes de abrir a operadoras': 'Avant l’ouverture aux opérateurs',
+  'A verificar…': 'Vérification…',
+  'Fazer cópia agora': 'Sauvegarder maintenant',
+  'A copiar… (pode demorar)': 'Sauvegarde en cours… (peut être long)',
+  'Cópia concluída': 'Sauvegarde terminée',
+  'Confirma de uma vez que o pg_dump existe, que a ligação direta serve, que as credenciais são aceites e que o bucket privado recebe o ficheiro — antes de confiar no agendamento.':
+    'Confirme d’un coup que pg_dump existe, que la connexion directe fonctionne, que les identifiants sont acceptés et que le bucket privé reçoit le fichier — avant de faire confiance à la planification.',
+  'Base de dados': 'Base de données',
+  'Armazenamento': 'Stockage',
+  'Cópias de segurança': 'Sauvegardes',
+  'Autenticação de dois fatores': 'Authentification à deux facteurs',
+  'Segredos': 'Secrets',
+  'Ligação da aplicação (DATABASE_URL)': 'Connexion de l’application (DATABASE_URL)',
+  'Ligação direta (DIRECT_URL)': 'Connexion directe (DIRECT_URL)',
+  'Armazenamento de ficheiros': 'Stockage des fichiers',
+  'Cópia de segurança automática': 'Sauvegarde automatique',
+  'Bucket das cópias (STORAGE_BACKUP_BUCKET)': 'Bucket des sauvegardes (STORAGE_BACKUP_BUCKET)',
+  'Ferramenta de cópia (pg_dump)': 'Outil de sauvegarde (pg_dump)',
+  'Última cópia com sucesso': 'Dernière sauvegarde réussie',
+  'Envio de email': 'Envoi d’e-mails',
+  'Remetente (EMAIL_FROM)': 'Expéditeur (EMAIL_FROM)',
+  'Endereço público (APP_URL)': 'Adresse publique (APP_URL)',
+  '2FA obrigatória (MFA_ENFORCE_FROM)': '2FA obligatoire (MFA_ENFORCE_FROM)',
+  'Contas com poder sem 2FA': 'Comptes à pouvoir sans 2FA',
+  'Chave de assinatura das sessões (JWT_SECRET)': 'Clé de signature des sessions (JWT_SECRET)',
 };
