@@ -51,8 +51,15 @@ function TwoFactorSection() {
   return (
     <div className="card card-pad" style={{ maxWidth: 420, marginTop: 16 }}>
       <strong style={{ fontSize: 13.5 }}>{t('Autenticação de dois fatores (2FA)')}</strong>
-      <p className="helptext" style={{ margin: '6px 0 12px' }}>
+      <p className="helptext" style={{ margin: '6px 0 8px' }}>
         {t('Além da senha, o login passa a pedir um código de 6 dígitos gerado no seu telemóvel (Google Authenticator, Microsoft Authenticator, Authy…). Recomendado sobretudo para perfis que aprovam e pagam.')}
+      </p>
+      {/* Sem isto, quem nunca usou 2FA fica à espera de um SMS que nunca chega —
+          o ecrã falava em "a app de autenticação" como se toda a gente já
+          tivesse uma instalada. */}
+      <p className="helptext" style={{ margin: '0 0 12px' }}>
+        <strong>{t('A KIXIMA não envia o código.')}</strong>{' '}
+        {t('Não há SMS nem email: é uma app no seu telemóvel que o gera, sem ligação à internet, e muda a cada 30 segundos.')}
       </p>
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
@@ -75,15 +82,20 @@ function TwoFactorSection() {
           <button className="btn btn-accent" disabled={busy} onClick={startSetup}>{t('Ativar 2FA')}</button>
         ) : (
           <>
+            <p style={{ fontSize: 13, margin: '0 0 6px' }}>
+              <strong>{t('1. Instale uma app de autenticação')}</strong>{' '}
+              {t('— Google Authenticator, Microsoft Authenticator ou Authy, gratuitas na Play Store e na App Store. Se já tiver uma, avance.')}
+            </p>
             <p style={{ fontSize: 13, margin: '0 0 10px' }}>
-              {t('1. Abra a app de autenticação e')} <strong>{t('digitalize o código QR')}</strong> {t('(ou introduza a chave manualmente).')}
+              <strong>{t('2. Abra a app e digitalize o código QR')}</strong>{' '}
+              {t('(ou use a chave manual). A app cria uma entrada KIXIMA e começa logo a mostrar um código de 6 dígitos.')}
             </p>
             {qr ? <img src={qr} alt={t('Código QR do 2FA')} style={{ display: 'block', margin: '0 auto 10px', borderRadius: 8 }} /> : null}
             <p className="helptext" style={{ margin: '0 0 12px', wordBreak: 'break-all' }}>
               {t('Chave manual:')} <span className="mono">{setup.secret}</span>
             </p>
             <div className="field">
-              <label>{t('2. Introduza o código de 6 dígitos gerado pela app')}</label>
+              <label>{t('3. Introduza o código de 6 dígitos que a app está a mostrar')}</label>
               <input inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={(e) => setCode(e.target.value)} />
             </div>
             <div style={{ display: 'flex', gap: 8 }}>

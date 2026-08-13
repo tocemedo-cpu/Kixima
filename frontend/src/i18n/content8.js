@@ -141,6 +141,17 @@ export const EN9 = {
   'Endereço público (APP_URL)': 'Public address (APP_URL)',
   '2FA obrigatória (MFA_ENFORCE_FROM)': 'Mandatory 2FA (MFA_ENFORCE_FROM)',
   'Contas com poder sem 2FA': 'Privileged accounts without 2FA',
+  // --- 2FA: instruções de ativação -------------------------------------------
+  'A KIXIMA não envia o código.': 'KIXIMA does not send the code.',
+  'Não há SMS nem email: é uma app no seu telemóvel que o gera, sem ligação à internet, e muda a cada 30 segundos.':
+    'There is no SMS or email: an app on your phone generates it, with no internet connection, and it changes every 30 seconds.',
+  '1. Instale uma app de autenticação': '1. Install an authenticator app',
+  '— Google Authenticator, Microsoft Authenticator ou Authy, gratuitas na Play Store e na App Store. Se já tiver uma, avance.':
+    '— Google Authenticator, Microsoft Authenticator or Authy, free on the Play Store and App Store. If you already have one, skip ahead.',
+  '2. Abra a app e digitalize o código QR': '2. Open the app and scan the QR code',
+  '(ou use a chave manual). A app cria uma entrada KIXIMA e começa logo a mostrar um código de 6 dígitos.':
+    '(or use the manual key). The app creates a KIXIMA entry and immediately starts showing a 6-digit code.',
+  '3. Introduza o código de 6 dígitos que a app está a mostrar': '3. Enter the 6-digit code the app is showing',
   'Enviar email de teste para mim': 'Send a test email to me',
   'Enviado para': 'Sent to',
   'Confirme na caixa de entrada (e no spam).': 'Check your inbox (and spam folder).',
@@ -274,6 +285,17 @@ export const FR9 = {
   'Endereço público (APP_URL)': 'Adresse publique (APP_URL)',
   '2FA obrigatória (MFA_ENFORCE_FROM)': '2FA obligatoire (MFA_ENFORCE_FROM)',
   'Contas com poder sem 2FA': 'Comptes à pouvoir sans 2FA',
+  // --- 2FA : instructions d’activation ----------------------------------------
+  'A KIXIMA não envia o código.': 'KIXIMA n’envoie pas le code.',
+  'Não há SMS nem email: é uma app no seu telemóvel que o gera, sem ligação à internet, e muda a cada 30 segundos.':
+    'Ni SMS ni e-mail : c’est une application sur votre téléphone qui le génère, sans connexion Internet, et il change toutes les 30 secondes.',
+  '1. Instale uma app de autenticação': '1. Installez une application d’authentification',
+  '— Google Authenticator, Microsoft Authenticator ou Authy, gratuitas na Play Store e na App Store. Se já tiver uma, avance.':
+    '— Google Authenticator, Microsoft Authenticator ou Authy, gratuites sur le Play Store et l’App Store. Si vous en avez déjà une, passez à la suite.',
+  '2. Abra a app e digitalize o código QR': '2. Ouvrez l’application et scannez le code QR',
+  '(ou use a chave manual). A app cria uma entrada KIXIMA e começa logo a mostrar um código de 6 dígitos.':
+    '(ou utilisez la clé manuelle). L’application crée une entrée KIXIMA et affiche aussitôt un code à 6 chiffres.',
+  '3. Introduza o código de 6 dígitos que a app está a mostrar': '3. Saisissez le code à 6 chiffres affiché par l’application',
   'Enviar email de teste para mim': 'M’envoyer un e-mail de test',
   'Enviado para': 'Envoyé à',
   'Confirme na caixa de entrada (e no spam).': 'Vérifiez votre boîte de réception (et les indésirables).',
