@@ -155,3 +155,68 @@ describe('Pedir que ativem', () => {
     expect((await request(app).post('/api/admin/mfa-lembrete')).status).toBe(401);
   });
 });
+
+// Um botão só funciona se alguém se lembrar de carregar nele, e o problema que
+// estamos a resolver É gente a não se lembrar. Se o prazo chegar e oito contas
+// ficarem trancadas no ecrã de ativação, a culpa não foi delas — foi de o aviso
+// ter dependido de um gesto manual.
+describe('Lembretes automáticos', () => {
+  const original = { ...config.auth };
+  afterEach(() => { Object.assign(config.auth, original); });
+
+  const emDias = (n) => new Date(Date.now() + n * 86400000);
+
+  test('sem data de entrada em vigor não se envia nada — seria spam', async () => {
+    config.auth.mfaEnforceFrom = null;
+    const r = await lembretes.lembretesAutomaticos();
+    expect(r.corrido).toBe(false);
+    expect(enviados).toHaveLength(0);
+  });
+
+  test('com o prazo longe, não se insiste todos os dias', async () => {
+    config.auth.mfaEnforceFrom = emDias(60);
+    const r = await lembretes.lembretesAutomaticos();
+    // Só às segundas — nos outros dias fica em silêncio.
+    if (new Date().getUTCDay() !== 1) {
+      expect(r.corrido).toBe(false);
+      expect(r.motivo).toMatch(/longe do prazo/);
+      expect(enviados).toHaveLength(0);
+    }
+  });
+
+  test('na última semana passa a ser diário', async () => {
+    config.auth.mfaEnforceFrom = emDias(3);
+    const r = await lembretes.lembretesAutomaticos();
+    expect(r.corrido).toBe(true);
+    expect(r.dias).toBeLessThanOrEqual(7);
+    expect(enviados.length).toBeGreaterThan(0);
+  });
+
+  test('depois do prazo continua a avisar — quem ficou de fora precisa de saber porquê', async () => {
+    config.auth.mfaEnforceFrom = emDias(-2);
+    const r = await lembretes.lembretesAutomaticos();
+    expect(r.corrido).toBe(true);
+    expect(enviados.length).toBeGreaterThan(0);
+  });
+
+  test('mesmo a correr de hora a hora, ninguém recebe dois no mesmo dia', async () => {
+    config.auth.mfaEnforceFrom = emDias(3);
+    await lembretes.lembretesAutomaticos();
+    const primeira = enviados.length;
+    expect(primeira).toBeGreaterThan(0);
+
+    // O trabalho corre outra vez uma hora depois; o travão é o próprio serviço.
+    await lembretes.lembretesAutomaticos();
+    expect(enviados.length).toBe(primeira);
+  });
+
+  test('sem email configurado não tenta — e diz porquê', async () => {
+    config.auth.mfaEnforceFrom = emDias(3);
+    config.email.provider = 'console';
+    config.email.apenasLog = true;
+    const r = await lembretes.lembretesAutomaticos();
+    expect(r.corrido).toBe(false);
+    expect(r.motivo).toMatch(/email não configurado/);
+    expect(enviados).toHaveLength(0);
+  });
+});

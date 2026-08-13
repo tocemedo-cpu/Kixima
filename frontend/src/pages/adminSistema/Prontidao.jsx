@@ -25,6 +25,9 @@ export default function Prontidao() {
   const [copia, setCopia] = useState(null);
   const [erroCopia, setErroCopia] = useState('');
   const [aCopiar, setACopiar] = useState(false);
+  const [verificacao, setVerificacao] = useState(null);
+  const [erroVerificacao, setErroVerificacao] = useState('');
+  const [aVerificar, setAVerificar] = useState(false);
   const [email, setEmail] = useState(null);
   const [erroEmail, setErroEmail] = useState('');
   const [aEnviar, setAEnviar] = useState(false);
@@ -52,6 +55,20 @@ export default function Prontidao() {
       setErroCopia(e.message);
     } finally {
       setACopiar(false);
+    }
+  }
+
+  // Fazer a cópia prova que ela se escreve. Isto prova que se lê — que é a
+  // pergunta que só se costuma fazer no dia em que já é tarde.
+  async function verificarCopia() {
+    setAVerificar(true); setErroVerificacao(''); setVerificacao(null);
+    try {
+      setVerificacao(await api.post('/api/admin/backup/verificar'));
+      load();
+    } catch (e) {
+      setErroVerificacao(e.message);
+    } finally {
+      setAVerificar(false);
     }
   }
 
@@ -139,6 +156,25 @@ export default function Prontidao() {
                 </p>
               ) : null}
               {erroCopia ? <p className="error-text" style={{ margin: '8px 0 0', fontSize: 12.5 }}>{erroCopia}</p> : null}
+
+              <div style={{ borderTop: '1px solid var(--line, #f0f0f0)', marginTop: 14, paddingTop: 14 }}>
+                <button className="btn btn-ghost btn-sm" onClick={verificarCopia} disabled={aVerificar}>
+                  {aVerificar ? t('A ler a cópia…') : t('Verificar a última cópia')}
+                </button>
+                <p className="bz-muted" style={{ margin: '8px 0 0', fontSize: 12.5 }}>
+                  {t('Vai buscá-la ao bucket, descomprime-a e confirma que traz a base toda. Um objeto truncado ou um gzip corrompido são indistinguíveis de uma cópia boa até alguém tentar lê-los.')}
+                </p>
+                {verificacao ? (
+                  <p style={{ margin: '8px 0 0', fontSize: 12.5 }}>
+                    ✅ {t('Lida e completa')}: {verificacao.tabelasNoDump} {t('tabelas')}
+                    {' · '}{verificacao.blocosDeDados} {t('blocos de dados')}
+                    {' · '}{verificacao.megabytes} MB {t('em')} {verificacao.segundos}s.
+                    <br />
+                    <span className="bz-muted">{verificacao.nota}</span>
+                  </p>
+                ) : null}
+                {erroVerificacao ? <p className="error-text" style={{ margin: '8px 0 0', fontSize: 12.5 }}>{erroVerificacao}</p> : null}
+              </div>
             </div>
           ) : null}
 

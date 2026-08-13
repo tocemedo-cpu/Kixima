@@ -161,4 +161,36 @@ async function enviarLembretes({ userIds = null, actor } = {}) {
   return { enviados, ignorados, falhas, total: alvo.length };
 }
 
-module.exports = { pendentes, enviarLembretes, INTERVALO_LEMBRETE_HORAS };
+/**
+ * Lembrete automático, à medida que o prazo se aproxima.
+ *
+ * Porquê não deixar isto no botão: um botão só funciona se alguém se lembrar de
+ * carregar nele, e o problema que estamos a resolver É gente a não se lembrar.
+ * Se o prazo chegar e oito contas ficarem trancadas no ecrã de ativação, a culpa
+ * não foi delas — foi de o aviso ter dependido de um gesto manual.
+ *
+ * O ritmo acompanha a urgência: uma vez por semana enquanto o prazo está longe,
+ * todos os dias na última semana. Fora disso, silêncio: insistir com quem tem
+ * dois meses pela frente ensina a ignorar o remetente.
+ */
+async function lembretesAutomaticos() {
+  const prazo = config.auth.mfaEnforceFrom;
+  if (!prazo) return { corrido: false, motivo: 'sem MFA_ENFORCE_FROM' };
+  if (mfaEmail.porqueNaoPodeUsarEmail()) {
+    return { corrido: false, motivo: 'email não configurado' };
+  }
+
+  const dias = Math.ceil((new Date(prazo).getTime() - Date.now()) / 86400000);
+  // Passado o prazo continua a valer: quem ficou de fora precisa de saber
+  // porquê, e o email é o único canal que lhe chega sem entrar na plataforma.
+  const semanal = dias > 7 && new Date().getUTCDay() === 1;   // segundas-feiras
+  const diario = dias <= 7;
+  if (!semanal && !diario) return { corrido: false, motivo: 'ainda longe do prazo', dias };
+
+  const r = await enviarLembretes({ actor: { actorId: null, actorName: 'Sistema' } });
+  return { corrido: true, dias, ...r };
+}
+
+module.exports = {
+  pendentes, enviarLembretes, lembretesAutomaticos, INTERVALO_LEMBRETE_HORAS,
+};

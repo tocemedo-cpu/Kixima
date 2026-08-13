@@ -139,7 +139,10 @@ describe('Diagnóstico do BACKUP_CRON', () => {
   test('cinco campos válidos: agendada', async () => {
     const c = await verificarCron('0 3 * * *');
     expect(c.estado).toBe('ok');
-    expect(c.detalhe).toBe('Agendada: 0 3 * * * (UTC).');
+    expect(c.detalhe).toMatch(/^Agendada: 0 3 \* \* \* \(UTC\)/);
+    // O agendamento sozinho não chega no plano gratuito — a mensagem tem de
+    // dizer que há recuperação, senão promete uma garantia que não dá.
+    expect(c.detalhe).toMatch(/recuperação automática/);
   });
 
   test('seis campos também servem — o node-cron aceita segundos', async () => {

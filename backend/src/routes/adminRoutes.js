@@ -10,6 +10,7 @@ const prontidaoService = require('../services/prontidaoService');
 const backupJob = require('../jobs/backupJob');
 const notificationService = require('../services/notificationService');
 const mfaLembreteService = require('../services/mfaLembreteService');
+const backupVerificacao = require('../services/backupVerificacaoService');
 
 const router = express.Router();
 router.use(authenticate);
@@ -92,6 +93,26 @@ router.post('/backup', async (req, res) => {
     res.status(502).json({
       error: { message: `A cópia falhou ao fim de ${((Date.now() - inicio) / 1000).toFixed(1)}s: ${err.message}` },
     });
+  }
+});
+
+// Confirmar que a ÚLTIMA cópia ainda se lê.
+//
+// Fazer a cópia prova que ela se escreve. Não prova que se lê — e um objeto
+// truncado, um gzip corrompido ou um bucket esvaziado por uma política de
+// retenção só se descobrem no dia em que a cópia é precisa.
+router.post('/backup/verificar', async (req, res) => {
+  try {
+    const r = await backupVerificacao.verificar();
+    await auditService.recordSafe({
+      actor: auditService.actorFrom(req),
+      action: 'COPIA_SEGURANCA_VERIFICADA',
+      entityType: 'Backup',
+      detail: { tabelas: r.tabelasNoDump, megabytes: r.megabytes },
+    });
+    res.json(r);
+  } catch (err) {
+    res.status(err.status || 400).json({ error: { message: err.message } });
   }
 });
 

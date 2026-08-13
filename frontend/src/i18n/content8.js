@@ -144,6 +144,12 @@ export const EN9 = {
   // --- 2FA: instruções de ativação -------------------------------------------
   // --- Verificação em dois passos (email + app) -------------------------------
   // --- Contas com poder sem 2FA ----------------------------------------------
+  'Verificar a última cópia': 'Check the latest backup',
+  'A ler a cópia…': 'Reading the backup…',
+  'Lida e completa': 'Read back and complete',
+  'blocos de dados': 'data blocks',
+  'Vai buscá-la ao bucket, descomprime-a e confirma que traz a base toda. Um objeto truncado ou um gzip corrompido são indistinguíveis de uma cópia boa até alguém tentar lê-los.':
+    'Fetches it from the bucket, decompresses it and confirms it holds the whole database. A truncated object or a corrupt gzip look exactly like a good backup until someone tries to read them.',
   'Pessoa': 'Person',
   'Último acesso': 'Last sign-in',
   'Último lembrete': 'Last reminder',
@@ -333,6 +339,12 @@ export const FR9 = {
   // --- 2FA : instructions d’activation ----------------------------------------
   // --- Vérification en deux étapes (e-mail + application) ---------------------
   // --- Comptes à pouvoir sans 2FA ---------------------------------------------
+  'Verificar a última cópia': 'Vérifier la dernière sauvegarde',
+  'A ler a cópia…': 'Lecture de la sauvegarde…',
+  'Lida e completa': 'Relue et complète',
+  'blocos de dados': 'blocs de données',
+  'Vai buscá-la ao bucket, descomprime-a e confirma que traz a base toda. Um objeto truncado ou um gzip corrompido são indistinguíveis de uma cópia boa até alguém tentar lê-los.':
+    'La récupère depuis le bucket, la décompresse et confirme qu’elle contient toute la base. Un objet tronqué ou un gzip corrompu ressemblent en tout point à une bonne sauvegarde jusqu’à ce qu’on essaie de les lire.',
   'Pessoa': 'Personne',
   'Último acesso': 'Dernière connexion',
   'Último lembrete': 'Dernier rappel',

@@ -131,17 +131,51 @@ async function enviarS3(key, buffer, mimetype, bucket = config.storage.bucket) {
 
 // --- API pública ------------------------------------------------------------
 // folder organiza os ficheiros (ex.: 'products', 'documents').
-async function saveFile({ buffer, originalname, mimetype, keyHint, folder = 'products', bucket }) {
+// `comChave` devolve { url, key } em vez do URL: quem guarda cópias de segurança
+// precisa da CHAVE para as voltar a ler, e num bucket privado o URL não serve
+// para isso.
+async function saveFile({ buffer, originalname, mimetype, keyHint, folder = 'products', bucket, comChave = false }) {
   const filename = buildFilename(keyHint, originalname);
   if (providerAtivo() === 's3') {
     const alvo = bucket || config.storage.bucket;
-    logger.info(`Storage S3: a enviar ${folder}/${filename} para o bucket ${alvo}`);
-    return saveS3(`${folder}/${filename}`, buffer, mimetype, alvo);
+    const key = `${folder}/${filename}`;
+    logger.info(`Storage S3: a enviar ${key} para o bucket ${alvo}`);
+    const url = await saveS3(key, buffer, mimetype, alvo);
+    return comChave ? { url, key } : url;
   }
-  return saveLocal(filename, buffer);
+  const url = saveLocal(filename, buffer);
+  return comChave ? { url, key: filename } : url;
+}
+
+/**
+ * Lê um objeto de volta do armazenamento.
+ *
+ * Existe para uma pergunta que a escrita não responde: a cópia de segurança que
+ * foi enviada ontem ainda LÊ? Um upload que devolve 200 e um objeto truncado,
+ * corrompido ou apagado por uma política de retenção são indistinguíveis até
+ * alguém tentar lê-lo — e a altura em que se tenta é sempre a pior.
+ */
+async function lerFicheiro(key, bucket) {
+  if (providerAtivo() !== 's3') {
+    return fs.readFileSync(path.join(uploadsDir, path.basename(key)));
+  }
+  const { GetObjectCommand } = require('@aws-sdk/client-s3');
+  try {
+    const r = await getS3().send(new GetObjectCommand({
+      Bucket: bucket || config.storage.bucket,
+      Key: key,
+    }));
+    const partes = [];
+    for await (const p of r.Body) partes.push(p);
+    return Buffer.concat(partes);
+  } catch (err) {
+    const e = new Error(`Não foi possível ler "${key}": ${explicar(err)}.`);
+    e.status = 502;
+    throw e;
+  }
 }
 
 // Alias mantido para as imagens de produtos.
 const saveImage = (args) => saveFile({ ...args, folder: 'products' });
 
-module.exports = { saveFile, saveImage, uploadsDir, providerAtivo };
+module.exports = { saveFile, saveImage, lerFicheiro, uploadsDir, providerAtivo };

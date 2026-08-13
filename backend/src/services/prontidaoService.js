@@ -152,7 +152,7 @@ async function verCopias() {
         + 'Depois de corrigir, reinicie o serviço: a expressão só é lida no arranque.' });
   } else {
     checks.push({ id: 'backup-cron', titulo: 'Cópia de segurança automática', estado: OK,
-      detalhe: `Agendada: ${expressao} (UTC).` });
+      detalhe: `Agendada: ${expressao} (UTC), com recuperação automática se falhar a janela.` });
   }
 
   const bucket = config.storage.backupBucket;
@@ -213,8 +213,28 @@ async function verCopias() {
       detalhe: `${new Date(ultima.createdAt).toISOString().slice(0, 16).replace('T', ' ')} UTC`
         + (ultima.detail?.megabytes ? ` — ${ultima.detail.megabytes} MB` : ''),
       acao: horas > 48
-        ? `Já passaram ${Math.floor(horas)} horas. Verifique o registo do serviço: a cópia pode estar a falhar em silêncio.`
+        ? `Já passaram ${Math.floor(horas)} horas, e a recuperação automática também não a repôs. `
+          + 'Verifique o registo do serviço: a cópia está a falhar, não a ser adiada.'
         : undefined });
+
+    // A escrita não prova que a cópia se lê. Enquanto ninguém a tiver lido de
+    // volta, o que existe é a suposição de que existe.
+    const verificada = await prisma.auditLog.findFirst({
+      where: { action: 'COPIA_SEGURANCA_VERIFICADA' },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    }).catch(() => null);
+
+    checks.push({ id: 'backup-legivel', titulo: 'A cópia foi lida de volta',
+      estado: verificada ? OK : AVISO,
+      detalhe: verificada
+        ? `Confirmada a ${new Date(verificada.createdAt).toISOString().slice(0, 16).replace('T', ' ')} UTC.`
+        : 'Nunca foi confirmado que a cópia se lê — só que se escreve.',
+      acao: verificada
+        ? undefined
+        : 'Use "Verificar a última cópia": vai buscá-la ao bucket, descomprime-a e confirma que traz '
+          + 'a base toda. Um objeto truncado ou um gzip corrompido são indistinguíveis de uma cópia '
+          + 'boa até alguém tentar lê-los.' });
   }
 
   return checks;
