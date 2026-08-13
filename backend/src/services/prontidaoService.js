@@ -37,7 +37,58 @@ function analisarLigacao(url) {
   return { host: m?.[1] || null, porta: m?.[2] ? Number(m[2]) : null, pgbouncer: /pgbouncer=true/.test(url) };
 }
 
-function verBaseDeDados() {
+
+/**
+ * A DIRECT_URL LIGA mesmo?
+ *
+ * Ler o texto do URL não chega, e depois de uma rotação de senha é precisamente
+ * onde isto falha: a senha aparece em DUAS variáveis, quem atualiza só a
+ * DATABASE_URL vê a plataforma a funcionar na mesma — porque é essa que a
+ * aplicação usa — e a DIRECT_URL fica para trás com a senha antiga. O que parte
+ * são as migrações no deploy seguinte e a cópia de segurança da noite. Ambas em
+ * silêncio, ambas descobertas tarde.
+ *
+ * Por isso abre-se mesmo uma ligação. Custa uma sessão curta, numa página que só
+ * o Admin do Sistema vê.
+ */
+async function testarLigacaoDireta() {
+  const url = config.database.directUrl;
+  if (!url) return 'não definida';
+  // Se for a mesma string da aplicação, já sabemos que liga: o processo está de pé.
+  if (url === config.database.url) return null;
+
+  const { PrismaClient } = require('@prisma/client');
+  const cliente = new PrismaClient({ datasources: { db: { url } } });
+  try {
+    await Promise.race([
+      cliente.$queryRaw`SELECT 1`,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('a ligação não respondeu em 8 segundos')), 8000)),
+    ]);
+    return null;
+  } catch (err) {
+    return explicarLigacao(err.message);
+  } finally {
+    await cliente.$disconnect().catch(() => {});
+  }
+}
+
+// O erro cru do Postgres/Supabase não diz o que fazer. Estes três cobrem quase tudo.
+function explicarLigacao(mensagem) {
+  const m = String(mensagem || '');
+  if (/authentication failed|autentica|credentials .* not valid|senha/i.test(m)) {
+    return 'a senha foi RECUSADA — depois de rodar a senha do Supabase é preciso atualizar as DUAS '
+      + 'variáveis; esta ficou com a antiga';
+  }
+  if (/Tenant or user not found/i.test(m)) {
+    return 'o utilizador não foi reconhecido pelo pooler — confirme o formato postgres.<ref> no URL';
+  }
+  if (/ENOTFOUND|EAI_AGAIN|ETIMEDOUT|não respondeu/i.test(m)) {
+    return `o servidor não respondeu (${m.slice(0, 80)}) — confirme o host e a porta`;
+  }
+  return m.slice(0, 160);
+}
+
+async function verBaseDeDados() {
   const app = analisarLigacao(config.database.url);
   const direta = analisarLigacao(config.database.directUrl);
   const checks = [];
@@ -67,8 +118,15 @@ function verBaseDeDados() {
       detalhe: `Aponta para a porta ${direta.porta}.`,
       acao: 'A DIRECT_URL tem de ser o pooler de SESSÃO, na porta 5432. Na 6543 o pg_dump falha a meio e as migrações não aplicam.' });
   } else {
-    checks.push({ id: 'db-direct', titulo: 'Ligação direta (DIRECT_URL)', estado: OK,
-      detalhe: `Pooler de sessão em ${direta.host}:5432.` });
+    const problema = await testarLigacaoDireta();
+    checks.push(problema
+      ? { id: 'db-direct', titulo: 'Ligação direta (DIRECT_URL)', estado: FALHA,
+        detalhe: `Aponta para ${direta.host}:5432, mas NÃO liga: ${problema}.`,
+        acao: 'As migrações e a cópia de segurança usam esta ligação, e mais nada — a plataforma '
+          + 'continua a funcionar sem ela, o que faz com que a avaria só se note no deploy seguinte '
+          + 'ou na noite em que a cópia devia correr. Corrija e reinicie o serviço.' }
+      : { id: 'db-direct', titulo: 'Ligação direta (DIRECT_URL)', estado: OK,
+        detalhe: `Pooler de sessão em ${direta.host}:5432 — ligação confirmada.` });
   }
 
   return checks;
@@ -350,9 +408,9 @@ function verSegredos() {
  * Nunca devolve o valor de nenhum segredo.
  */
 async function verificar() {
-  const [copias, mfa] = await Promise.all([verCopias(), verMfa()]);
+  const [copias, mfa, baseDeDados] = await Promise.all([verCopias(), verMfa(), verBaseDeDados()]);
   const grupos = [
-    { grupo: 'Base de dados', checks: verBaseDeDados() },
+    { grupo: 'Base de dados', checks: baseDeDados },
     { grupo: 'Armazenamento', checks: verArmazenamento() },
     { grupo: 'Cópias de segurança', checks: copias },
     { grupo: 'Email', checks: verEmail() },

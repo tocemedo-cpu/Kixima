@@ -88,6 +88,43 @@ describe('Prontidão para produção', () => {
 // queixar ao utilizador, e a cópia simplesmente nunca corre. O diagnóstico tem
 // de nomear a causa concreta — dizer só "inválido" faz a pessoa olhar para um
 // valor que lhe parece bem e não ver nada.
+// Depois de rodar a senha do Supabase, o erro mais fácil de cometer é atualizar
+// só a DATABASE_URL: a plataforma continua a funcionar — é essa que a aplicação
+// usa — e a DIRECT_URL fica com a senha antiga. O que parte são as migrações no
+// deploy seguinte e a cópia de segurança da noite, ambas em silêncio.
+//
+// Ler o texto do URL nunca apanharia isto. Só abrir a ligação apanha.
+describe('A DIRECT_URL liga mesmo', () => {
+  const original = config.database.directUrl;
+  afterEach(() => { config.database.directUrl = original; });
+
+  async function verDireta() {
+    const r = await prontidao.verificar();
+    return r.grupos.find((g) => g.grupo === 'Base de dados').checks.find((c) => c.id === 'db-direct');
+  }
+
+  test('com credenciais válidas, confirma a ligação', async () => {
+    const c = await verDireta();
+    expect(c.estado).toBe('ok');
+    expect(c.detalhe).toMatch(/ligação confirmada/);
+  }, 30000);
+
+  test('com a senha antiga, é apanhada — e diz que foi isso', async () => {
+    config.database.directUrl = String(original).replace(/:\/\/([^:]+):[^@]*@/, '://$1:senha-antiga@');
+    const c = await verDireta();
+    expect(c.estado).toBe('falha');
+    expect(c.detalhe).toMatch(/NÃO liga/);
+    expect(c.detalhe).toMatch(/RECUSADA|DUAS variáveis/);
+  }, 30000);
+
+  test('a mensagem explica porque é que isto passa despercebido', async () => {
+    config.database.directUrl = String(original).replace(/:\/\/([^:]+):[^@]*@/, '://$1:senha-antiga@');
+    const c = await verDireta();
+    expect(c.acao).toMatch(/migrações e a cópia de segurança/);
+    expect(c.acao).toMatch(/plataforma continua a funcionar/);
+  }, 30000);
+});
+
 describe('Diagnóstico do BACKUP_CRON', () => {
   const original = process.env.BACKUP_CRON;
   afterAll(() => {
