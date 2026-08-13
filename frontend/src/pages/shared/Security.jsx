@@ -6,11 +6,20 @@ import { api } from '../../api/client';
 import { PageHeader, ErrorBanner, SuccessBanner } from '../../components/Common';
 import { useI18n } from '../../i18n';
 
-// Secção 2FA: estado → ativação em 2 passos (QR + código) → desativação com código.
+// Secção da verificação em dois passos.
+//
+// Dois métodos, e o por omissão é o EMAIL: o código de 6 dígitos chega à caixa
+// de correio da pessoa, sem instalar nada. A app de autenticação continua
+// disponível, escondida atrás de "prefiro usar uma app" — é mais segura (o
+// código nasce no telemóvel, sem rede), mas obriga a instalar e configurar uma
+// aplicação, e na prática isso faz com que a 2FA não seja ativada de todo. Um
+// segundo fator que ninguém usa protege zero contas.
 function TwoFactorSection() {
   const { t } = useI18n();
-  const [status, setStatus] = useState(null); // { enabled, enabledAt }
+  const [status, setStatus] = useState(null); // { enabled, metodo, emailIndisponivel, email }
+  const [etapa, setEtapa] = useState('');     // '' | 'EMAIL' | 'TOTP'
   const [setup, setSetup] = useState(null);   // { secret, otpauthUrl }
+  const [envio, setEnvio] = useState(null);   // { enviadoPara, validadeMinutos }
   const [qr, setQr] = useState('');
   const [code, setCode] = useState('');
   const [disableCode, setDisableCode] = useState('');
@@ -34,32 +43,44 @@ function TwoFactorSection() {
     try { await fn(); } catch (e) { setError(e.message); } finally { setBusy(false); }
   }
 
-  const startSetup = () => run(async () => setSetup(await api.post('/api/auth/2fa/setup')));
-  const confirmEnable = () => run(async () => {
-    await api.post('/api/auth/2fa/enable', { code: code.trim() });
-    setSetup(null); setCode('');
-    setSuccess(t('Autenticação de dois fatores ATIVADA. A partir de agora o login pede também o código da app.'));
+  const comecarEmail = () => run(async () => {
+    setEnvio(await api.post('/api/auth/2fa/email/enviar'));
+    setEtapa('EMAIL');
+  });
+  const reenviarEmail = () => run(async () => {
+    setEnvio(await api.post('/api/auth/2fa/email/enviar'));
+    setSuccess(t('Enviámos outro código.'));
+  });
+  const comecarApp = () => run(async () => {
+    setSetup(await api.post('/api/auth/2fa/setup'));
+    setEtapa('TOTP');
+  });
+  const cancelar = () => { setEtapa(''); setSetup(null); setEnvio(null); setCode(''); setError(''); };
+
+  const confirmar = () => run(async () => {
+    const r = await api.post('/api/auth/2fa/enable', { code: code.trim() });
+    cancelar();
+    setSuccess(r.metodo === 'EMAIL'
+      ? t('Verificação em dois passos ATIVADA. A partir de agora, ao entrar, enviamos-lhe um código por email.')
+      : t('Verificação em dois passos ATIVADA. A partir de agora o login pede também o código da app.'));
     load();
+  });
+  const pedirCodigoParaDesativar = () => run(async () => {
+    const r = await api.post('/api/auth/2fa/email/reenviar');
+    setSuccess(t('Enviámos um código para') + ' ' + r.enviadoPara + '.');
   });
   const disable = () => run(async () => {
     await api.post('/api/auth/2fa/disable', { code: disableCode.trim() });
     setDisableCode('');
-    setSuccess(t('Autenticação de dois fatores desativada.'));
+    setSuccess(t('Verificação em dois passos desativada.'));
     load();
   });
 
   return (
     <div className="card card-pad" style={{ maxWidth: 420, marginTop: 16 }}>
-      <strong style={{ fontSize: 13.5 }}>{t('Autenticação de dois fatores (2FA)')}</strong>
-      <p className="helptext" style={{ margin: '6px 0 8px' }}>
-        {t('Além da senha, o login passa a pedir um código de 6 dígitos gerado no seu telemóvel (Google Authenticator, Microsoft Authenticator, Authy…). Recomendado sobretudo para perfis que aprovam e pagam.')}
-      </p>
-      {/* Sem isto, quem nunca usou 2FA fica à espera de um SMS que nunca chega —
-          o ecrã falava em "a app de autenticação" como se toda a gente já
-          tivesse uma instalada. */}
-      <p className="helptext" style={{ margin: '0 0 12px' }}>
-        <strong>{t('A KIXIMA não envia o código.')}</strong>{' '}
-        {t('Não há SMS nem email: é uma app no seu telemóvel que o gera, sem ligação à internet, e muda a cada 30 segundos.')}
+      <strong style={{ fontSize: 13.5 }}>{t('Verificação em dois passos')}</strong>
+      <p className="helptext" style={{ margin: '6px 0 12px' }}>
+        {t('Além da senha, entrar passa a pedir um código de 6 dígitos. Assim, quem descobrir a sua senha não entra na mesma. Recomendado sobretudo para perfis que aprovam e pagam.')}
       </p>
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
@@ -68,18 +89,69 @@ function TwoFactorSection() {
         : status.enabled ? (
           <>
             <p style={{ fontSize: 13 }}>
-              ✅ <strong>{t('Ativa')}</strong> {t('desde')} {new Date(status.enabledAt).toLocaleDateString('pt-AO')}.
+              ✅ <strong>{t('Ativa')}</strong> {t('desde')} {new Date(status.enabledAt).toLocaleDateString('pt-AO')}
+              {' — '}
+              {status.metodo === 'EMAIL' ? t('por email') : t('por app de autenticação')}.
             </p>
             <div className="field" style={{ marginTop: 10 }}>
-              <label>{t('Para desativar, confirme o código atual da app')}</label>
+              <label>{t('Para desativar, confirme um código atual')}</label>
               <input inputMode="numeric" maxLength={6} placeholder="000000" value={disableCode} onChange={(e) => setDisableCode(e.target.value)} />
             </div>
-            <button className="btn btn-danger btn-sm" disabled={busy || disableCode.trim().length !== 6} onClick={disable}>
-              {t('Desativar 2FA')}
-            </button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {status.metodo === 'EMAIL' ? (
+                <button className="btn btn-ghost btn-sm" disabled={busy} onClick={pedirCodigoParaDesativar}>
+                  {t('Enviar-me um código')}
+                </button>
+              ) : null}
+              <button className="btn btn-danger btn-sm" disabled={busy || disableCode.trim().length !== 6} onClick={disable}>
+                {t('Desativar')}
+              </button>
+            </div>
           </>
-        ) : !setup ? (
-          <button className="btn btn-accent" disabled={busy} onClick={startSetup}>{t('Ativar 2FA')}</button>
+        ) : !etapa ? (
+          <>
+            {/* O aviso tem de vir ANTES do botão: ativar por email num servidor
+                sem email configurado trancaria a pessoa fora da conta. */}
+            {status.emailIndisponivel ? (
+              <p className="error-text" style={{ fontSize: 12.5, margin: '0 0 10px' }}>{status.emailIndisponivel}</p>
+            ) : (
+              <p className="helptext" style={{ margin: '0 0 10px' }}>
+                {t('O código será enviado para')} <strong>{status.email}</strong>.
+              </p>
+            )}
+            <button className="btn btn-accent" disabled={busy || Boolean(status.emailIndisponivel)} onClick={comecarEmail}>
+              {t('Ativar com código por email')}
+            </button>
+            <p className="helptext" style={{ margin: '10px 0 0' }}>
+              <button
+                type="button"
+                onClick={comecarApp}
+                disabled={busy}
+                style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', color: 'var(--brand-600)', font: 'inherit', textDecoration: 'underline' }}
+              >
+                {t('Prefiro usar uma app de autenticação')}
+              </button>{' '}
+              {t('— mais seguro, mas obriga a instalar uma aplicação no telemóvel.')}
+            </p>
+          </>
+        ) : etapa === 'EMAIL' ? (
+          <>
+            <p style={{ fontSize: 13, margin: '0 0 10px' }}>
+              {t('Enviámos um código de 6 dígitos para')} <strong>{envio?.enviadoPara}</strong>.{' '}
+              {t('É válido durante')} {envio?.validadeMinutos} {t('minutos. Confirme também a pasta de spam.')}
+            </p>
+            <div className="field">
+              <label>{t('Código recebido por email')}</label>
+              <input inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={(e) => setCode(e.target.value)} />
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="btn btn-accent" disabled={busy || code.trim().length !== 6} onClick={confirmar}>
+                {t('Confirmar e ativar')}
+              </button>
+              <button className="btn btn-ghost" disabled={busy} onClick={reenviarEmail}>{t('Enviar outro')}</button>
+              <button className="btn btn-ghost" disabled={busy} onClick={cancelar}>{t('Cancelar')}</button>
+            </div>
+          </>
         ) : (
           <>
             <p style={{ fontSize: 13, margin: '0 0 6px' }}>
@@ -92,19 +164,17 @@ function TwoFactorSection() {
             </p>
             {qr ? <img src={qr} alt={t('Código QR do 2FA')} style={{ display: 'block', margin: '0 auto 10px', borderRadius: 8 }} /> : null}
             <p className="helptext" style={{ margin: '0 0 12px', wordBreak: 'break-all' }}>
-              {t('Chave manual:')} <span className="mono">{setup.secret}</span>
+              {t('Chave manual:')} <span className="mono">{setup?.secret}</span>
             </p>
             <div className="field">
               <label>{t('3. Introduza o código de 6 dígitos que a app está a mostrar')}</label>
               <input inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={(e) => setCode(e.target.value)} />
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-accent" disabled={busy || code.trim().length !== 6} onClick={confirmEnable}>
+              <button className="btn btn-accent" disabled={busy || code.trim().length !== 6} onClick={confirmar}>
                 {t('Confirmar e ativar')}
               </button>
-              <button className="btn btn-ghost" disabled={busy} onClick={() => { setSetup(null); setCode(''); }}>
-                {t('Cancelar')}
-              </button>
+              <button className="btn btn-ghost" disabled={busy} onClick={cancelar}>{t('Cancelar')}</button>
             </div>
           </>
         )}

@@ -142,6 +142,33 @@ export const EN9 = {
   '2FA obrigatória (MFA_ENFORCE_FROM)': 'Mandatory 2FA (MFA_ENFORCE_FROM)',
   'Contas com poder sem 2FA': 'Privileged accounts without 2FA',
   // --- 2FA: instruções de ativação -------------------------------------------
+  // --- Verificação em dois passos (email + app) -------------------------------
+  'Verificação em dois passos': 'Two-step verification',
+  'Além da senha, entrar passa a pedir um código de 6 dígitos. Assim, quem descobrir a sua senha não entra na mesma. Recomendado sobretudo para perfis que aprovam e pagam.':
+    'On top of your password, signing in will ask for a 6-digit code. That way, someone who finds out your password still cannot get in. Recommended above all for roles that approve and pay.',
+  'O código será enviado para': 'The code will be sent to',
+  'Ativar com código por email': 'Turn on with a code by email',
+  'Prefiro usar uma app de autenticação': 'I would rather use an authenticator app',
+  '— mais seguro, mas obriga a instalar uma aplicação no telemóvel.':
+    '— more secure, but it means installing an app on your phone.',
+  'Enviámos um código de 6 dígitos para': 'We sent a 6-digit code to',
+  'É válido durante': 'It is valid for',
+  'minutos. Confirme também a pasta de spam.': 'minutes. Check your spam folder too.',
+  'Código recebido por email': 'Code received by email',
+  'Enviar outro': 'Send another',
+  'Confirme também a pasta de spam.': 'Check your spam folder too.',
+  'Enviámos outro código.': 'We sent another code.',
+  'Enviámos um código para': 'We sent a code to',
+  'Enviar-me um código': 'Send me a code',
+  'Para desativar, confirme um código atual': 'To turn it off, confirm a current code',
+  'Desativar': 'Turn off',
+  'por email': 'by email',
+  'por app de autenticação': 'by authenticator app',
+  'Verificação em dois passos ATIVADA. A partir de agora, ao entrar, enviamos-lhe um código por email.':
+    'Two-step verification is ON. From now on, when you sign in, we will email you a code.',
+  'Verificação em dois passos ATIVADA. A partir de agora o login pede também o código da app.':
+    'Two-step verification is ON. From now on signing in will also ask for the code from the app.',
+  'Verificação em dois passos desativada.': 'Two-step verification turned off.',
   'A KIXIMA não envia o código.': 'KIXIMA does not send the code.',
   'Não há SMS nem email: é uma app no seu telemóvel que o gera, sem ligação à internet, e muda a cada 30 segundos.':
     'There is no SMS or email: an app on your phone generates it, with no internet connection, and it changes every 30 seconds.',
@@ -286,6 +313,33 @@ export const FR9 = {
   '2FA obrigatória (MFA_ENFORCE_FROM)': '2FA obligatoire (MFA_ENFORCE_FROM)',
   'Contas com poder sem 2FA': 'Comptes à pouvoir sans 2FA',
   // --- 2FA : instructions d’activation ----------------------------------------
+  // --- Vérification en deux étapes (e-mail + application) ---------------------
+  'Verificação em dois passos': 'Vérification en deux étapes',
+  'Além da senha, entrar passa a pedir um código de 6 dígitos. Assim, quem descobrir a sua senha não entra na mesma. Recomendado sobretudo para perfis que aprovam e pagam.':
+    'En plus du mot de passe, la connexion demandera un code à 6 chiffres. Ainsi, qui découvre votre mot de passe n’entre pas pour autant. Recommandé surtout pour les profils qui approuvent et paient.',
+  'O código será enviado para': 'Le code sera envoyé à',
+  'Ativar com código por email': 'Activer avec un code par e-mail',
+  'Prefiro usar uma app de autenticação': 'Je préfère utiliser une application d’authentification',
+  '— mais seguro, mas obriga a instalar uma aplicação no telemóvel.':
+    '— plus sûr, mais il faut installer une application sur le téléphone.',
+  'Enviámos um código de 6 dígitos para': 'Nous avons envoyé un code à 6 chiffres à',
+  'É válido durante': 'Il est valable',
+  'minutos. Confirme também a pasta de spam.': 'minutes. Vérifiez aussi les indésirables.',
+  'Código recebido por email': 'Code reçu par e-mail',
+  'Enviar outro': 'En envoyer un autre',
+  'Confirme também a pasta de spam.': 'Vérifiez aussi les indésirables.',
+  'Enviámos outro código.': 'Nous avons envoyé un autre code.',
+  'Enviámos um código para': 'Nous avons envoyé un code à',
+  'Enviar-me um código': 'M’envoyer un code',
+  'Para desativar, confirme um código atual': 'Pour désactiver, confirmez un code actuel',
+  'Desativar': 'Désactiver',
+  'por email': 'par e-mail',
+  'por app de autenticação': 'par application d’authentification',
+  'Verificação em dois passos ATIVADA. A partir de agora, ao entrar, enviamos-lhe um código por email.':
+    'Vérification en deux étapes ACTIVÉE. Désormais, à la connexion, nous vous enverrons un code par e-mail.',
+  'Verificação em dois passos ATIVADA. A partir de agora o login pede também o código da app.':
+    'Vérification en deux étapes ACTIVÉE. Désormais la connexion demandera aussi le code de l’application.',
+  'Verificação em dois passos desativada.': 'Vérification en deux étapes désactivée.',
   'A KIXIMA não envia o código.': 'KIXIMA n’envoie pas le code.',
   'Não há SMS nem email: é uma app no seu telemóvel que o gera, sem ligação à internet, e muda a cada 30 segundos.':
     'Ni SMS ni e-mail : c’est une application sur votre téléphone qui le génère, sans connexion Internet, et il change toutes les 30 secondes.',

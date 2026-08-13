@@ -104,6 +104,23 @@ async function totpStatus(req, res) {
   res.json(await authService.totpStatus(req.user.id));
 }
 
+// Ativação por email: envia o código de 6 dígitos para o endereço da conta.
+async function mfaEnviarCodigo(req, res) {
+  res.json(await authService.enviarCodigoAtivacao(req.user.id));
+}
+
+// Reenvio a partir do ecrã de login — ainda sem sessão, só com o desafio.
+async function mfaReenviarCodigo(req, res) {
+  res.json(await authService.reenviarCodigoDoDesafio(req.body.challenge));
+}
+
+// Reenvio já dentro da sessão (para desativar a 2FA por email).
+async function mfaReenviarCodigoSessao(req, res) {
+  const prisma = require('../config/database');
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  res.json(await authService.reenviarCodigo(user));
+}
+
 async function totpSetup(req, res) {
   res.json(await authService.setupTotp(req.user.id));
 }
@@ -140,4 +157,5 @@ async function totpVerify(req, res) {
 module.exports = {
   login, me, changePassword, logout, forgotPassword, resetPassword,
   totpStatus, totpSetup, totpEnable, totpDisable, totpVerify,
+  mfaEnviarCodigo, mfaReenviarCodigo, mfaReenviarCodigoSessao,
 };

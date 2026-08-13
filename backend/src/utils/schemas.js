@@ -72,6 +72,10 @@ const totpCodeSchema = z.object({
 const totpVerifySchema = totpCodeSchema.extend({
   challenge: z.string().min(10),
 });
+// Reenvio do código no ecrã de login: só o desafio, ainda não há código.
+const reenviarCodigoSchema = z.object({
+  challenge: z.string().min(10),
+});
 
 // Admin do Sistema: dimensão, plano e preço por utilizador de uma empresa.
 const companyPlanSchema = z.object({
@@ -361,6 +365,7 @@ module.exports = {
   resetPasswordSchema,
   totpCodeSchema,
   totpVerifySchema,
+  reenviarCodigoSchema,
   registerCompanySchema,
   decideCompanySchema,
   companyPlanSchema,

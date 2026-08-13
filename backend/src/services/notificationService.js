@@ -96,17 +96,18 @@ async function sendEmail(to, subject, body, opts) {
 }
 
 /**
- * Envio de TESTE — o único caminho em que o erro NÃO é engolido.
+ * Envio DIRETO — o único caminho em que o erro NÃO é engolido.
  *
  * Em todo o resto, uma falha de envio é registada e o pedido segue: um convite
  * não deve deixar de ser criado porque o servidor de email não respondeu. Mas
- * isso significa que uma chave errada ou um remetente por verificar não dá
- * sinal nenhum a quem está a configurar — os emails apenas não chegam.
+ * há dois casos em que engolir o erro é o pior que se pode fazer:
  *
- * Aqui é ao contrário: quem carrega no botão quer precisamente saber o que
- * correu mal, com a mensagem crua do Brevo, que é a que diz o que corrigir.
+ *  - quem está a CONFIGURAR o email precisa de ver o que correu mal, e a
+ *    mensagem crua do Brevo é a que diz o que corrigir;
+ *  - o código de verificação em dois passos É o acesso à conta. Se não sai, a
+ *    pessoa fica à espera de algo que não existe — tem de o saber na hora.
  */
-async function enviarEmailDeTeste(to) {
+async function enviarEmailDireto(to, assunto, corpo) {
   if (config.email.apenasLog) {
     const e = new Error('EMAIL_PROVIDER=console — nada é enviado. Defina EMAIL_PROVIDER=brevo e BREVO_API_KEY.');
     e.status = 422;
@@ -117,10 +118,6 @@ async function enviarEmailDeTeste(to) {
     e.status = 422;
     throw e;
   }
-
-  const assunto = 'KIXIMA — teste de configuração de email';
-  const corpo = 'Se está a ler isto, o envio de email da plataforma KIXIMA está a funcionar.\n\n'
-    + 'Este email foi enviado a partir de Configurações e Suporte → Prontidão para produção.';
 
   if (config.email.provider === 'brevo' || config.email.provider === 'brevo-api') {
     await sendViaBrevoApi(to, assunto, corpo, null);
@@ -137,6 +134,16 @@ async function enviarEmailDeTeste(to) {
   });
   await transport.sendMail({ from: config.email.from, to, subject: assunto, text: corpo });
   return { provider: 'smtp', para: to, remetente: config.email.from };
+}
+
+// Email de teste da página de Prontidão — confirma a configuração de ponta a ponta.
+async function enviarEmailDeTeste(to) {
+  return enviarEmailDireto(
+    to,
+    'KIXIMA — teste de configuração de email',
+    'Se está a ler isto, o envio de email da plataforma KIXIMA está a funcionar.\n\n'
+    + 'Este email foi enviado a partir de Configurações e Suporte → Prontidão para produção.',
+  );
 }
 
 async function notifyUser({ userId, type, title, message, channel = 'IN_APP', relatedEntityType, relatedEntityId, emailTo, locale }) {
@@ -351,4 +358,7 @@ const events = {
     }),
 };
 
-module.exports = { notifyUser, notifyUsersByRole, notifyCompanyContact, sendEmail, enviarEmailDeTeste, events };
+module.exports = {
+  notifyUser, notifyUsersByRole, notifyCompanyContact, sendEmail,
+  enviarEmailDireto, enviarEmailDeTeste, events,
+};

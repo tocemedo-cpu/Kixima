@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
+import { api } from '../../api/client';
 import { ROLE_HOME } from '../../domain';
 import AuthHero from '../../components/AuthHero';
 import { Icon } from '../../components/icons';
@@ -18,6 +19,12 @@ export default function LoginPage() {
   // 2FA: quando o login devolve um desafio, mostra-se o passo do código.
   const [challenge, setChallenge] = useState('');
   const [code, setCode] = useState('');
+  // Como é feita a verificação nesta conta: 'EMAIL' (código enviado agora para
+  // a caixa de correio) ou 'TOTP' (app de autenticação). O texto do ecrã tem de
+  // dizer onde ir buscar o código — sem isso a pessoa fica à espera de um SMS.
+  const [metodo, setMetodo] = useState('');
+  const [enviadoPara, setEnviadoPara] = useState('');
+  const [aviso, setAviso] = useState('');
 
   if (user) return <Navigate to={ROLE_HOME[user.role]} replace />;
 
@@ -29,6 +36,8 @@ export default function LoginPage() {
       const result = await login(email, password);
       if (result?.requires2fa) {
         setChallenge(result.challenge);
+        setMetodo(result.metodo || 'TOTP');
+        setEnviadoPara(result.enviadoPara || '');
         return;
       }
       navigate(ROLE_HOME[result.role], { replace: true });
@@ -52,9 +61,23 @@ export default function LoginPage() {
       if (/expirado|inválid/i.test(err.message || '')) {
         setChallenge('');
         setCode('');
+        setMetodo('');
       }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  // Pedir outro código sem obrigar a recomeçar o login: o email pode demorar,
+  // ou ter caído no spam e sido apagado.
+  async function reenviar() {
+    setError(''); setAviso('');
+    try {
+      const r = await api.post('/api/auth/2fa/reenviar', { challenge });
+      setEnviadoPara(r.enviadoPara || enviadoPara);
+      setAviso(t('Enviámos outro código.'));
+    } catch (err) {
+      setError(err.message);
     }
   }
 
@@ -67,7 +90,15 @@ export default function LoginPage() {
           {challenge ? (
             <>
               <h2>{t('Verificação em dois passos')}</h2>
-              <p>{t('Introduza o código de 6 dígitos da sua app de autenticação.')}</p>
+              {metodo === 'EMAIL' ? (
+                <p>
+                  {t('Enviámos um código de 6 dígitos para')} <strong>{enviadoPara}</strong>.{' '}
+                  {t('Confirme também a pasta de spam.')}
+                </p>
+              ) : (
+                <p>{t('Introduza o código de 6 dígitos da sua app de autenticação.')}</p>
+              )}
+              {aviso ? <p className="helptext" style={{ marginTop: -6 }}>{aviso}</p> : null}
               <form onSubmit={handleVerify}>
                 <div className="field">
                   <label htmlFor="totp">{t('Código')}</label>
@@ -86,10 +117,15 @@ export default function LoginPage() {
                 <button className="btn btn-accent" type="submit" disabled={submitting || code.trim().length !== 6} style={{ width: '100%' }}>
                   {submitting ? t('A entrar…') : t('Verificar e entrar')}
                 </button>
-                <p style={{ marginTop: 10, textAlign: 'right' }}>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setChallenge(''); setCode(''); setError(''); }}>
+                <p style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setChallenge(''); setCode(''); setError(''); setMetodo(''); }}>
                     {t('← Voltar ao login')}
                   </button>
+                  {metodo === 'EMAIL' ? (
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={reenviar}>
+                      {t('Enviar outro')}
+                    </button>
+                  ) : null}
                 </p>
               </form>
             </>

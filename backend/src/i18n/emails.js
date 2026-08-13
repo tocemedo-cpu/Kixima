@@ -24,6 +24,10 @@ const EN = {
   'Convite para a KIXIMA': 'Invitation to KIXIMA',
   'Recuperação de senha': 'Password recovery',
   'Nova candidatura ao Supplier Development': 'New Supplier Development application',
+  'Código de acesso KIXIMA': 'KIXIMA access code',
+  'Código para ativar a verificação em dois passos': 'Code to turn on two-step verification',
+  'O seu código é {codigo}. É válido durante {minutos} minutos e só pode ser usado uma vez. Se não foi você a pedi-lo, alguém sabe a sua senha — mude-a assim que puder.':
+    'Your code is {codigo}. It is valid for {minutos} minutes and can only be used once. If you did not request it, someone knows your password — change it as soon as you can.',
   'Apólice atualizada': 'Policy updated',
 };
 
@@ -41,6 +45,10 @@ const FR = {
   'Convite para a KIXIMA': 'Invitation à KIXIMA',
   'Recuperação de senha': 'Récupération de mot de passe',
   'Nova candidatura ao Supplier Development': 'Nouvelle candidature au Supplier Development',
+  'Código de acesso KIXIMA': 'Code d’accès KIXIMA',
+  'Código para ativar a verificação em dois passos': 'Code pour activer la vérification en deux étapes',
+  'O seu código é {codigo}. É válido durante {minutos} minutos e só pode ser usado uma vez. Se não foi você a pedi-lo, alguém sabe a sua senha — mude-a assim que puder.':
+    'Votre code est {codigo}. Il est valable {minutos} minutes et ne peut servir qu’une seule fois. Si vous ne l’avez pas demandé, quelqu’un connaît votre mot de passe — changez-le dès que possible.',
   'Apólice atualizada': 'Police mise à jour',
 };
 

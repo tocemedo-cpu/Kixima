@@ -77,15 +77,22 @@ async function login({ email, password }) {
     throw new UnauthorizedError('Credenciais inválidas.');
   }
 
-  // 2FA ativo: a senha não basta. Devolve um desafio de curta duração; o token
-  // de sessão só sai no /2fa/verify com um código TOTP válido.
+  // 2FA ativa: a senha não basta. Devolve um desafio de curta duração; o token
+  // de sessão só sai no /2fa/verify com um código válido.
   if (user.totpEnabledAt) {
     const challenge = jwt.sign(
       { t: '2fa', sub: user.id, tv: user.tokenVersion ?? 0 },
       config.auth.jwtSecret,
       { expiresIn: TWO_FA_CHALLENGE_TTL },
     );
-    return { requires2fa: true, challenge };
+    const metodo = user.mfaMethod || 'TOTP';
+    if (metodo !== 'EMAIL') return { requires2fa: true, metodo, challenge };
+
+    // Método EMAIL: o código é enviado agora. Se o envio falhar, dizemos —
+    // engolir o erro deixaria a pessoa à espera de um código que não existe,
+    // sem forma nenhuma de entrar.
+    const envio = await mfaEmail.enviarCodigo(user, { automatico: true });
+    return { requires2fa: true, metodo, challenge, ...envio };
   }
 
   return buildSession(user);
@@ -116,52 +123,126 @@ function buildSession(user) {
 
 // --- 2FA (TOTP) -------------------------------------------------------------
 const totpUtil = require('../utils/totp');
-const TWO_FA_CHALLENGE_TTL = '5m';
+const mfaEmail = require('./mfaEmailService');
+// Curto de propósito: é só o tempo de ir buscar o código e voltar. Com o método
+// EMAIL dá folga suficiente — o código dura 10 minutos, mas o desafio não.
+const TWO_FA_CHALLENGE_TTL = '15m';
 
 async function totpStatus(userId) {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { totpEnabledAt: true } });
-  return { enabled: Boolean(user?.totpEnabledAt), enabledAt: user?.totpEnabledAt ?? null };
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { totpEnabledAt: true, mfaMethod: true, email: true },
+  });
+  return {
+    enabled: Boolean(user?.totpEnabledAt),
+    enabledAt: user?.totpEnabledAt ?? null,
+    metodo: user?.totpEnabledAt ? (user.mfaMethod || 'TOTP') : null,
+    // A interface precisa de saber se o email está mesmo a funcionar ANTES de
+    // deixar ativar: sem isso, a pessoa ativava e ficava trancada fora.
+    emailIndisponivel: mfaEmail.porqueNaoPodeUsarEmail(),
+    email: user?.email ? mfaEmail.mascarar(user.email) : null,
+  };
 }
 
-// Passo 1 da ativação: gera o segredo (fica pendente até confirmar um código).
+// --- Ativação por EMAIL (método por omissão) --------------------------------
+// Passo 1: envia um código para o email da pessoa.
+async function enviarCodigoAtivacao(userId) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new UnauthorizedError('Sessão inválida.');
+  if (user.totpEnabledAt) throw new ConflictError('A verificação em dois passos já está ativa.');
+  return mfaEmail.enviarCodigo(user, { motivo: 'ativacao' });
+}
+
+// --- Ativação por APP (TOTP) ------------------------------------------------
+// Mantido para quem prefira a app: o código nasce no telemóvel, sem rede e sem
+// passar por lado nenhum. É mais seguro do que o email — mas obriga a instalar
+// e configurar uma aplicação, e por isso não é o caminho por omissão.
 async function setupTotp(userId) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new UnauthorizedError('Sessão inválida.');
-  if (user.totpEnabledAt) throw new ConflictError('A autenticação de dois fatores já está ativa.');
+  if (user.totpEnabledAt) throw new ConflictError('A verificação em dois passos já está ativa.');
 
   const secret = totpUtil.generateSecret();
   await prisma.user.update({ where: { id: userId }, data: { totpSecret: secret, totpEnabledAt: null } });
   return { secret, otpauthUrl: totpUtil.otpauthUrl({ secret, label: user.email }) };
 }
 
-// Passo 2: o utilizador prova que a app está configurada — só então fica ativo.
+// Passo 2 (ambos os métodos): a pessoa prova que recebe os códigos — só então
+// a 2FA fica ativa. O método fica gravado, porque é ele que decide o que lhe
+// vai ser pedido no login.
 async function enableTotp(userId, code) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user?.totpSecret) throw new ConflictError('Inicie primeiro a ativação (gerar o código QR).');
-  if (user.totpEnabledAt) throw new ConflictError('A autenticação de dois fatores já está ativa.');
+  if (!user) throw new UnauthorizedError('Sessão inválida.');
+  if (user.totpEnabledAt) throw new ConflictError('A verificação em dois passos já está ativa.');
+
+  // Há um código de email pendente → é uma ativação por email.
+  if (user.mfaCodeHash) {
+    const problema = await mfaEmail.confirmarCodigo(user, code);
+    if (problema) throw new UnauthorizedError(problema);
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { totpEnabledAt: new Date(), mfaMethod: 'EMAIL', totpSecret: null },
+    });
+    return { enabled: true, enabledAt: updated.totpEnabledAt, metodo: 'EMAIL' };
+  }
+
+  if (!user.totpSecret) {
+    throw new ConflictError('Inicie primeiro a ativação (pedir o código por email ou gerar o código QR).');
+  }
   if (!totpUtil.verify(code, user.totpSecret)) {
     // "Código incorreto" é verdade e não ajuda: a causa quase sempre é o relógio
     // do telemóvel fora de horas. Aqui diz-se qual é o desvio, em vez de deixar
     // a pessoa a reinstalar a app e a falhar na mesma.
     throw new UnauthorizedError(totpUtil.explicarFalha(code, user.totpSecret));
   }
-  const updated = await prisma.user.update({ where: { id: userId }, data: { totpEnabledAt: new Date() } });
-  return { enabled: true, enabledAt: updated.totpEnabledAt };
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { totpEnabledAt: new Date(), mfaMethod: 'TOTP' },
+  });
+  return { enabled: true, enabledAt: updated.totpEnabledAt, metodo: 'TOTP' };
 }
 
 // Desativar exige um código válido (impede desativação por sessão roubada).
+// Com o método EMAIL o código tem de ser pedido primeiro.
 async function disableTotp(userId, code) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user?.totpEnabledAt) throw new ConflictError('A autenticação de dois fatores não está ativa.');
-  if (!totpUtil.verify(code, user.totpSecret)) {
-    throw new UnauthorizedError(totpUtil.explicarFalha(code, user.totpSecret));
-  }
-  await prisma.user.update({ where: { id: userId }, data: { totpSecret: null, totpEnabledAt: null } });
+  if (!user?.totpEnabledAt) throw new ConflictError('A verificação em dois passos não está ativa.');
+
+  const problema = await confirmarSegundoFator(user, code);
+  if (problema) throw new UnauthorizedError(problema);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { totpSecret: null, totpEnabledAt: null, mfaMethod: null, mfaCodeHash: null, mfaCodeExpiraEm: null },
+  });
   return { enabled: false };
 }
 
-// 2º passo do login: troca desafio + código TOTP pela sessão completa.
-async function verify2fa(challenge, code) {
+// Pede um código novo para uma conta que JÁ tem a 2FA por email — no login
+// (via desafio) ou já dentro da sessão, para desativar.
+async function reenviarCodigo(user) {
+  if ((user.mfaMethod || 'TOTP') !== 'EMAIL') {
+    throw new ConflictError('Esta conta usa a app de autenticação — o código é gerado no telemóvel.');
+  }
+  return mfaEmail.enviarCodigo(user);
+}
+
+/**
+ * Confirma o segundo fator, seja qual for o método configurado.
+ * Devolve null se serve, ou a razão pela qual não serve.
+ */
+async function confirmarSegundoFator(user, code) {
+  if ((user.mfaMethod || 'TOTP') === 'EMAIL') {
+    return mfaEmail.confirmarCodigo(user, code);
+  }
+  if (!totpUtil.verify(code, user.totpSecret)) {
+    return totpUtil.explicarFalha(code, user.totpSecret);
+  }
+  return null;
+}
+
+// Lê o desafio do 2º passo do login e devolve o utilizador a que pertence.
+async function utilizadorDoDesafio(challenge) {
   let payload;
   try {
     payload = jwt.verify(challenge, config.auth.jwtSecret);
@@ -175,14 +256,24 @@ async function verify2fa(challenge, code) {
   if (!user || !user.active || (user.tokenVersion ?? 0) !== payload.tv) {
     throw new UnauthorizedError('Sessão inválida — volte a iniciar sessão.');
   }
-  if (!user.totpEnabledAt || !totpUtil.verify(code, user.totpSecret)) {
-    throw new UnauthorizedError(
-      user.totpEnabledAt
-        ? totpUtil.explicarFalha(code, user.totpSecret)
-        : 'Código incorreto. Confirme o código atual na app de autenticação.',
-    );
+  return user;
+}
+
+// 2º passo do login: troca desafio + código pela sessão completa.
+async function verify2fa(challenge, code) {
+  const user = await utilizadorDoDesafio(challenge);
+  if (!user.totpEnabledAt) {
+    throw new UnauthorizedError('Esta conta não tem verificação em dois passos. Volte a iniciar sessão.');
   }
+  const problema = await confirmarSegundoFator(user, code);
+  if (problema) throw new UnauthorizedError(problema);
   return buildSession(user);
+}
+
+// Reenvio a partir do ecrã de login (ainda sem sessão) — só com um desafio válido.
+async function reenviarCodigoDoDesafio(challenge) {
+  const user = await utilizadorDoDesafio(challenge);
+  return reenviarCodigo(user);
 }
 
 async function createUser({ name, email, password, role, companyId, approvalCap }) {
@@ -303,4 +394,5 @@ module.exports = {
   login, createUser, hashPassword, signToken, signInvite, verifyInvite,
   changePassword, revokeSessions, requestPasswordReset, resetPassword,
   totpStatus, setupTotp, enableTotp, disableTotp, verify2fa,
+  enviarCodigoAtivacao, reenviarCodigo, reenviarCodigoDoDesafio,
 };

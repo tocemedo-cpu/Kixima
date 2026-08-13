@@ -292,10 +292,27 @@ model User {
   tokenVersion    Int       @default(0) @map("token_version")
   // Aceite individual dos Termos/Privacidade (registo por convite).
   termsAcceptedAt DateTime? @map("terms_accepted_at")
-  // 2FA (TOTP): o segredo é gerado no setup e só fica ATIVO após o utilizador
-  // confirmar um código válido (totpEnabledAt preenchido).
+  // --- Verificação em dois passos -------------------------------------------
+  // NOTA SOBRE O NOME: `totpEnabledAt` é histórico — hoje significa "2FA ativa
+  // desde", seja qual for o método. Mantém-se assim de propósito: renomear a
+  // coluna obrigaria a uma migração numa base em produção sem nada ganhar para
+  // quem usa a plataforma. É `mfaMethod` que diz de que método se trata.
+  //
+  //   EMAIL → o código de 6 dígitos é enviado para o email da pessoa (omissão)
+  //   TOTP  → app de autenticação; mantido para quem já a tinha configurada
+  mfaMethod       String?   @map("mfa_method")
   totpSecret      String?   @map("totp_secret")
   totpEnabledAt   DateTime? @map("totp_enabled_at")
+  // Código enviado por email, à espera de confirmação. Guarda-se o HASH: é uma
+  // credencial, e quem lê a base não pode entrar na conta de ninguém.
+  mfaCodeHash     String?   @map("mfa_code_hash")
+  mfaCodeExpiraEm DateTime? @map("mfa_code_expira_em")
+  // Tentativas falhadas neste código. Ao fim de poucas, o código morre — sem
+  // isto, dez minutos de validade dariam para tentar muitos dos 10^6 valores.
+  mfaCodeTentativas Int     @default(0) @map("mfa_code_tentativas")
+  // Trava reenvios seguidos (e impede usar a plataforma para enviar email a
+  // outra pessoa em catadupa).
+  mfaCodeEnviadoEm DateTime? @map("mfa_code_enviado_em")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
