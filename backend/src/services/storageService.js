@@ -155,6 +155,25 @@ async function saveFile({ buffer, originalname, mimetype, keyHint, folder = 'pro
  * corrompido ou apagado por uma política de retenção são indistinguíveis até
  * alguém tentar lê-lo — e a altura em que se tenta é sempre a pior.
  */
+/**
+ * Junta o corpo de uma resposta do S3 num Buffer.
+ *
+ * O SDK v3 devolve um stream cujo tipo depende do ambiente. O
+ * `transformToByteArray()` é o caminho documentado e existe em todas as versões
+ * recentes; a iteração fica como recurso. Está à parte para poder ser testado:
+ * este troço só corre quando alguém verifica uma cópia de segurança, e não pode
+ * ser aí a primeira vez que se descobre que o Body não era o que se pensava.
+ */
+async function lerBody(body) {
+  if (!body) throw new Error('resposta sem conteúdo');
+  if (typeof body.transformToByteArray === 'function') {
+    return Buffer.from(await body.transformToByteArray());
+  }
+  const partes = [];
+  for await (const p of body) partes.push(p);
+  return Buffer.concat(partes);
+}
+
 async function lerFicheiro(key, bucket) {
   if (providerAtivo() !== 's3') {
     return fs.readFileSync(path.join(uploadsDir, path.basename(key)));
@@ -165,9 +184,7 @@ async function lerFicheiro(key, bucket) {
       Bucket: bucket || config.storage.bucket,
       Key: key,
     }));
-    const partes = [];
-    for await (const p of r.Body) partes.push(p);
-    return Buffer.concat(partes);
+    return lerBody(r.Body);
   } catch (err) {
     const e = new Error(`Não foi possível ler "${key}": ${explicar(err)}.`);
     e.status = 502;
@@ -178,4 +195,4 @@ async function lerFicheiro(key, bucket) {
 // Alias mantido para as imagens de produtos.
 const saveImage = (args) => saveFile({ ...args, folder: 'products' });
 
-module.exports = { saveFile, saveImage, lerFicheiro, uploadsDir, providerAtivo };
+module.exports = { saveFile, saveImage, lerFicheiro, lerBody, uploadsDir, providerAtivo };

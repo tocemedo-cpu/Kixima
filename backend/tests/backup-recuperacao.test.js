@@ -143,3 +143,25 @@ describe('Recuperar uma cópia perdida', () => {
     expect(backupJob.IDADE_MAXIMA_HORAS).toBeLessThanOrEqual(48);
   });
 });
+
+// A leitura de volta do S3 nunca corre nos testes (não há S3 aqui) nem correu
+// ainda em produção. O que se testa é a parte que decide COMO ler o corpo da
+// resposta — para que a primeira verificação real não seja a primeira vez que se
+// descobre que o Body não era o que se pensava.
+describe('Ler o corpo da resposta do S3', () => {
+  const conteudo = Buffer.from('conteúdo da cópia');
+
+  test('usa transformToByteArray — o caminho documentado do SDK v3', async () => {
+    const body = { transformToByteArray: async () => new Uint8Array(conteudo) };
+    expect((await storage.lerBody(body)).toString()).toBe(conteudo.toString());
+  });
+
+  test('e a iteração como recurso, se o SDK não o tiver', async () => {
+    const body = (async function* gerar() { yield conteudo.subarray(0, 8); yield conteudo.subarray(8); })();
+    expect((await storage.lerBody(body)).toString()).toBe(conteudo.toString());
+  });
+
+  test('uma resposta sem corpo não passa por ficheiro vazio', async () => {
+    await expect(storage.lerBody(null)).rejects.toThrow(/sem conteúdo/);
+  });
+});
