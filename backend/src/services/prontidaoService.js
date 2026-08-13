@@ -220,12 +220,20 @@ function verEmail() {
     : { id: 'email-from', titulo: 'Remetente (EMAIL_FROM)', estado: FALHA, detalhe: 'Não está definido.',
       acao: 'Defina EMAIL_FROM com um remetente verificado na conta Brevo.' });
 
-  // Os emails levam links para a plataforma. Se APP_URL ficar em localhost, os
-  // links saem para fora a apontar para o computador de quem os recebe.
+  // O APP_URL importa MENOS do que este aviso dizia, e exagerá-lo mandava
+  // resolver o problema errado: os links dos convites são construídos a partir
+  // do host REAL do pedido (publicBaseUrl, em companyController), pelo que saem
+  // certos mesmo com o APP_URL por definir. E não há fluxo de recuperação de
+  // senha nenhum — o aviso anterior invocava um que não existe.
+  // O que o APP_URL faz mesmo: é a única entrada da allow-list de CORS, e é o
+  // valor que manda quando houver domínio próprio.
   const app = String(config.appUrl || '');
   if (/localhost|127\.0\.0\.1/.test(app)) {
-    checks.push({ id: 'app-url', titulo: 'Endereço público (APP_URL)', estado: FALHA, detalhe: app,
-      acao: 'Defina APP_URL com o endereço real da plataforma. Os links dos convites e da recuperação de senha são construídos a partir daqui — em localhost, não funcionam para ninguém.' });
+    checks.push({ id: 'app-url', titulo: 'Endereço público (APP_URL)', estado: AVISO, detalhe: app,
+      acao: 'Ainda aponta para localhost. Os links dos convites saem certos mesmo assim, porque são '
+        + 'construídos a partir do endereço real do pedido — mas o APP_URL é a única entrada da '
+        + 'allow-list de CORS e é o valor que manda assim que ligar um domínio próprio. Defina-o com '
+        + 'o endereço real do serviço.' });
   } else {
     checks.push({ id: 'app-url', titulo: 'Endereço público (APP_URL)', estado: OK, detalhe: app });
   }
