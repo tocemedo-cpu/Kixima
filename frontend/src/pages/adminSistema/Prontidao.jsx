@@ -25,6 +25,9 @@ export default function Prontidao() {
   const [copia, setCopia] = useState(null);
   const [erroCopia, setErroCopia] = useState('');
   const [aCopiar, setACopiar] = useState(false);
+  const [email, setEmail] = useState(null);
+  const [erroEmail, setErroEmail] = useState('');
+  const [aEnviar, setAEnviar] = useState(false);
 
   function load() {
     api.get('/api/admin/prontidao').then(setData).catch((e) => setError(e.message));
@@ -43,6 +46,20 @@ export default function Prontidao() {
       setErroCopia(e.message);
     } finally {
       setACopiar(false);
+    }
+  }
+
+  // O envio de email falha em silêncio por desenho — um convite não deve
+  // deixar de ser criado porque o servidor de email não respondeu. Este botão é
+  // o único sítio onde o erro aparece por inteiro.
+  async function emailDeTeste() {
+    setAEnviar(true); setErroEmail(''); setEmail(null);
+    try {
+      setEmail(await api.post('/api/admin/email-teste'));
+    } catch (e) {
+      setErroEmail(e.message);
+    } finally {
+      setAEnviar(false);
     }
   }
 
@@ -99,6 +116,23 @@ export default function Prontidao() {
                 </p>
               ) : null}
               {erroCopia ? <p className="error-text" style={{ margin: '8px 0 0', fontSize: 12.5 }}>{erroCopia}</p> : null}
+            </div>
+          ) : null}
+
+          {g.grupo === 'Email' ? (
+            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--line, #f0f0f0)', background: 'var(--surface-2, #fafafa)' }}>
+              <button className="btn btn-accent btn-sm" onClick={emailDeTeste} disabled={aEnviar}>
+                {aEnviar ? t('A enviar…') : t('Enviar email de teste para mim')}
+              </button>
+              <p className="bz-muted" style={{ margin: '8px 0 0', fontSize: 12.5 }}>
+                {t('Um convite nunca deixa de ser criado por o email falhar — por isso uma chave errada ou um remetente por verificar não dão sinal nenhum. Aqui o erro aparece por inteiro.')}
+              </p>
+              {email ? (
+                <p style={{ margin: '8px 0 0', fontSize: 12.5 }}>
+                  ✅ {t('Enviado para')} <strong>{email.para}</strong> {t('via')} {email.provider}. {t('Confirme na caixa de entrada (e no spam).')}
+                </p>
+              ) : null}
+              {erroEmail ? <p className="error-text" style={{ margin: '8px 0 0', fontSize: 12.5 }}>{erroEmail}</p> : null}
             </div>
           ) : null}
         </div>

@@ -8,6 +8,7 @@ const adminService = require('../services/adminService');
 const auditService = require('../services/auditService');
 const prontidaoService = require('../services/prontidaoService');
 const backupJob = require('../jobs/backupJob');
+const notificationService = require('../services/notificationService');
 
 const router = express.Router();
 router.use(authenticate);
@@ -90,6 +91,29 @@ router.post('/backup', async (req, res) => {
     res.status(502).json({
       error: { message: `A cópia falhou ao fim de ${((Date.now() - inicio) / 1000).toFixed(1)}s: ${err.message}` },
     });
+  }
+});
+
+// Enviar um email de teste para o próprio Admin do Sistema.
+//
+// Existe porque o envio de email falha em SILÊNCIO por desenho: um convite não
+// deve deixar de ser criado porque o servidor de email não respondeu. Mas isso
+// significa que uma chave errada ou um remetente por verificar não dá sinal
+// nenhum a quem está a configurar — os emails apenas nunca chegam. Aqui o erro
+// vem por inteiro, que é o que diz o que corrigir.
+router.post('/email-teste', async (req, res) => {
+  try {
+    const r = await notificationService.enviarEmailDeTeste(req.user.email);
+    await auditService.recordSafe({
+      actor: auditService.actorFrom(req),
+      action: 'EMAIL_TESTE_ENVIADO',
+      entityType: 'Email',
+      entityRef: r.para,
+      detail: { provider: r.provider },
+    });
+    res.json(r);
+  } catch (err) {
+    res.status(err.status || 502).json({ error: { message: err.message } });
   }
 });
 

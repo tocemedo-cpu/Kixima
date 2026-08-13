@@ -141,6 +141,11 @@ export const EN9 = {
   'Endereço público (APP_URL)': 'Public address (APP_URL)',
   '2FA obrigatória (MFA_ENFORCE_FROM)': 'Mandatory 2FA (MFA_ENFORCE_FROM)',
   'Contas com poder sem 2FA': 'Privileged accounts without 2FA',
+  'Enviar email de teste para mim': 'Send a test email to me',
+  'Enviado para': 'Sent to',
+  'Confirme na caixa de entrada (e no spam).': 'Check your inbox (and spam folder).',
+  'Um convite nunca deixa de ser criado por o email falhar — por isso uma chave errada ou um remetente por verificar não dão sinal nenhum. Aqui o erro aparece por inteiro.':
+    'An invitation is never left uncreated just because email failed — which is why a wrong key or an unverified sender gives no sign at all. Here the error is shown in full.',
   'Chave de assinatura das sessões (JWT_SECRET)': 'Session signing key (JWT_SECRET)',
 };
 
@@ -269,5 +274,10 @@ export const FR9 = {
   'Endereço público (APP_URL)': 'Adresse publique (APP_URL)',
   '2FA obrigatória (MFA_ENFORCE_FROM)': '2FA obligatoire (MFA_ENFORCE_FROM)',
   'Contas com poder sem 2FA': 'Comptes à pouvoir sans 2FA',
+  'Enviar email de teste para mim': 'M’envoyer un e-mail de test',
+  'Enviado para': 'Envoyé à',
+  'Confirme na caixa de entrada (e no spam).': 'Vérifiez votre boîte de réception (et les indésirables).',
+  'Um convite nunca deixa de ser criado por o email falhar — por isso uma chave errada ou um remetente por verificar não dão sinal nenhum. Aqui o erro aparece por inteiro.':
+    'Une invitation n’est jamais laissée de côté parce que l’e-mail a échoué — c’est pourquoi une clé erronée ou un expéditeur non vérifié ne donnent aucun signe. Ici, l’erreur est affichée en entier.',
   'Chave de assinatura das sessões (JWT_SECRET)': 'Clé de signature des sessions (JWT_SECRET)',
 };

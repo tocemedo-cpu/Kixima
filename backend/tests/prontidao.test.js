@@ -27,9 +27,11 @@ describe('Prontidão para produção', () => {
       expect((await request(app).get('/api/admin/prontidao')).status).toBe(401);
     });
 
-    test('e só ele pode mandar fazer uma cópia', async () => {
+    test('e só ele pode mandar fazer uma cópia ou enviar um email de teste', async () => {
       expect((await auth(tokens.comprador).post('/api/admin/backup')).status).toBe(403);
       expect((await request(app).post('/api/admin/backup')).status).toBe(401);
+      expect((await auth(tokens.comprador).post('/api/admin/email-teste')).status).toBe(403);
+      expect((await request(app).post('/api/admin/email-teste')).status).toBe(401);
     });
   });
 
@@ -120,6 +122,38 @@ describe('Cópia de segurança a pedido', () => {
       expect(backupJob.motivoParaNaoCorrer()).toBeNull();
     } finally {
       Object.assign(config.storage, anterior);
+    }
+  });
+});
+
+// O envio de email é, por desenho, o sítio onde as falhas são engolidas: um
+// convite não deve deixar de ser criado porque o servidor de email não
+// respondeu. O reverso é que uma chave errada não dá sinal nenhum. O email de
+// teste é o único caminho onde o erro tem de vir por inteiro — se também aqui
+// fosse engolido, o botão diria "enviado" sem nada ter saído, que é a pior
+// resposta possível.
+describe('Email de teste', () => {
+  let tokens;
+  beforeAll(async () => { tokens = await loginAll(); });
+
+  test('com EMAIL_PROVIDER=console recusa em vez de fingir que enviou', async () => {
+    expect(config.email.apenasLog).toBe(true); // estado do ambiente de teste
+    const res = await auth(tokens.adminSistema).post('/api/admin/email-teste');
+    expect(res.status).toBe(422);
+    expect(res.body.error.message).toMatch(/EMAIL_PROVIDER=brevo/);
+  });
+
+  test('com o provider definido mas sem credenciais, diz qual falta', async () => {
+    const notificationService = require('../src/services/notificationService');
+    const anterior = { ...config.email };
+    try {
+      config.email.provider = 'brevo';
+      config.email.apenasLog = false;
+      config.email.missing = ['BREVO_API_KEY'];
+      await expect(notificationService.enviarEmailDeTeste('alguem@kixima.co.ao'))
+        .rejects.toThrow(/BREVO_API_KEY/);
+    } finally {
+      Object.assign(config.email, anterior);
     }
   });
 });
