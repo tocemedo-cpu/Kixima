@@ -40,6 +40,15 @@ const server = app.listen(config.port, () => {
   } else {
     logger.info(`Email: ${config.email.provider} (remetente ${config.email.from})`);
   }
+  // Uma data mal escrita desliga a obrigatoriedade da 2FA sem nada o denunciar:
+  // a variável está no painel, e a plataforma comporta-se como se não estivesse.
+  if (config.auth.mfaEnforceFromInvalido) {
+    logger.error(
+      `MFA_ENFORCE_FROM tem o valor "${config.auth.mfaEnforceFromInvalido}", que não é uma data. `
+      + 'Está a ser IGNORADO: a verificação em dois passos não vai ser exigida a ninguém. '
+      + 'Use o formato 2026-09-15T00:00:00Z (sem aspas) e reinicie.',
+    );
+  }
   schedulePolicyExpiryJob();
   scheduleBackupJob();
   // Regista nos logs se a integração ERP (RabbitMQ) está ativa.

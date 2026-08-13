@@ -4,6 +4,31 @@
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+/**
+ * Limpa um valor colado no painel do Render: espaços à volta e aspas que
+ * tenham vindo agarradas ao exemplo. O painel guarda o valor LITERALMENTE, e
+ * `"2026-09-15T00:00:00Z"` — com as aspas — não é uma data.
+ */
+function limpar(valor) {
+  return String(valor ?? '').trim().replace(/^["']|["']$/g, '').trim();
+}
+
+// Data vinda do ambiente, ou null se não existir/não for uma data.
+function dataDoAmbiente(valor) {
+  const limpo = limpar(valor);
+  if (!limpo) return null;
+  const d = new Date(limpo);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+// O valor original, quando existe mas não é uma data — para se poder dizer
+// PORQUÊ, em vez de o ignorar em silêncio.
+function dataInvalida(valor) {
+  const limpo = limpar(valor);
+  if (!limpo) return null;
+  return Number.isNaN(new Date(limpo).getTime()) ? String(valor) : null;
+}
+
 const required = ['DATABASE_URL', 'JWT_SECRET'];
 
 if (NODE_ENV === 'production') {
@@ -48,7 +73,16 @@ const config = {
     // Antes dela, quem ainda não a configurou entra na mesma e é avisado — dar
     // prazo é o que evita trancar administradores fora no dia do lançamento.
     // Sem a variável definida, fica só o aviso (nunca bloqueia).
-    mfaEnforceFrom: process.env.MFA_ENFORCE_FROM ? new Date(process.env.MFA_ENFORCE_FROM) : null,
+    //
+    // O valor é validado aqui, e não onde é usado, porque uma data inválida
+    // falhava do PIOR modo possível: `new Date("lixo")` devolve um objeto que é
+    // truthy, mas cuja comparação com qualquer data dá SEMPRE false. A 2FA
+    // deixava de ser exigida sem nada o denunciar — e a variável, no painel,
+    // parecia estar lá.
+    mfaEnforceFrom: dataDoAmbiente(process.env.MFA_ENFORCE_FROM),
+    // Guardado para o arranque e a página de Prontidão poderem dizer o que está
+    // errado, em vez de a definição ser ignorada em silêncio.
+    mfaEnforceFromInvalido: dataInvalida(process.env.MFA_ENFORCE_FROM),
   },
 
   // Regras de negócio — configuráveis por ambiente, nunca hardcoded no código.

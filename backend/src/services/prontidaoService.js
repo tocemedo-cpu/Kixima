@@ -276,10 +276,17 @@ async function verMfa() {
     where: { role: { in: perfis }, active: true, totpEnabledAt: null },
   }).catch(() => null);
 
-  if (!prazo) {
+  // Uma data que o servidor não consegue ler é PIOR do que não ter data: no
+  // painel a variável parece estar definida, e a 2FA nunca chega a ser exigida.
+  if (config.auth.mfaEnforceFromInvalido) {
+    checks.push({ id: 'mfa-prazo', titulo: '2FA obrigatória (MFA_ENFORCE_FROM)', estado: FALHA,
+      detalhe: `O valor ${JSON.stringify(config.auth.mfaEnforceFromInvalido)} não é uma data — está a ser ignorado, e a 2FA NÃO é exigida a ninguém.`,
+      acao: 'Escreva a data no formato ISO, sem aspas: 2026-09-15T00:00:00Z (ou só 2026-09-15). '
+        + 'Formatos como 15/09/2026 não são lidos. Depois de corrigir, reinicie o serviço.' });
+  } else if (!prazo) {
     checks.push({ id: 'mfa-prazo', titulo: '2FA obrigatória (MFA_ENFORCE_FROM)', estado: AVISO,
       detalhe: 'Sem data definida — a 2FA é só um aviso e nunca é exigida.',
-      acao: `Defina MFA_ENFORCE_FROM com uma data futura (ex.: 2026-09-15T00:00:00Z), para dar prazo a ${perfis.join(' e ')} configurarem a 2FA antes de passar a ser obrigatória.` });
+      acao: `Defina MFA_ENFORCE_FROM com uma data futura no formato 2026-09-15T00:00:00Z (sem aspas), para dar prazo a ${perfis.join(' e ')} configurarem a 2FA antes de passar a ser obrigatória.` });
   } else {
     const passou = new Date() >= prazo;
     const data = prazo.toISOString().slice(0, 10);

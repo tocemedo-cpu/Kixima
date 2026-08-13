@@ -88,3 +88,45 @@ describe('2FA obrigatória', () => {
     });
   });
 });
+
+// Uma data mal escrita no painel do Render falhava do PIOR modo possível:
+// `new Date("lixo")` devolve um objeto TRUTHY cuja comparação com qualquer data
+// dá sempre false. A obrigatoriedade da 2FA desligava-se sozinha, a variável
+// continuava lá no painel a parecer bem, e a página de Prontidão rebentava com
+// "Invalid time value" ao tentar formatá-la.
+describe('MFA_ENFORCE_FROM mal escrita', () => {
+  const config = require('../src/config/env');
+  const mfaPolicy = require('../src/services/mfaPolicy');
+  const prontidao = require('../src/services/prontidaoService');
+  const original = { ...config.auth };
+
+  afterEach(() => { Object.assign(config.auth, original); });
+
+  test('uma data inválida NÃO passa por prazo esgotado', () => {
+    config.auth.mfaEnforceFrom = new Date('isto-não-é-uma-data');
+    expect(Boolean(config.auth.mfaEnforceFrom)).toBe(true);   // é truthy — a armadilha
+    expect(mfaPolicy.prazoEsgotado()).toBe(false);            // e mesmo assim não passa
+  });
+
+  test('a página de Prontidão não rebenta, e diz que está a ser ignorada', async () => {
+    config.auth.mfaEnforceFrom = null;
+    config.auth.mfaEnforceFromInvalido = '15/09/2026';
+
+    const r = await prontidao.verificar();
+    const c = r.grupos.find((g) => g.grupo === 'Autenticação de dois fatores')
+      .checks.find((x) => x.id === 'mfa-prazo');
+    expect(c.estado).toBe('falha');
+    expect(c.detalhe).toMatch(/não é uma data/);
+    expect(c.detalhe).toMatch(/NÃO é exigida/);
+    expect(c.acao).toMatch(/sem aspas/);
+  });
+
+  // As duas causas prováveis de quem cola o valor no painel do Render.
+  test('aspas e espaços colados com o exemplo são tolerados', () => {
+    // O parsing vive no config; reproduz-se aqui a mesma limpeza.
+    const limpar = (v) => String(v ?? '').trim().replace(/^["']|["']$/g, '').trim();
+    for (const v of ['"2026-09-15T00:00:00Z"', ' 2026-09-15T00:00:00Z ', "'2026-09-15'"]) {
+      expect(Number.isNaN(new Date(limpar(v)).getTime())).toBe(false);
+    }
+  });
+});

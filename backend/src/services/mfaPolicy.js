@@ -26,9 +26,16 @@ function exigeMfa(role) {
 }
 
 // Já passou o prazo para configurar?
+//
+// A verificação de validade não é zelo a mais: `new Date("lixo")` devolve um
+// objeto TRUTHY cuja comparação com qualquer data dá sempre false. Sem ela, uma
+// data mal escrita no painel desligava a obrigatoriedade da 2FA sem nada o
+// denunciar. O `config` já filtra o valor; isto é a segunda linha, para o caso
+// de esta função vir a ser chamada com outra origem.
 function prazoEsgotado(agora = new Date()) {
   const limite = config.auth.mfaEnforceFrom;
-  return Boolean(limite) && agora >= limite;
+  if (!limite || Number.isNaN(new Date(limite).getTime())) return false;
+  return agora >= limite;
 }
 
 /**
