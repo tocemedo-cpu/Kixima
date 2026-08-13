@@ -245,6 +245,10 @@ sessões abertas — o que é aceitável, e às vezes é mesmo o que se quer).
   persistirem, usa o **Supabase Storage** (S3-compatível, já tens Supabase):
   1. Supabase → Storage → cria um bucket **público** `product-images`.
   2. Storage → Settings → **S3 Connection**: ativa e copia Access key / Secret.
+     > A **chave secreta é mostrada uma única vez**, quando a crias. Se fechares
+     > o painel sem a copiar não há como a recuperar — tens de gerar uma nova e
+     > atualizar **as duas** variáveis. E atenção: uma variável criada no Render
+     > mas deixada **em branco** conta como ausente.
   3. No Render → Environment, acrescenta:
      ```
      STORAGE_PROVIDER=s3
@@ -273,7 +277,7 @@ sessões abertas — o que é aceitável, e às vezes é mesmo o que se quer).
      (`https://…@…ingest.sentry.io/…`).
   2. No Render → Environment: `SENTRY_DSN` = DSN do Node; e o **build-arg**
      `VITE_SENTRY_DSN` = DSN do React (é embutido no build do frontend).
-  3. **Verifica** o backend (no Shell do serviço): `cd backend && npm run sentry:test`
+  3. **Verifica** o backend (precisa de Shell, logo de plano pago): `cd backend && npm run sentry:test`
      → deve aparecer um issue em Sentry → Issues. O frontend confirma-se quando
      ocorrer um erro real (o `ErrorBoundary` mostra o ecrã de recurso e reporta).
 

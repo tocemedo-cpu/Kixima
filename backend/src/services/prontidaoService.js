@@ -83,9 +83,20 @@ function verArmazenamento() {
       acao: 'Defina STORAGE_PROVIDER=s3 e as credenciais do Supabase Storage. O disco do contentor é apagado a cada reinício: as fotos do catálogo e os documentos de credenciamento desaparecem.' }];
   }
   if (emFalta.length) {
+    // O secret do Supabase é mostrado UMA única vez, no momento em que a chave
+    // é criada. Quem fechou o painel não o recupera — tem de gerar outra. É a
+    // causa mais provável de faltar só o secret, e não dizê-lo deixa a pessoa
+    // à procura de um valor que já não existe em lado nenhum.
+    const soOSecret = emFalta.length === 1 && emFalta[0] === 'STORAGE_SECRET_KEY';
     return [{ id: 'storage', titulo: 'Armazenamento de ficheiros', estado: FALHA,
       detalhe: `S3 ativo mas faltam: ${emFalta.join(', ')}.`,
-      acao: 'Preencha essas variáveis (Supabase → Project Settings → Storage → S3 access keys) e reinicie. Enquanto faltarem, os ficheiros vão para o disco do contentor.' }];
+      acao: (soOSecret
+        ? 'O Supabase mostra a chave secreta UMA única vez, quando a cria — se fechou o painel, não a recupera. '
+          + 'Em Project Settings → Storage → S3 access keys crie uma nova e atualize as DUAS variáveis '
+          + '(STORAGE_ACCESS_KEY e STORAGE_SECRET_KEY), depois apague a antiga. '
+        : 'Preencha essas variáveis (Supabase → Project Settings → Storage → S3 access keys). ')
+        + 'Uma variável criada mas deixada EM BRANCO conta como ausente. Reinicie o serviço depois de guardar — '
+        + 'enquanto faltarem, os ficheiros vão para o disco do contentor e desaparecem no reinício seguinte.' }];
   }
   return [{ id: 'storage', titulo: 'Armazenamento de ficheiros', estado: OK,
     detalhe: `S3 ativo no bucket "${config.storage.bucket}".` }];

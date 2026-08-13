@@ -41,7 +41,9 @@ if (s3MalConfigurado()) {
     `Armazenamento S3 ATIVO mas mal configurado — faltam: ${config.storage.missing.join(', ')}. ` +
     'Os ficheiros vão para o disco do contentor, que é APAGADO a cada reinício. ' +
     'Defina essas variáveis no ambiente (Supabase → Project Settings → Storage → S3 access keys) ' +
-    'e reinicie o serviço. Para confirmar: npm run storage:check',
+    'e reinicie o serviço. Nota: uma variável criada mas deixada EM BRANCO conta como ausente. '
+    + 'Para confirmar, entre como Admin do Sistema em Configurações e Suporte → Prontidão para '
+    + 'produção (o plano gratuito do Render não dá acesso a shell).',
   );
 }
 
