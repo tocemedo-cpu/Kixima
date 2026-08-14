@@ -28,6 +28,7 @@ const contractRoutes = require('./routes/contractRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
 const apiCatalogoRoutes = require('./routes/apiCatalogoRoutes');
+const planosRoutes = require('./routes/planosRoutes');
 const kitRoutes = require('./routes/kitRoutes');
 const quoteRoutes = require('./routes/quoteRoutes');
 const marketplaceRoutes = require('./routes/marketplaceRoutes');
@@ -132,6 +133,10 @@ app.use('/api/reports', reportsRoutes);
 // primeiro dia — quem integra um sistema com isto não pode acordar com os
 // campos mudados.
 app.use('/api/v1/catalogo', apiCatalogoRoutes);
+
+// Tabela de planos e preços — pública, para a página de preços não ter os
+// números escritos à mão.
+app.use('/api/planos', planosRoutes);
 app.use('/api/kits', kitRoutes);
 app.use('/api/quotes', quoteRoutes);
 app.use('/api/marketplace', marketplaceRoutes);

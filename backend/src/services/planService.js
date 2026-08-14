@@ -46,12 +46,12 @@ function classify({ employees, annualRevenueUsd } = {}) {
 
 // Plano mínimo exigido pela dimensão: grandes empresas têm de subscrever o PRO.
 function requiredPlan(size) {
-  return size === 'GRANDE' ? 'PRO' : 'ENTRADA';
+  return size === 'GRANDE' ? 'PRO' : 'BASE';
 }
 
 // O plano escolhido é aceitável para a dimensão? (subir para PRO é sempre OK)
 // O plano escolhido é aceitável para a dimensão? Subir é sempre permitido.
-const ESCADA = ['ENTRADA', 'CORE', 'PRO'];
+const ESCADA = ['BASE', 'CORE', 'PRO'];
 function planAllowed(size, plan) {
   const minimo = ESCADA.indexOf(requiredPlan(size));
   return ESCADA.indexOf(normalizarPlano(plan)) >= minimo;
@@ -59,7 +59,7 @@ function planAllowed(size, plan) {
 
 // --- Planos -----------------------------------------------------------------
 //
-// ENTRADA · CORE · PRO. Fonte única de verdade: qualquer limite ou
+// BASE · CORE · PRO. Fonte única de verdade: qualquer limite ou
 // funcionalidade que dependa do plano lê-se daqui, e de mais lado nenhum.
 //
 // O PRINCÍPIO que decide o que se limita e o que não se limita:
@@ -78,8 +78,67 @@ function planAllowed(size, plan) {
 // funcionalidades de escala (importação em massa, ERP, contratos-quadro).
 const ILIMITADO = null;   // null = sem limite, para distinguir de 0
 
+// --- Preços -----------------------------------------------------------------
+//
+// Os três planos têm PERÍODOS diferentes, e isso é uma armadilha de comunicação:
+// o Base custa 100 USD por TRIMESTRE e o Core 100 USD por MÊS. Quem passa os
+// olhos pela tabela vê "100 USD" duas vezes e não regista a diferença — ou seja,
+// vê o Core como se fosse igual ao Base, e o salto real (3×) fica invisível.
+//
+// Por isso o preço mensal equivalente é CALCULADO aqui e mostrado sempre ao
+// lado. Nunca escrito à mão: um número que se calcula não pode ficar
+// dessincronizado do preço a que se refere.
+const MESES_DO_PERIODO = { MENSAL: 1, TRIMESTRAL: 3, SEMESTRAL: 6, ANUAL: 12 };
+
+const PRECOS = {
+  BASE: {
+    valor: Number(process.env.KIXIMA_PRECO_BASE_USD) || 100,
+    periodo: process.env.KIXIMA_PRECO_BASE_PERIODO || 'TRIMESTRAL',
+  },
+  CORE: {
+    valor: Number(process.env.KIXIMA_PRECO_CORE_USD) || 100,
+    periodo: process.env.KIXIMA_PRECO_CORE_PERIODO || 'MENSAL',
+  },
+  PRO: {
+    valor: Number(process.env.KIXIMA_PRECO_PRO_USD) || 5000,
+    // ANUAL por omissão. Ver a nota em `preco()` — a escolha do período muda o
+    // preço efetivo do Pro em 12×, e é configurável de propósito.
+    periodo: process.env.KIXIMA_PRECO_PRO_PERIODO || 'ANUAL',
+  },
+};
+
+/**
+ * Preço de um plano, com o equivalente mensal para se poderem comparar.
+ *
+ * NOTA SOBRE O PERÍODO DO PRO: 5.000 USD por ANO são ~417 USD/mês — um degrau de
+ * 4× sobre o Core, que é uma escada que alguém sobe. Os mesmos 5.000 por MÊS
+ * seriam 50× o Core: isso não é uma escada, é um penhasco, e penhascos matam
+ * upgrades. Quem cresce olha para a conta, faz as contas e fica onde está.
+ * Por isso o valor por omissão é anual, e o período é configurável sem tocar
+ * em código.
+ */
+function preco(plan) {
+  const p = PRECOS[normalizarPlano(plan)];
+  if (!p) return null;
+  const meses = MESES_DO_PERIODO[p.periodo] || 1;
+  return {
+    valorUsd: p.valor,
+    periodo: p.periodo,
+    meses,
+    // Arredondado ao cêntimo — é para comparar, não para faturar.
+    porMesUsd: Math.round((p.valor / meses) * 100) / 100,
+  };
+}
+
+// Todos os planos com preço e funcionalidades, para a página pública e para a
+// interface. Um sítio só: a tabela de preços não pode divergir do que a
+// plataforma faz.
+function tabela() {
+  return ESCADA.map((plano) => ({ plano, preco: preco(plano), features: FEATURES[plano] }));
+}
+
 const FEATURES = {
-  ENTRADA: {
+  BASE: {
     itensNoCatalogo: ILIMITADO,
     // Posição na pesquisa. É esta a alavanca que SUBSTITUI o limite de itens:
     // o plano de entrada publica tudo, mas ordena abaixo dos pagos na
@@ -153,7 +212,7 @@ const ALIASES = { BASICO: 'CORE' };
 
 function normalizarPlano(plan) {
   const p = String(plan || '').toUpperCase();
-  return ALIASES[p] || (FEATURES[p] ? p : 'ENTRADA');
+  return ALIASES[p] || (FEATURES[p] ? p : 'BASE');
 }
 
 function features(plan) {
@@ -180,7 +239,7 @@ function assertLimite(company, nome, usadoAgora, label) {
   if (max === ILIMITADO) return;
   if (Number(usadoAgora) < max) return;
   const plano = normalizarPlano(company?.plan);
-  const seguinte = plano === 'ENTRADA' ? 'Core' : 'Pro';
+  const seguinte = plano === 'BASE' ? 'Core' : 'Pro';
   throw new BusinessRuleError(
     `O plano ${plano} inclui ${max} ${label}. Já tem ${usadoAgora}. `
     + `O plano ${seguinte} aumenta este limite.`,
@@ -237,4 +296,5 @@ module.exports = {
   SEAT_PRICE_CAP_USD, SIZE_RULES, FEATURES, ESCADA, ILIMITADO,
   classify, requiredPlan, planAllowed, features, hasFeature, assertFeature,
   limite, assertLimite, normalizarPlano, planoQueInclui, rankDoPlano, monthlyAccessCost,
+  PRECOS, MESES_DO_PERIODO, preco, tabela,
 };

@@ -63,7 +63,7 @@ model ApiKey {
 }
 
 enum CompanyPlan {
-  ENTRADA
+  BASE
   CORE
   PRO
   // Plano do modelo de dois degraus. As empresas foram migradas para CORE; o
@@ -126,7 +126,7 @@ model Company {
   employees        Int?        @map("employees") // nº de trabalhadores
   annualRevenueUsd Decimal?    @map("annual_revenue_usd") @db.Decimal(16, 2)
   size             CompanySize @default(PEQUENA)
-  plan             CompanyPlan @default(ENTRADA)
+  plan             CompanyPlan @default(BASE)
   // Posição na ordenação por relevância do marketplace, derivada do plano.
   // Denormalizada de propósito: ordenar pelo enum daria a ordem de DECLARAÇÃO
   // do tipo no Postgres, que não é a ordem comercial e mudaria sozinha se

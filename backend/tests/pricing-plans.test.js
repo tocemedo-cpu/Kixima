@@ -78,10 +78,10 @@ describe('Dimensão da empresa e planos', () => {
     expect(plans.classify({ employees: 20, annualRevenueUsd: 50_000_000 })).toBe('GRANDE');
   });
 
-  test('grandes empresas exigem o plano PRO; as restantes entram no ENTRADA', () => {
+  test('grandes empresas exigem o plano PRO; as restantes entram no BASE', () => {
     expect(plans.requiredPlan('GRANDE')).toBe('PRO');
-    expect(plans.requiredPlan('PEQUENA')).toBe('ENTRADA');
-    expect(plans.planAllowed('GRANDE', 'ENTRADA')).toBe(false);
+    expect(plans.requiredPlan('PEQUENA')).toBe('BASE');
+    expect(plans.planAllowed('GRANDE', 'BASE')).toBe(false);
     expect(plans.planAllowed('GRANDE', 'CORE')).toBe(false);
     expect(plans.planAllowed('GRANDE', 'PRO')).toBe(true);
     // Subir de plano é sempre permitido, seja qual for a dimensão.
@@ -90,7 +90,7 @@ describe('Dimensão da empresa e planos', () => {
   });
 
   test('a integração com ERP é exclusiva do PRO', () => {
-    expect(plans.hasFeature('ENTRADA', 'erpIntegration')).toBe(false);
+    expect(plans.hasFeature('BASE', 'erpIntegration')).toBe(false);
     expect(plans.hasFeature('CORE', 'erpIntegration')).toBe(false);
     expect(plans.hasFeature('PRO', 'erpIntegration')).toBe(true);
   });
@@ -110,20 +110,20 @@ describe('Dimensão da empresa e planos', () => {
   });
 
   test('o que se limita é a intensidade de uso, não o volume do catálogo', () => {
-    expect(plans.limite('ENTRADA', 'cotacoesPorMes')).toBe(3);
+    expect(plans.limite('BASE', 'cotacoesPorMes')).toBe(3);
     expect(plans.limite('CORE', 'cotacoesPorMes')).toBe(20);
     expect(plans.limite('PRO', 'cotacoesPorMes')).toBe(plans.ILIMITADO);
 
-    expect(plans.limite('ENTRADA', 'lugaresIncluidos')).toBe(2);
+    expect(plans.limite('BASE', 'lugaresIncluidos')).toBe(2);
     expect(plans.limite('CORE', 'lugaresIncluidos')).toBe(5);
     expect(plans.limite('PRO', 'lugaresIncluidos')).toBe(plans.ILIMITADO);
   });
 
   test('a mensagem do limite diz o número atual e o do plano', () => {
-    expect(() => plans.assertLimite({ plan: 'ENTRADA' }, 'lugaresIncluidos', 2, 'lugares'))
+    expect(() => plans.assertLimite({ plan: 'BASE' }, 'lugaresIncluidos', 2, 'lugares'))
       .toThrow(/inclui 2 lugares.*Já tem 2/s);
     // Abaixo do limite passa; ilimitado nunca lança.
-    expect(() => plans.assertLimite({ plan: 'ENTRADA' }, 'lugaresIncluidos', 1, 'lugares')).not.toThrow();
+    expect(() => plans.assertLimite({ plan: 'BASE' }, 'lugaresIncluidos', 1, 'lugares')).not.toThrow();
     expect(() => plans.assertLimite({ plan: 'PRO' }, 'lugaresIncluidos', 9999, 'lugares')).not.toThrow();
   });
 
@@ -336,7 +336,7 @@ describe('Limites do plano, na prática', () => {
   const porPlano = (plan) => prisma.company.update({ where: { id: fornecedora.id }, data: { plan } });
 
   test('os kits são do CORE para cima, e a mensagem diz qual', async () => {
-    await porPlano('ENTRADA');
+    await porPlano('BASE');
     // Payload VÁLIDO de propósito: a validação corre antes da guarda do plano,
     // e um payload inválido daria 422 sem nunca chegar à regra em teste.
     const produto = await prisma.product.findFirst({ where: { supplierId: fornecedora.id } });
@@ -358,7 +358,7 @@ describe('Limites do plano, na prática', () => {
 
   // A regra que sustenta o desenho todo.
   test('publicar itens NUNCA é limitado — nem no plano mais baixo', async () => {
-    await porPlano('ENTRADA');
+    await porPlano('BASE');
     const antes = await prisma.product.count({ where: { supplierId: fornecedora.id } });
 
     const res = await auth(tokens.fornecedor).post('/api/catalog').send({
@@ -375,9 +375,9 @@ describe('Limites do plano, na prática', () => {
   });
 
   test('a galeria é que é limitada, e diz quantas o plano inclui', async () => {
-    await porPlano('ENTRADA');   // 3 imagens
+    await porPlano('BASE');   // 3 imagens
     const plans = require('../src/services/planService');
-    const empresa = { plan: 'ENTRADA' };
+    const empresa = { plan: 'BASE' };
     // 3 cabe; 4 não.
     expect(() => plans.assertLimite(empresa, 'imagensPorItem', 2, 'imagens por item')).not.toThrow();
     expect(() => plans.assertLimite(empresa, 'imagensPorItem', 3, 'imagens por item'))
@@ -402,7 +402,7 @@ describe('A posição na pesquisa acompanha o plano', () => {
   });
 
   test('a escada de posições é a esperada, e o Pro leva selo', () => {
-    expect(plans.rankDoPlano('ENTRADA')).toBe(0);
+    expect(plans.rankDoPlano('BASE')).toBe(0);
     expect(plans.rankDoPlano('CORE')).toBe(1);
     expect(plans.rankDoPlano('PRO')).toBe(2);
     expect(plans.rankDoPlano('BASICO')).toBe(1);          // sinónimo de CORE
@@ -441,7 +441,7 @@ describe('Subir de plano muda a posição no marketplace', () => {
     outra = await prisma.company.create({
       data: {
         name: `Concorrente ${Date.now()}`, taxId: `${Date.now()}`, type: 'FORNECEDOR',
-        contactEmail: `c${Date.now()}@x.ao`, status: 'APROVADA', plan: 'ENTRADA', searchRank: 0,
+        contactEmail: `c${Date.now()}@x.ao`, status: 'APROVADA', plan: 'BASE', searchRank: 0,
       },
     });
     // Clona um produto existente em vez de o construir campo a campo: assim o
@@ -465,7 +465,7 @@ describe('Subir de plano muda a posição no marketplace', () => {
   }
 
   test('no Entrada fica atrás; no Pro passa à frente', async () => {
-    await prisma.company.update({ where: { id: fornecedora.id }, data: { plan: 'ENTRADA', searchRank: 0 } });
+    await prisma.company.update({ where: { id: fornecedora.id }, data: { plan: 'BASE', searchRank: 0 } });
     const noEntrada = await posicaoDe(outra.id);
 
     await prisma.company.update({ where: { id: outra.id }, data: { plan: 'PRO', searchRank: 2 } });
@@ -478,7 +478,65 @@ describe('Subir de plano muda a posição no marketplace', () => {
   // E o catálogo continua a ser publicado por inteiro em qualquer plano — é
   // a posição que muda, não o direito a estar lá.
   test('o item do plano de entrada continua no catálogo, só mais abaixo', async () => {
-    await prisma.company.update({ where: { id: outra.id }, data: { plan: 'ENTRADA', searchRank: 0 } });
+    await prisma.company.update({ where: { id: outra.id }, data: { plan: 'BASE', searchRank: 0 } });
     expect(await posicaoDe(outra.id)).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// Os preços vivem no código para a página não os ter escritos à mão. Uma tabela
+// de preços que diverge do que a plataforma cobra é a pior espécie de bug:
+// ninguém a testa, ninguém dá por ela, e quem descobre é o cliente que pagou um
+// valor diferente do que leu.
+describe('Preços', () => {
+  const plans = require('../src/services/planService');
+  const request = require('supertest');
+  const app = require('../src/app');
+
+  test('cada plano tem preço, período e o equivalente mensal calculado', () => {
+    for (const plano of plans.ESCADA) {
+      const p = plans.preco(plano);
+      expect(p.valorUsd).toBeGreaterThan(0);
+      expect(Object.keys(plans.MESES_DO_PERIODO)).toContain(p.periodo);
+      expect(p.porMesUsd).toBeCloseTo(p.valorUsd / p.meses, 2);
+    }
+  });
+
+  // A armadilha de comunicação: 100 no Base e 100 no Core são valores MUITO
+  // diferentes, e quem passa os olhos pela tabela vê o mesmo número duas vezes.
+  test('o Base e o Core têm o mesmo valor mas períodos diferentes — o mensal desfaz o equívoco', () => {
+    const base = plans.preco('BASE');
+    const core = plans.preco('CORE');
+    expect(base.valorUsd).toBe(core.valorUsd);          // o mesmo "100 USD"
+    expect(base.periodo).not.toBe(core.periodo);        // períodos diferentes
+    expect(core.porMesUsd).toBeGreaterThan(base.porMesUsd * 2.5);
+  });
+
+  // Penhascos matam upgrades: quem cresce faz as contas e fica onde está.
+  test('a escada sobe sem penhascos — nenhum degrau multiplica por mais de 10', () => {
+    const mensal = plans.ESCADA.map((p) => plans.preco(p).porMesUsd);
+    for (let i = 1; i < mensal.length; i++) {
+      const salto = mensal[i] / mensal[i - 1];
+      expect(salto).toBeGreaterThan(1);      // sobe mesmo
+      expect(salto).toBeLessThanOrEqual(10); // e não é um precipício
+    }
+  });
+
+  test('a tabela pública traz os planos e a taxa por transação', async () => {
+    const res = await request(app).get('/api/planos');
+    expect(res.status).toBe(200);
+    expect(res.body.planos.map((p) => p.plano)).toEqual(plans.ESCADA);
+    for (const linha of res.body.planos) {
+      expect(linha.preco.porMesUsd).toBeGreaterThan(0);
+      // O catálogo nunca é limitado — e a tabela pública tem de o dizer.
+      expect(linha.features.itensNoCatalogo).toBeNull();
+    }
+    // A subscrição não é o custo todo: a taxa por transação é a outra metade.
+    expect(res.body.taxaPorTransacao.porOrdemUsd).toBeGreaterThan(0);
+    expect(res.body.taxaPorTransacao.porFaturaUsd).toBeGreaterThan(0);
+  });
+
+  test('é pública — quem ainda não tem conta precisa de ver os preços', async () => {
+    const res = await request(app).get('/api/planos');
+    expect(res.status).toBe(200);
   });
 });

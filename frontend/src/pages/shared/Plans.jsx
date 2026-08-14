@@ -2,7 +2,9 @@
 // Planos e preços — página PÚBLICA (login e home). Explica o modelo comercial:
 // taxa por transação (por PO e por fatura, com limiar) e taxa de acesso por
 // utilizador; e o que distingue os três planos (Entrada, Core e Pro).
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../../api/client';
 import Logo from '../../components/Logo';
 import { Icon } from '../../components/icons';
 import { useI18n, LANGS } from '../../i18n';
@@ -17,9 +19,8 @@ import { useI18n, LANGS } from '../../i18n';
 // maior — para proteger a taxa de acesso, que é a menor.
 const PLANS = [
   {
-    key: 'ENTRADA',
-    name: 'Entrada',
-    price: 'Sob consulta',
+    key: 'BASE',
+    name: 'Base',
     unit: 'para começar a vender',
     forWho: 'Micro e pequenas empresas a entrar na cadeia de fornecimento',
     features: [
@@ -35,11 +36,10 @@ const PLANS = [
   {
     key: 'CORE',
     name: 'Core',
-    price: 'Sob consulta',
     unit: 'para quem já vende com regularidade',
     forWho: 'Pequenas e médias empresas com catálogo ativo',
     features: [
-      'Tudo o que o plano Entrada inclui',
+      'Tudo o que o plano Base inclui',
       '5 utilizadores incluídos',
       'Kits e pacotes de produtos',
       '20 pedidos de cotação por mês',
@@ -50,7 +50,6 @@ const PLANS = [
   {
     key: 'PRO',
     name: 'Pro',
-    price: 'Sob consulta',
     unit: 'obrigatório para grandes empresas',
     forWho: 'Grandes empresas (mais de 200 trabalhadores ou 10 M USD)',
     highlight: true,
@@ -69,9 +68,22 @@ const PLANS = [
   },
 ];
 
+// Os períodos são diferentes entre planos, e isso é uma armadilha: 100 USD por
+// trimestre e 100 USD por mês são o mesmo número e valores muito diferentes.
+// O equivalente mensal aparece sempre ao lado, e vem calculado do servidor —
+// escrito à mão acabaria por divergir do que a plataforma cobra.
+const PERIODOS = { MENSAL: '/ mês', TRIMESTRAL: '/ trimestre', SEMESTRAL: '/ semestre', ANUAL: '/ ano' };
+
 export default function Plans() {
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
+  const [precos, setPrecos] = useState(null);
+
+  useEffect(() => {
+    api.get('/api/planos')
+      .then((r) => setPrecos(Object.fromEntries(r.planos.map((p) => [p.plano, p.preco]))))
+      .catch(() => setPrecos({}));   // sem preços, a página continua a explicar os planos
+  }, []);
 
   return (
     <div className="sd-page">
@@ -120,7 +132,17 @@ export default function Plans() {
             <article className={`pl-card${p.highlight ? ' pl-card-pro' : ''}`} key={p.key}>
               {p.highlight ? <span className="pl-badge">{t('Grandes empresas')}</span> : null}
               <h2>{t(p.name)}</h2>
-              <div className="pl-price"><strong>{t(p.price)}</strong><span>{t(p.unit)}</span></div>
+              <div className="pl-price">
+                <strong>{precos?.[p.key] ? `${precos[p.key].valorUsd} USD` : t('Sob consulta')}</strong>
+                <span>{precos?.[p.key] ? t(PERIODOS[precos[p.key].periodo] || '') : ''} {t(p.unit)}</span>
+              </div>
+              {/* O equivalente mensal, sempre. Sem ele, "100 USD" no Base e
+                  "100 USD" no Core leem-se como o mesmo preço. */}
+              {precos?.[p.key] && precos[p.key].meses > 1 ? (
+                <p className="helptext" style={{ margin: '-6px 0 10px' }}>
+                  ≈ {precos[p.key].porMesUsd} {t('USD por mês')}
+                </p>
+              ) : null}
               <p className="pl-for">{t(p.forWho)}</p>
               <ul className="pl-list">
                 {p.features.map((f) => (

@@ -145,7 +145,13 @@ export const EN9 = {
   // --- Verificação em dois passos (email + app) -------------------------------
   // --- Contas com poder sem 2FA ----------------------------------------------
   // --- Planos: Entrada · Core · Pro -------------------------------------------
-  'Entrada': 'Entry',
+  'Base': 'Base',
+  'Tudo o que o plano Base inclui': 'Everything in the Base plan',
+  'USD por mês': 'USD per month',
+  '/ mês': '/ month',
+  '/ trimestre': '/ quarter',
+  '/ semestre': '/ half-year',
+  '/ ano': '/ year',
   // --- Relatório de conteúdo local --------------------------------------------
   // --- API de catálogo ---------------------------------------------------------
   'API de catálogo': 'Catalogue API',
@@ -221,7 +227,6 @@ export const EN9 = {
   'Histórico de relatórios de 12 meses': '12 months of report history',
   'Pedidos de cotação e histórico de relatórios sem limite':
     'Unlimited quote requests and report history',
-  'Tudo o que o plano Entrada inclui': 'Everything in the Entry plan',
   'Tudo o que o plano Core inclui': 'Everything in the Core plan',
   'Verificar a última cópia': 'Check the latest backup',
   'A ler a cópia…': 'Reading the backup…',
@@ -419,7 +424,13 @@ export const FR9 = {
   // --- Vérification en deux étapes (e-mail + application) ---------------------
   // --- Comptes à pouvoir sans 2FA ---------------------------------------------
   // --- Forfaits : Entrada · Core · Pro ----------------------------------------
-  'Entrada': 'Entrée',
+  'Base': 'Base',
+  'Tudo o que o plano Base inclui': 'Tout ce que comprend le forfait Base',
+  'USD por mês': 'USD par mois',
+  '/ mês': '/ mois',
+  '/ trimestre': '/ trimestre',
+  '/ semestre': '/ semestre',
+  '/ ano': '/ an',
   // --- Rapport de contenu local ------------------------------------------------
   // --- API de catalogue ---------------------------------------------------------
   'API de catálogo': 'API de catalogue',
@@ -495,7 +506,6 @@ export const FR9 = {
   'Histórico de relatórios de 12 meses': '12 mois d’historique de rapports',
   'Pedidos de cotação e histórico de relatórios sem limite':
     'Demandes de devis et historique de rapports illimités',
-  'Tudo o que o plano Entrada inclui': 'Tout ce que comprend le forfait Entrée',
   'Tudo o que o plano Core inclui': 'Tout ce que comprend le forfait Core',
   'Verificar a última cópia': 'Vérifier la dernière sauvegarde',
   'A ler a cópia…': 'Lecture de la sauvegarde…',
