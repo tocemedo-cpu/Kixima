@@ -121,6 +121,7 @@ const COMPANY_ADMIN = [
   { label: 'Aprovações de PO', icon: 'approvals', to: '/empresa/aprovacoes' },
   { label: 'Contratos', icon: 'contract', to: '/empresa/contratos' },
   { label: 'Relatórios', icon: 'report', to: '/empresa/relatorios' },
+  { label: 'Conteúdo local', icon: 'chart', to: '/empresa/conteudo-local' },
   { label: 'Atividades', icon: 'activities', to: '/empresa/atividades' },
   { label: 'Configurações', icon: 'settings', to: '/empresa/configuracoes' },
   ...COMMON_TAIL,

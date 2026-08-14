@@ -146,6 +146,34 @@ export const EN9 = {
   // --- Contas com poder sem 2FA ----------------------------------------------
   // --- Planos: Entrada · Core · Pro -------------------------------------------
   'Entrada': 'Entry',
+  // --- Relatório de conteúdo local --------------------------------------------
+  'Conteúdo local': 'Local content',
+  'Relatório de conteúdo local': 'Local content report',
+  'Quanto do que a sua empresa comprou foi para empresas angolanas, quanto corresponde a bens de origem angolana, e quanto foi para micro, pequenas e médias empresas nacionais.':
+    'How much of what your company bought went to Angolan companies, how much corresponds to goods of Angolan origin, and how much went to Angolan micro, small and medium enterprises.',
+  'De': 'From',
+  'Até': 'To',
+  'Gerar relatório': 'Generate report',
+  'A calcular…': 'Calculating…',
+  'Descarregar com o anexo': 'Download with the annex',
+  'Este relatório ainda não se pode entregar.': 'This report cannot be submitted yet.',
+  'Contratação nacional': 'National sourcing',
+  'Bens de origem angolana': 'Goods of Angolan origin',
+  'MPME angolanas': 'Angolan MSMEs',
+  'Valor comprado': 'Total purchased',
+  'Valores sem IVA, de ordens com compromisso financeiro assumido. Linhas sem país de origem declarado não contam como angolanas.':
+    'Excluding VAT, from orders with a financial commitment in place. Lines with no declared country of origin do not count as Angolan.',
+  'A fornecedores nacionais': 'To national suppliers',
+  'Sem compras no período.': 'No purchases in this period.',
+  'País': 'Country',
+  'Dimensão': 'Size',
+  'O ficheiro descarregado inclui o anexo com as': 'The downloaded file includes the annex with the',
+  'ordens que compõem estes números, com referência, data, NIF e origem — é o que permite justificar cada percentagem linha a linha.':
+    'orders behind these figures, with reference, date, tax ID and origin — that is what lets you justify each percentage line by line.',
+  'Período:': 'Period:',
+  'Escolha o período e gere o relatório.': 'Choose the period and generate the report.',
+  'Relatório de conteúdo local: contratação nacional, origem dos bens e compras a MPME angolanas':
+    'Local content report: national sourcing, origin of goods and purchases from Angolan MSMEs',
   'Destaque': 'Featured',
   'Core': 'Core',
   'para começar a vender': 'to start selling',
@@ -360,6 +388,34 @@ export const FR9 = {
   // --- Comptes à pouvoir sans 2FA ---------------------------------------------
   // --- Forfaits : Entrada · Core · Pro ----------------------------------------
   'Entrada': 'Entrée',
+  // --- Rapport de contenu local ------------------------------------------------
+  'Conteúdo local': 'Contenu local',
+  'Relatório de conteúdo local': 'Rapport de contenu local',
+  'Quanto do que a sua empresa comprou foi para empresas angolanas, quanto corresponde a bens de origem angolana, e quanto foi para micro, pequenas e médias empresas nacionais.':
+    'Quelle part de vos achats est allée à des entreprises angolaises, quelle part correspond à des biens d’origine angolaise, et quelle part est allée aux micro, petites et moyennes entreprises angolaises.',
+  'De': 'Du',
+  'Até': 'Au',
+  'Gerar relatório': 'Générer le rapport',
+  'A calcular…': 'Calcul en cours…',
+  'Descarregar com o anexo': 'Télécharger avec l’annexe',
+  'Este relatório ainda não se pode entregar.': 'Ce rapport ne peut pas encore être remis.',
+  'Contratação nacional': 'Achats nationaux',
+  'Bens de origem angolana': 'Biens d’origine angolaise',
+  'MPME angolanas': 'PME angolaises',
+  'Valor comprado': 'Montant acheté',
+  'Valores sem IVA, de ordens com compromisso financeiro assumido. Linhas sem país de origem declarado não contam como angolanas.':
+    'Hors TVA, pour les commandes ayant un engagement financier. Les lignes sans pays d’origine déclaré ne comptent pas comme angolaises.',
+  'A fornecedores nacionais': 'À des fournisseurs nationaux',
+  'Sem compras no período.': 'Aucun achat sur la période.',
+  'País': 'Pays',
+  'Dimensão': 'Taille',
+  'O ficheiro descarregado inclui o anexo com as': 'Le fichier téléchargé inclut l’annexe avec les',
+  'ordens que compõem estes números, com referência, data, NIF e origem — é o que permite justificar cada percentagem linha a linha.':
+    'commandes à l’origine de ces chiffres, avec référence, date, NIF et origine — c’est ce qui permet de justifier chaque pourcentage ligne par ligne.',
+  'Período:': 'Période :',
+  'Escolha o período e gere o relatório.': 'Choisissez la période et générez le rapport.',
+  'Relatório de conteúdo local: contratação nacional, origem dos bens e compras a MPME angolanas':
+    'Rapport de contenu local : achats nationaux, origine des biens et achats auprès de PME angolaises',
   'Destaque': 'En vedette',
   'Core': 'Core',
   'para começar a vender': 'pour commencer à vendre',

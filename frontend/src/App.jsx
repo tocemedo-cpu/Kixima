@@ -53,6 +53,7 @@ const Organization = lazy(() => import('./pages/companyAdmin/Organization'));
 const CompanyDocuments = lazy(() => import('./pages/companyAdmin/CompanyDocuments'));
 const CompanyPermissions = lazy(() => import('./pages/companyAdmin/Permissions'));
 const CompanyReports = lazy(() => import('./pages/companyAdmin/Reports'));
+const ConteudoLocal = lazy(() => import('./pages/companyAdmin/ConteudoLocal'));
 const CompanyActivities = lazy(() => import('./pages/companyAdmin/Activities'));
 const CompanySettings = lazy(() => import('./pages/companyAdmin/Settings'));
 
@@ -174,6 +175,7 @@ export default function App() {
             <Route path="/empresa/perfil" element={<CompanyProfile />} />
             <Route path="/empresa/contratos" element={<Contracts />} />
             <Route path="/empresa/relatorios" element={<CompanyReports />} />
+            <Route path="/empresa/conteudo-local" element={<ConteudoLocal />} />
             <Route path="/empresa/atividades" element={<CompanyActivities />} />
             <Route path="/empresa/configuracoes" element={<CompanySettings />} />
           </Route>
