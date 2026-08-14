@@ -81,6 +81,10 @@ export default function Catalog() {
 
   const priceOf = (p) => Number(p.promoPrice ?? p.unitPrice) || 0;
   const isVerified = (p) => p.supplier?.verified || p.supplier?.status === 'APROVADA';
+  // Selo do plano Pro. É a contrapartida visível de "Destaque + selo" na tabela
+  // de preços — sem isto, o fornecedor paga o Pro e não vê diferença nenhuma
+  // além de uma posição que ele próprio não consegue confirmar.
+  const isDestaque = (p) => (p.supplier?.searchRank ?? 0) >= 2;
   const handleAdd = (p) => { addItem(p, 1); setAdded(p.id); setTimeout(() => setAdded(null), 1200); };
   const toggleCompare = (p) => setCompare((c) => (c.some((x) => x.id === p.id) ? c.filter((x) => x.id !== p.id) : [...c, p]));
   const inCompare = (id) => compare.some((x) => x.id === id);
@@ -239,6 +243,7 @@ export default function Catalog() {
                         <span className="pc-sup-label">{t('Fornecedor')}</span>
                         <span className="pc-sup-name">{p.supplier?.name || '—'}</span>
                         {isVerified(p) ? <span className="pc-verif"><Icon name="approvals" size={12} /> {t('Verificado')}</span> : null}
+                        {isDestaque(p) ? <span className="pc-destaque"><Icon name="policy" size={12} /> {t('Destaque')}</span> : null}
                       </div>
                       <div className="pc-price-row">
                         {p.promoPrice != null ? <span className="pc-old">{formatMoney(p.unitPrice, p.currency)}</span> : null}

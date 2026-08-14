@@ -384,3 +384,101 @@ describe('Limites do plano, na prática', () => {
       .toThrow(/inclui 3 imagens por item/);
   });
 });
+
+// A posição na pesquisa é uma coluna DERIVADA do plano — e colunas derivadas
+// dessincronizam-se. Já aconteceu aqui: o seed escrevia o plano diretamente e
+// deixava a posição a zero, com uma empresa a pagar Core e a aparecer no fundo
+// da pesquisa. Este teste é a rede: percorre TODAS as empresas e exige que a
+// posição corresponda ao plano, seja qual for o caminho por onde foram criadas.
+describe('A posição na pesquisa acompanha o plano', () => {
+  const prisma = require('../src/config/database');
+  const plans = require('../src/services/planService');
+
+  test('nenhuma empresa tem a posição dessincronizada do plano', async () => {
+    const empresas = await prisma.company.findMany({ select: { name: true, plan: true, searchRank: true } });
+    expect(empresas.length).toBeGreaterThan(0);
+    const erradas = empresas.filter((e) => e.searchRank !== plans.rankDoPlano(e.plan));
+    expect(erradas.map((e) => `${e.name}: plano ${e.plan} mas posição ${e.searchRank}`)).toEqual([]);
+  });
+
+  test('a escada de posições é a esperada, e o Pro leva selo', () => {
+    expect(plans.rankDoPlano('ENTRADA')).toBe(0);
+    expect(plans.rankDoPlano('CORE')).toBe(1);
+    expect(plans.rankDoPlano('PRO')).toBe(2);
+    expect(plans.rankDoPlano('BASICO')).toBe(1);          // sinónimo de CORE
+    expect(plans.features('PRO').selo).toBe(true);
+    expect(plans.features('CORE').selo).toBe(false);
+  });
+
+  // A decisão de produto que impede a ordenação de mentir.
+  test('o plano SÓ entra na relevância — as ordenações explícitas ficam puras', () => {
+    const fonte = require('fs').readFileSync(
+      require('path').join(__dirname, '..', 'src/services/marketplaceService.js'), 'utf8',
+    );
+    const sorts = fonte.slice(fonte.indexOf('const SORTS'), fonte.indexOf('const SUPPLIER'));
+    // Uma única ordenação usa o rank do plano: a relevância.
+    expect((sorts.match(/RANK_DO_PLANO/g) || []).length).toBe(1);
+    expect(sorts).toMatch(/relevantes: \[RANK_DO_PLANO/);
+    // E o preço continua a ser só o preço.
+    expect(sorts).toMatch(/preco_asc: \[\{ unitPrice: 'asc' \}\]/);
+  });
+});
+
+// O efeito real: subir de plano muda a posição no marketplace. Sem isto, a
+// linha "Posição na pesquisa" da tabela de preços seria uma promessa vazia.
+describe('Subir de plano muda a posição no marketplace', () => {
+  const prisma = require('../src/config/database');
+  const marketplace = require('../src/services/marketplaceService');
+
+  let fornecedora;
+  let outra;
+  let original;
+
+  beforeAll(async () => {
+    fornecedora = await prisma.company.findFirst({ where: { type: 'FORNECEDOR' } });
+    original = { plan: fornecedora.plan, searchRank: fornecedora.searchRank };
+    // Uma segunda fornecedora, para haver ordenação que se veja.
+    outra = await prisma.company.create({
+      data: {
+        name: `Concorrente ${Date.now()}`, taxId: `${Date.now()}`, type: 'FORNECEDOR',
+        contactEmail: `c${Date.now()}@x.ao`, status: 'APROVADA', plan: 'ENTRADA', searchRank: 0,
+      },
+    });
+    // Clona um produto existente em vez de o construir campo a campo: assim o
+    // teste não parte de cada vez que o modelo Product ganha um campo obrigatório.
+    const modelo = await prisma.product.findFirst({ where: { active: true } });
+    const { id, createdAt, updatedAt, slug, supplierId, ...campos } = modelo;
+    await prisma.product.create({
+      data: { ...campos, supplierId: outra.id, slug: `concorrente-${Date.now()}`, name: 'Produto da concorrente' },
+    });
+  });
+
+  afterAll(async () => {
+    await prisma.product.deleteMany({ where: { supplierId: outra.id } });
+    await prisma.company.delete({ where: { id: outra.id } });
+    await prisma.company.update({ where: { id: fornecedora.id }, data: original });
+  });
+
+  async function posicaoDe(companyId) {
+    const r = await marketplace.search({ limit: 48, sort: 'relevantes' });
+    return r.items.findIndex((p) => p.supplier?.id === companyId);
+  }
+
+  test('no Entrada fica atrás; no Pro passa à frente', async () => {
+    await prisma.company.update({ where: { id: fornecedora.id }, data: { plan: 'ENTRADA', searchRank: 0 } });
+    const noEntrada = await posicaoDe(outra.id);
+
+    await prisma.company.update({ where: { id: outra.id }, data: { plan: 'PRO', searchRank: 2 } });
+    const noPro = await posicaoDe(outra.id);
+
+    expect(noPro).toBeGreaterThanOrEqual(0);
+    expect(noPro).toBeLessThan(noEntrada === -1 ? Number.MAX_SAFE_INTEGER : noEntrada);
+  });
+
+  // E o catálogo continua a ser publicado por inteiro em qualquer plano — é
+  // a posição que muda, não o direito a estar lá.
+  test('o item do plano de entrada continua no catálogo, só mais abaixo', async () => {
+    await prisma.company.update({ where: { id: outra.id }, data: { plan: 'ENTRADA', searchRank: 0 } });
+    expect(await posicaoDe(outra.id)).toBeGreaterThanOrEqual(0);
+  });
+});

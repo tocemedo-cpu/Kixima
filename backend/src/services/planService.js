@@ -81,6 +81,12 @@ const ILIMITADO = null;   // null = sem limite, para distinguir de 0
 const FEATURES = {
   ENTRADA: {
     itensNoCatalogo: ILIMITADO,
+    // Posição na pesquisa. É esta a alavanca que SUBSTITUI o limite de itens:
+    // o plano de entrada publica tudo, mas ordena abaixo dos pagos na
+    // relevância. Mesma pressão para subir de plano, zero dano à densidade do
+    // catálogo — que é o que faz o marketplace valer.
+    posicaoNaPesquisa: 0,
+    selo: false,
     lugaresIncluidos: 2,
     kits: false,
     carregamentoEmMassa: false,
@@ -95,6 +101,8 @@ const FEATURES = {
   },
   CORE: {
     itensNoCatalogo: ILIMITADO,
+    posicaoNaPesquisa: 1,
+    selo: false,
     lugaresIncluidos: 5,
     kits: true,
     carregamentoEmMassa: false,
@@ -109,6 +117,8 @@ const FEATURES = {
   },
   PRO: {
     itensNoCatalogo: ILIMITADO,
+    posicaoNaPesquisa: 2,
+    selo: true,
     lugaresIncluidos: ILIMITADO,
     kits: true,
     carregamentoEmMassa: true,
@@ -122,6 +132,13 @@ const FEATURES = {
     auditTrail: true,
   },
 };
+
+// Posição do plano na ordenação por relevância. Guardada em Company.searchRank
+// para o Postgres poder ordenar por ela: ordenar pelo ENUM daria a ordem de
+// declaração do tipo, que não é a ordem comercial.
+function rankDoPlano(plan) {
+  return features(plan).posicaoNaPesquisa ?? 0;
+}
 
 // BASICO foi o plano intermédio antes de haver três. A migração passou essas
 // empresas para CORE; este alias existe para o caso de alguma linha ficar para
@@ -213,5 +230,5 @@ module.exports = {
   supplierDevAccessFee,
   SEAT_PRICE_CAP_USD, SIZE_RULES, FEATURES, ESCADA, ILIMITADO,
   classify, requiredPlan, planAllowed, features, hasFeature, assertFeature,
-  limite, assertLimite, normalizarPlano, planoQueInclui, monthlyAccessCost,
+  limite, assertLimite, normalizarPlano, planoQueInclui, rankDoPlano, monthlyAccessCost,
 };

@@ -118,6 +118,7 @@ async function registerCompany(data, uploadedDocs = [], policyFile = null) {
         annualRevenueUsd: annualRevenueUsd ?? null,
         size,
         plan,
+        searchRank: planService.rankDoPlano(plan),
       },
     });
     await tx.user.create({
@@ -257,12 +258,16 @@ async function updatePlan(companyId, data) {
     where: { id: companyId },
     data: {
       size, plan,
+      // Derivado do plano, e escrito aqui: se ficasse por atualizar, uma empresa
+      // que subisse para Pro continuaria a aparecer no fundo da pesquisa — a
+      // pagar por uma coisa que não recebia.
+      searchRank: planService.rankDoPlano(plan),
       employees: employees ?? null,
       annualRevenueUsd: annualRevenueUsd ?? null,
       ...(data.seatPriceUsd != null ? { seatPriceUsd: data.seatPriceUsd } : {}),
       ...(data.planNotes !== undefined ? { planNotes: data.planNotes } : {}),
     },
-    select: { id: true, name: true, size: true, plan: true, seatPriceUsd: true, employees: true, annualRevenueUsd: true, planNotes: true },
+    select: { id: true, name: true, size: true, plan: true, searchRank: true, seatPriceUsd: true, employees: true, annualRevenueUsd: true, planNotes: true },
   });
 }
 

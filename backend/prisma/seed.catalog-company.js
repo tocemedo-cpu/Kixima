@@ -69,6 +69,7 @@ const COMPANY = {
   annualRevenueUsd: 2_400_000,
   size: 'PEQUENA',
   plan: 'CORE',
+  searchRank: 1,   // tem de acompanhar o plano (ver planService.rankDoPlano)
   seatPriceUsd: 100,
 };
 

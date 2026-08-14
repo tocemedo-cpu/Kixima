@@ -20,6 +20,7 @@ async function main() {
       type: 'CLIENTE',
       // 5 utilizadores no seed — o plano tem de incluir 5 lugares.
       plan: 'CORE',
+      searchRank: 1,   // tem de acompanhar o plano (ver planService.rankDoPlano)
       contactEmail: 'contacto@petroangola.co.ao',
       status: 'APROVADA',
       approvedAt: new Date(),
@@ -32,6 +33,7 @@ async function main() {
       taxId: 'AO-FOR-0001',
       type: 'FORNECEDOR',
       plan: 'CORE',
+      searchRank: 1,   // tem de acompanhar o plano (ver planService.rankDoPlano)
       contactEmail: 'vendas@kianda.co.ao',
       status: 'APROVADA',
       approvedAt: new Date(),

@@ -146,6 +146,7 @@ export const EN9 = {
   // --- Contas com poder sem 2FA ----------------------------------------------
   // --- Planos: Entrada · Core · Pro -------------------------------------------
   'Entrada': 'Entry',
+  'Destaque': 'Featured',
   'Core': 'Core',
   'para começar a vender': 'to start selling',
   'para quem já vende com regularidade': 'for those already selling regularly',
@@ -359,6 +360,7 @@ export const FR9 = {
   // --- Comptes à pouvoir sans 2FA ---------------------------------------------
   // --- Forfaits : Entrada · Core · Pro ----------------------------------------
   'Entrada': 'Entrée',
+  'Destaque': 'En vedette',
   'Core': 'Core',
   'para começar a vender': 'pour commencer à vendre',
   'para quem já vende com regularidade': 'pour ceux qui vendent déjà régulièrement',

@@ -102,6 +102,11 @@ model Company {
   annualRevenueUsd Decimal?    @map("annual_revenue_usd") @db.Decimal(16, 2)
   size             CompanySize @default(PEQUENA)
   plan             CompanyPlan @default(ENTRADA)
+  // Posição na ordenação por relevância do marketplace, derivada do plano.
+  // Denormalizada de propósito: ordenar pelo enum daria a ordem de DECLARAÇÃO
+  // do tipo no Postgres, que não é a ordem comercial e mudaria sozinha se
+  // alguém acrescentasse um valor ao enum.
+  searchRank       Int         @default(0) @map("search_rank")
   // Preço por utilizador/mês (USD). Teto do plano BASICO: 100 USD.
   seatPriceUsd     Decimal     @default(100) @map("seat_price_usd") @db.Decimal(10, 2)
   planNotes        String?     @map("plan_notes")

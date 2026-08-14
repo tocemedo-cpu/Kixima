@@ -3,8 +3,16 @@
 const prisma = require('../config/database');
 const { NotFoundError } = require('../utils/errors');
 
+// A POSIÇÃO DO PLANO SÓ ENTRA NA RELEVÂNCIA — e é uma decisão de produto, não
+// uma omissão. Quem escolhe "preço mais baixo" quer o preço mais baixo; se o
+// plano do fornecedor passasse à frente disso, o controlo de ordenação passaria
+// a mentir, e um comprador que descobre que a ordenação não é o que diz perde a
+// confiança na pesquisa toda. Isso custa mais ao marketplace do que a
+// diferenciação de planos lhe rende.
+const RANK_DO_PLANO = { supplier: { searchRank: 'desc' } };
+
 const SORTS = {
-  relevantes: [{ reviewCount: 'desc' }, { rating: 'desc' }, { createdAt: 'desc' }],
+  relevantes: [RANK_DO_PLANO, { reviewCount: 'desc' }, { rating: 'desc' }, { createdAt: 'desc' }],
   recentes: [{ createdAt: 'desc' }],
   avaliacao: [{ rating: 'desc' }, { reviewCount: 'desc' }],
   preco_asc: [{ unitPrice: 'asc' }],
@@ -13,7 +21,8 @@ const SORTS = {
   vendidos: [{ reviewCount: 'desc' }, { viewCount: 'desc' }], // proxy até haver contador de vendas
 };
 
-const SUPPLIER = { select: { id: true, name: true, verified: true, logoUrl: true } };
+// `searchRank` vai no select para a interface poder mostrar o selo do Pro.
+const SUPPLIER = { select: { id: true, name: true, verified: true, logoUrl: true, searchRank: true } };
 
 // Constrói o `where` do Prisma a partir de parâmetros já validados/saneados.
 function buildWhere(f) {

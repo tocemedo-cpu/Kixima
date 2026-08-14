@@ -698,6 +698,16 @@ tbody tr:hover {
   color: var(--brand-700, #b3141f);
   border: 1px solid var(--brand-100, #fbdadd);
 }
+/* Selo do plano Pro no cartão do produto. Distinto do "Verificado" de propósito:
+   verificado é uma garantia da KIXIMA sobre a empresa; destaque é o plano que
+   ela subscreveu. Confundi-los seria vender credibilidade. */
+.pc-destaque {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px;
+  background: var(--brand-050, #fdecee); color: var(--brand-700, #b3141f);
+  border: 1px solid var(--brand-100, #fbdadd);
+}
+
 .mfa-aviso { display: flex; gap: 10px; align-items: flex-start; line-height: 1.5; }
 .mfa-aviso a { color: inherit; font-weight: 600; text-decoration: underline; }
 
