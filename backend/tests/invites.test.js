@@ -24,8 +24,14 @@ async function tokenOf(inviteId) {
   return inv.token;
 }
 
+// Estes testes são sobre a MECÂNICA do convite (criar, aceitar, cancelar,
+// reenviar), não sobre os lugares que o plano inclui. Com o plano do seed
+// (CORE, 5 lugares) os convites em fila esgotam o limite a meio do ficheiro e
+// os testes passariam a falhar por uma razão que não é a que estão a verificar.
+// Os limites de lugares têm testes próprios em pricing-plans.test.js.
 beforeAll(async () => {
   clientAdminToken = await login('admin@petroangola.co.ao');
+  await prisma.company.updateMany({ where: { type: 'CLIENTE' }, data: { plan: 'PRO' } });
 
   const supplier = await prisma.company.findFirst({ where: { type: 'FORNECEDOR' } });
   const passwordHash = await bcrypt.hash(PASSWORD, 10);
@@ -37,6 +43,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await prisma.company.updateMany({ where: { type: 'CLIENTE' }, data: { plan: 'CORE' } });
   const emails = [compradorEmail, vendedorEmail, canceladoEmail, supplierAdminEmail];
   await prisma.employeeInvite.deleteMany({ where: { email: { in: emails } } });
   await prisma.user.deleteMany({ where: { email: { in: emails } } });

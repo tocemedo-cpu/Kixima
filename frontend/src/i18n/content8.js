@@ -144,6 +144,24 @@ export const EN9 = {
   // --- 2FA: instruções de ativação -------------------------------------------
   // --- Verificação em dois passos (email + app) -------------------------------
   // --- Contas com poder sem 2FA ----------------------------------------------
+  // --- Planos: Entrada · Core · Pro -------------------------------------------
+  'Entrada': 'Entry',
+  'Core': 'Core',
+  'para começar a vender': 'to start selling',
+  'para quem já vende com regularidade': 'for those already selling regularly',
+  'Micro e pequenas empresas a entrar na cadeia de fornecimento':
+    'Micro and small companies entering the supply chain',
+  'Pequenas e médias empresas com catálogo ativo': 'Small and medium companies with an active catalogue',
+  'Catálogo sem limite de itens': 'Unlimited catalogue items',
+  'Kits e pacotes de produtos': 'Kits and product bundles',
+  'Carregamento de catálogo em massa por Excel': 'Bulk catalogue upload by Excel',
+  'Utilizadores sem limite': 'Unlimited users',
+  'Histórico de relatórios de 3 meses': '3 months of report history',
+  'Histórico de relatórios de 12 meses': '12 months of report history',
+  'Pedidos de cotação e histórico de relatórios sem limite':
+    'Unlimited quote requests and report history',
+  'Tudo o que o plano Entrada inclui': 'Everything in the Entry plan',
+  'Tudo o que o plano Core inclui': 'Everything in the Core plan',
   'Verificar a última cópia': 'Check the latest backup',
   'A ler a cópia…': 'Reading the backup…',
   'Lida e completa': 'Read back and complete',
@@ -339,6 +357,24 @@ export const FR9 = {
   // --- 2FA : instructions d’activation ----------------------------------------
   // --- Vérification en deux étapes (e-mail + application) ---------------------
   // --- Comptes à pouvoir sans 2FA ---------------------------------------------
+  // --- Forfaits : Entrada · Core · Pro ----------------------------------------
+  'Entrada': 'Entrée',
+  'Core': 'Core',
+  'para começar a vender': 'pour commencer à vendre',
+  'para quem já vende com regularidade': 'pour ceux qui vendent déjà régulièrement',
+  'Micro e pequenas empresas a entrar na cadeia de fornecimento':
+    'Micro et petites entreprises entrant dans la chaîne d’approvisionnement',
+  'Pequenas e médias empresas com catálogo ativo': 'Petites et moyennes entreprises avec un catalogue actif',
+  'Catálogo sem limite de itens': 'Catalogue sans limite d’articles',
+  'Kits e pacotes de produtos': 'Kits et lots de produits',
+  'Carregamento de catálogo em massa por Excel': 'Import de catalogue en masse par Excel',
+  'Utilizadores sem limite': 'Utilisateurs illimités',
+  'Histórico de relatórios de 3 meses': '3 mois d’historique de rapports',
+  'Histórico de relatórios de 12 meses': '12 mois d’historique de rapports',
+  'Pedidos de cotação e histórico de relatórios sem limite':
+    'Demandes de devis et historique de rapports illimités',
+  'Tudo o que o plano Entrada inclui': 'Tout ce que comprend le forfait Entrée',
+  'Tudo o que o plano Core inclui': 'Tout ce que comprend le forfait Core',
   'Verificar a última cópia': 'Vérifier la dernière sauvegarde',
   'A ler a cópia…': 'Lecture de la sauvegarde…',
   'Lida e completa': 'Relue et complète',

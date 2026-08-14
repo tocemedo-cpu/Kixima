@@ -38,8 +38,13 @@ enum CompanySize {
 // PRO: obrigatório para grandes empresas — inclui integração com ERPs externos
 // (SAP, AS400, Ariba, Maximo, Oracle e outros).
 enum CompanyPlan {
-  BASICO
+  ENTRADA
+  CORE
   PRO
+  // Plano do modelo de dois degraus. As empresas foram migradas para CORE; o
+  // valor fica no enum porque removê-lo obrigaria a recriar o tipo, e o código
+  // trata-o como sinónimo de CORE.
+  BASICO
 }
 
 enum CompanyStatus {
@@ -96,7 +101,7 @@ model Company {
   employees        Int?        @map("employees") // nº de trabalhadores
   annualRevenueUsd Decimal?    @map("annual_revenue_usd") @db.Decimal(16, 2)
   size             CompanySize @default(PEQUENA)
-  plan             CompanyPlan @default(BASICO)
+  plan             CompanyPlan @default(ENTRADA)
   // Preço por utilizador/mês (USD). Teto do plano BASICO: 100 USD.
   seatPriceUsd     Decimal     @default(100) @map("seat_price_usd") @db.Decimal(10, 2)
   planNotes        String?     @map("plan_notes")

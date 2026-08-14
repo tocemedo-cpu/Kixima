@@ -78,17 +78,53 @@ describe('Dimensão da empresa e planos', () => {
     expect(plans.classify({ employees: 20, annualRevenueUsd: 50_000_000 })).toBe('GRANDE');
   });
 
-  test('grandes empresas exigem o plano PRO; as restantes podem ficar no BÁSICO', () => {
+  test('grandes empresas exigem o plano PRO; as restantes entram no ENTRADA', () => {
     expect(plans.requiredPlan('GRANDE')).toBe('PRO');
-    expect(plans.requiredPlan('PEQUENA')).toBe('BASICO');
-    expect(plans.planAllowed('GRANDE', 'BASICO')).toBe(false);
+    expect(plans.requiredPlan('PEQUENA')).toBe('ENTRADA');
+    expect(plans.planAllowed('GRANDE', 'ENTRADA')).toBe(false);
+    expect(plans.planAllowed('GRANDE', 'CORE')).toBe(false);
     expect(plans.planAllowed('GRANDE', 'PRO')).toBe(true);
+    // Subir de plano é sempre permitido, seja qual for a dimensão.
     expect(plans.planAllowed('PEQUENA', 'PRO')).toBe(true);
+    expect(plans.planAllowed('PEQUENA', 'CORE')).toBe(true);
   });
 
   test('a integração com ERP é exclusiva do PRO', () => {
-    expect(plans.hasFeature('BASICO', 'erpIntegration')).toBe(false);
+    expect(plans.hasFeature('ENTRADA', 'erpIntegration')).toBe(false);
+    expect(plans.hasFeature('CORE', 'erpIntegration')).toBe(false);
     expect(plans.hasFeature('PRO', 'erpIntegration')).toBe(true);
+  });
+
+  // O plano de dois degraus. As empresas foram migradas para CORE; um plano
+  // esquecido não pode tirar funcionalidades a quem as tinha.
+  test('BASICO continua a valer como CORE', () => {
+    expect(plans.normalizarPlano('BASICO')).toBe('CORE');
+    expect(plans.features('BASICO')).toEqual(plans.features('CORE'));
+  });
+
+  // A regra que decide o desenho todo dos planos.
+  test('o catálogo NUNCA tem limite de itens, em plano nenhum', () => {
+    for (const plano of plans.ESCADA) {
+      expect(plans.limite(plano, 'itensNoCatalogo')).toBe(plans.ILIMITADO);
+    }
+  });
+
+  test('o que se limita é a intensidade de uso, não o volume do catálogo', () => {
+    expect(plans.limite('ENTRADA', 'cotacoesPorMes')).toBe(3);
+    expect(plans.limite('CORE', 'cotacoesPorMes')).toBe(20);
+    expect(plans.limite('PRO', 'cotacoesPorMes')).toBe(plans.ILIMITADO);
+
+    expect(plans.limite('ENTRADA', 'lugaresIncluidos')).toBe(2);
+    expect(plans.limite('CORE', 'lugaresIncluidos')).toBe(5);
+    expect(plans.limite('PRO', 'lugaresIncluidos')).toBe(plans.ILIMITADO);
+  });
+
+  test('a mensagem do limite diz o número atual e o do plano', () => {
+    expect(() => plans.assertLimite({ plan: 'ENTRADA' }, 'lugaresIncluidos', 2, 'lugares'))
+      .toThrow(/inclui 2 lugares.*Já tem 2/s);
+    // Abaixo do limite passa; ilimitado nunca lança.
+    expect(() => plans.assertLimite({ plan: 'ENTRADA' }, 'lugaresIncluidos', 1, 'lugares')).not.toThrow();
+    expect(() => plans.assertLimite({ plan: 'PRO' }, 'lugaresIncluidos', 9999, 'lugares')).not.toThrow();
   });
 
   test('custo mensal de acesso = utilizadores ativos × preço por utilizador (teto 100 USD)', () => {
@@ -268,5 +304,83 @@ describe('Supplier Development', () => {
     expect(orcamento.status).toBe(200);
     expect(Number(orcamento.body.programFeeUsd)).toBe(4500);
     expect(orcamento.body.customPricing).toBe(false);
+  });
+});
+
+// Os limites do plano, aplicados onde a pessoa os encontra.
+//
+// O que se protege aqui não é cada limite em si: é a REGRA que decide quais
+// existem. Limita-se a intensidade de uso — lugares, cotações, média por item,
+// funcionalidades de escala. Nunca o número de itens no catálogo, porque a
+// densidade do catálogo é o que faz o marketplace valer, e cortá-la cortaria a
+// Taxa KIXIMA, que é a receita maior.
+describe('Limites do plano, na prática', () => {
+  const request = require('supertest');
+  const app = require('../src/app');
+  const prisma = require('../src/config/database');
+  const { loginAll, auth } = require('./helpers');
+
+  let tokens;
+  let fornecedora;
+  let planoOriginal;
+
+  beforeAll(async () => {
+    tokens = await loginAll();
+    fornecedora = await prisma.company.findFirst({ where: { type: 'FORNECEDOR' } });
+    planoOriginal = fornecedora.plan;
+  });
+  afterEach(async () => {
+    await prisma.company.update({ where: { id: fornecedora.id }, data: { plan: planoOriginal } });
+  });
+
+  const porPlano = (plan) => prisma.company.update({ where: { id: fornecedora.id }, data: { plan } });
+
+  test('os kits são do CORE para cima, e a mensagem diz qual', async () => {
+    await porPlano('ENTRADA');
+    // Payload VÁLIDO de propósito: a validação corre antes da guarda do plano,
+    // e um payload inválido daria 422 sem nunca chegar à regra em teste.
+    const produto = await prisma.product.findFirst({ where: { supplierId: fornecedora.id } });
+    const res = await auth(tokens.fornecedor).post('/api/kits')
+      .send({ name: `Kit de teste ${Date.now()}`, items: [{ productId: produto.id, quantity: 1 }] });
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toMatch(/Kits/);
+    expect(res.body.error.message).toMatch(/plano CORE/);
+  });
+
+  test('o carregamento em massa é do PRO, e não se confunde com publicar item a item', async () => {
+    await porPlano('CORE');
+    const res = await auth(tokens.fornecedor).post('/api/catalog/import')
+      .attach('file', Buffer.from('nao-importa'), 'catalogo.xlsx');
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toMatch(/Carregamento em massa/);
+    expect(res.body.error.message).toMatch(/plano PRO/);
+  });
+
+  // A regra que sustenta o desenho todo.
+  test('publicar itens NUNCA é limitado — nem no plano mais baixo', async () => {
+    await porPlano('ENTRADA');
+    const antes = await prisma.product.count({ where: { supplierId: fornecedora.id } });
+
+    const res = await auth(tokens.fornecedor).post('/api/catalog').send({
+      name: `Item sem limite ${Date.now()}`,
+      description: 'Publicado no plano de entrada.',
+      category: 'EQUIPAMENTO',
+      unitPrice: 1000,
+      currency: 'AOA',
+      unit: 'UN',
+      stock: 5,
+    });
+    expect(res.status).toBe(201);
+    expect(await prisma.product.count({ where: { supplierId: fornecedora.id } })).toBe(antes + 1);
+  });
+
+  test('a galeria é que é limitada, e diz quantas o plano inclui', async () => {
+    await porPlano('ENTRADA');   // 3 imagens
+    const plans = require('../src/services/planService');
+    const empresa = { plan: 'ENTRADA' };
+    // 3 cabe; 4 não.
+    expect(() => plans.assertLimite(empresa, 'imagensPorItem', 2, 'imagens por item')).not.toThrow();
+    expect(() => plans.assertLimite(empresa, 'imagensPorItem', 3, 'imagens por item'))
+      .toThrow(/inclui 3 imagens por item/);
   });
 });

@@ -3,6 +3,7 @@
 // fornecedor).
 
 const prisma = require('../config/database');
+const planService = require('./planService');
 const { NotFoundError, BusinessRuleError, ForbiddenError } = require('../utils/errors');
 
 async function listKits(supplierCompanyId) {
@@ -14,6 +15,11 @@ async function listKits(supplierCompanyId) {
 }
 
 async function createKit(supplierCompanyId, { name, description, items }) {
+  // Os kits agrupam produtos numa oferta — é uma funcionalidade de venda, não de
+  // catálogo: agrupar não aumenta a densidade, aumenta o valor por transação.
+  const empresa = await prisma.company.findUnique({ where: { id: supplierCompanyId } });
+  planService.assertFeature(empresa, 'kits', 'Kits e pacotes');
+
   if (!items || items.length === 0) {
     throw new BusinessRuleError('Um kit precisa de pelo menos um produto.');
   }

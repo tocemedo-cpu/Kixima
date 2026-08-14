@@ -1,25 +1,50 @@
 // src/pages/shared/Plans.jsx
 // Planos e preços — página PÚBLICA (login e home). Explica o modelo comercial:
 // taxa por transação (por PO e por fatura, com limiar) e taxa de acesso por
-// utilizador; e a diferença entre o plano BÁSICO e o PRO (integração com ERPs).
+// utilizador; e o que distingue os três planos (Entrada, Core e Pro).
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../components/Logo';
 import { Icon } from '../../components/icons';
 import { useI18n, LANGS } from '../../i18n';
 
+// Os três planos. Tem de espelhar backend/src/services/planService.js — se
+// divergirem, a página promete uma coisa e a plataforma faz outra, e quem
+// descobre é o cliente que pagou.
+//
+// O QUE NÃO ESTÁ NESTA TABELA, de propósito: um limite de itens no catálogo.
+// Não existe em plano nenhum. A densidade do catálogo é o que faz o marketplace
+// valer para o comprador, e limitá-la cortaria a Taxa KIXIMA — que é a receita
+// maior — para proteger a taxa de acesso, que é a menor.
 const PLANS = [
   {
-    key: 'BASICO',
-    name: 'Básico',
-    price: 'até 100 USD',
-    unit: '/ utilizador / mês',
-    forWho: 'Micro, pequenas e médias empresas',
+    key: 'ENTRADA',
+    name: 'Entrada',
+    price: 'Sob consulta',
+    unit: 'para começar a vender',
+    forWho: 'Micro e pequenas empresas a entrar na cadeia de fornecimento',
     features: [
+      'Catálogo sem limite de itens',
       'Marketplace completo: catálogo, cesta, ordens de compra e faturas',
       'Pagamento garantido com comprovativo e confirmação de receção',
-      'Comparação de fornecedores para o mesmo produto',
-      'Importação de catálogo por Excel',
-      'Trilho de auditoria e documentos imprimíveis (PO, fatura, extrato)',
+      '2 utilizadores incluídos',
+      '3 pedidos de cotação por mês',
+      '3 imagens e 1 documento técnico por item',
+      'Histórico de relatórios de 3 meses',
+    ],
+  },
+  {
+    key: 'CORE',
+    name: 'Core',
+    price: 'Sob consulta',
+    unit: 'para quem já vende com regularidade',
+    forWho: 'Pequenas e médias empresas com catálogo ativo',
+    features: [
+      'Tudo o que o plano Entrada inclui',
+      '5 utilizadores incluídos',
+      'Kits e pacotes de produtos',
+      '20 pedidos de cotação por mês',
+      '10 imagens e 3 documentos técnicos por item',
+      'Histórico de relatórios de 12 meses',
     ],
   },
   {
@@ -30,9 +55,13 @@ const PLANS = [
     forWho: 'Grandes empresas (mais de 200 trabalhadores ou 10 M USD)',
     highlight: true,
     features: [
-      'Tudo o que o plano Básico inclui',
+      'Tudo o que o plano Core inclui',
+      'Utilizadores sem limite',
+      'Carregamento de catálogo em massa por Excel',
       'Integração com ERPs: SAP, AS400, SAP Ariba, IBM Maximo, Oracle e outros',
       'Contratos-quadro com call-offs automáticos e faturação consolidada',
+      'Pedidos de cotação e histórico de relatórios sem limite',
+      '6 documentos técnicos por item',
       'Acompanhamento dedicado da equipa KIXIMA',
     ],
   },

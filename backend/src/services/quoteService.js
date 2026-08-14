@@ -3,6 +3,7 @@
 // responde com preço/prazo; o comprador pode encerrar.
 
 const prisma = require('../config/database');
+const planService = require('./planService');
 const { NotFoundError, BusinessRuleError, ForbiddenError } = require('../utils/errors');
 
 const INCLUDE = {
@@ -11,7 +12,25 @@ const INCLUDE = {
   supplierCompany: { select: { id: true, name: true } },
 };
 
+// Quantas cotações esta empresa já pediu no mês corrente (UTC).
+async function assertCotacoesDoMes(buyerCompanyId) {
+  const empresa = await prisma.company.findUnique({ where: { id: buyerCompanyId } });
+  if (planService.limite(empresa?.plan, 'cotacoesPorMes') === planService.ILIMITADO) return;
+
+  const agora = new Date();
+  const inicioDoMes = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1));
+  const usadas = await prisma.quoteRequest.count({
+    where: { buyerCompanyId, createdAt: { gte: inicioDoMes } },
+  });
+  planService.assertLimite(empresa, 'cotacoesPorMes', usadas, 'pedidos de cotação por mês');
+}
+
 async function createRequest(buyerCompanyId, createdById, { supplierCompanyId, items, note }) {
+  // Cotações por mês: limita a INTENSIDADE de uso, não o catálogo. Cada pedido
+  // custa trabalho ao fornecedor do outro lado, por isso é uma medida honesta de
+  // quanto a empresa está a usar a plataforma.
+  await assertCotacoesDoMes(buyerCompanyId);
+
   if (supplierCompanyId === buyerCompanyId) {
     throw new BusinessRuleError('Não pode pedir cotação à sua própria empresa.');
   }

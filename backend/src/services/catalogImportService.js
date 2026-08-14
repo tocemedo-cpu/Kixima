@@ -6,6 +6,7 @@
 const XLSX = require('xlsx');
 const AdmZip = require('adm-zip');
 const prisma = require('../config/database');
+const planService = require('./planService');
 const storageService = require('./storageService');
 const { BusinessRuleError } = require('../utils/errors');
 
@@ -111,6 +112,13 @@ function pickSheet(wb, names) {
  * @returns {{ total, created, updated, withImages, errors: Array<{row,error}> }}
  */
 async function importCatalog(buffer, supplierId) {
+  // Carregar centenas de linhas de uma vez é uma funcionalidade de ESCALA: quem
+  // a usa tem catálogo grande e equipa para o manter. Publicar item a item
+  // continua sem limite nenhum, em qualquer plano — a densidade do catálogo
+  // nunca é o que se restringe.
+  const empresa = await prisma.company.findUnique({ where: { id: supplierId } });
+  planService.assertFeature(empresa, 'carregamentoEmMassa', 'Carregamento em massa');
+
   let wb;
   try { wb = XLSX.read(buffer, { type: 'buffer' }); }
   catch { throw new BusinessRuleError('Não foi possível ler o ficheiro Excel. Verifique se é um .xlsx válido.'); }

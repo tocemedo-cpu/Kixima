@@ -18,6 +18,8 @@ async function main() {
       name: 'Petro Angola Operações, Lda',
       taxId: 'AO-CLI-0001',
       type: 'CLIENTE',
+      // 5 utilizadores no seed — o plano tem de incluir 5 lugares.
+      plan: 'CORE',
       contactEmail: 'contacto@petroangola.co.ao',
       status: 'APROVADA',
       approvedAt: new Date(),
@@ -29,6 +31,7 @@ async function main() {
       name: 'Fornecedora Industrial Kianda, Lda',
       taxId: 'AO-FOR-0001',
       type: 'FORNECEDOR',
+      plan: 'CORE',
       contactEmail: 'vendas@kianda.co.ao',
       status: 'APROVADA',
       approvedAt: new Date(),

@@ -1,6 +1,7 @@
 // src/services/catalogService.js
 
 const prisma = require('../config/database');
+const planService = require('./planService');
 const { NotFoundError, ForbiddenError } = require('../utils/errors');
 const storageService = require('./storageService');
 
@@ -60,6 +61,25 @@ async function getProductBySlug(slug) {
 
 // Guarda ficheiros no storage e devolve os registos a criar. Feito fora da
 // transação (como no cadastro de empresas) — bytes primeiro, linhas depois.
+/**
+ * A galeria e os documentos deste item cabem no plano?
+ *
+ * Conta a imagem principal, porque para quem publica ela é uma foto como as
+ * outras — dizer "3 imagens" e depois aceitar 4 seria mentir na tabela de preços.
+ */
+function assertMediaCabeNoPlano(empresa, { mainImage = null, gallery = [], documents = [] } = {}) {
+  const imagens = (mainImage ? 1 : 0) + (gallery?.length || 0);
+  const maxImagens = planService.limite(empresa?.plan, 'imagensPorItem');
+  if (maxImagens !== planService.ILIMITADO && imagens > maxImagens) {
+    planService.assertLimite(empresa, 'imagensPorItem', maxImagens, 'imagens por item');
+  }
+  const docs = documents?.length || 0;
+  const maxDocs = planService.limite(empresa?.plan, 'documentosPorItem');
+  if (maxDocs !== planService.ILIMITADO && docs > maxDocs) {
+    planService.assertLimite(empresa, 'documentosPorItem', maxDocs, 'documentos técnicos por item');
+  }
+}
+
 async function persistProductMedia({ mainImage = null, gallery = [], documents = [] }, keyHint) {
   const imageRecords = [];
   let primaryUrl = null;
@@ -99,6 +119,11 @@ async function createProduct(supplierCompanyId, data, media = {}) {
   if (!supplier || supplier.type !== 'FORNECEDOR') {
     throw new ForbiddenError('Apenas empresas fornecedoras podem publicar itens no catálogo.');
   }
+  // Quantos itens a empresa publica NÃO é limitado, em plano nenhum — é a
+  // densidade do catálogo que faz o marketplace valer. O que o plano limita é
+  // quanta MÍDIA cada item leva: mais fotos e mais fichas técnicas vendem
+  // melhor, e isso é o que se paga.
+  assertMediaCabeNoPlano(supplier, media);
   if (supplier.status !== 'APROVADA') {
     throw new ForbiddenError('A empresa precisa estar credenciada (due diligence aprovada) para publicar itens.');
   }

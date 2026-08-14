@@ -334,6 +334,23 @@ async function sendInviteEmail(invite, company, baseUrl = null) {
 
 // Cria um convite de funcionário: gera o link único, persiste o convite e
 // envia automaticamente o email ao funcionário — sem o admin copiar nada.
+/**
+ * Há lugar livre no plano para mais uma pessoa?
+ *
+ * O limite é do PLANO, não da empresa: quem precisa de mais gente sobe de plano.
+ * A conta inclui os convites por aceitar, senão bastava enviar todos os convites
+ * de uma vez para o limite não valer nada.
+ */
+async function assertLugaresDisponiveis(company) {
+  const [ativos, convitesAbertos] = await Promise.all([
+    prisma.user.count({ where: { companyId: company.id, active: true } }),
+    prisma.employeeInvite.count({
+      where: { companyId: company.id, status: 'PENDENTE', expiresAt: { gt: new Date() } },
+    }),
+  ]);
+  planService.assertLimite(company, 'lugaresIncluidos', ativos + convitesAbertos, 'lugares (utilizadores)');
+}
+
 async function createInvite(companyId, role, { name, email }, createdById = null, baseUrl = null) {
   const company = await prisma.company.findUnique({ where: { id: companyId } });
   if (!company) throw new NotFoundError('Empresa');
@@ -341,6 +358,12 @@ async function createInvite(companyId, role, { name, email }, createdById = null
   if (!allowed.includes(role)) {
     throw new BusinessRuleError('Este perfil não pode ser convidado para este tipo de empresa.');
   }
+  // Lugares incluídos no plano. Contam-se os utilizadores ativos MAIS os
+  // convites ainda por aceitar: sem isso, dez convites em fila passariam o
+  // limite todos de uma vez, e a empresa só descobriria o excesso quando as
+  // pessoas já tivessem criado conta.
+  await assertLugaresDisponiveis(company);
+
   const normEmail = String(email).trim().toLowerCase();
   if (await prisma.user.findUnique({ where: { email: normEmail } })) {
     throw new ConflictError('Já existe uma conta com este email.');

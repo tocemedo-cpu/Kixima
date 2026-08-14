@@ -68,7 +68,7 @@ const COMPANY = {
   employees: 45,
   annualRevenueUsd: 2_400_000,
   size: 'PEQUENA',
-  plan: 'BASICO',
+  plan: 'CORE',
   seatPriceUsd: 100,
 };
 

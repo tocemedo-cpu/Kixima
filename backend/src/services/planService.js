@@ -46,46 +46,142 @@ function classify({ employees, annualRevenueUsd } = {}) {
 
 // Plano mínimo exigido pela dimensão: grandes empresas têm de subscrever o PRO.
 function requiredPlan(size) {
-  return size === 'GRANDE' ? 'PRO' : 'BASICO';
+  return size === 'GRANDE' ? 'PRO' : 'ENTRADA';
 }
 
 // O plano escolhido é aceitável para a dimensão? (subir para PRO é sempre OK)
+// O plano escolhido é aceitável para a dimensão? Subir é sempre permitido.
+const ESCADA = ['ENTRADA', 'CORE', 'PRO'];
 function planAllowed(size, plan) {
-  return requiredPlan(size) === 'BASICO' || plan === 'PRO';
+  const minimo = ESCADA.indexOf(requiredPlan(size));
+  return ESCADA.indexOf(normalizarPlano(plan)) >= minimo;
 }
 
-// Funcionalidades por plano — fonte única de verdade para o gating.
+// --- Planos -----------------------------------------------------------------
+//
+// ENTRADA · CORE · PRO. Fonte única de verdade: qualquer limite ou
+// funcionalidade que dependa do plano lê-se daqui, e de mais lado nenhum.
+//
+// O PRINCÍPIO que decide o que se limita e o que não se limita:
+//
+//   NUNCA se limita o VOLUME do catálogo. Limita-se a INTENSIDADE de uso.
+//
+// Num marketplace, a densidade do catálogo é o que cria valor para o comprador,
+// que cria transações, que geram a Taxa KIXIMA — que é a receita maior. Limitar
+// itens cortaria a própria receita transacional para proteger uma receita de
+// subscrição muito menor. Pior: um fornecedor limitado a 10 itens não publica 10
+// SKUs bem classificados, publica uma linha "Válvulas diversas — consultar", e a
+// taxonomia UNSPSC, as facetas e a pesquisa — que SÃO o produto — degradam-se.
+//
+// Por isso não há limite de itens em plano nenhum, e não deve passar a haver.
+// O que se limita são cotações por mês, janela de histórico, lugares e
+// funcionalidades de escala (importação em massa, ERP, contratos-quadro).
+const ILIMITADO = null;   // null = sem limite, para distinguir de 0
+
 const FEATURES = {
-  BASICO: {
-    erpIntegration: false,
+  ENTRADA: {
+    itensNoCatalogo: ILIMITADO,
+    lugaresIncluidos: 2,
+    kits: false,
+    carregamentoEmMassa: false,
+    documentosPorItem: 1,
+    imagensPorItem: 3,
+    cotacoesPorMes: 3,
+    historicoRelatoriosMeses: 3,
     frameworkContracts: false,
+    erpIntegration: false,
     supplierComparison: true,
-    catalogImport: true,
+    auditTrail: true,
+  },
+  CORE: {
+    itensNoCatalogo: ILIMITADO,
+    lugaresIncluidos: 5,
+    kits: true,
+    carregamentoEmMassa: false,
+    documentosPorItem: 3,
+    imagensPorItem: 10,
+    cotacoesPorMes: 20,
+    historicoRelatoriosMeses: 12,
+    frameworkContracts: false,
+    erpIntegration: false,
+    supplierComparison: true,
     auditTrail: true,
   },
   PRO: {
-    erpIntegration: true,
+    itensNoCatalogo: ILIMITADO,
+    lugaresIncluidos: ILIMITADO,
+    kits: true,
+    carregamentoEmMassa: true,
+    documentosPorItem: 6,
+    imagensPorItem: 10,
+    cotacoesPorMes: ILIMITADO,
+    historicoRelatoriosMeses: ILIMITADO,
     frameworkContracts: true,
+    erpIntegration: true,
     supplierComparison: true,
-    catalogImport: true,
     auditTrail: true,
   },
 };
 
+// BASICO foi o plano intermédio antes de haver três. A migração passou essas
+// empresas para CORE; este alias existe para o caso de alguma linha ficar para
+// trás — um plano desconhecido não pode tirar funcionalidades a quem as tinha.
+const ALIASES = { BASICO: 'CORE' };
+
+function normalizarPlano(plan) {
+  const p = String(plan || '').toUpperCase();
+  return ALIASES[p] || (FEATURES[p] ? p : 'ENTRADA');
+}
+
 function features(plan) {
-  return FEATURES[plan] || FEATURES.BASICO;
+  return FEATURES[normalizarPlano(plan)];
+}
+
+/**
+ * Limite numérico de uma funcionalidade, ou null se for ilimitado.
+ * Separado de hasFeature porque 0 e null querem dizer coisas opostas: 0 é
+ * "nenhum", null é "sem limite" — confundi-los abriria ou fecharia tudo.
+ */
+function limite(plan, nome) {
+  const v = features(plan)[nome];
+  return v === undefined ? 0 : v;
+}
+
+/**
+ * Guarda de LIMITE: lança se o próximo já ultrapassa o que o plano inclui.
+ * A mensagem diz sempre o número atual e o do plano — "atingiu o limite" sem
+ * dizer qual manda a pessoa adivinhar.
+ */
+function assertLimite(company, nome, usadoAgora, label) {
+  const max = limite(company?.plan, nome);
+  if (max === ILIMITADO) return;
+  if (Number(usadoAgora) < max) return;
+  const plano = normalizarPlano(company?.plan);
+  const seguinte = plano === 'ENTRADA' ? 'Core' : 'Pro';
+  throw new BusinessRuleError(
+    `O plano ${plano} inclui ${max} ${label}. Já tem ${usadoAgora}. `
+    + `O plano ${seguinte} aumenta este limite.`,
+  );
 }
 
 function hasFeature(plan, feature) {
   return Boolean(features(plan)[feature]);
 }
 
-// Guarda de funcionalidade: lança 403 com mensagem explicativa se o plano da
-// empresa não a inclui. Usado nas rotas exclusivas do PRO.
+// O plano mais baixo da escada que inclui esta funcionalidade. Calculado a
+// partir da matriz, e não escrito à mão: quando uma funcionalidade mudar de
+// degrau, a mensagem muda com ela em vez de passar a mentir.
+function planoQueInclui(feature) {
+  return ESCADA.find((p) => Boolean(FEATURES[p][feature])) || null;
+}
+
+// Guarda de funcionalidade: lança com mensagem explicativa se o plano da
+// empresa não a inclui, dizendo qual é o plano que a tem.
 function assertFeature(company, feature, label) {
   if (!hasFeature(company?.plan, feature)) {
     throw new BusinessRuleError(
-      `Esta funcionalidade (${label}) faz parte do plano PRO. A sua empresa está no plano ${company?.plan || 'BASICO'}.`
+      `Esta funcionalidade (${label}) não está incluída no plano ${normalizarPlano(company?.plan)}. `
+      + `Faz parte do plano ${planoQueInclui(feature) || 'PRO'}.`
     );
   }
 }
@@ -115,6 +211,7 @@ function supplierDevAccessFee() {
 
 module.exports = {
   supplierDevAccessFee,
-  SEAT_PRICE_CAP_USD, SIZE_RULES, FEATURES,
-  classify, requiredPlan, planAllowed, features, hasFeature, assertFeature, monthlyAccessCost,
+  SEAT_PRICE_CAP_USD, SIZE_RULES, FEATURES, ESCADA, ILIMITADO,
+  classify, requiredPlan, planAllowed, features, hasFeature, assertFeature,
+  limite, assertLimite, normalizarPlano, planoQueInclui, monthlyAccessCost,
 };
