@@ -27,6 +27,7 @@ const policyRoutes = require('./routes/policyRoutes');
 const contractRoutes = require('./routes/contractRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
+const apiCatalogoRoutes = require('./routes/apiCatalogoRoutes');
 const kitRoutes = require('./routes/kitRoutes');
 const quoteRoutes = require('./routes/quoteRoutes');
 const marketplaceRoutes = require('./routes/marketplaceRoutes');
@@ -124,6 +125,13 @@ app.use('/api/supplier-development', supplierDevRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportsRoutes);
+
+// API pública de catálogo (plano Pro), autenticada por CHAVE e não por sessão.
+// Fica FORA do apiLimiter e do bloco autenticado por JWT de propósito: tem o seu
+// próprio limite por chave e as suas próprias regras. Versionada em /v1 desde o
+// primeiro dia — quem integra um sistema com isto não pode acordar com os
+// campos mudados.
+app.use('/api/v1/catalogo', apiCatalogoRoutes);
 app.use('/api/kits', kitRoutes);
 app.use('/api/quotes', quoteRoutes);
 app.use('/api/marketplace', marketplaceRoutes);

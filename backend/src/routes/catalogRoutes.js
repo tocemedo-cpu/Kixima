@@ -1,4 +1,7 @@
 const express = require('express');
+const prisma = require('../config/database');
+const auditService = require('../services/auditService');
+const apiKeyService = require('../services/apiKeyService');
 const catalogController = require('../controllers/catalogController');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
@@ -31,6 +34,42 @@ router.get('/documents', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogCont
 // Movimentos de inventário (Entradas/Saídas) — antes de /:id.
 router.get('/movements', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogController.listMovements);
 router.post('/movements', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), validate(stockMovementSchema), catalogController.createMovement);
+// --- Chaves da API de catálogo (plano Pro) ---
+// ANTES das rotas com parâmetro. O Express faz corresponder por ordem, e
+// `/:id` apanharia `/api-keys` — a listagem devolvia "produto não encontrado" e
+// a interface mostrava uma lista vazia sem erro nenhum.-------------------------------
+// Ficam aqui, ao lado do catálogo, porque é isso que a chave alcança — e é a
+// leitura certa para quem a cria: não é "uma chave da KIXIMA", é uma chave do
+// meu catálogo.
+router.get('/api-keys', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), async (req, res) => {
+  res.json(await apiKeyService.listar(req.user.companyId));
+});
+
+router.post('/api-keys', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), async (req, res) => {
+  const empresa = await prisma.company.findUnique({ where: { id: req.user.companyId } });
+  const criada = await apiKeyService.criar(empresa, { nome: req.body?.nome }, req.user.id);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'CHAVE_API_CRIADA',
+    entityType: 'ApiKey',
+    entityId: criada.id,
+    entityRef: criada.prefixo,
+    detail: { nome: criada.nome },
+  });
+  res.status(201).json(criada);
+});
+
+router.delete('/api-keys/:id', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), async (req, res) => {
+  const r = await apiKeyService.revogar(req.user.companyId, req.params.id);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'CHAVE_API_REVOGADA',
+    entityType: 'ApiKey',
+    entityId: req.params.id,
+  });
+  res.json(r);
+});
+
 router.get('/slug/:slug', catalogController.getBySlug);
 router.get('/:id', catalogController.getOne);
 router.get('/:id/reviews', catalogController.listReviews);

@@ -147,6 +147,38 @@ export const EN9 = {
   // --- Planos: Entrada · Core · Pro -------------------------------------------
   'Entrada': 'Entry',
   // --- Relatório de conteúdo local --------------------------------------------
+  // --- API de catálogo ---------------------------------------------------------
+  'API de catálogo': 'Catalogue API',
+  'API de catálogo: sincronize preços e stock a partir do seu sistema':
+    'Catalogue API: sync prices and stock from your own system',
+  'Mantenha preços e stock sincronizados a partir do seu próprio sistema. Preço desatualizado num marketplace é o comprador a encomendar por um valor que já não existe.':
+    'Keep prices and stock in sync from your own system. A stale price in a marketplace is a buyer ordering at a value that no longer exists.',
+  'Nome da chave': 'Key name',
+  'ex.: ERP da produção': 'e.g. Production ERP',
+  'Criar chave': 'Create key',
+  'A criar…': 'Creating…',
+  'Dê um nome que diga onde a chave é usada — é por ele que vai saber qual revogar.':
+    'Give it a name that says where the key is used — that is how you will know which one to revoke.',
+  'Chave criada — copie-a agora': 'Key created — copy it now',
+  'Copiar': 'Copy',
+  'Chave copiada.': 'Key copied.',
+  'Chave revogada.': 'Key revoked.',
+  'Chave': 'Key',
+  'Criada': 'Created',
+  'Último uso': 'Last used',
+  'nunca usada': 'never used',
+  'Revogada': 'Revoked',
+  'Revogar': 'Revoke',
+  'Ainda não criou nenhuma chave.': 'You have not created any keys yet.',
+  'Como usar': 'How to use it',
+  'A chave só alcança o catálogo da sua empresa. Não dá acesso a ordens, pagamentos, faturas nem utilizadores.':
+    'The key only reaches your company’s catalogue. It gives no access to orders, payments, invoices or users.',
+  'Limite de 120 pedidos por minuto por chave. Cada alteração fica no trilho de auditoria com a chave identificada.':
+    'Limit of 120 requests per minute per key. Every change is recorded in the audit trail with the key identified.',
+  'Atingiu o máximo de 5 chaves ativas. Revogue uma antes de criar outra.':
+    'You have reached the maximum of 5 active keys. Revoke one before creating another.',
+  'Revogar a chave "{nome}"? Qualquer sistema que a use deixa de aceder ao catálogo de imediato.':
+    'Revoke the key "{nome}"? Any system using it loses access to the catalogue immediately.',
   'Conteúdo local': 'Local content',
   'Relatório de conteúdo local': 'Local content report',
   'Quanto do que a sua empresa comprou foi para empresas angolanas, quanto corresponde a bens de origem angolana, e quanto foi para micro, pequenas e médias empresas nacionais.':
@@ -389,6 +421,38 @@ export const FR9 = {
   // --- Forfaits : Entrada · Core · Pro ----------------------------------------
   'Entrada': 'Entrée',
   // --- Rapport de contenu local ------------------------------------------------
+  // --- API de catalogue ---------------------------------------------------------
+  'API de catálogo': 'API de catalogue',
+  'API de catálogo: sincronize preços e stock a partir do seu sistema':
+    'API de catalogue : synchronisez prix et stock depuis votre système',
+  'Mantenha preços e stock sincronizados a partir do seu próprio sistema. Preço desatualizado num marketplace é o comprador a encomendar por um valor que já não existe.':
+    'Gardez prix et stock synchronisés depuis votre propre système. Un prix obsolète sur une place de marché, c’est un acheteur qui commande à un montant qui n’existe plus.',
+  'Nome da chave': 'Nom de la clé',
+  'ex.: ERP da produção': 'ex. : ERP de production',
+  'Criar chave': 'Créer une clé',
+  'A criar…': 'Création…',
+  'Dê um nome que diga onde a chave é usada — é por ele que vai saber qual revogar.':
+    'Donnez-lui un nom qui indique où la clé est utilisée — c’est ainsi que vous saurez laquelle révoquer.',
+  'Chave criada — copie-a agora': 'Clé créée — copiez-la maintenant',
+  'Copiar': 'Copier',
+  'Chave copiada.': 'Clé copiée.',
+  'Chave revogada.': 'Clé révoquée.',
+  'Chave': 'Clé',
+  'Criada': 'Créée',
+  'Último uso': 'Dernière utilisation',
+  'nunca usada': 'jamais utilisée',
+  'Revogada': 'Révoquée',
+  'Revogar': 'Révoquer',
+  'Ainda não criou nenhuma chave.': 'Vous n’avez encore créé aucune clé.',
+  'Como usar': 'Comment l’utiliser',
+  'A chave só alcança o catálogo da sua empresa. Não dá acesso a ordens, pagamentos, faturas nem utilizadores.':
+    'La clé n’atteint que le catalogue de votre entreprise. Elle ne donne accès ni aux commandes, ni aux paiements, ni aux factures, ni aux utilisateurs.',
+  'Limite de 120 pedidos por minuto por chave. Cada alteração fica no trilho de auditoria com a chave identificada.':
+    'Limite de 120 requêtes par minute et par clé. Chaque modification est consignée dans la piste d’audit avec la clé identifiée.',
+  'Atingiu o máximo de 5 chaves ativas. Revogue uma antes de criar outra.':
+    'Vous avez atteint le maximum de 5 clés actives. Révoquez-en une avant d’en créer une autre.',
+  'Revogar a chave "{nome}"? Qualquer sistema que a use deixa de aceder ao catálogo de imediato.':
+    'Révoquer la clé « {nome} » ? Tout système qui l’utilise perd immédiatement l’accès au catalogue.',
   'Conteúdo local': 'Contenu local',
   'Relatório de conteúdo local': 'Rapport de contenu local',
   'Quanto do que a sua empresa comprou foi para empresas angolanas, quanto corresponde a bens de origem angolana, e quanto foi para micro, pequenas e médias empresas nacionais.':

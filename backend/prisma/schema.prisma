@@ -37,6 +37,31 @@ enum CompanySize {
 // Plano de subscrição. BASICO: versão essencial, taxa de acesso por utilizador.
 // PRO: obrigatório para grandes empresas — inclui integração com ERPs externos
 // (SAP, AS400, Ariba, Maximo, Oracle e outros).
+// Chave de API do catálogo (plano Pro).
+//
+// É uma credencial que contorna o login E a verificação em dois passos: um
+// sistema não consegue introduzir um código de 6 dígitos. Por isso o seu
+// ALCANCE é estritamente o catálogo da própria empresa — não toca em ordens,
+// pagamentos, utilizadores nem documentos —, guarda-se em hash, mostra-se uma
+// única vez e revoga-se sem apagar o histórico de uso.
+model ApiKey {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // Nome dado por quem a criou ("ERP da produção"), para saber o que revogar.
+  nome      String
+  // Prefixo visível (kxm_a1b2…) — permite identificar a chave sem a guardar.
+  prefixo   String   @unique
+  hash      String
+  criadaPor String?  @map("criada_por")
+  ultimoUso DateTime? @map("ultimo_uso")
+  revogadaEm DateTime? @map("revogada_em")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@map("api_keys")
+}
+
 enum CompanyPlan {
   ENTRADA
   CORE
@@ -107,6 +132,7 @@ model Company {
   // do tipo no Postgres, que não é a ordem comercial e mudaria sozinha se
   // alguém acrescentasse um valor ao enum.
   searchRank       Int         @default(0) @map("search_rank")
+  apiKeys          ApiKey[]
   // Preço por utilizador/mês (USD). Teto do plano BASICO: 100 USD.
   seatPriceUsd     Decimal     @default(100) @map("seat_price_usd") @db.Decimal(10, 2)
   planNotes        String?     @map("plan_notes")

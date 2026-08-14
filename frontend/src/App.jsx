@@ -73,6 +73,7 @@ const StockMovements = lazy(() => import('./pages/fornecedor/StockMovements'));
 const Kits = lazy(() => import('./pages/fornecedor/Kits'));
 const SupplierQuotes = lazy(() => import('./pages/fornecedor/SupplierQuotes'));
 const CatalogImport = lazy(() => import('./pages/fornecedor/CatalogImport'));
+const ApiCatalogo = lazy(() => import('./pages/fornecedor/ApiCatalogo'));
 
 const FinanceiroHome = lazy(() => import('./pages/financeiro/Home'));
 const PendingInvoices = lazy(() => import('./pages/financeiro/PendingInvoices'));
@@ -201,6 +202,7 @@ export default function App() {
             <Route path="/fornecedor/catalogo/promocoes" element={<CatalogInsights />} />
             <Route path="/fornecedor/catalogo/kits" element={<Kits />} />
             <Route path="/fornecedor/catalogo/importar" element={<CatalogImport />} />
+            <Route path="/fornecedor/api" element={<ApiCatalogo />} />
             <Route path="/fornecedor/inventario/armazens" element={<CatalogInsights />} />
             <Route path="/fornecedor/inventario/entradas" element={<StockMovements />} />
             <Route path="/fornecedor/inventario/saidas" element={<StockMovements />} />

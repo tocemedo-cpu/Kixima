@@ -61,6 +61,7 @@ const PLANS = [
       'Integração com ERPs: SAP, AS400, SAP Ariba, IBM Maximo, Oracle e outros',
       'Contratos-quadro com call-offs automáticos e faturação consolidada',
       'Relatório de conteúdo local: contratação nacional, origem dos bens e compras a MPME angolanas',
+      'API de catálogo: sincronize preços e stock a partir do seu sistema',
       'Pedidos de cotação e histórico de relatórios sem limite',
       '6 documentos técnicos por item',
       'Acompanhamento dedicado da equipa KIXIMA',
