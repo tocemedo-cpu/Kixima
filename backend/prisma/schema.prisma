@@ -863,6 +863,16 @@ model Invoice {
   issuedAt DateTime @default(now()) @map("issued_at")
   dueAt    DateTime @map("due_at")
 
+  // --- Faturação certificada (AGT) ------------------------------------------
+  // Nulos nas faturas anteriores à série certificada, e é assim que se
+  // distinguem. Ver a migração 20260901000000_faturacao_agt.
+  serie          String?   @map("serie")
+  numeroNaSerie  Int?      @map("numero_na_serie")
+  // Cada documento assina o anterior: adulterar um deles parte a cadeia a partir dele.
+  hashDocumento  String?   @map("hash_documento")
+  hashAnterior   String?   @map("hash_anterior")
+  assinadaEm     DateTime? @map("assinada_em")
+
   payment     Payment?
   platformFee PlatformFee?
 
@@ -870,7 +880,30 @@ model Invoice {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([contractId])
+  @@index([serie, numeroNaSerie])
   @@map("invoices")
+}
+
+// Série de faturação declarada à AGT.
+//
+// O contador vive aqui e é lido com bloqueio DENTRO da transação da fatura —
+// ver faturacaoService.emitir(). É por isso que não se usa o
+// `reference_counters`: esse incrementa fora da transação e deixa buracos
+// quando algo falha a seguir, e numa numeração certificada um buraco é uma
+// pergunta sem resposta boa numa inspeção.
+model SerieFaturacao {
+  id            String   @id @default(uuid())
+  codigo        String
+  ano           Int
+  ultimoNumero  Int      @default(0) @map("ultimo_numero")
+  // O elo a que a próxima fatura se agarra.
+  ultimoHash    String?  @map("ultimo_hash")
+  ativa         Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([codigo, ano])
+  @@map("series_faturacao")
 }
 
 enum PaymentStatus {

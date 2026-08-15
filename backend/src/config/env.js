@@ -160,6 +160,22 @@ const config = {
     // Amostragem de performance (0 = desligado). Erros são sempre capturados.
     tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0,
   },
+
+  // Faturação certificada (AGT). Tudo INATIVO por omissão.
+  //
+  // Sem `serie` definida, as faturas são emitidas como sempre foram — sem
+  // número de série e sem hash — e distinguem-se por `serie IS NULL`. É
+  // deliberado: ligar a numeração certificada antes de a série estar declarada
+  // à AGT produziria documentos numerados numa série que não existe, e a
+  // numeração não se corrige para trás.
+  faturacao: {
+    serie: process.env.KIXIMA_SERIE_FATURACAO || '',
+    nif: process.env.KIXIMA_NIF || '',
+    nome: process.env.KIXIMA_NOME_FISCAL || 'KIXIMA',
+    // Atribuído pela AGT ao programa, no fim do processo de certificação.
+    certificadoAgt: process.env.KIXIMA_CERTIFICADO_AGT || '',
+  },
+  versao: process.env.npm_package_version || '1.0',
 };
 
 // Variáveis obrigatórias quando o armazenamento é S3-compatível. Uma string

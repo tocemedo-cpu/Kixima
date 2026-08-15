@@ -20,6 +20,7 @@ const notificationService = require('./notificationService');
 const contractService = require('./contractService');
 const eventBus = require('./eventBus');
 const taxService = require('./taxService');
+const faturacaoService = require('./faturacaoService');
 
 // --- 1. Checkout: criação da PO ---------------------------------------------
 
@@ -251,8 +252,16 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
     const reference = await nextReference('FAT', 'invoice');
     // IVA (lei angolana): calculado por linha conforme o tipo do produto/serviço.
     const iva = taxService.summarize(po.items.map((li) => ({ net: Number(li.lineTotal), kind: li.product?.kind })));
+    // Série, número e hash atribuídos DENTRO desta transação. Se o que vem a
+    // seguir falhar, o número volta atrás com ela — é essa a diferença entre
+    // uma numeração certificada e um contador qualquer.
+    const certificacao = await faturacaoService.atribuir(tx, {
+      emitidaEm: new Date(), total: iva.gross,
+    });
+
     const createdInvoice = await tx.invoice.create({
       data: {
+        ...certificacao,
         reference,
         purchaseOrderId: id,
         amount: iva.gross,               // total a pagar pelo comprador (com IVA)

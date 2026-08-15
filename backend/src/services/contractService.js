@@ -6,6 +6,7 @@ const { NotFoundError, BusinessRuleError } = require('../utils/errors');
 const { nextReference } = require('../utils/reference');
 const taxService = require('./taxService');
 const planService = require('./planService');
+const faturacaoService = require('./faturacaoService');
 
 /**
  * O contrato-quadro está no plano Pro — mas de QUEM?
@@ -152,24 +153,39 @@ async function consolidateContractBilling(contractId) {
 
   const reference = await nextReference('FAT', 'invoice');
 
-  const invoice = await prisma.invoice.create({
-    data: {
-      reference,
-      contractId,
-      consolidatedPoIds: pendingCallOffs.map((po) => po.id),
-      amount: iva.gross,
-      netAmount: iva.net,
-      taxAmount: iva.tax,
-      withholdingAmount: iva.withheld,
-      currency: contract.currency,
-      dueAt,
-      status: 'PENDENTE',
-    },
-  });
+  // A fatura e a atualização das call-offs passam a viver na MESMA transação.
+  //
+  // Antes eram duas escritas soltas, e isso já era frágil: uma falha entre as
+  // duas deixava uma fatura emitida sem as ordens correspondentes marcadas. Com
+  // numeração certificada deixa de ser aceitável de todo — o número da série é
+  // atribuído aqui dentro, e só uma transação o devolve se algo correr mal.
+  const invoice = await prisma.$transaction(async (tx) => {
+    const certificacao = await faturacaoService.atribuir(tx, {
+      emitidaEm: new Date(), total: iva.gross,
+    });
 
-  await prisma.purchaseOrder.updateMany({
-    where: { id: { in: pendingCallOffs.map((po) => po.id) } },
-    data: { paymentDueAt: dueAt },
+    const criada = await tx.invoice.create({
+      data: {
+        ...certificacao,
+        reference,
+        contractId,
+        consolidatedPoIds: pendingCallOffs.map((po) => po.id),
+        amount: iva.gross,
+        netAmount: iva.net,
+        taxAmount: iva.tax,
+        withholdingAmount: iva.withheld,
+        currency: contract.currency,
+        dueAt,
+        status: 'PENDENTE',
+      },
+    });
+
+    await tx.purchaseOrder.updateMany({
+      where: { id: { in: pendingCallOffs.map((po) => po.id) } },
+      data: { paymentDueAt: dueAt },
+    });
+
+    return criada;
   });
 
   const notificationService = require('./notificationService');
