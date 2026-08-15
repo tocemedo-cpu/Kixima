@@ -25,9 +25,11 @@ export default function AdminHome() {
       <PageHeader title="Visão geral" subtitle="Cadastros pendentes, apólices a expirar e empresas ativas." />
 
       <div className="grid-cols grid-3" style={{ marginBottom: 24 }}>
-        <StatCard label="Cadastros pendentes" value={pendentes.length} sub="Aguardando due diligence" />
-        <StatCard label="Empresas ativas" value={aprovadas.length} sub="Credenciadas na plataforma" />
-        <StatCard label="Total de empresas" value={companies.length} />
+        {/* "12 cadastros pendentes" é um convite a agir; sem ligação, é só um
+            número que obriga a procurar o menu. */}
+        <StatCard label="Cadastros pendentes" value={pendentes.length} sub="Aguardando due diligence" to="/sistema/due-diligence" />
+        <StatCard label="Empresas ativas" value={aprovadas.length} sub="Credenciadas na plataforma" to="/sistema/empresas" />
+        <StatCard label="Total de empresas" value={companies.length} to="/sistema/empresas" />
       </div>
 
       {pendentes.length > 0 && (

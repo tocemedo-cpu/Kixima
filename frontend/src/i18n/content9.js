@@ -170,6 +170,20 @@ export const EN10 = {
     'Revenue, orders and best sellers cover the last {n} months — the history included in your plan.',
   'Produtos, estoque e visualizações mostram sempre o estado atual.':
     'Products, stock and views always show the current state.',
+
+  // --- Estados vazios com saída, e menu do fornecedor (KX-09, KX-15) ---------
+  'Ainda não criou nenhuma chave. Crie a primeira no formulário acima para o seu sistema começar a enviar preços e stock.':
+    'You have not created a key yet. Create the first one in the form above so your system can start sending prices and stock.',
+  'Ainda não recebeu pedidos de cotação': 'You have not received any quote requests yet',
+  'Ainda não respondeu a cotações': 'You have not answered any quotes yet',
+  'As cotações que responder ficam guardadas aqui, com o histórico de preços e prazos que ofereceu.':
+    'The quotes you answer are kept here, with the history of prices and lead times you offered.',
+  'Os pedidos chegam de compradores que encontram os seus produtos. Um catálogo mais completo — com fichas técnicas e certificados — aparece em mais pesquisas.':
+    'Requests come from buyers who find your products. A fuller catalogue — with datasheets and certificates — shows up in more searches.',
+  'Taxas por transação e acesso por utilizador, com os limites de cada plano':
+    'Per-transaction fees and per-user access, with each plan\u2019s limits',
+  'Ver o meu catálogo': 'View my catalogue',
+  'Ver solicitações por responder': 'View requests awaiting reply',
 };
 
 export const FR10 = {
@@ -312,4 +326,18 @@ export const FR10 = {
     'Le chiffre d’affaires, les commandes et les meilleures ventes couvrent les {n} derniers mois — l’historique inclus dans votre forfait.',
   'Produtos, estoque e visualizações mostram sempre o estado atual.':
     'Les produits, le stock et les vues affichent toujours l’état actuel.',
+
+  // --- États vides avec issue, et menu du fournisseur (KX-09, KX-15) ---------
+  'Ainda não criou nenhuma chave. Crie a primeira no formulário acima para o seu sistema começar a enviar preços e stock.':
+    'Vous n\u2019avez pas encore créé de clé. Créez la première dans le formulaire ci-dessus pour que votre système commence à envoyer prix et stock.',
+  'Ainda não recebeu pedidos de cotação': 'Vous n\u2019avez encore reçu aucune demande de devis',
+  'Ainda não respondeu a cotações': 'Vous n\u2019avez encore répondu à aucun devis',
+  'As cotações que responder ficam guardadas aqui, com o histórico de preços e prazos que ofereceu.':
+    'Les devis auxquels vous répondez sont conservés ici, avec l\u2019historique des prix et des délais proposés.',
+  'Os pedidos chegam de compradores que encontram os seus produtos. Um catálogo mais completo — com fichas técnicas e certificados — aparece em mais pesquisas.':
+    'Les demandes viennent d\u2019acheteurs qui trouvent vos produits. Un catalogue plus complet — avec fiches techniques et certificats — apparaît dans plus de recherches.',
+  'Taxas por transação e acesso por utilizador, com os limites de cada plano':
+    'Frais par transaction et accès par utilisateur, avec les limites de chaque forfait',
+  'Ver o meu catálogo': 'Voir mon catalogue',
+  'Ver solicitações por responder': 'Voir les demandes en attente de réponse',
 };

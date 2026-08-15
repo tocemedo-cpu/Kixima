@@ -107,7 +107,14 @@ export default function ApiCatalogo() {
           <tbody>
             {!chaves ? <tr><td colSpan={6}><EmptyRow>A carregar…</EmptyRow></td></tr>
               : chaves.length === 0
-                ? <tr><td colSpan={6}><EmptyRow>Ainda não criou nenhuma chave.</EmptyRow></td></tr>
+                ? (
+                  <tr><td colSpan={6}><EmptyRow>
+                    {/* O formulário está logo acima — um botão aqui era ruído.
+                        O que faltava era o vazio dizer para que serve a chave
+                        e onde se cria, em vez de constatar que não há nenhuma. */}
+                    {t('Ainda não criou nenhuma chave. Crie a primeira no formulário acima para o seu sistema começar a enviar preços e stock.')}
+                  </EmptyRow></td></tr>
+                )
                 : chaves.map((c) => (
                   <tr key={c.id}>
                     <td><strong>{c.nome}</strong></td>

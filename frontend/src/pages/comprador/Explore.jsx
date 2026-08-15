@@ -21,16 +21,23 @@ const cache = new Map();
 export default function Explore() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const [sp] = useSearchParams();
+  // TODOS os filtros vivem no endereço, e não só `q`.
+  //
+  // Antes, um comprador que filtrasse por categoria, país e certificação não
+  // conseguia mandar aquilo a um colega: o link levava-o à lista sem filtro
+  // nenhum. Recarregar a página tinha o mesmo efeito. Numa plataforma de
+  // compras, o resultado filtrado É o trabalho — perdê-lo ao partilhar obriga
+  // a pessoa do outro lado a repetir os passos de memória.
+  const [sp, setSp] = useSearchParams();
   const [q, setQ] = useState(sp.get('q') || '');
   const [pendingQ, setPendingQ] = useState(sp.get('q') || '');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState(sp.get('category') || '');
   const [kind, setKind] = useState(sp.get('kind') || '');
-  const [country, setCountry] = useState('');
-  const [certs, setCerts] = useState([]);
-  const [sort, setSort] = useState('relevantes');
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(12);
+  const [country, setCountry] = useState(sp.get('country') || '');
+  const [certs, setCerts] = useState(() => (sp.get('certs') ? sp.get('certs').split(',').filter(Boolean) : []));
+  const [sort, setSort] = useState(sp.get('sort') || 'relevantes');
+  const [page, setPage] = useState(Number(sp.get('page')) > 0 ? Number(sp.get('page')) : 1);
+  const [limit, setLimit] = useState(Number(sp.get('limit')) > 0 ? Number(sp.get('limit')) : 12);
 
   const [data, setData] = useState(null);
   const [facets, setFacets] = useState({ categories: [], kinds: [], countries: [], certifications: [] });
@@ -39,7 +46,30 @@ export default function Explore() {
   const [toast, setToast] = useState('');
   const firstLoad = useRef(true);
 
-  useEffect(() => { setQ(sp.get('q') || ''); setPendingQ(sp.get('q') || ''); }, [sp]);
+  // Alguém chegou aqui com um `q` diferente (a pesquisa da barra de topo, ou
+  // um link colado). Só se sincroniza quando é MESMO diferente: sem essa
+  // guarda, este efeito e o que escreve o endereço mais abaixo ficavam a
+  // acordar-se um ao outro em ciclo.
+  useEffect(() => {
+    const urlQ = sp.get('q') || '';
+    if (urlQ !== q) { setQ(urlQ); setPendingQ(urlQ); }
+  }, [sp]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Estado -> endereço. `replace` e não `push`: cada clique num filtro a criar
+  // uma entrada no histórico tornava o botão "voltar" do browser inútil — eram
+  // precisos dez toques para sair da página.
+  useEffect(() => {
+    const seguinte = new URLSearchParams();
+    if (q) seguinte.set('q', q);
+    if (category) seguinte.set('category', category);
+    if (kind) seguinte.set('kind', kind);
+    if (country) seguinte.set('country', country);
+    if (certs.length) seguinte.set('certs', certs.join(','));
+    if (sort !== 'relevantes') seguinte.set('sort', sort);
+    if (page > 1) seguinte.set('page', String(page));
+    if (limit !== 12) seguinte.set('limit', String(limit));
+    if (seguinte.toString() !== sp.toString()) setSp(seguinte, { replace: true });
+  }, [q, category, kind, country, certs, sort, page, limit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const params = useMemo(() => {
     const p = { sort, page, limit };

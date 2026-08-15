@@ -95,7 +95,11 @@ export default function Home() {
           <span className="home-program-ico"><Icon name="wallet" size={18} /></span>
           <span>
             <strong>{t('Planos e preços')}</strong>
-            <span>{t('Básico e Pro — taxas por transação e acesso por utilizador')}</span>
+            {/* Não se nomeiam os degraus aqui. A escada é BASE → CORE → PRO e
+                vem de planService.tabela(); escrevê-la à mão num cartão de
+                entrada garante que um dia diz outra coisa que a página de
+                planos — e já dizia: tinha ficado nos dois planos antigos. */}
+            <span>{t('Taxas por transação e acesso por utilizador, com os limites de cada plano')}</span>
           </span>
         </a>
       </div>

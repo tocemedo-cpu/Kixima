@@ -15,6 +15,22 @@ const COMMON_TAIL = [
 // Estrutura ERP completa da visão do Fornecedor (SAP Ariba / Oracle-like).
 const FORNECEDOR = [
   { label: 'Dashboard', icon: 'home', to: '/fornecedor', end: true },
+
+  // AS TRÊS DO DIA A DIA, à vista.
+  //
+  // O resto do menu são 27 entradas dentro de sete acordeões — uma estrutura
+  // de ERP, correta para quem a conhece e cara para quem a usa todos os dias:
+  // aceitar uma ordem custava abrir "Pedidos" e escolher entre quatro; repor
+  // stock custava abrir "Inventário". São os três gestos que um fornecedor
+  // repete todos os dias, e estavam todos a dois cliques.
+  //
+  // Continuam nos acordeões de onde vieram, e isso é deliberado: quem já
+  // aprendeu o caminho antigo não o perde. A duplicação é o preço de não
+  // reeducar ninguém.
+  { label: 'Ordens', icon: 'orders', to: '/fornecedor/ordens' },
+  { label: 'Produtos & Serviços', icon: 'catalog', to: '/fornecedor/catalogo', end: true },
+  { label: 'Stock', icon: 'warehouse', to: '/fornecedor/inventario/stock' },
+
   // O Perfil da Empresa é a tela do Company Admin — não aparece aqui. O Vendedor
   // vê a empresa em que está pelo seu perfil pessoal (/perfil).
   {

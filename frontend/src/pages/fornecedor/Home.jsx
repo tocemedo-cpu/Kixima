@@ -30,9 +30,12 @@ export default function FornecedorHome() {
       <PageHeader title="Central de Negócios" subtitle="Resumo: POs novas, faturas pendentes, pagamentos recebidos." />
 
       <div className="grid-cols grid-3" style={{ marginBottom: 24 }}>
-        <StatCard label="POs novas para aceitar" value={novas.length} />
-        <StatCard label="Aguardando pagamento" value={aguardandoPagamento.length} sub="Dentro do prazo garantido de 7 dias" />
-        <StatCard label="Pagamentos recebidos" value={pagas.length} />
+        {/* Cada número leva ao sítio onde se age sobre ele. "3 POs novas para
+            aceitar" e depois procurar onde se aceitam é o passo que não devia
+            existir. Só se ligam rotas que existem mesmo. */}
+        <StatCard label="POs novas para aceitar" value={novas.length} to="/fornecedor/ordens" />
+        <StatCard label="Aguardando pagamento" value={aguardandoPagamento.length} sub="Dentro do prazo garantido de 7 dias" to="/fornecedor/faturas" />
+        <StatCard label="Pagamentos recebidos" value={pagas.length} to="/fornecedor/pagamentos" />
       </div>
 
       <div className="card">

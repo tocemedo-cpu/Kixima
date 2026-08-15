@@ -3,7 +3,7 @@
 // Route-aware: /solicitacoes mostra ABERTA com formulário de resposta;
 // /cotacoes mostra as respondidas/encerradas.
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
 import Badge from '../../components/Badge';
@@ -42,7 +42,23 @@ export default function SupplierQuotes() {
       <SuccessBanner message={success} />
 
       {list.length === 0 ? (
-        <div className="empty-state"><h3>{t('Nada por aqui')}</h3><p>{isInbox ? t('Sem solicitações por responder.') : t('Ainda não respondeu a cotações.')}</p></div>
+        // Os dois vazios são diferentes e não podem ter a mesma saída.
+        // Sem solicitações, não há nada a responder — o que está na mão do
+        // fornecedor é o catálogo, que é o que faz chegar pedidos. Sem
+        // cotações respondidas, a saída é a caixa de entrada.
+        isInbox ? (
+          <div className="empty-state">
+            <h3>{t('Ainda não recebeu pedidos de cotação')}</h3>
+            <p>{t('Os pedidos chegam de compradores que encontram os seus produtos. Um catálogo mais completo — com fichas técnicas e certificados — aparece em mais pesquisas.')}</p>
+            <Link className="btn btn-accent btn-sm" to="/fornecedor/catalogo">{t('Ver o meu catálogo')}</Link>
+          </div>
+        ) : (
+          <div className="empty-state">
+            <h3>{t('Ainda não respondeu a cotações')}</h3>
+            <p>{t('As cotações que responder ficam guardadas aqui, com o histórico de preços e prazos que ofereceu.')}</p>
+            <Link className="btn btn-accent btn-sm" to="/fornecedor/pedidos/solicitacoes">{t('Ver solicitações por responder')}</Link>
+          </div>
+        )
       ) : (
         list.map((q) => (
           <QuoteCard key={q.id} quote={q} respondable={isInbox} onDone={(msg) => { setSuccess(msg); load(); }} onError={setError} />
