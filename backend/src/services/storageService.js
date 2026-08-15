@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const config = require('../config/env');
+const fileSignature = require('../utils/fileSignature');
 const logger = require('../config/logger');
 
 const uploadsDir = path.join(__dirname, '../../uploads');
@@ -135,6 +136,13 @@ async function enviarS3(key, buffer, mimetype, bucket = config.storage.bucket) {
 // precisa da CHAVE para as voltar a ler, e num bucket privado o URL não serve
 // para isso.
 async function saveFile({ buffer, originalname, mimetype, keyHint, folder = 'products', bucket, comChave = false }) {
+  // O tipo declarado vem de quem envia; aqui confere-se contra os bytes reais.
+  // A verificação está NESTE ponto e não nos filtros do multer por dois
+  // motivos: o multer decide antes de haver buffer (só vê os cabeçalhos), e
+  // tudo o que se guarda passa por aqui — não há rota que se possa esquecer
+  // dela. Lança antes de qualquer escrita na base, porque quem chama guarda o
+  // ficheiro primeiro e só depois grava.
+  fileSignature.verificar(buffer, mimetype, originalname);
   const filename = buildFilename(keyHint, originalname);
   if (providerAtivo() === 's3') {
     const alvo = bucket || config.storage.bucket;

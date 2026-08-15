@@ -51,7 +51,19 @@ app.set('trust proxy', 1);
 
 // crossOriginResourcePolicy: cross-origin para as imagens carregadas poderem
 // ser servidas ao frontend (dev noutra porta) sem bloqueio do helmet.
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+//
+// A CSP parte da política do helmet e acrescenta-lhe o anfitrião do
+// armazenamento — ver config/csp.js para o motivo por extenso. Em resumo: a
+// política por omissão só permite imagens da própria origem, e as fotos do
+// catálogo vêm do bucket. Sem isto, o marketplace fica sem imagem nenhuma em
+// produção, sem um único erro do lado do servidor.
+const csp = require('./config/csp');
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    directives: csp.directivas(helmet.contentSecurityPolicy.getDefaultDirectives()),
+  },
+}));
 
 // CORS: em produção o SPA é servido na mesma origem, por isso restringimos a
 // uma allow-list (APP_URL + CORS_ORIGINS). Em desenvolvimento permitimos tudo

@@ -134,12 +134,61 @@ async function verBaseDeDados() {
 }
 
 // --- Armazenamento ----------------------------------------------------------
-function verArmazenamento() {
+/**
+ * Quantos ficheiros já estão no disco do contentor — ou seja, quantos se perdem
+ * no próximo reinício.
+ *
+ * Um URL local começa por /api/uploads/; um que esteja no bucket começa por
+ * https://. A distinção é essa e não há outra: a base guarda o URL tal como o
+ * storageService o devolveu na altura.
+ *
+ * Existe porque "o disco é apagado a cada reinício" é uma frase que não move
+ * ninguém. "Tem 7 comprovativos de pagamento e 12 documentos de credenciamento
+ * neste disco" move.
+ */
+const LOCAL = { startsWith: '/api/uploads/' };
+
+async function ficheirosEmRisco() {
+  try {
+    const [comprovativos, subscricoes, documentos, apolices, fichas] = await Promise.all([
+      prisma.payment.count({ where: { proofUrl: LOCAL } }),
+      prisma.planoCobranca.count({ where: { comprovativoUrl: LOCAL } }),
+      prisma.companyDocument.count({ where: { fileUrl: LOCAL } }),
+      prisma.supplierToKiximaPolicy.count({ where: { documentUrl: LOCAL } }),
+      prisma.productDocument.count({ where: { fileUrl: LOCAL } }),
+    ]);
+    return { comprovativos: comprovativos + subscricoes, documentos, apolices, fichas,
+      total: comprovativos + subscricoes + documentos + apolices + fichas };
+  } catch {
+    // Uma contagem que falha não pode calar o aviso — o aviso é o que importa.
+    return null;
+  }
+}
+
+// Ordenado por gravidade do que se perde, não por número: um comprovativo de
+// pagamento vale mais do que uma ficha técnica que o fornecedor volta a enviar.
+function descreverRisco(r) {
+  if (!r || r.total === 0) return '';
+  const partes = [];
+  if (r.comprovativos) partes.push(`${r.comprovativos} comprovativo(s) de pagamento`);
+  if (r.documentos) partes.push(`${r.documentos} documento(s) de credenciamento`);
+  if (r.apolices) partes.push(`${r.apolices} apólice(s)`);
+  if (r.fichas) partes.push(`${r.fichas} ficha(s) técnica(s)`);
+  return ` NESTE MOMENTO estão em risco: ${partes.join(', ')}.`;
+}
+
+async function verArmazenamento() {
   const emFalta = config.storage.missing || [];
   if (config.storage.provider !== 's3') {
+    const risco = await ficheirosEmRisco();
     return [{ id: 'storage', titulo: 'Armazenamento de ficheiros', estado: FALHA,
-      detalhe: 'A guardar no disco do contentor.',
-      acao: 'Defina STORAGE_PROVIDER=s3 e as credenciais do Supabase Storage. O disco do contentor é apagado a cada reinício: as fotos do catálogo e os documentos de credenciamento desaparecem.' }];
+      detalhe: 'A guardar no disco do contentor, que é apagado a cada deploy e a cada arranque depois de suspensão.'
+        + descreverRisco(risco),
+      acao: 'Defina STORAGE_PROVIDER=s3 e as credenciais do Supabase Storage (receita no DEPLOY.md). '
+        + 'O que se perde não é decorativo: os COMPROVATIVOS DE TRANSFERÊNCIA são a prova inteira que sustenta '
+        + 'o "pagamento garantido", e a certidão comercial, o alvará e a licença ANPG são o que justificou '
+        + 'aprovar cada empresa. Quando desaparecem, a base continua a apontar para o URL e o pedido devolve '
+        + '404 sem registar erro nenhum — só se descobre no dia em que há uma disputa.' }];
   }
   if (emFalta.length) {
     // O secret do Supabase é mostrado UMA única vez, no momento em que a chave
@@ -439,10 +488,12 @@ function verCobrancas() {
  * Nunca devolve o valor de nenhum segredo.
  */
 async function verificar() {
-  const [copias, mfa, baseDeDados] = await Promise.all([verCopias(), verMfa(), verBaseDeDados()]);
+  const [copias, mfa, baseDeDados, armazenamento] = await Promise.all([
+    verCopias(), verMfa(), verBaseDeDados(), verArmazenamento(),
+  ]);
   const grupos = [
     { grupo: 'Base de dados', checks: baseDeDados },
-    { grupo: 'Armazenamento', checks: verArmazenamento() },
+    { grupo: 'Armazenamento', checks: armazenamento },
     { grupo: 'Cópias de segurança', checks: copias },
     { grupo: 'Email', checks: verEmail() },
     { grupo: 'Autenticação de dois fatores', checks: mfa },

@@ -14,6 +14,11 @@ const config = require('../src/config/env');
 const storageService = require('../src/services/storageService');
 
 const IMG = Buffer.from('89504e470d0a1a0a', 'hex');
+// O storageService confere os bytes contra o tipo declarado (RA-3), por isso
+// cada fixture tem de ser COERENTE. Antes bastava um buffer qualquer; agora um
+// PNG rotulado de .jpg é recusado — e é esse o objetivo.
+const JPEG = Buffer.from('ffd8ffe000104a464946', 'hex');
+const PDF = Buffer.from('%PDF-1.4 documento de teste');
 
 describe('storageService — S3 (Supabase Storage)', () => {
   const original = { ...config.storage };
@@ -33,7 +38,7 @@ describe('storageService — S3 (Supabase Storage)', () => {
       publicUrl: 'https://proj.supabase.co/storage/v1/object/public/product-images',
       forcePathStyle: true,
     });
-    const url = await storageService.saveFile({ buffer: IMG, originalname: 'foto.jpg', mimetype: 'image/jpeg', keyHint: 'cat-1', folder: 'catalog' });
+    const url = await storageService.saveFile({ buffer: JPEG, originalname: 'foto.jpg', mimetype: 'image/jpeg', keyHint: 'cat-1', folder: 'catalog' });
 
     // URL público = publicUrl + '/' + key (folder/filename)
     expect(url).toMatch(/^https:\/\/proj\.supabase\.co\/storage\/v1\/object\/public\/product-images\/catalog\/cat-1-\d+\.jpg$/);
@@ -59,7 +64,7 @@ describe('storageService — configuração incompleta', () => {
     });
     expect(storageService.providerAtivo()).toBe('local');
 
-    const url = await storageService.saveFile({ buffer: IMG, originalname: 'd.pdf', mimetype: 'application/pdf', keyHint: 'doc', folder: 'documents' });
+    const url = await storageService.saveFile({ buffer: PDF, originalname: 'd.pdf', mimetype: 'application/pdf', keyHint: 'doc', folder: 'documents' });
     expect(url).toMatch(/^\/api\/uploads\//);
     expect(sent).toHaveLength(0); // nem chegou a falar com o S3
   });
