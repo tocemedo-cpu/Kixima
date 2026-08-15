@@ -40,7 +40,13 @@ const looksLikeText = (s) =>
   !/^[A-Z0-9_]+$/.test(s) &&                  // enums técnicos
   !/^\d/.test(s) && !s.includes('=>') &&
   !s.startsWith('url(') &&                    // valores CSS (url(#gradiente))
-  !/[<>{}]|className=|\\n/.test(s);           // fragmentos de JSX apanhados por engano
+  // Fragmentos de JSX apanhados por engano. Os marcadores de interpolação
+  // ({n}, {ref}, …) são RETIRADOS antes desta prova: são chaves legítimas e
+  // precisam de tradução tanto como as outras. Enquanto contavam como JSX, uma
+  // frase interpolada nova entrava em produção por traduzir e a auditoria
+  // continuava a dizer "0 em falta" — o pior resultado possível para uma
+  // verificação: passar por estar a olhar para o lado.
+  !/[<>{}]|className=|\\n/.test(s.replace(/\{[a-zA-Z][a-zA-Z0-9]*\}/g, ''));
 
 const used = new Map(); // chave -> [ficheiros]
 function addKey(key, file) {

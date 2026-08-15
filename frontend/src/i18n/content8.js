@@ -293,6 +293,10 @@ export const EN9 = {
   'Um convite nunca deixa de ser criado por o email falhar — por isso uma chave errada ou um remetente por verificar não dão sinal nenhum. Aqui o erro aparece por inteiro.':
     'An invitation is never left uncreated just because email failed — which is why a wrong key or an unverified sender gives no sign at all. Here the error is shown in full.',
   'Chave de assinatura das sessões (JWT_SECRET)': 'Session signing key (JWT_SECRET)',
+  // --- Prontidão: cobranças de subscrição -------------------------------------
+  'Cobranças de subscrição': 'Subscription charges',
+  'Dados bancários para as subscrições': 'Bank details for subscriptions',
+  'KIXIMA_BANCO_IBAN não está definido.': 'KIXIMA_BANCO_IBAN is not set.',
 };
 
 export const FR9 = {
@@ -572,4 +576,8 @@ export const FR9 = {
   'Um convite nunca deixa de ser criado por o email falhar — por isso uma chave errada ou um remetente por verificar não dão sinal nenhum. Aqui o erro aparece por inteiro.':
     'Une invitation n’est jamais laissée de côté parce que l’e-mail a échoué — c’est pourquoi une clé erronée ou un expéditeur non vérifié ne donnent aucun signe. Ici, l’erreur est affichée en entier.',
   'Chave de assinatura das sessões (JWT_SECRET)': 'Clé de signature des sessions (JWT_SECRET)',
+  // --- Prontidão : facturations d’abonnement ----------------------------------
+  'Cobranças de subscrição': 'Facturations d’abonnement',
+  'Dados bancários para as subscrições': 'Coordonnées bancaires pour les abonnements',
+  'KIXIMA_BANCO_IBAN não está definido.': 'KIXIMA_BANCO_IBAN n’est pas défini.',
 };

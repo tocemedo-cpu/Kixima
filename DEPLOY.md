@@ -217,7 +217,28 @@ e a única saída seria mexer na base à mão. Escolhe uma data que dê tempo de
 avisar as pessoas, e confirma na página de Prontidão quantas contas ainda não a
 têm antes de a data chegar.
 
-### 5. Rodar a senha da base de dados
+### 5. Conta bancária das subscrições (`KIXIMA_BANCO_IBAN`)
+```
+KIXIMA_BANCO_IBAN=AO06000000000000000000000
+KIXIMA_BANCO_TITULAR=KIXIMA, Lda
+KIXIMA_BANCO_NOME=Banco Angolano de Investimentos
+KIXIMA_BANCO_SWIFT=BAIPAOLU
+KIXIMA_BANCO_MOEDA=USD
+```
+Só o **IBAN** é obrigatório; os outros aparecem quando estão preenchidos. Para
+transferências internacionais convém ter também o SWIFT e o titular.
+
+É para onde as empresas transferem quando pedem ou renovam um plano. Não é um
+segredo — é um número que existe para ser dado a quem paga — por isso a página
+de Prontidão mostra-o **por inteiro**: assim confere-se que é a conta certa, e
+não apenas que o campo está preenchido.
+
+> **Sem esta variável nada dá erro.** A plataforma continua a emitir cobranças e
+> a pedir o comprovativo; a página diz "transfira o valor" e não mostra para
+> onde. Ninguém vê uma falha — vê-se dinheiro que não chega, semanas depois. Por
+> isso a Prontidão marca a ausência do IBAN como **falha**, e não como aviso.
+
+### 6. Rodar a senha da base de dados
 A senha do Supabase foi partilhada em texto e tem de ser considerada
 comprometida. **Este passo derruba o serviço até o Render ser atualizado**, por
 isso deixa-o para o fim.

@@ -54,6 +54,7 @@ const CompanyDocuments = lazy(() => import('./pages/companyAdmin/CompanyDocument
 const CompanyPermissions = lazy(() => import('./pages/companyAdmin/Permissions'));
 const CompanyReports = lazy(() => import('./pages/companyAdmin/Reports'));
 const ConteudoLocal = lazy(() => import('./pages/companyAdmin/ConteudoLocal'));
+const Assinatura = lazy(() => import('./pages/companyAdmin/Assinatura'));
 const CompanyActivities = lazy(() => import('./pages/companyAdmin/Activities'));
 const CompanySettings = lazy(() => import('./pages/companyAdmin/Settings'));
 
@@ -92,6 +93,7 @@ const AuditTrail = lazy(() => import('./pages/adminSistema/AuditTrail'));
 const AdminPlans = lazy(() => import('./pages/adminSistema/Plans'));
 const AdminSupplierDev = lazy(() => import('./pages/adminSistema/SupplierDev'));
 const Prontidao = lazy(() => import('./pages/adminSistema/Prontidao'));
+const Cobrancas = lazy(() => import('./pages/adminSistema/Cobrancas'));
 
 // Ecrã de recurso enquanto o chunk de uma rota é carregado.
 function PageLoading() {
@@ -177,6 +179,7 @@ export default function App() {
             <Route path="/empresa/contratos" element={<Contracts />} />
             <Route path="/empresa/relatorios" element={<CompanyReports />} />
             <Route path="/empresa/conteudo-local" element={<ConteudoLocal />} />
+            <Route path="/empresa/assinatura" element={<Assinatura />} />
             <Route path="/empresa/atividades" element={<CompanyActivities />} />
             <Route path="/empresa/configuracoes" element={<CompanySettings />} />
           </Route>
@@ -239,6 +242,7 @@ export default function App() {
             <Route path="/sistema/planos" element={<AdminPlans />} />
             <Route path="/sistema/supplier-development" element={<AdminSupplierDev />} />
             <Route path="/sistema/prontidao" element={<Prontidao />} />
+            <Route path="/sistema/cobrancas" element={<Cobrancas />} />
           </Route>
         </Route>
       </Route>

@@ -72,6 +72,57 @@ enum CompanyPlan {
   BASICO
 }
 
+// Cobrança de subscrição — o pedido de plano e o seu pagamento.
+//
+// NÃO HÁ GATEWAY, e isso não é uma lacuna: em Angola o B2B paga-se por
+// transferência bancária. A plataforma já cobra as faturas assim — comprovativo
+// carregado e confirmado por quem recebe — e a subscrição segue exatamente o
+// mesmo caminho. Inventar um botão "pagar com cartão" que ninguém consegue usar
+// seria pior do que não ter botão nenhum.
+//
+// O PLANO SÓ MUDA NA CONFIRMAÇÃO. Entre pedir e confirmar não muda nada: quem
+// pedisse o Pro e ficasse logo com o Pro tinha o plano de graça enquanto a
+// transferência não chegasse — ou nunca chegasse.
+enum CobrancaStatus {
+  PENDENTE            // emitida, à espera de pagamento
+  COMPROVATIVO_ENVIADO // empresa carregou o comprovativo, aguarda confirmação
+  CONFIRMADA          // KIXIMA confirmou: o plano muda AQUI
+  CANCELADA
+}
+
+model PlanoCobranca {
+  id          String         @id @default(uuid())
+  referencia  String         @unique          // SUB-2026-000001
+  companyId   String         @map("company_id")
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  planoAtual  CompanyPlan    @map("plano_atual")
+  planoNovo   CompanyPlan    @map("plano_novo")
+  // Preço GRAVADO no momento do pedido. Se a tabela mudar amanhã, esta cobrança
+  // continua a valer o que foi acordado — uma cobrança que muda de valor
+  // sozinha não é uma cobrança.
+  valorUsd    Decimal        @map("valor_usd") @db.Decimal(12, 2)
+  periodo     String                          // MENSAL | TRIMESTRAL | ANUAL
+  meses       Int
+
+  status      CobrancaStatus @default(PENDENTE)
+  comprovativoUrl String?    @map("comprovativo_url")
+  submetidoEm DateTime?      @map("submetido_em")
+  confirmadaPor String?      @map("confirmada_por")
+  confirmadaEm  DateTime?    @map("confirmada_em")
+  // Até quando a subscrição fica paga, calculado na confirmação.
+  validoAte     DateTime?    @map("valido_ate")
+  notas         String?
+
+  createdById String?        @map("created_by_id")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@index([status])
+  @@map("plano_cobrancas")
+}
+
 enum CompanyStatus {
   PENDENTE // aguarda due diligence
   APROVADA
@@ -133,6 +184,10 @@ model Company {
   // alguém acrescentasse um valor ao enum.
   searchRank       Int         @default(0) @map("search_rank")
   apiKeys          ApiKey[]
+  // Até quando a subscrição está paga. Null = nunca foi cobrada (o Base de
+  // arranque, ou uma empresa que a KIXIMA pôs num plano à mão).
+  planoValidoAte   DateTime?   @map("plano_valido_ate")
+  cobrancas        PlanoCobranca[]
   // Preço por utilizador/mês (USD). Teto do plano BASICO: 100 USD.
   seatPriceUsd     Decimal     @default(100) @map("seat_price_usd") @db.Decimal(10, 2)
   planNotes        String?     @map("plan_notes")
@@ -971,6 +1026,8 @@ enum NotificationType {
   APOLICE_A_EXPIRAR
   CADASTRO_EMPRESA_APROVADO
   CADASTRO_EMPRESA_REJEITADO
+  SUBSCRICAO_COMPROVATIVO
+  SUBSCRICAO_CONFIRMADA
 }
 
 model Notification {

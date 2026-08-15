@@ -123,6 +123,7 @@ const COMPANY_ADMIN = [
   { label: 'Contratos', icon: 'contract', to: '/empresa/contratos' },
   { label: 'Relatórios', icon: 'report', to: '/empresa/relatorios' },
   { label: 'Conteúdo local', icon: 'chart', to: '/empresa/conteudo-local' },
+  { label: 'Subscrição', icon: 'wallet', to: '/empresa/assinatura' },
   { label: 'Atividades', icon: 'activities', to: '/empresa/atividades' },
   { label: 'Configurações', icon: 'settings', to: '/empresa/configuracoes' },
   ...COMMON_TAIL,
@@ -162,6 +163,7 @@ const ADMIN_SISTEMA = [
   { label: 'Contratos-Quadro', icon: 'contract', to: '/sistema/contratos' },
   { label: 'Taxa KIXIMA', icon: 'wallet', to: '/sistema/taxas' },
   { label: 'Planos e Subscrições', icon: 'building', to: '/sistema/planos' },
+  { label: 'Cobranças de subscrição', icon: 'invoice', to: '/sistema/cobrancas' },
   { label: 'Supplier Development', icon: 'suppliers', to: '/sistema/supplier-development' },
   {
     // No Admin do Sistema, o suporte e a ajuda vivem dentro das configurações.

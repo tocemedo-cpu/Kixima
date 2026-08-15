@@ -15,28 +15,34 @@ const prisma = require('../config/database');
 
 // Primeiro uso de um contador: arranca no maior número já emitido nessa tabela,
 // para não repetir referências criadas antes de existir contador.
-async function seedValue(prefix, counterModel, year) {
+async function seedValue(prefix, counterModel, year, campo) {
   // Ordenar por texto não serve quando há larguras diferentes ("PO-2026-9"
   // ficaria depois de "PO-2026-000010"): procura-se o máximo NUMÉRICO.
   const emitidas = await prisma[counterModel].findMany({
-    where: { reference: { startsWith: `${prefix}-${year}-` } },
-    select: { reference: true },
+    where: { [campo]: { startsWith: `${prefix}-${year}-` } },
+    select: { [campo]: true },
   });
   const ultimo = emitidas
-    .map((r) => Number(String(r.reference).split('-').pop()))
+    .map((r) => Number(String(r[campo]).split('-').pop()))
     .filter((n) => Number.isFinite(n))
     .sort((a, b) => b - a)[0];
   return ultimo > 0 ? ultimo : 0;
 }
 
-async function nextReference(prefix, counterModel, dateField = 'createdAt') { // eslint-disable-line no-unused-vars
+/**
+ * @param campo Nome do campo que guarda a referência no modelo. Os modelos
+ *   antigos chamam-lhe `reference`; os novos (em português) `referencia`. O
+ *   nome tem de vir de fora porque a semente lê o maior número JÁ EMITIDO — a
+ *   ler o campo errado, arrancaria do 1 e colidiria com referências existentes.
+ */
+async function nextReference(prefix, counterModel, campo = 'reference') {
   const year = new Date().getFullYear();
   const key = `${prefix}-${year}`;
 
   // O INSERT só ganha na primeiríssima vez; a partir daí é sempre o DO UPDATE
   // que incrementa. As duas metades correm numa instrução — se dois pedidos
   // chegarem juntos, um insere e o outro incrementa, e saem números distintos.
-  const inicial = (await seedValue(prefix, counterModel, year)) + 1;
+  const inicial = (await seedValue(prefix, counterModel, year, campo)) + 1;
   const [{ value }] = await prisma.$queryRaw`
     INSERT INTO "reference_counters" ("key", "value")
     VALUES (${key}, ${inicial})

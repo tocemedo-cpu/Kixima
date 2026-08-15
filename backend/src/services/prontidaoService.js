@@ -22,6 +22,7 @@ const { spawnSync } = require('child_process');
 const config = require('../config/env');
 const prisma = require('../config/database');
 const storage = require('./storageService');
+const assinaturaService = require('./assinaturaService');
 
 const OK = 'ok';          // está feito
 const AVISO = 'aviso';    // funciona, mas não é o que se quer em produção
@@ -403,6 +404,36 @@ function verSegredos() {
     detalhe: `Definida (${s.length} caracteres).` }];
 }
 
+// --- Cobranças de subscrição -------------------------------------------------
+/**
+ * Os dados bancários para onde as empresas transferem a subscrição.
+ *
+ * Falha silenciosa clássica: sem o IBAN, a página de subscrição continua a
+ * emitir cobranças e a pedir o comprovativo, mas não diz para onde transferir.
+ * Ninguém vê um erro — vê-se dinheiro que não chega, semanas depois, sem se
+ * perceber porquê. O IBAN não é segredo (é para ser dado a quem paga), por isso
+ * é o único valor que esta página mostra por inteiro; e mostra-o de propósito,
+ * para se poder CONFERIR que está certo, e não só que está preenchido.
+ */
+function verCobrancas() {
+  const b = assinaturaService.dadosBancarios();
+  if (!b.configurado) {
+    return [{ id: 'iban', titulo: 'Dados bancários para as subscrições', estado: FALHA,
+      detalhe: 'KIXIMA_BANCO_IBAN não está definido.',
+      acao: 'Defina KIXIMA_BANCO_IBAN (e, se quiser, KIXIMA_BANCO_TITULAR, KIXIMA_BANCO_NOME, '
+        + 'KIXIMA_BANCO_SWIFT e KIXIMA_BANCO_MOEDA). Sem o IBAN, quem pede um plano lê "transfira o valor" '
+        + 'e não tem para onde.' }];
+  }
+  const faltam = ['titular', 'banco', 'swift'].filter((k) => !b[k]);
+  return [{ id: 'iban', titulo: 'Dados bancários para as subscrições',
+    estado: faltam.length ? AVISO : OK,
+    detalhe: `IBAN ${b.iban} · ${b.moeda}${b.banco ? ` · ${b.banco}` : ''}${b.titular ? ` · ${b.titular}` : ''}. `
+      + 'Confira que é a conta certa — é este o número que as empresas vão usar.',
+    acao: faltam.length
+      ? `Por preencher: ${faltam.join(', ')}. Uma transferência internacional costuma exigir o SWIFT e o titular.`
+      : undefined }];
+}
+
 /**
  * Estado de prontidão do ambiente onde este processo corre.
  * Nunca devolve o valor de nenhum segredo.
@@ -416,6 +447,7 @@ async function verificar() {
     { grupo: 'Email', checks: verEmail() },
     { grupo: 'Autenticação de dois fatores', checks: mfa },
     { grupo: 'Segredos', checks: verSegredos() },
+    { grupo: 'Cobranças de subscrição', checks: verCobrancas() },
   ];
 
   const todos = grupos.flatMap((g) => g.checks);
