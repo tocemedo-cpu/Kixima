@@ -44,7 +44,7 @@ export default function Home() {
       api.get('/api/marketplace/suppliers'),
       api.get('/api/notifications'),
     ]).then(([dash, facets, trending, frequent, suppliers, notifs]) => {
-      setD({ dash, categories: facets.categories || [], trending: trending.items || [], frequent: frequent.items || [], suppliers: suppliers || [], notifs: (notifs || []).slice(0, 6) });
+      setD({ dash, categories: facets.categories || [], trending: trending.items || [], frequent: frequent.items || [], suppliers: suppliers || [], notifs: (notifs?.itens || []).slice(0, 6) });
     }).catch((e) => setError(e.message));
   }, []);
 

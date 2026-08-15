@@ -21,12 +21,42 @@ const PERIODO = { de: '2020-01-01', ate: '2035-12-31' };
 let compradora;
 let planoOriginal;
 
+// Produtos cuja origem foi limpa por esta suite, para repor no fim.
+let origensLimpas = [];
+
 beforeAll(async () => {
   compradora = await prisma.company.findFirst({ where: { type: 'CLIENTE' } });
   planoOriginal = { plan: compradora.plan, searchRank: compradora.searchRank };
+
+  // A PRECONDIÇÃO PASSA A SER GARANTIDA, e não assumida.
+  //
+  // Estes testes afirmam que nenhum produto do seed tem país de origem
+  // declarado — e era verdade, até outro ficheiro de teste criar produtos com
+  // origem e não os apagar. O resultado era uma falha intermitente: verde ou
+  // vermelho conforme a ordem em que o Jest calhasse correr os ficheiros, e a
+  // mensagem a apontar para conteúdo local quando o problema estava na
+  // importação de catálogo.
+  //
+  // Um teste que depende do que os outros deixam na base não está a testar o
+  // que diz que testa. A precondição fica escrita aqui, à vista, e reposta no
+  // fim para não ser este a contaminar os seguintes.
+  origensLimpas = await prisma.product.findMany({
+    where: { countryOfOrigin: { not: null } },
+    select: { id: true, countryOfOrigin: true },
+  });
+  if (origensLimpas.length) {
+    await prisma.product.updateMany({
+      where: { id: { in: origensLimpas.map((p) => p.id) } },
+      data: { countryOfOrigin: null },
+    });
+  }
 });
+
 afterAll(async () => {
   await prisma.company.update({ where: { id: compradora.id }, data: planoOriginal });
+  for (const p of origensLimpas) {
+    await prisma.product.update({ where: { id: p.id }, data: { countryOfOrigin: p.countryOfOrigin } });
+  }
 });
 
 describe('O que entra na conta', () => {

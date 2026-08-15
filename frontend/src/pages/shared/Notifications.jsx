@@ -9,9 +9,12 @@ export default function Notifications() {
   const { t } = useI18n();
   const [notifications, setNotifications] = useState(null);
   const [error, setError] = useState('');
+  const [total, setTotal] = useState(0);
 
   function load() {
-    api.get('/api/notifications').then(setNotifications).catch((e) => setError(e.message));
+    api.get('/api/notifications', { limit: 100 })
+      .then((r) => { setNotifications(r.itens || []); setTotal(r.total || 0); })
+      .catch((e) => setError(e.message));
   }
 
   useEffect(load, []);

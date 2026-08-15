@@ -19,12 +19,36 @@ function buildXlsxBuffer(rows) {
 
 const HEADER = ['Categoria', 'Produto/Serviço', 'Descrição', 'Tipo', 'UOM', 'Código UNSPSC', 'Título Oficial UNSPSC', 'Segmento UNSPSC', 'Família UNSPSC', 'País de Origem', 'Preço'];
 
+let planoOriginal;
+
 beforeAll(async () => {
   tokens = await loginAll();
   const sup = await prisma.company.findFirst({ where: { type: 'FORNECEDOR' } });
   supplierId = sup.id;
+
+  // O carregamento em massa é do plano Pro, e esta suite não punha lá a
+  // empresa — passava porque OUTRO ficheiro de teste a deixava em Pro e o
+  // Jest calhava correr esse primeiro. Uma dependência invisível entre
+  // ficheiros que partilham a mesma base: verde ou vermelho conforme a ordem,
+  // e a falha aponta para o sítio errado quando aparece.
+  planoOriginal = sup.plan;
+  await prisma.company.update({ where: { id: supplierId }, data: { plan: 'PRO' } });
 });
-afterAll(async () => { await prisma.$disconnect(); });
+
+afterAll(async () => {
+  // Os produtos importados ficavam na base. Não é lixo inofensivo: têm
+  // `countryOfOrigin` preenchido, e o relatório de conteúdo local afirma que
+  // NENHUM produto do seed tem origem declarada. Estes sobreviventes punham
+  // essa percentagem acima de zero e faziam falhar um teste noutro ficheiro,
+  // que não tinha nada a ver com importação nenhuma.
+  await prisma.product.deleteMany({
+    where: { supplierId, name: { in: ['Válvula de teste', 'Inspeção de teste'] } },
+  });
+  if (planoOriginal) {
+    await prisma.company.update({ where: { id: supplierId }, data: { plan: planoOriginal } });
+  }
+  await prisma.$disconnect();
+});
 
 describe('parsePrice', () => {
   test('interpreta formatos AOA e números', () => {

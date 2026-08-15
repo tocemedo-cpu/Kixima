@@ -40,10 +40,16 @@ describe('Movimentos de inventário', () => {
   });
 
   test('lista movimentos filtrando por tipo', async () => {
+    // A resposta passou a ser um envelope paginado ({ itens, total, … }) em vez
+    // de um array. O `total` é a razão de ser da mudança: antes havia um
+    // `take: 200` fixo e a interface não tinha como saber que faltavam linhas.
     const res = await auth(fornecedorToken).get('/api/catalog/movements').query({ type: 'ENTRADA' });
     expect(res.status).toBe(200);
-    expect(res.body.every((m) => m.type === 'ENTRADA')).toBe(true);
-    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body.itens.every((m) => m.type === 'ENTRADA')).toBe(true);
+    expect(res.body.itens.length).toBeGreaterThan(0);
+    // O filtro tem de contar o que filtrou, e não o total sem filtro — senão
+    // a interface diria "a mostrar 3 de 40" com 3 a ser tudo o que existe.
+    expect(res.body.total).toBe(res.body.itens.length);
   });
 
   test('não regista movimento em produto de outra empresa (404)', async () => {

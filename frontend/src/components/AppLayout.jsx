@@ -20,12 +20,18 @@ export default function AppLayout() {
   const location = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [porLer, setPorLer] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const { count: cartCount } = useCart();
 
   useEffect(() => {
     let cancelled = false;
-    api.get('/api/notifications').then((data) => { if (!cancelled) setNotifications(data); }).catch(() => {});
+    // A resposta passou a trazer envelope: itens desta página + total + porLer.
+    // O contador do sino usa `porLer`, que conta TODAS as por ler e não só as
+    // desta página — senão o número mudava ao paginar.
+    api.get('/api/notifications').then((data) => {
+      if (!cancelled) { setNotifications(data.itens || []); setPorLer(data.porLer || 0); }
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, [location.pathname]);
 
@@ -39,7 +45,10 @@ export default function AppLayout() {
     ? 'FINANCEIRO_FORNECEDOR'
     : user.role;
   const items = SIDEBAR_MENUS[menuKey] || [];
-  const unread = notifications.filter((n) => !n.readAt).length;
+  // Contado pelo servidor sobre TODAS as notificações, e não sobre as desta
+  // página: um sino que diz "3" e ao paginar passa a dizer "1" parece uma
+  // avaria. Ao marcar como lida desconta-se aqui, para o número reagir já.
+  const unread = porLer;
 
   return (
     <div className={`app-shell${menuOpen ? ' menu-open' : ''}`}>
@@ -69,7 +78,10 @@ export default function AppLayout() {
           <NotificationPanel
             notifications={notifications}
             onClose={() => setNotifOpen(false)}
-            onRead={(id) => setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)))}
+            onRead={(id) => {
+              setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)));
+              setPorLer((n) => Math.max(0, n - 1));
+            }}
           />
         ) : null}
 

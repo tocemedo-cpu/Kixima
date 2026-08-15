@@ -19,13 +19,19 @@ export default function StockMovements() {
 
   const [products, setProducts] = useState(null);
   const [movements, setMovements] = useState(null);
+  const [total, setTotal] = useState(0);
   const [form, setForm] = useState({ productId: '', quantity: '', note: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
 
   function loadMovements() {
-    api.get('/api/catalog/movements', { type }).then(setMovements).catch((e) => setError(e.message));
+    // A resposta traz envelope (itens + total). O total é o que permite dizer
+    // quantos movimentos existem em vez de mostrar os primeiros e deixar
+    // acreditar que são todos.
+    api.get('/api/catalog/movements', { type, limit: 100 })
+      .then((r) => { setMovements(r.itens || []); setTotal(r.total || 0); })
+      .catch((e) => setError(e.message));
   }
   useEffect(() => {
     api.get('/api/catalog', { supplierId: user.companyId }).then(setProducts).catch((e) => setError(e.message));
@@ -109,6 +115,14 @@ export default function StockMovements() {
             </tbody>
           </table>
           </div>
+          {/* Dizer quantos existem, e não só mostrar os que couberam. Uma lista
+              cortada em silêncio é pior do que uma que não abre: quem a lê
+              toma decisões com ela a acreditar que está completa. */}
+          {total > movements.length ? (
+            <p className="helptext" style={{ margin: '10px 0 0' }}>
+              {t('A mostrar os {n} movimentos mais recentes de {total} no total.', { n: movements.length, total })}
+            </p>
+          ) : null}
         </div>
       )}
     </div>

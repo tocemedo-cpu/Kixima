@@ -65,7 +65,9 @@ async function documents(req, res) {
 }
 
 async function listMovements(req, res) {
-  const movements = await catalogService.listStockMovements(req.user.companyId, { type: req.query.type });
+  const movements = await catalogService.listStockMovements(req.user.companyId, {
+    type: req.query.type, page: req.query.page, limit: req.query.limit,
+  });
   res.json(movements);
 }
 

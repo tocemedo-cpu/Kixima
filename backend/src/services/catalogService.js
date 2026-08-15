@@ -1,6 +1,7 @@
 // src/services/catalogService.js
 
 const prisma = require('../config/database');
+const paginacao = require('../utils/paginacao');
 const planService = require('./planService');
 const { NotFoundError, ForbiddenError } = require('../utils/errors');
 const storageService = require('./storageService');
@@ -243,16 +244,28 @@ async function createStockMovement(supplierCompanyId, userId, { productId, type,
   });
 }
 
-async function listStockMovements(supplierCompanyId, { type } = {}) {
-  return prisma.stockMovement.findMany({
-    where: { product: { supplierId: supplierCompanyId }, ...(type ? { type } : {}) },
-    select: {
-      id: true, type: true, quantity: true, note: true, createdAt: true,
-      productId: true, product: { select: { name: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 200,
-  });
+async function listStockMovements(supplierCompanyId, { type, page, limit } = {}) {
+  // Estava aqui um `take: 200` fixo. O histórico de movimentos de stock é a
+  // tabela que mais depressa cresce do lado do fornecedor — uma entrada e uma
+  // saída por cada linha de cada ordem. Ao fim de uns meses, os 200 mais
+  // recentes são uma semana, e o resto desaparecia sem aviso. É o registo que
+  // se consulta justamente quando as contas não batem certo.
+  const p = paginacao.parametros({ page, limit });
+  const where = { product: { supplierId: supplierCompanyId }, ...(type ? { type } : {}) };
+
+  const [total, itens] = await Promise.all([
+    prisma.stockMovement.count({ where }),
+    prisma.stockMovement.findMany({
+      where,
+      select: {
+        id: true, type: true, quantity: true, note: true, createdAt: true,
+        productId: true, product: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: p.skip, take: p.take,
+    }),
+  ]);
+  return paginacao.envelope(itens, total, p);
 }
 
 module.exports = {

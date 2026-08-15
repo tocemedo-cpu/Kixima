@@ -184,6 +184,8 @@ export const EN10 = {
     'Per-transaction fees and per-user access, with each plan\u2019s limits',
   'Ver o meu catálogo': 'View my catalogue',
   'Ver solicitações por responder': 'View requests awaiting reply',
+  'A mostrar os {n} movimentos mais recentes de {total} no total.':
+    'Showing the {n} most recent movements out of {total} in total.',
 };
 
 export const FR10 = {
@@ -340,4 +342,6 @@ export const FR10 = {
     'Frais par transaction et accès par utilisateur, avec les limites de chaque forfait',
   'Ver o meu catálogo': 'Voir mon catalogue',
   'Ver solicitações por responder': 'Voir les demandes en attente de réponse',
+  'A mostrar os {n} movimentos mais recentes de {total} no total.':
+    'Affichage des {n} mouvements les plus récents sur {total} au total.',
 };
