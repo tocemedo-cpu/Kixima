@@ -292,6 +292,7 @@ export default function Catalog() {
               <button className="pc-modal-x" onClick={() => setShowCompare(false)}>✕</button>
             </div>
             <div className="pc-compare">
+              <div className="bz-scroll-x">
               <table className="bz-table">
                 <thead>
                   <tr>
@@ -309,6 +310,7 @@ export default function Catalog() {
                   <tr><td>{t('Prazo de Entrega')}</td>{compare.map((p) => <td key={p.id}>{p.leadTimeDays != null ? `${p.leadTimeDays} ${t('dias')}` : '—'}</td>)}</tr>
                 </tbody>
               </table>
+              </div>
             </div>
             <div className="pc-modal-foot">
               <button className="btn btn-ghost btn-sm" onClick={() => { setCompare([]); setShowCompare(false); }}>{t('Limpar comparação')}</button>

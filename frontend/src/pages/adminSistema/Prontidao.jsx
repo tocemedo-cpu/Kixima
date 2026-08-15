@@ -181,6 +181,7 @@ export default function Prontidao() {
           {g.grupo === 'Autenticação de dois fatores' && pendentes?.length ? (
             <div style={{ borderTop: '1px solid var(--line, #f0f0f0)', background: 'var(--surface-2, #fafafa)' }}>
               <div style={{ overflowX: 'auto' }}>
+                <div className="bz-scroll-x">
                 <table className="bz-table" style={{ margin: 0 }}>
                   <thead>
                     <tr>
@@ -219,6 +220,7 @@ export default function Prontidao() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </div>
               <div style={{ padding: '12px 16px' }}>
                 <button className="btn btn-accent btn-sm" onClick={enviarLembretes} disabled={aLembrar}>

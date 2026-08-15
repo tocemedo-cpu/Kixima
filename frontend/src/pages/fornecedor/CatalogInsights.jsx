@@ -73,6 +73,7 @@ function renderView(seg, g, title, t) {
     if (rows.length === 0) return <Empty label={title} />;
     return (
       <div className="card" style={{ overflowX: 'auto' }}>
+        <div className="bz-scroll-x">
         <table>
           <thead><tr><th>{t('Produto')}</th><th>{t('Categoria')}</th><th style={{ textAlign: 'right' }}>{t('Preço')}</th></tr></thead>
           <tbody>
@@ -92,6 +93,7 @@ function renderView(seg, g, title, t) {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     );
   }

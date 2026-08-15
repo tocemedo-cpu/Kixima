@@ -94,6 +94,7 @@ export default function StockMovements() {
         <div className="empty-state"><h3>{t('Sem {x}', { x: t(title).toLowerCase() })}</h3><p>{t('Os movimentos registados aparecem aqui.')}</p></div>
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
+          <div className="bz-scroll-x">
           <table>
             <thead><tr><th>{t('Data')}</th><th>{t('Produto')}</th><th style={{ textAlign: 'right' }}>{t('Qtd.')}</th><th>{t('Nota')}</th></tr></thead>
             <tbody>
@@ -107,6 +108,7 @@ export default function StockMovements() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

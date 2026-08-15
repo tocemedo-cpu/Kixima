@@ -73,6 +73,7 @@ export default function Wallet() {
         {recentPaid.length === 0 ? (
           <div className="card-pad"><p className="helptext" style={{ margin: 0 }}>{t('Ainda sem pagamentos recebidos.')}</p></div>
         ) : (
+          <div className="bz-scroll-x">
           <table>
             <thead><tr><th>{t('Referência')}</th><th>{t('Cliente')}</th><th>{t('Estado')}</th><th style={{ textAlign: 'right' }}>{t('Valor')}</th></tr></thead>
             <tbody>
@@ -86,6 +87,7 @@ export default function Wallet() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

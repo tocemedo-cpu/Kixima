@@ -259,6 +259,7 @@ export default function Assinatura() {
       {/* --- Histórico --- */}
       <h3 style={{ margin: '22px 0 12px' }}>{t('Histórico de cobranças')}</h3>
       <div className="bz-card">
+        <div className="bz-scroll-x">
         <table className="bz-table">
           <thead>
             <tr>
@@ -285,6 +286,7 @@ export default function Assinatura() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

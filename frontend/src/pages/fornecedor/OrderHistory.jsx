@@ -32,6 +32,7 @@ export default function OrderHistory() {
         <div className="empty-state"><h3>{t('Sem histórico')}</h3><p>{t('Ordens concluídas aparecem aqui.')}</p></div>
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
+          <div className="bz-scroll-x">
           <table>
             <thead><tr><th>{t('Referência')}</th><th>{t('Cliente')}</th><th>{t('Data')}</th><th>{t('Estado')}</th><th style={{ textAlign: 'right' }}>{t('Valor')}</th></tr></thead>
             <tbody>
@@ -46,6 +47,7 @@ export default function OrderHistory() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

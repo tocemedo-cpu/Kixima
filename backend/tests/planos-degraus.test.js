@@ -68,8 +68,18 @@ describe('Janela de histórico dos relatórios', () => {
   });
 
   test('o relatório diz que janela aplicou e o que ficou de fora dela', async () => {
-    await porPlano('BASE');
+    // O plano que conta aqui é o do FORNECEDOR — é a empresa dele que o
+    // endpoint lê. Pôr o do comprador seria mudar a empresa errada e deixar o
+    // teste a depender do plano que o fornecedor calhasse ter.
+    const f = await prisma.user.findUnique({ where: { email: USERS.fornecedor } });
+    const antes = await prisma.company.findUnique({
+      where: { id: f.companyId }, select: { plan: true },
+    });
+    await prisma.company.update({ where: { id: f.companyId }, data: { plan: 'BASE' } });
+
     const res = await auth(tokens.fornecedor).get('/api/reports/fornecedor');
+    await prisma.company.update({ where: { id: f.companyId }, data: { plan: antes.plan } });
+
     expect(res.status).toBe(200);
     expect(res.body.janela).toBeDefined();
     expect(res.body.janela.desde).toEqual(expect.any(String));

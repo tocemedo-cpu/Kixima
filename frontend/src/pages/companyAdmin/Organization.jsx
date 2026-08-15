@@ -93,6 +93,7 @@ export default function Organization() {
       <div className="bz-layout">
         <div className="bz-panel">
           <h3>{t('Dados Gerais')}</h3>
+          <div className="bz-scroll-x">
           <table className="bz-table">
             <tbody>
               {[
@@ -106,6 +107,7 @@ export default function Organization() {
               <tr><td className="bz-muted">{t('Estado')}</td><td><Pill tone={c.status === 'APROVADA' ? 'success' : 'pending'}>{c.status === 'APROVADA' ? 'Ativa' : c.status}</Pill> {c.verified ? <Pill tone="success">Verificada</Pill> : null}</td></tr>
             </tbody>
           </table>
+          </div>
         </div>
 
         <div className="bz-side">

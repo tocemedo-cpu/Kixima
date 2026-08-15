@@ -2813,3 +2813,162 @@ tbody tr:hover {
 .sd-fee-done { margin-top: 14px; }
 .home-programs { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 1100px) { .home-programs { grid-template-columns: 1fr; } }
+
+/* ==========================================================================
+   KIXIMA — CAMADA MOBILE (< 760px)
+   ==========================================================================
+   O desktop está congelado. Tudo abaixo vive dentro de `max-width: 759px` e
+   não existe a partir dos 760 — o breakpoint mais baixo que o resto da folha
+   já usava. Nada aqui edita uma regra anterior; é só acrescento.
+
+   A CAUSA RAIZ, medida e não suposta: a 390px, o documento tinha 643px de
+   largura. Não era a pesquisa — essa já estava esmagada nos 64px, era a
+   vítima. Era `.nav-left` com 367px e `flex-shrink: 0`, e dentro dele a
+   tagline "PLATAFORMA DE PROCUREMENT GARANTIDO" numa linha só. O mesmo bloco
+   de marca dava 430px na página de cadastro: uma causa, dois sintomas.
+
+   A ARITMÉTICA que decidiu o desenho: a 360px, depois de esconder a tagline,
+   sobram ~336px úteis. `.nav-left` ocupa ~170 e `.nav-actions` ~156. Sobram
+   dez. A pesquisa não cabe na mesma linha — e removê-la em mobile seria tirar
+   a função principal a quem mais precisa dela. Por isso a barra passa a duas
+   linhas. Custa ~42px de altura fixa em cada página; é o preço de manter a
+   pesquisa, e foi pago de propósito.
+   ========================================================================== */
+
+@media (max-width: 759px) {
+
+  /* --- Marca -------------------------------------------------------------
+     A palavra KIXIMA e o emblema FICAM. Só sai a tagline, que é o que não
+     cabe. Esconder aqui resolve a barra de topo e o hero de autenticação de
+     uma vez, porque é o mesmo componente. */
+  .brand-sub,
+  .brand-sub-light { display: none; }
+
+  /* --- Estrutura ---------------------------------------------------------
+     A barra deixa de ter altura fixa porque passa a ter duas linhas. */
+  .app-shell { grid-template-rows: auto 1fr; }
+
+  .navbar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 56px;
+    padding: 8px 12px;
+    gap: 8px 10px;
+  }
+
+  /* Linha 1: marca à esquerda, ações à direita. Linha 2: pesquisa inteira.
+     `min-width: 0` é o que permite ao bloco da marca encolher — sem ele,
+     `flex-shrink: 0` mantinha-o nos 367px e o overflow voltava. */
+  .nav-left {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 8px;
+  }
+  .nav-actions {
+    order: 2;
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+  .nav-search {
+    order: 3;
+    flex: 1 0 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  /* O nome pode truncar num ecrã muito estreito, mas nunca desaparece. */
+  .nav-logo { min-width: 0; }
+  .brand-logo { min-width: 0; }
+  .brand-text { min-width: 0; overflow: hidden; }
+  .brand-word { white-space: nowrap; }
+
+  .nav-icon { width: 36px; height: 36px; }
+  .nav-search input { padding: 8px 44px 8px 12px; font-size: 16px; }
+  /* 16px não é escolha estética: abaixo disso o Safari do iOS dá zoom
+     automático ao focar o campo, e o utilizador fica com a página ampliada
+     sem ter pedido nada. */
+
+  /* --- Conteúdo ---------------------------------------------------------- */
+  .app-shell > .content { padding: 16px 12px; }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .page-header h1 { font-size: 20px; }
+
+  /* --- Tabelas -----------------------------------------------------------
+     Continuam tabelas: converter em cartões perde a comparação coluna a
+     coluna, que é a razão de existirem numa plataforma de compras. O que
+     muda é que o scroll fica DENTRO do contentor, em vez de arrastar a
+     página inteira de lado.
+
+     Classe própria, e não a `.bz-tablewrap` que já existia, porque essa
+     ganha `overflow-x` num bloco de 980px — usá-la mudaria o comportamento
+     entre os 760 e os 980, que é território protegido. */
+  .bz-scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .bz-scroll-x > table {
+    min-width: 560px;
+  }
+
+  /* --- Autenticação ------------------------------------------------------
+     A marca NÃO era a causa aqui. Medido: com a tagline já escondida, o bloco
+     da marca tinha 198px de largura mínima — e a coluna continuava nos 494.
+     A cadeia real é `.login-panel` (494) → `.login-card` (414) → `input`
+     (348): um <input> tem largura mínima intrínseca e não encolhe sozinho, e
+     um item de grelha não desce abaixo do min-content do seu conteúdo. A
+     coluna era esticada pelo FORMULÁRIO, e o hero — que partilha a mesma
+     coluna quando a grelha passa a uma só — ia atrás.
+
+     Por isso são precisas as duas metades: deixar a coluna encolher, e deixar
+     os campos encolherem com ela. Só a primeira empurrava o transbordo para
+     dentro do painel em vez de o resolver. */
+  .login-panel { min-width: 0; }
+  .login-panel input,
+  .login-panel select,
+  .login-panel textarea,
+  .login-panel .field { min-width: 0; max-width: 100%; }
+
+  .login-hero { padding: 20px 16px; }
+  .auth-hero { gap: 16px; }
+  .auth-hero-title { font-size: 24px; }
+  .auth-hero-feats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .login-card { padding: 20px 16px; }
+}
+
+/* ==========================================================================
+   CORREÇÃO: transbordo horizontal na grelha de autenticação (todas as larguras)
+   ==========================================================================
+   Isto NÃO é camada mobile nem alteração de desenho — é a correção de um
+   defeito que já lá estava e que a medição apanhou de caminho. Medido ANTES
+   de qualquer alteração minha: /cadastro transbordava a 1280px (+8), a 1000px
+   (+53) e a 390px (+134).
+
+   A cadeia completa, medida a 1000px: `.login-panel` (476) → `.login-card`
+   (396) → `form` (330) → `.grid-cols.grid-2` com colunas de 242+242=484
+   dentro de 330. `repeat(2, 1fr)` parece flexível e não é: `1fr` tem mínimo
+   implícito `auto`, isto é, o min-content do conteúdo — e um <input> não
+   encolhe abaixo da sua largura intrínseca. As colunas ficam presas nos 242
+   e a segunda sai pela direita.
+
+   Foi por aqui que o diagnóstico inicial se enganou: o sintoma aparecia no
+   bloco da marca (que ia atrás da coluna inflada) sem a causa estar lá. A
+   primeira tentativa de correção — deixar só o painel encolher — PIOROU o
+   transbordo, de +53 para +97: o painel encolheu e as colunas fixas passaram
+   a caber ainda menos. É preciso deixar encolher as colunas também.
+
+   `minmax(0, 1fr)` mantém DUAS colunas e deixa-as encolher. Fica limitado ao
+   painel de autenticação de propósito: `.grid-cols` é usada em toda a
+   aplicação, e mudá-la globalmente seria mexer onde não é preciso.
+   ========================================================================== */
+.login-panel { min-width: 0; }
+.login-panel input,
+.login-panel select,
+.login-panel textarea { min-width: 0; max-width: 100%; }
+.login-panel .grid-cols.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.login-panel .grid-cols.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }

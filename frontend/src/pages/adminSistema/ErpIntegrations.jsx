@@ -164,6 +164,7 @@ export default function ErpIntegrations() {
               {audits.length > 0 ? (
                 <>
                   <div className="reg-section">{t('Histórico de auditoria')}</div>
+                  <div className="bz-scroll-x">
                   <table className="bz-table">
                     <thead><tr><th>{t('Quando')}</th><th>{t('Ação')}</th><th>ERP</th><th>{t('Por')}</th><th>{t('Resultado')}</th></tr></thead>
                     <tbody>
@@ -178,6 +179,7 @@ export default function ErpIntegrations() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </>
               ) : null}
             </>

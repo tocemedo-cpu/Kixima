@@ -104,6 +104,7 @@ export default function OrderDetail() {
       <div className="grid-cols grid-2" style={{ alignItems: 'start' }}>
         <div className="card card-pad" style={{ marginBottom: 16 }}>
           <strong style={{ fontSize: 13.5 }}>{t('Itens')}</strong>
+          <div className="bz-scroll-x">
           <table style={{ marginTop: 10 }}>
             <thead>
               <tr><th>{t('Produto')}</th><th>{t('Qtd.')}</th><th>{t('Preço unit.')}</th><th>{t('Total')}</th></tr>
@@ -119,6 +120,7 @@ export default function OrderDetail() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
         <div className="card card-pad" style={{ marginBottom: 16 }}>

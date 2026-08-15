@@ -82,6 +82,7 @@ export default function Inventory() {
         </div>
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
+          <div className="bz-scroll-x">
           <table>
             <thead>
               <tr>
@@ -130,6 +131,7 @@ export default function Inventory() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

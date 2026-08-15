@@ -66,6 +66,7 @@ export default function Profile() {
         <div className="bz-panel">
           <h3>{t('Atividade Recente')}</h3>
           {(!recent || recent.length === 0) ? <p className="bz-sub">{t('Sem atividade recente.')}</p> : (
+            <div className="bz-scroll-x">
             <table className="bz-table" style={{ marginTop: 4 }}>
               <tbody>
                 {recent.map((r) => (
@@ -77,6 +78,7 @@ export default function Profile() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
         <div className="bz-side">

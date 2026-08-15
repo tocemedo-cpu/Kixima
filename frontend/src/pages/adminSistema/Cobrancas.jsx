@@ -103,6 +103,7 @@ export default function Cobrancas() {
 
       <h3 style={{ margin: '18px 0 10px' }}>{t('Por confirmar')}</h3>
       <div className="bz-card">
+        <div className="bz-scroll-x">
         <table className="bz-table">
           <thead>
             <tr>
@@ -142,10 +143,12 @@ export default function Cobrancas() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <h3 style={{ margin: '22px 0 10px' }}>{t('Por pagar')}</h3>
       <div className="bz-card">
+        <div className="bz-scroll-x">
         <table className="bz-table">
           <thead>
             <tr>
@@ -176,6 +179,7 @@ export default function Cobrancas() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <h3 style={{ margin: '22px 0 10px' }}>{t('Subscrições vencidas')}</h3>
@@ -183,6 +187,7 @@ export default function Cobrancas() {
         {t('Estas empresas mantêm o acesso — a plataforma não corta o plano sozinha. Contacte-as para regularizar ou emita uma nova cobrança.')}
       </p>
       <div className="bz-card">
+        <div className="bz-scroll-x">
         <table className="bz-table">
           <thead>
             <tr>
@@ -205,6 +210,7 @@ export default function Cobrancas() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
