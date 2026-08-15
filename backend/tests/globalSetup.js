@@ -16,8 +16,18 @@ module.exports = async () => {
   const run = (cmd) =>
     execSync(cmd, { cwd: backendDir, env, stdio: ['ignore', 'ignore', 'inherit'] });
 
-  // Repõe o schema do zero (--force-reset apaga e recria as tabelas).
-  run('npx prisma db push --force-reset --skip-generate');
+  // APLICA AS MIGRAÇÕES, e não `db push`.
+  //
+  // Estava aqui `prisma db push --force-reset`, que constrói as tabelas a
+  // partir do schema.prisma e IGNORA o SQL das migrações. A consequência é
+  // silenciosa e grande: tudo o que só existe nas migrações — gatilhos,
+  // funções, índices, restrições escritas à mão — nunca existiu na base de
+  // testes. A suite passava a validar um schema que não é o que corre em
+  // produção, e um gatilho partido seria verde aqui e avariado lá.
+  //
+  // `migrate reset` apaga, recria e aplica as migrações pela ordem real. É
+  // mais lento, e é o único jeito de o que se testa ser o que se publica.
+  run('npx prisma migrate reset --force --skip-seed --skip-generate');
   // Popula os dados de demonstração (só para os testes — ver prisma/seed.demo.js).
   run('node prisma/seed.demo.js');
 };

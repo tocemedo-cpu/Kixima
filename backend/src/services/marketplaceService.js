@@ -46,6 +46,32 @@ function comSelo(supplier) {
   return { ...resto, destaque: planService.hasFeature(plan, 'selo') };
 }
 
+/**
+ * O MESMO mapa de acentos que a base usa em kixima_normalizar().
+ *
+ * Tem de ser o mesmo, caractere a caractere: a coluna `search_text` é escrita
+ * pelo gatilho com o mapa do SQL, e a consulta é escrita aqui com o mapa do JS.
+ * Se se desencontrarem, a pesquisa não dá erro — deixa simplesmente de
+ * encontrar coisas, e ninguém sabe porquê. `tests/pesquisa.test.js` compara os
+ * dois lados justamente por isso.
+ *
+ * Não se usa `normalize('NFD')` + remoção de diacríticos, que seria o idioma
+ * natural em JS: a base não tem NFD, e duas normalizações "equivalentes" mas
+ * diferentes é como esta classe de avaria começa.
+ */
+const ACENTOS = 'áàâãäéèêëíìîïóòôõöúùûüçñ';
+const SEM_ACENTOS = 'aaaaaeeeeiiiiooooouuuucn';
+
+function normalizarParaPesquisa(texto) {
+  const s = String(texto || '').toLowerCase();
+  let saida = '';
+  for (const c of s) {
+    const i = ACENTOS.indexOf(c);
+    saida += i === -1 ? c : SEM_ACENTOS[i];
+  }
+  return saida;
+}
+
 // Constrói o `where` do Prisma a partir de parâmetros já validados/saneados.
 function buildWhere(f) {
   const where = { active: true };
@@ -67,15 +93,21 @@ function buildWhere(f) {
   if (f.verified) where.supplier = { is: { verified: true } };
   if (f.excludeSupplierId) where.supplierId = { not: f.excludeSupplierId };
   if (f.q) {
-    const q = f.q;
+    // Uma coluna normalizada em vez de seis ILIKE.
+    //
+    // O que estava aqui antes era `contains` com `mode: 'insensitive'` sobre
+    // seis colunas: ignorava a CAIXA mas não os ACENTOS. "valvula" não
+    // encontrava "válvula" — e em Angola escreve-se sem acentos na caixa de
+    // pesquisa, é a norma. O fornecedor que publicou bem não aparecia, e
+    // concluía, com razão, que a culpa era da plataforma.
+    //
+    // Além disso, seis `%termo%` sem índice é varrimento de tabela seis vezes
+    // por pesquisa. Agora é uma coluna, com índice de trigramas.
+    const q = normalizarParaPesquisa(f.q);
     where.OR = [
-      { name: { contains: q, mode: 'insensitive' } },
-      { description: { contains: q, mode: 'insensitive' } },
-      { specialty: { contains: q, mode: 'insensitive' } },
-      { category: { contains: q, mode: 'insensitive' } },
-      { city: { contains: q, mode: 'insensitive' } },
-      { tags: { has: q } },
-      { supplier: { is: { name: { contains: q, mode: 'insensitive' } } } },
+      { searchText: { contains: q } },
+      { tags: { has: f.q } },
+      { supplier: { is: { searchText: { contains: q } } } },
     ];
   }
   return where;
@@ -224,4 +256,4 @@ async function compareSuppliers(productId, { excludeSupplierId } = {}) {
   };
 }
 
-module.exports = { search, facets, verifiedSuppliers, compareSuppliers };
+module.exports = { search, facets, verifiedSuppliers, compareSuppliers, normalizarParaPesquisa };

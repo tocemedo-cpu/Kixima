@@ -183,6 +183,10 @@ model Company {
   // do tipo no Postgres, que não é a ordem comercial e mudaria sozinha se
   // alguém acrescentasse um valor ao enum.
   searchRank       Int         @default(0) @map("search_rank")
+
+  // Nome + cidade + país normalizados (ver migração 20260831010000).
+  // Mantido por gatilho, como o dos produtos.
+  searchText       String?     @map("search_text")
   apiKeys          ApiKey[]
   // Até quando a subscrição está paga. Null = nunca foi cobrada (o Base de
   // arranque, ou uma empresa que a KIXIMA pôs num plano à mão).
@@ -529,6 +533,12 @@ model Product {
   rating      Float?
   reviewCount Int     @default(0) @map("review_count")
   viewCount   Int     @default(0) @map("view_count") // nº de visualizações por compradores
+
+  // Texto de pesquisa normalizado (minúsculas, sem acentos), mantido por um
+  // GATILHO na base — nunca escrito pela aplicação. Ver a migração
+  // 20260831000000_pesquisa_sem_acentos para o porquê do gatilho e não de
+  // código aqui. Nullable porque o gatilho a preenche; nunca fica vazia.
+  searchText  String? @map("search_text")
   imageUrl    String? @map("image_url") // imagem principal (destaque no marketplace)
 
   createdAt DateTime @default(now()) @map("created_at")
