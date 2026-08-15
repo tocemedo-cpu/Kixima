@@ -373,3 +373,78 @@ describe('Subscrição — sessão', () => {
     expect((await request(app).get('/api/assinatura')).status).toBe(401);
   });
 });
+
+describe('Muro de plano — o caminho para a subscrição', () => {
+  // O botão "Ver planos e subscrever" aparece porque o erro traz este CÓDIGO.
+  // Se alguém o trocar por um BusinessRuleError comum, o muro continua a
+  // funcionar e a interface deixa de dar saída — sem nada a partir-se.
+  test('bater num limite devolve PLANO_INSUFICIENTE e o plano necessário', async () => {
+    await prisma.company.update({
+      where: { id: companyId },
+      data: { plan: 'BASE', searchRank: planService.rankDoPlano('BASE') },
+    });
+    // A empresa tem 3 pessoas e o Base inclui 2 lugares.
+    const res = await auth(adminEmpresaToken)
+      .post('/api/companies/invites')
+      .send({ role: 'COMPRADOR', name: 'Pessoa a mais', email: 'amais@petroangola.co.ao' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('PLANO_INSUFICIENTE');
+    expect(res.body.error.details.planoNecessario).toBe('CORE');
+  });
+
+  test('uma funcionalidade fora do plano diz QUAL plano a inclui', async () => {
+    const forn = await prisma.user.findUnique({ where: { email: 'fornecedor@kianda.co.ao' } });
+    await prisma.company.update({
+      where: { id: forn.companyId },
+      data: { plan: 'BASE', searchRank: planService.rankDoPlano('BASE') },
+    });
+    const tokenForn = await login('fornecedor@kianda.co.ao');
+    const res = await auth(tokenForn).post('/api/catalog/api-keys').send({ nome: 'teste' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('PLANO_INSUFICIENTE');
+    // Calculado a partir da matriz, não escrito à mão: quando a API de catálogo
+    // mudar de degrau, a mensagem muda com ela em vez de passar a mentir.
+    expect(res.body.error.details.planoNecessario).toBe(planService.planoQueInclui('apiCatalogo'));
+
+    await prisma.company.update({
+      where: { id: forn.companyId },
+      data: { plan: 'PRO', searchRank: planService.rankDoPlano('PRO') },
+    });
+  });
+});
+
+describe('Subscrição — renovar acima do limite', () => {
+  // Uma empresa pode ficar acima do limite sem culpa (a KIXIMA baixou-lhe o
+  // plano à mão). Se o teste de lugares travasse também a renovação, ela não
+  // podia subir sem pagar nem pagar para ficar onde estava.
+  test('renovar o plano atual não é travado pelos lugares ocupados', async () => {
+    await prisma.company.update({
+      where: { id: companyId },
+      data: { plan: 'BASE', searchRank: planService.rankDoPlano('BASE') },
+    });
+    const ocupados = await assinaturaService.lugaresOcupados(companyId);
+    expect(ocupados).toBeGreaterThan(planService.limite('BASE', 'lugaresIncluidos'));
+
+    const res = await auth(adminEmpresaToken).get('/api/assinatura');
+    const base = res.body.opcoes.find((o) => o.plano === 'BASE');
+    expect(base.direcao).toBe('RENOVAR');
+    expect(base.impedimento).toBeNull();
+
+    // E o pedido passa mesmo.
+    const pedido = await auth(adminEmpresaToken).post('/api/assinatura/pedir').send({ plano: 'BASE' });
+    expect(pedido.status).toBe(201);
+  });
+
+  test('descer para um plano com menos lugares continua travado', async () => {
+    await prisma.company.update({
+      where: { id: companyId },
+      data: { plan: 'CORE', searchRank: planService.rankDoPlano('CORE') },
+    });
+    const res = await auth(adminEmpresaToken).get('/api/assinatura');
+    const base = res.body.opcoes.find((o) => o.plano === 'BASE');
+    expect(base.direcao).toBe('DESCER');
+    expect(base.impedimento?.codigo).toBe('LUGARES_INSUFICIENTES');
+  });
+});

@@ -124,6 +124,17 @@ export const EN10 = {
   'Só pode cancelar cobranças da sua própria empresa.':
     'You can only cancel charges belonging to your own company.',
   'Indique o motivo do cancelamento.': 'State the reason for the cancellation.',
+  // --- Caminhos para a subscrição ---------------------------------------------
+  // O muro de plano é o momento em que alguém quer mudar de plano. Era o único
+  // sítio da plataforma sem botão.
+  'Ver planos e subscrever': 'View plans and subscribe',
+  'Ver a subscrição': 'View the subscription',
+  'Só o administrador da empresa pode mudar de plano — fale com ele.':
+    'Only the company administrator can change the plan — talk to them.',
+  'Só o administrador da empresa escolhe o plano. Pode carregar o comprovativo de uma cobrança já emitida.':
+    'Only the company administrator chooses the plan. You can upload the proof for a charge already issued.',
+  'Subscrever este plano': 'Subscribe to this plan',
+  'Começar com o plano {plano}': 'Get started on the {plano} plan',
   // --- Chaves usadas via t(VARIÁVEL), invisíveis à auditoria estática ----------
   // A auditoria procura t('literal'). Estas passam por t(PERIODOS[x]) e por
   // t(p.label), com o valor a vir de um objeto ou do servidor — nenhuma delas
@@ -248,6 +259,15 @@ export const FR10 = {
   'Só pode cancelar cobranças da sua própria empresa.':
     'Vous ne pouvez annuler que les facturations de votre propre entreprise.',
   'Indique o motivo do cancelamento.': 'Indiquez le motif de l’annulation.',
+  // --- Caminhos para a subscrição ---------------------------------------------
+  'Ver planos e subscrever': 'Voir les forfaits et souscrire',
+  'Ver a subscrição': 'Voir l’abonnement',
+  'Só o administrador da empresa pode mudar de plano — fale com ele.':
+    'Seul l’administrateur de l’entreprise peut changer de forfait — adressez-vous à lui.',
+  'Só o administrador da empresa escolhe o plano. Pode carregar o comprovativo de uma cobrança já emitida.':
+    'Seul l’administrateur de l’entreprise choisit le forfait. Vous pouvez téléverser le justificatif d’une facturation déjà émise.',
+  'Subscrever este plano': 'Souscrire ce forfait',
+  'Começar com o plano {plano}': 'Commencer avec le forfait {plano}',
   // --- Chaves usadas via t(VARIÁVEL), invisíveis à auditoria estática ----------
   'por mês': 'par mois',
   'por trimestre': 'par trimestre',

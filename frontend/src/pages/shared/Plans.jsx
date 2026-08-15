@@ -4,7 +4,7 @@
 // utilizador; e o que distingue os três planos (Entrada, Core e Pro).
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../../api/client';
+import { api, getToken } from '../../api/client';
 import Logo from '../../components/Logo';
 import { Icon } from '../../components/icons';
 import { useI18n, LANGS } from '../../i18n';
@@ -78,6 +78,10 @@ export default function Plans() {
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
   const [precos, setPrecos] = useState(null);
+  // Página pública, mas também alcançável com sessão aberta. Basta a presença
+  // do token: chamar /api/auth/me só para escolher o destino de um botão faria
+  // um pedido autenticado numa página que tem de abrir sem sessão nenhuma.
+  const autenticado = Boolean(getToken());
 
   useEffect(() => {
     api.get('/api/planos')
@@ -125,22 +129,23 @@ export default function Plans() {
         </div>
       </section>
 
-      {/* Planos de acesso. */}
-      <section className="sd-formwrap" style={{ maxWidth: 900 }}>
+      {/* Planos de acesso. Mais largo do que as outras secções: são três
+          cartões e têm de caber lado a lado para se poderem comparar. */}
+      <section className="sd-formwrap" style={{ maxWidth: 1060 }}>
         <div className="pl-grid">
           {PLANS.map((p) => (
             <article className={`pl-card${p.highlight ? ' pl-card-pro' : ''}`} key={p.key}>
               {p.highlight ? <span className="pl-badge">{t('Grandes empresas')}</span> : null}
               <h2>{t(p.name)}</h2>
               <div className="pl-price">
-                <strong>{precos?.[p.key] ? `${precos[p.key].valorUsd} USD` : t('Sob consulta')}</strong>
+                <strong>{precos?.[p.key] ? `${precos[p.key].valorUsd.toLocaleString('pt-AO')} USD` : t('Sob consulta')}</strong>
                 <span>{precos?.[p.key] ? t(PERIODOS[precos[p.key].periodo] || '') : ''} {t(p.unit)}</span>
               </div>
               {/* O equivalente mensal, sempre. Sem ele, "100 USD" no Base e
                   "100 USD" no Core leem-se como o mesmo preço. */}
               {precos?.[p.key] && precos[p.key].meses > 1 ? (
                 <p className="helptext" style={{ margin: '-6px 0 10px' }}>
-                  ≈ {precos[p.key].porMesUsd} {t('USD por mês')}
+                  ≈ {precos[p.key].porMesUsd.toLocaleString('pt-AO')} {t('USD por mês')}
                 </p>
               ) : null}
               <p className="pl-for">{t(p.forWho)}</p>
@@ -149,6 +154,17 @@ export default function Plans() {
                   <li key={f}><Icon name="reception" size={14} /> <span>{t(f)}</span></li>
                 ))}
               </ul>
+              {/* Cada plano leva a algum lado. Sem isto a página explicava três
+                  planos e não deixava escolher nenhum — quem se decidia tinha
+                  de ir procurar o caminho sozinho.
+
+                  O destino depende de haver sessão: uma empresa que ainda não
+                  existe não pode subscrever, tem de se registar primeiro. Mandar
+                  um visitante para /empresa/assinatura dava-lhe o ecrã de login
+                  sem explicar porquê. */}
+              <Link className={`btn ${p.highlight ? 'btn-accent' : 'btn-ghost'} pl-cta`} to={autenticado ? '/empresa/assinatura' : '/cadastro'}>
+                {autenticado ? t('Subscrever este plano') : t('Começar com o plano {plano}', { plano: t(p.name) })}
+              </Link>
             </article>
           ))}
         </div>

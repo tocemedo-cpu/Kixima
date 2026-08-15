@@ -129,6 +129,15 @@ function impedimento(company, planoNovo, ocupados) {
       minimo: planService.requiredPlan(company.size),
     };
   }
+  // RENOVAR o plano atual nunca se bloqueia por lugares. Uma empresa pode estar
+  // acima do limite sem culpa — a KIXIMA baixou-lhe o plano à mão, ou o limite
+  // do plano mudou — e nesse estado o teste de lugares bloqueava também o botão
+  // de renovar. Ficava presa: não podia subir sem pagar, não podia pagar para
+  // ficar onde estava, e a única saída era despedir gente. O limite serve para
+  // travar a DESCIDA para um plano que não a comporta, não para impedir alguém
+  // de pagar o que já tem.
+  if (planService.normalizarPlano(company.plan) === planService.normalizarPlano(planoNovo)) return null;
+
   const lugares = planService.limite(planoNovo, 'lugaresIncluidos');
   if (lugares !== planService.ILIMITADO && ocupados > lugares) {
     return { codigo: 'LUGARES_INSUFICIENTES', plano: planoNovo, lugares, ocupados };

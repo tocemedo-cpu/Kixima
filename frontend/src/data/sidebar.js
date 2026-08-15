@@ -134,6 +134,10 @@ const FINANCEIRO = [
   { label: 'Centro Financeiro', icon: 'wallet', to: '/financeiro', end: true },
   { label: 'Faturas', icon: 'invoice', to: '/financeiro/faturas' },
   { label: 'Pagamentos', icon: 'payment', to: '/financeiro/historico' },
+  // O Financeiro não escolhe o plano, mas é quem faz as transferências e
+  // carrega o comprovativo. Sem esta entrada tinha acesso à página e nenhuma
+  // forma de lá chegar.
+  { label: 'Subscrição', icon: 'building', to: '/empresa/assinatura' },
   ...COMMON_TAIL,
 ];
 
@@ -146,6 +150,7 @@ const FINANCEIRO_FORNECEDOR = [
   { label: 'Pagamentos Recebidos', icon: 'payment', to: '/financeiro/recebidos' },
   { label: 'Faturas a Pagar', icon: 'invoice', to: '/financeiro/faturas' },
   { label: 'Pagamentos Feitos', icon: 'history', to: '/financeiro/historico' },
+  { label: 'Subscrição', icon: 'building', to: '/empresa/assinatura' },
   ...COMMON_TAIL,
 ];
 

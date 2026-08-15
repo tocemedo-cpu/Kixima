@@ -2644,7 +2644,10 @@ tbody tr:hover {
 .pl-fee { border: 1px solid var(--line); border-radius: 10px; padding: 14px; text-align: center; }
 .pl-fee strong { display: block; font-size: 24px; color: var(--brand-600); }
 .pl-fee span { font-size: 12px; color: var(--ink-600, #555); line-height: 1.5; display: block; margin-top: 4px; }
-.pl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+/* Três colunas: os planos passaram a três e a grelha tinha ficado em duas, o
+   que atirava o Pro sozinho para uma segunda linha. Comparam-se lado a lado ou
+   não se comparam. */
+.pl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .pl-card { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 22px; box-shadow: var(--shadow-card); }
 .pl-card-pro { border-color: var(--brand-600); }
 .pl-badge { position: absolute; top: -10px; right: 16px; background: var(--brand-600); color: #fff; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
@@ -2655,6 +2658,15 @@ tbody tr:hover {
 .pl-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .pl-list li { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: var(--ink-900); }
 .pl-list li svg { color: var(--ok-600, #16a066); flex-shrink: 0; margin-top: 2px; }
+/* Cartão em coluna com o botão no fundo: as listas têm alturas diferentes e os
+   pontos de decisão têm de ficar alinhados para se poderem comparar. */
+.pl-card { display: flex; flex-direction: column; }
+/* `align-content: start` porque a lista agora cresce para empurrar o botão
+   para o fundo: sem isto o grid esticava as linhas e os planos com menos
+   funcionalidades ficavam com buracos entre os pontos. */
+.pl-list { flex: 1 1 auto; align-content: start; }
+.pl-cta { width: 100%; margin-top: 18px; justify-content: center; }
+@media (max-width: 1000px) { .pl-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 760px) { .pl-grid, .pl-fees { grid-template-columns: 1fr; } }
 
 /* Cartões dos programas KIXIMA na home. */

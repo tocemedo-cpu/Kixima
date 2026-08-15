@@ -46,6 +46,23 @@ class BusinessRuleError extends AppError {
   }
 }
 
+/**
+ * Bateu-se num limite ou numa funcionalidade que o plano não inclui.
+ *
+ * Tem código próprio para a interface poder oferecer o caminho para a página de
+ * subscrição. Com o código genérico de regra de negócio ela teria de reconhecer
+ * o muro pelo TEXTO da mensagem — e uma frase reescrita partia o botão sem que
+ * teste nenhum reparasse. O plano necessário viaja à parte para a interface
+ * poder dizer qual é sem o extrair da frase.
+ */
+class PlanRequiredError extends BusinessRuleError {
+  constructor(message, planoNecessario = null) {
+    super(message);
+    this.code = 'PLANO_INSUFICIENTE';
+    this.details = { planoNecessario };
+  }
+}
+
 module.exports = {
   AppError,
   NotFoundError,
@@ -53,5 +70,6 @@ module.exports = {
   UnauthorizedError,
   ForbiddenError,
   ConflictError,
+  PlanRequiredError,
   BusinessRuleError,
 };

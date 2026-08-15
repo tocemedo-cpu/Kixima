@@ -105,7 +105,7 @@ export default function CatalogManage() {
   const cardInputs = useRef({});
 
   function load() {
-    api.get('/api/catalog', { supplierId: user.companyId }).then(setProducts).catch((e) => setError(e.message));
+    api.get('/api/catalog', { supplierId: user.companyId }).then(setProducts).catch((e) => setError(e));
   }
   useEffect(load, [user.companyId]);
 
@@ -194,7 +194,7 @@ export default function CatalogManage() {
       setShowForm(false);
       load();
     } catch (err) {
-      setError(err.message);
+      setError(err);
     } finally {
       setSubmitting(false);
     }
@@ -207,13 +207,13 @@ export default function CatalogManage() {
       await api.upload(`/api/catalog/${productId}/image`, file);
       load();
     } catch (err) {
-      setError(err.message);
+      setError(err);
     } finally {
       setUploadingId(null);
     }
   }
   async function handleDeactivate(id) {
-    try { await api.del(`/api/catalog/${id}`); load(); } catch (err) { setError(err.message); }
+    try { await api.del(`/api/catalog/${id}`); load(); } catch (err) { setError(err); }
   }
 
   return (

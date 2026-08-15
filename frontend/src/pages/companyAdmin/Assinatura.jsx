@@ -16,6 +16,7 @@ import { Crumbs, PageHead, Pill, EmptyRow } from '../../components/BuyerUI';
 import { ErrorBanner, SuccessBanner } from '../../components/Common';
 import { formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
+import { useAuth } from '../../auth/AuthContext';
 
 // Os valores passam por t(VARIÁVEL), que a auditoria estática não consegue ver
 // — ela procura t('literal'). Por isso estão declarados aqui e as chaves foram
@@ -43,6 +44,11 @@ const usd = (v) => `${Number(v).toLocaleString('pt-AO', { minimumFractionDigits:
 
 export default function Assinatura() {
   const { t } = useI18n();
+  // O Financeiro vê a página e carrega o comprovativo, mas não escolhe o plano
+  // — é a mesma divisão do pagamento de faturas, e é a que o servidor aplica.
+  // Sem isto teria botões que lhe devolviam 403 sem explicação nenhuma.
+  const { user } = useAuth();
+  const podeEscolherPlano = user?.role === 'COMPANY_ADMIN';
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
@@ -153,9 +159,11 @@ export default function Assinatura() {
                 {t('Este valor está fixado nesta cobrança e não muda, mesmo que a tabela de preços mude.')}
               </p>
             </div>
-            <button className="btn btn-ghost" onClick={() => cancelar(aberta.id)} disabled={busy}>
-              {t('Cancelar cobrança')}
-            </button>
+            {podeEscolherPlano ? (
+              <button className="btn btn-ghost" onClick={() => cancelar(aberta.id)} disabled={busy}>
+                {t('Cancelar cobrança')}
+              </button>
+            ) : null}
           </div>
 
           {aberta.status === 'PENDENTE' ? (
@@ -241,8 +249,9 @@ export default function Assinatura() {
           <Opcao
             key={o.plano}
             opcao={o}
-            busy={busy || Boolean(aberta)}
+            busy={busy || Boolean(aberta) || !podeEscolherPlano}
             temCobrancaAberta={Boolean(aberta)}
+            podeEscolherPlano={podeEscolherPlano}
             onPedir={() => pedirComAviso(o)}
           />
         ))}
@@ -305,7 +314,7 @@ function textoDoImpedimento(imp, t) {
   );
 }
 
-function Opcao({ opcao, busy, temCobrancaAberta, onPedir }) {
+function Opcao({ opcao, busy, temCobrancaAberta, podeEscolherPlano, onPedir }) {
   const { t } = useI18n();
   const { preco } = opcao;
   const rotulo = { SUBIR: 'Subir para este plano', DESCER: 'Descer para este plano', RENOVAR: 'Renovar este plano' };
@@ -366,6 +375,9 @@ function Opcao({ opcao, busy, temCobrancaAberta, onPedir }) {
       ) : null}
       {temCobrancaAberta && !opcao.impedimento ? (
         <p className="helptext">{t('Conclua ou cancele a cobrança em aberto para pedir outro plano.')}</p>
+      ) : null}
+      {!podeEscolherPlano && !opcao.impedimento && !temCobrancaAberta ? (
+        <p className="helptext">{t('Só o administrador da empresa escolhe o plano. Pode carregar o comprovativo de uma cobrança já emitida.')}</p>
       ) : null}
 
       <button

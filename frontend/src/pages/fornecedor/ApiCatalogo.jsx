@@ -20,7 +20,7 @@ export default function ApiCatalogo() {
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const carregar = () => api.get('/api/catalog/api-keys').then(setChaves).catch((e) => setError(e.message));
+  const carregar = () => api.get('/api/catalog/api-keys').then(setChaves).catch((e) => setError(e));
   useEffect(() => { carregar(); }, []);
 
   async function criar(e) {
@@ -30,7 +30,7 @@ export default function ApiCatalogo() {
       setNova(await api.post('/api/catalog/api-keys', { nome }));
       setNome('');
       carregar();
-    } catch (err) { setError(err.message); } finally { setBusy(false); }
+    } catch (err) { setError(err); } finally { setBusy(false); }
   }
 
   async function revogar(id, nomeDaChave) {
@@ -42,7 +42,7 @@ export default function ApiCatalogo() {
       await api.del(`/api/catalog/api-keys/${id}`);
       setSuccess(t('Chave revogada.'));
       carregar();
-    } catch (err) { setError(err.message); }
+    } catch (err) { setError(err); }
   }
 
   const ativas = (chaves || []).filter((c) => c.ativa);

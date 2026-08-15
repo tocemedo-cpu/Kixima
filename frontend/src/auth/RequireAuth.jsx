@@ -12,8 +12,16 @@ export function RequireAuth() {
   return <Outlet />;
 }
 
+/**
+ * `role` aceita um papel ou vários. Há ecrãs que servem mais do que uma
+ * persona — a subscrição é vista pelo Company Admin (que escolhe o plano) e
+ * pelo Financeiro (que faz a transferência e carrega o comprovativo), tal como
+ * o servidor permite. Com um só papel, o menu do Financeiro tinha uma entrada
+ * que o expulsava para o seu dashboard sem dizer porquê.
+ */
 export function RequireRole({ role }) {
   const { user } = useAuth();
-  if (user.role !== role) return <Navigate to={ROLE_HOME[user.role]} replace />;
+  const permitidos = Array.isArray(role) ? role : [role];
+  if (!permitidos.includes(user.role)) return <Navigate to={ROLE_HOME[user.role]} replace />;
   return <Outlet />;
 }

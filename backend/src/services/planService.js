@@ -15,7 +15,7 @@
 //   BASICO — versão essencial. Taxa de acesso por utilizador/mês (teto 100 USD).
 //   PRO    — obrigatório para GRANDES empresas. Além do resto, permite a
 //            integração com ERPs externos (SAP, AS400, Ariba, Maximo, Oracle…).
-const { BusinessRuleError } = require('../utils/errors');
+const { PlanRequiredError } = require('../utils/errors');
 
 const SEAT_PRICE_CAP_USD = Number(process.env.KIXIMA_SEAT_PRICE_CAP_USD) || 100;
 
@@ -239,10 +239,11 @@ function assertLimite(company, nome, usadoAgora, label) {
   if (max === ILIMITADO) return;
   if (Number(usadoAgora) < max) return;
   const plano = normalizarPlano(company?.plan);
-  const seguinte = plano === 'BASE' ? 'Core' : 'Pro';
-  throw new BusinessRuleError(
+  const seguinte = plano === 'BASE' ? 'CORE' : 'PRO';
+  throw new PlanRequiredError(
     `O plano ${plano} inclui ${max} ${label}. Já tem ${usadoAgora}. `
     + `O plano ${seguinte} aumenta este limite.`,
+    seguinte,
   );
 }
 
@@ -261,9 +262,11 @@ function planoQueInclui(feature) {
 // empresa não a inclui, dizendo qual é o plano que a tem.
 function assertFeature(company, feature, label) {
   if (!hasFeature(company?.plan, feature)) {
-    throw new BusinessRuleError(
+    const necessario = planoQueInclui(feature) || 'PRO';
+    throw new PlanRequiredError(
       `Esta funcionalidade (${label}) não está incluída no plano ${normalizarPlano(company?.plan)}. `
-      + `Faz parte do plano ${planoQueInclui(feature) || 'PRO'}.`
+      + `Faz parte do plano ${necessario}.`,
+      necessario,
     );
   }
 }

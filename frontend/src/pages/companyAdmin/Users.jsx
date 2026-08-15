@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
+import { ErrorBanner } from '../../components/Common';
 import { Icon } from '../../components/icons';
 import { formatDateTime } from '../../domain';
 import { useI18n } from '../../i18n';
@@ -49,7 +50,7 @@ export default function Users() {
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState(false);
 
-  function loadUsers() { api.get('/api/companies/users').then(setUsers).catch((e) => setError(e.message)); }
+  function loadUsers() { api.get('/api/companies/users').then(setUsers).catch((e) => setError(e)); }
   function loadInvites() { api.get('/api/companies/invites').then(setInvites).catch(() => {}); }
   useEffect(() => {
     if (user.companyId) api.get(`/api/companies/${user.companyId}`).then(setCompany).catch(() => {});
@@ -71,12 +72,12 @@ export default function Users() {
       setModal(false);
       flash(t('Convite enviado com sucesso para o email do funcionário.'));
       loadInvites();
-    } catch (err) { setFormError(err.message); } finally { setBusy(false); }
+    } catch (err) { setFormError(err); } finally { setBusy(false); }
   }
-  async function resendInvite(id, to) { try { await api.post(`/api/companies/invites/${id}/resend`); flash(t('Convite reenviado para {to}.', { to })); loadInvites(); } catch (e) { setError(e.message); } }
-  async function cancelInvite(id) { try { await api.post(`/api/companies/invites/${id}/cancel`); flash(t('Convite cancelado.')); loadInvites(); } catch (e) { setError(e.message); } }
-  async function accept(id, name) { try { await api.patch(`/api/companies/users/${id}/activate`); flash(t('Cadastro de {name} aceite.', { name })); loadUsers(); } catch (e) { setError(e.message); } }
-  async function reject(id, name) { try { await api.del(`/api/companies/users/${id}`); flash(t('Cadastro de {name} removido.', { name })); loadUsers(); } catch (e) { setError(e.message); } }
+  async function resendInvite(id, to) { try { await api.post(`/api/companies/invites/${id}/resend`); flash(t('Convite reenviado para {to}.', { to })); loadInvites(); } catch (e) { setError(e); } }
+  async function cancelInvite(id) { try { await api.post(`/api/companies/invites/${id}/cancel`); flash(t('Convite cancelado.')); loadInvites(); } catch (e) { setError(e); } }
+  async function accept(id, name) { try { await api.patch(`/api/companies/users/${id}/activate`); flash(t('Cadastro de {name} aceite.', { name })); loadUsers(); } catch (e) { setError(e); } }
+  async function reject(id, name) { try { await api.del(`/api/companies/users/${id}`); flash(t('Cadastro de {name} removido.', { name })); loadUsers(); } catch (e) { setError(e); } }
 
   const pending = (users || []).filter((u) => !u.active);
   const list = (users || []).filter((u) => !q || u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()));
@@ -88,7 +89,9 @@ export default function Users() {
       <PageHead title="Usuários & Perfis" subtitle="Gerencie os usuários, perfis e permissões da empresa."
         actions={<button className="btn btn-accent" onClick={openInviteModal}>{t('+ Novo Usuário')}</button>} />
 
-      {error ? <div className="empty-state" style={{ padding: 14 }}><p>{error}</p></div> : null}
+      {/* Banner e não caixa vazia: é aqui que se bate no limite de lugares do
+          plano, e é o banner que sabe oferecer o caminho para o resolver. */}
+      <ErrorBanner message={error} />
 
       {pending.length > 0 && (
         <div className="bz-card bz-tablewrap" style={{ marginBottom: 16 }}>
@@ -190,7 +193,11 @@ export default function Users() {
             <label className="field"><span>{t('Perfil')}</span>
               <select value={role} onChange={(e) => setRole(e.target.value)}>{options.map((o) => <option key={o.value} value={o.value}>{t(o.label)}</option>)}</select>
             </label>
-            {formError ? <p className="av-error" style={{ maxWidth: 'none' }}>{formError}</p> : null}
+            {/* Banner e não parágrafo: o limite de lugares do plano bate AQUI,
+                dentro do modal do convite, e é este o momento em que a pessoa
+                quer subir de plano. Um texto vermelho sem saída deixava-a a
+                fechar o modal sem saber o que fazer a seguir. */}
+            <ErrorBanner message={formError} />
             <div className="hs-form-actions">
               <button type="button" className="btn btn-ghost" onClick={() => setModal(false)}>{t('Cancelar')}</button>
               <button type="submit" className="btn btn-accent" disabled={busy || !options.length}>{busy ? t('A enviar…') : t('Salvar e enviar convite')}</button>

@@ -23,7 +23,7 @@ export default function CatalogImport() {
       const res = await api.upload('/api/catalog/import', file, 'file');
       setResult(res);
     } catch (err) {
-      setError(err.message);
+      setError(err);
     } finally {
       setBusy(false);
     }

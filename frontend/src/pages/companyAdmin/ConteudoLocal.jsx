@@ -28,7 +28,7 @@ export default function ConteudoLocal() {
     setBusy(true); setError('');
     api.get(`/api/reports/conteudo-local?de=${de}&ate=${ate}`)
       .then(setData)
-      .catch((e) => { setError(e.message); setData(null); })
+      .catch((e) => { setError(e); setData(null); })
       .finally(() => setBusy(false));
   }
   useEffect(() => { carregar(); }, []);

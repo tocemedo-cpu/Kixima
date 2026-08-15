@@ -31,7 +31,7 @@ export default function ErpIntegrations() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    api.get('/api/companies', { status: 'APROVADA' }).then(setCompanies).catch((e) => setError(e.message));
+    api.get('/api/companies', { status: 'APROVADA' }).then(setCompanies).catch((e) => setError(e));
   }, []);
 
   async function open(companyId) {
@@ -43,7 +43,7 @@ export default function ErpIntegrations() {
       setErp(data.erp);
       setForm(data.config || {});
       api.get(`/api/companies/${companyId}/erp-config/audits`).then(setAudits).catch(() => {});
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(e); }
   }
 
   function onErpChange(next) {
@@ -66,7 +66,7 @@ export default function ErpIntegrations() {
           ? t('Configuração {erp} guardada e sincronizada.', { erp: ERP_LABELS[erp] })
           : t('Configuração {erp} guardada.', { erp: ERP_LABELS[erp] }));
       api.get(`/api/companies/${selected}/erp-config/audits`).then(setAudits).catch(() => {});
-    } catch (e) { setError(e.message); } finally { setBusy(false); }
+    } catch (e) { setError(e); } finally { setBusy(false); }
   }
 
   async function test() {
@@ -76,7 +76,7 @@ export default function ErpIntegrations() {
       setCfg((c) => ({ ...c, lastTest: { at: r.at, ok: r.ok, message: r.message } }));
       setSuccess(r.ok ? t('Ligação OK: {msg}', { msg: r.message }) : t('Falha: {msg}', { msg: r.message }));
       api.get(`/api/companies/${selected}/erp-config/audits`).then(setAudits).catch(() => {});
-    } catch (e) { setError(e.message); } finally { setBusy(false); }
+    } catch (e) { setError(e); } finally { setBusy(false); }
   }
 
   const fields = (cfg?.fields?.[erp]) || [];

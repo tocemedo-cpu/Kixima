@@ -21,10 +21,10 @@ export default function Kits() {
   const [saving, setSaving] = useState(false);
 
   function loadKits() {
-    api.get('/api/kits').then(setKits).catch((e) => setError(e.message));
+    api.get('/api/kits').then(setKits).catch((e) => setError(e));
   }
   useEffect(() => {
-    api.get('/api/catalog', { supplierId: user.companyId }).then(setProducts).catch((e) => setError(e.message));
+    api.get('/api/catalog', { supplierId: user.companyId }).then(setProducts).catch((e) => setError(e));
     loadKits();
   }, [user.companyId]);
 
@@ -50,14 +50,14 @@ export default function Kits() {
       setShowForm(false);
       loadKits();
     } catch (err) {
-      setError(err.message);
+      setError(err);
     } finally {
       setSaving(false);
     }
   }
 
   async function remove(id) {
-    try { await api.del(`/api/kits/${id}`); loadKits(); } catch (e) { setError(e.message); }
+    try { await api.del(`/api/kits/${id}`); loadKits(); } catch (e) { setError(e); }
   }
 
   const kitTotal = (kit) => kit.items.reduce((s, it) => s + Number(it.product?.unitPrice || 0) * it.quantity, 0);

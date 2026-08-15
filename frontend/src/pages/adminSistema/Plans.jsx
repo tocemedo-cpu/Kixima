@@ -3,6 +3,7 @@
 // por cada empresa no cadastro, define o plano (BÁSICO/PRO) e o preço por
 // utilizador/mês (teto 100 USD), e mostra o custo mensal de acesso resultante.
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { useI18n } from '../../i18n';
@@ -78,6 +79,13 @@ export default function AdminPlans() {
       <PageHead
         title="Planos e Subscrições"
         subtitle="Dimensão da empresa (critério MPME), plano contratado e taxa de acesso por utilizador. Empresas de grande dimensão têm de subscrever o plano PRO."
+        actions={
+          /* O plano mexe-se em dois sítios: à mão aqui (correções, casos
+             especiais) e pela via paga, na fila das cobranças. Quem abre esta
+             página à procura de um pagamento por confirmar tem de ter por onde
+             ir — senão altera o plano à mão e a cobrança fica pendurada. */
+          <Link className="btn btn-ghost" to="/sistema/cobrancas">{t('Cobranças de subscrição')}</Link>
+        }
       />
 
       <KpiRow cards={[
