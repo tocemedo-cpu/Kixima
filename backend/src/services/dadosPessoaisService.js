@@ -18,6 +18,7 @@
 // titular que já não é identificável. É o equilíbrio que a própria lei prevê
 // quando há obrigação legal de conservação.
 const prisma = require('../config/database');
+const auditService = require('./auditService');
 const { NotFoundError, BusinessRuleError } = require('../utils/errors');
 
 // Tudo o que a plataforma sabe sobre uma pessoa, num único documento.
@@ -132,6 +133,22 @@ async function anonimizar(userId, { motivo } = {}) {
 
     // 3. As notificações são correspondência pessoal: essas apagam-se.
     const avisos = await tx.notification.deleteMany({ where: { userId } });
+
+    // 4. O registo de que ISTO aconteceu, escrito AQUI DENTRO e já sem nome.
+    //
+    //    Estava a ser escrito na rota, DEPOIS da transação, com o ator retirado
+    //    do token — ou seja, com o nome verdadeiro da pessoa. Era a única linha
+    //    do trilho garantidamente existente, e era a que a identificava: o
+    //    passo 2 limpava todas as outras e esta nascia logo a seguir a repor o
+    //    nome. Anonimização que deixa o nome no registo do pedido de
+    //    anonimização não é anonimização.
+    await auditService.record(tx, {
+      actor: { actorId: userId, actorName: 'Utilizador anonimizado', actorRole: user.role, companyId: user.companyId },
+      action: 'DADOS_PESSOAIS_ANONIMIZADOS',
+      entityType: 'User',
+      entityId: userId,
+      detail: { registosPreservados: trilho.count, motivo: motivo || null },
+    });
 
     return {
       utilizador: anonimo,

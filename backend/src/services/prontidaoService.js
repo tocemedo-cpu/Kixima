@@ -436,6 +436,38 @@ async function verMfa() {
   return checks;
 }
 
+// --- Contas bloqueadas ------------------------------------------------------
+/**
+ * Contas bloqueadas por tentativas falhadas, AGORA.
+ *
+ * O titular de cada uma recebe um email, mas isso avisa uma pessoa de cada vez.
+ * Alguém a varrer a plataforma inteira aparece aqui como um número — e é o
+ * número que diz que não é um utilizador distraído.
+ */
+async function verContasBloqueadas() {
+  const bloqueio = require('./loginAttemptService');
+  let contas;
+  try {
+    contas = await bloqueio.bloqueadasAgora();
+  } catch (err) {
+    return [{ id: 'bloqueios', titulo: 'Contas bloqueadas por tentativas falhadas', estado: AVISO,
+      detalhe: `Não foi possível contar: ${err.message}` }];
+  }
+  if (contas.length === 0) {
+    return [{ id: 'bloqueios', titulo: 'Contas bloqueadas por tentativas falhadas', estado: OK,
+      detalhe: 'Nenhuma neste momento.' }];
+  }
+  // Uma conta bloqueada é normal (alguém enganou-se). Várias ao mesmo tempo não é.
+  const varias = contas.length > 2;
+  return [{ id: 'bloqueios', titulo: 'Contas bloqueadas por tentativas falhadas',
+    estado: varias ? AVISO : OK,
+    detalhe: `${contas.length} conta(s): ${contas.map((c) => c.email).join(', ')}.`,
+    acao: varias
+      ? 'Várias contas bloqueadas ao mesmo tempo não é distração — é alguém a varrer a plataforma. '
+        + 'Os titulares já foram avisados por email; confirme com eles e considere antecipar o prazo da 2FA.'
+      : undefined }];
+}
+
 // --- Segredos ---------------------------------------------------------------
 function verSegredos() {
   const s = String(config.auth.jwtSecret || '');
@@ -488,8 +520,8 @@ function verCobrancas() {
  * Nunca devolve o valor de nenhum segredo.
  */
 async function verificar() {
-  const [copias, mfa, baseDeDados, armazenamento] = await Promise.all([
-    verCopias(), verMfa(), verBaseDeDados(), verArmazenamento(),
+  const [copias, mfa, baseDeDados, armazenamento, contas] = await Promise.all([
+    verCopias(), verMfa(), verBaseDeDados(), verArmazenamento(), verContasBloqueadas(),
   ]);
   const grupos = [
     { grupo: 'Base de dados', checks: baseDeDados },
@@ -498,6 +530,7 @@ async function verificar() {
     { grupo: 'Email', checks: verEmail() },
     { grupo: 'Autenticação de dois fatores', checks: mfa },
     { grupo: 'Segredos', checks: verSegredos() },
+    { grupo: 'Contas sob ataque', checks: contas },
     { grupo: 'Cobranças de subscrição', checks: verCobrancas() },
   ];
 

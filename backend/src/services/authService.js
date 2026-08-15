@@ -3,6 +3,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../config/database');
+const loginAttempts = require('./loginAttemptService');
 const config = require('../config/env');
 const mfaPolicy = require('./mfaPolicy');
 const { UnauthorizedError, ForbiddenError, ConflictError } = require('../utils/errors');
@@ -61,6 +62,13 @@ async function login({ email, password }) {
   if (!user) {
     throw new UnauthorizedError('Credenciais inválidas.');
   }
+
+  // O bloqueio é verificado AQUI, antes de tudo o resto. O bcrypt é caro de
+  // propósito: deixar uma conta sob ataque chegar à comparação consumia o
+  // processador do contentor a validar senhas que já se sabia que iam ser
+  // recusadas. E um bloqueio aplicado depois de acertar na senha não bloqueia.
+  loginAttempts.assertNaoBloqueado(user);
+
   // Conta criada por convite fica inativa até o Company Admin aceitar o cadastro.
   if (!user.active) {
     throw new ForbiddenError('A sua conta ainda aguarda aprovação do administrador da empresa.');
@@ -74,8 +82,14 @@ async function login({ email, password }) {
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
+    await loginAttempts.registarFalha(user);
     throw new UnauthorizedError('Credenciais inválidas.');
   }
+  // Senha certa: apaga o rasto das falhas anteriores. Antes da 2FA de propósito
+  // — quem sabe a senha já provou não ser quem andava a adivinhar, e deixar o
+  // contador de pé faria com que um código de 2FA errado a seguir somasse a
+  // falhas de senha, que são coisas diferentes.
+  await loginAttempts.limpar(user);
 
   // 2FA ativa: a senha não basta. Devolve um desafio de curta duração; o token
   // de sessão só sai no /2fa/verify com um código válido.

@@ -64,14 +64,10 @@ router.post('/me/anonimizar', async (req, res) => {
   const confere = await bcrypt.compare(String(req.body?.password || ''), eu.passwordHash);
   if (!confere) throw new ValidationError('Confirme a sua senha atual para eliminar os dados.');
 
+  // O registo de auditoria é escrito DENTRO da transação do serviço, e já sem
+  // nome. Escrevê-lo aqui usaria o ator do token — o nome verdadeiro — e repunha
+  // no trilho exatamente aquilo que a operação acabou de remover.
   const resultado = await dadosPessoais.anonimizar(req.user.id, { motivo: req.body?.motivo });
-  await auditService.recordSafe({
-    actor: auditService.actorFrom(req),
-    action: 'DADOS_PESSOAIS_ANONIMIZADOS',
-    entityType: 'User',
-    entityId: req.user.id,
-    detail: { registosPreservados: resultado.registosDeAuditoriaPreservados, ...auditService.contextoFrom(req) },
-  });
   res.json(resultado);
 });
 

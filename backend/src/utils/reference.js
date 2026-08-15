@@ -15,18 +15,52 @@ const prisma = require('../config/database');
 
 // Primeiro uso de um contador: arranca no maior número já emitido nessa tabela,
 // para não repetir referências criadas antes de existir contador.
+// Tabelas onde vivem as referências, por modelo. O nome da tabela não se pode
+// interpolar a partir do modelo sem abrir uma porta a SQL injection, por isso é
+// uma lista fechada: um modelo que não esteja aqui não é aceite.
+const TABELA_DO_MODELO = {
+  purchaseOrder: { tabela: 'purchase_orders', coluna: 'reference' },
+  invoice: { tabela: 'invoices', coluna: 'reference' },
+  contract: { tabela: 'contracts', coluna: 'reference' },
+  supplierDevRequest: { tabela: 'supplier_dev_requests', coluna: 'reference' },
+  planoCobranca: { tabela: 'plano_cobrancas', coluna: 'referencia' },
+};
+
+/**
+ * O maior número já emitido com este prefixo e ano.
+ *
+ * Calculado PELA BASE, com um único valor de volta. Antes lia-se a tabela toda
+ * para memória e ordenava-se em JavaScript — ordenar por texto não serve,
+ * porque "PO-2026-9" ficaria depois de "PO-2026-000010", e por isso era preciso
+ * converter tudo a número.
+ *
+ * Além de ser um leitura sem tecto (a tabela cresce para sempre), isso tornou-se
+ * perigoso quando passou a haver um limite por omissão nas consultas: uma leitura
+ * truncada devolveria um máximo mais baixo do que o real, e a referência
+ * seguinte colidiria com uma que já existe. Aqui não há nada para truncar.
+ */
 async function seedValue(prefix, counterModel, year, campo) {
-  // Ordenar por texto não serve quando há larguras diferentes ("PO-2026-9"
-  // ficaria depois de "PO-2026-000010"): procura-se o máximo NUMÉRICO.
-  const emitidas = await prisma[counterModel].findMany({
-    where: { [campo]: { startsWith: `${prefix}-${year}-` } },
-    select: { [campo]: true },
-  });
-  const ultimo = emitidas
-    .map((r) => Number(String(r[campo]).split('-').pop()))
-    .filter((n) => Number.isFinite(n))
-    .sort((a, b) => b - a)[0];
-  return ultimo > 0 ? ultimo : 0;
+  const alvo = TABELA_DO_MODELO[counterModel];
+  if (!alvo) {
+    throw new Error(
+      `Modelo "${counterModel}" não está registado em TABELA_DO_MODELO (src/utils/reference.js). `
+      + 'Acrescente-o antes de gerar referências para ele.',
+    );
+  }
+  if (alvo.coluna !== campo) {
+    throw new Error(`Campo "${campo}" não corresponde à coluna registada para ${counterModel}.`);
+  }
+
+  // Identificadores vêm da lista fechada acima, nunca do exterior; o prefixo e
+  // o ano vão como parâmetros.
+  const sql = `
+    SELECT COALESCE(MAX(NULLIF(regexp_replace("${alvo.coluna}", '^.*-', ''), '')::bigint), 0) AS max
+    FROM "${alvo.tabela}"
+    WHERE "${alvo.coluna}" LIKE $1
+      AND "${alvo.coluna}" ~ '-[0-9]+$'
+  `;
+  const [{ max }] = await prisma.$queryRawUnsafe(sql, `${prefix}-${year}-%`);
+  return Number(max) || 0;
 }
 
 /**

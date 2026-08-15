@@ -96,10 +96,19 @@ describe('Dados pessoais', () => {
         .send({ password: 'Tubo-Flexivel-55' });
       expect(res.body.registosDeAuditoriaPreservados).toBeGreaterThan(0);
 
-      const trilho = await prisma.auditLog.findMany({ where: { actorId: vitima.id } });
+      // Procura-se a linha, não se assume a posição: sem ORDER BY o Postgres não
+      // promete ordem nenhuma, e uma asserção em trilho[0] passa ou falha
+      // conforme o plano de execução do dia.
+      const trilho = await prisma.auditLog.findMany({
+        where: { actorId: vitima.id },
+        orderBy: { createdAt: 'asc' },
+      });
       expect(trilho.length).toBeGreaterThan(0);          // o registo não se apaga
-      expect(trilho[0].action).toBe('PO_APROVADA');      // e continua a dizer o que aconteceu
-      expect(trilho[0].actorName).toBe('Utilizador anonimizado'); // sem identificar quem
+      const aprovacao = trilho.find((r) => r.action === 'PO_APROVADA');
+      expect(aprovacao).toBeTruthy();                     // continua a dizer o que aconteceu
+      expect(aprovacao.actorName).toBe('Utilizador anonimizado'); // sem identificar quem
+      // E TODAS as linhas dela ficam sem nome, não só a que se foi buscar.
+      expect(trilho.every((r) => r.actorName === 'Utilizador anonimizado')).toBe(true);
     });
 
     test('a correspondência pessoal é eliminada', async () => {

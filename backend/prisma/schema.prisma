@@ -401,6 +401,21 @@ model User {
   // Tentativas falhadas neste código. Ao fim de poucas, o código morre — sem
   // isto, dez minutos de validade dariam para tentar muitos dos 10^6 valores.
   mfaCodeTentativas Int     @default(0) @map("mfa_code_tentativas")
+
+  // --- Tentativas de entrada falhadas (bloqueio progressivo) ----------------
+  // O limite por IP não protege uma CONTA: quem rode endereços tenta senhas sem
+  // tecto contra um email conhecido, e o contador do rate limiter vive em
+  // memória, por isso reinicia a cada arranque. Estes campos ficam na base
+  // porque o bloqueio tem de sobreviver a um reinício — no plano gratuito o
+  // contentor reinicia sozinho, e um bloqueio que se desfaz nesse momento é um
+  // bloqueio que não existe.
+  falhasSeguidas   Int       @default(0) @map("falhas_seguidas")
+  ultimaFalhaEm    DateTime? @map("ultima_falha_em")
+  // Bloqueio TEMPORÁRIO, sempre. Um bloqueio permanente seria uma arma: bastava
+  // errar a senha de alguém vezes suficientes para o deixar de fora.
+  bloqueadoAte     DateTime? @map("bloqueado_ate")
+  // Quando se avisou o titular pela última vez, para não lhe encher a caixa.
+  avisoBloqueioEm  DateTime? @map("aviso_bloqueio_em")
   // Trava reenvios seguidos (e impede usar a plataforma para enviar email a
   // outra pessoa em catadupa).
   mfaCodeEnviadoEm DateTime? @map("mfa_code_enviado_em")
