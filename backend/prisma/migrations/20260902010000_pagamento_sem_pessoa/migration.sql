@@ -1,0 +1,13 @@
+-- Um pagamento conciliado automaticamente não tem pessoa que o executou.
+--
+-- `processed_by_id` era obrigatório porque, até agora, TODOS os pagamentos
+-- passavam por alguém do Financeiro. Com a conciliação por referência bancária
+-- deixa de ser verdade: a linha do extrato bate com a fatura e o pagamento
+-- regista-se sozinho.
+--
+-- A tentação seria criar um utilizador "sistema" e atribuir-lhe estes
+-- pagamentos. Seria pior: passaria a existir, no registo de auditoria, uma
+-- conta que "executa" pagamentos e à qual ninguém pode pedir contas — e daria
+-- a estes pagamentos o mesmo aspeto dos que uma pessoa decidiu. O nulo diz a
+-- verdade: ninguém decidiu, foi o extrato que bateu certo.
+ALTER TABLE "payments" ALTER COLUMN "processed_by_id" DROP NOT NULL;

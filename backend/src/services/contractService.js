@@ -7,6 +7,7 @@ const { nextReference } = require('../utils/reference');
 const taxService = require('./taxService');
 const planService = require('./planService');
 const faturacaoService = require('./faturacaoService');
+const conciliacaoService = require('./conciliacaoService');
 
 /**
  * O contrato-quadro está no plano Pro — mas de QUEM?
@@ -185,7 +186,8 @@ async function consolidateContractBilling(contractId) {
       data: { paymentDueAt: dueAt },
     });
 
-    return criada;
+    await conciliacaoService.atribuirReferencia(criada.id, tx);
+    return tx.invoice.findUnique({ where: { id: criada.id } });
   });
 
   const notificationService = require('./notificationService');

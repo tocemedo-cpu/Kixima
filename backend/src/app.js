@@ -29,6 +29,7 @@ const contractRoutes = require('./routes/contractRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
 const faturacaoRoutes = require('./routes/faturacaoRoutes');
+const conciliacaoRoutes = require('./routes/conciliacaoRoutes');
 const apiCatalogoRoutes = require('./routes/apiCatalogoRoutes');
 const planosRoutes = require('./routes/planosRoutes');
 const assinaturaRoutes = require('./routes/assinaturaRoutes');
@@ -165,6 +166,7 @@ app.use('/api/contracts', contractRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/faturacao', faturacaoRoutes);
+app.use('/api/conciliacao', conciliacaoRoutes);
 
 // API pública de catálogo (plano Pro), autenticada por CHAVE e não por sessão.
 // Fica FORA do apiLimiter e do bloco autenticado por JWT de propósito: tem o seu

@@ -873,6 +873,12 @@ model Invoice {
   hashAnterior   String?   @map("hash_anterior")
   assinadaEm     DateTime? @map("assinada_em")
 
+  // Referência que o pagador escreve na transferência. Única em toda a
+  // plataforma — é por ela que a conciliação encontra a fatura, e duas iguais
+  // tornariam a conciliação ambígua, que é o mesmo que inútil.
+  referenciaPagamento String? @unique @map("referencia_pagamento")
+  linhasExtrato       LinhaExtrato[]
+
   payment     Payment?
   platformFee PlatformFee?
 
@@ -891,6 +897,34 @@ model Invoice {
 // `reference_counters`: esse incrementa fora da transação e deixa buracos
 // quando algo falha a seguir, e numa numeração certificada um buraco é uma
 // pergunta sem resposta boa numa inspeção.
+// Linha do extrato bancário, tal como entrou.
+//
+// Guarda-se o EXTRATO e não só o resultado da conciliação. Uma conciliação que
+// só regista sucessos não responde à pergunta que interessa quando algo corre
+// mal: "o dinheiro entrou?". "Não encontrámos nada" e "entrou mas não casou"
+// são respostas diferentes — a segunda tem uma linha aqui, a primeira não.
+model LinhaExtrato {
+  id        String   @id @default(uuid())
+  // Identificador da linha no banco: é o que torna a importação idempotente.
+  // Reenviar um extrato é banal, e não pode pagar a mesma fatura duas vezes.
+  idNoBanco String   @unique @map("id_no_banco")
+  dataValor DateTime @map("data_valor")
+  montante  Decimal  @db.Decimal(14, 2)
+  moeda     String   @default("AOA")
+  descricao String?
+  referencia String?
+  estado    String   @default("POR_CONCILIAR")
+  invoiceId String?  @map("invoice_id")
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+  motivo    String?
+  importadaEm  DateTime  @default(now()) @map("importada_em")
+  conciliadaEm DateTime? @map("conciliada_em")
+
+  @@index([estado])
+  @@index([referencia])
+  @@map("linhas_extrato")
+}
+
 model SerieFaturacao {
   id            String   @id @default(uuid())
   codigo        String
@@ -911,6 +945,15 @@ enum PaymentStatus {
   FALHOU
 }
 
+// Por onde o dinheiro entrou. TRANSFERENCIA_MANUAL é o que sempre existiu e
+// continua a existir: um canal automático que falhe não pode deixar ninguém
+// sem forma de pagar.
+enum CanalPagamento {
+  TRANSFERENCIA_MANUAL
+  REFERENCIA_BANCARIA
+  MULTICAIXA_EXPRESS
+}
+
 model Payment {
   id        String  @id @default(uuid())
   invoiceId String  @unique @map("invoice_id")
@@ -919,7 +962,11 @@ model Payment {
   amount        Decimal       @db.Decimal(14, 2)
   currency      String        @default("AOA")
   status        PaymentStatus @default(PROCESSADO)
-  processedById String        @map("processed_by_id") // utilizador Financeiro que executou
+  canal         CanalPagamento @default(TRANSFERENCIA_MANUAL)
+  // Nulo quando o pagamento foi conciliado automaticamente: ninguém o
+  // executou, foi o extrato que bateu certo. Um utilizador "sistema" seria
+  // pior — uma conta que executa pagamentos e a quem ninguém pede contas.
+  processedById String?       @map("processed_by_id") // utilizador Financeiro que executou
   reference     String        @unique // referência da transação
 
   // Comprovativo da transferência (obrigatório ao pagar) — prova de que o

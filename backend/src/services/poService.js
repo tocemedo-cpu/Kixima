@@ -21,6 +21,7 @@ const contractService = require('./contractService');
 const eventBus = require('./eventBus');
 const taxService = require('./taxService');
 const faturacaoService = require('./faturacaoService');
+const conciliacaoService = require('./conciliacaoService');
 
 // --- 1. Checkout: criação da PO ---------------------------------------------
 
@@ -274,7 +275,13 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
       },
     });
 
-    return [updatedPo, createdInvoice];
+    // A referência de pagamento nasce com a fatura, na mesma transação: é o
+    // que o comprador vai escrever na transferência, e tem de existir a partir
+    // do momento em que a fatura existe.
+    await conciliacaoService.atribuirReferencia(createdInvoice.id, tx);
+    const comReferencia = await tx.invoice.findUnique({ where: { id: createdInvoice.id } });
+
+    return [updatedPo, comReferencia];
   });
 
   await notificationService.events.faturaGerada(invoice, updated);
