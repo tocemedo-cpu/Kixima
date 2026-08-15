@@ -69,7 +69,7 @@ export default function SupplierDevelopment({ initialTrack = 'BUROCRACIA' }) {
   return (
     <div className="sd-page">
       <header className="sd-top">
-        <Link to="/login" className="sd-brand"><Logo size={20} mark={44} subtitle /></Link>
+        <Link to="/login" className="sd-brand"><Logo size={20} mark={44} subtitle light /></Link>
         <div className="sd-top-actions">
           <select className="input sd-lang" value={lang} onChange={(e) => setLang(e.target.value)} aria-label={t('Idioma')}>
             {LANGS.map((l) => <option key={l.code} value={l.code}>{l.flag} {l.label}</option>)}

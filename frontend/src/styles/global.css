@@ -28,24 +28,43 @@
   --navy-100: #c7cad2;
 
   /* Âmbar da chama — usado no logótipo e em estados "pendente" */
-  --amber-500: #f2a33c;
+  /* DOIS âmbares, e não um. O mesmo tom não pode servir fundo claro e fundo
+     escuro: escurecê-lo o suficiente para se ler sobre branco torna-o
+     impossível de ler sobre preto, e foi exatamente isso que aconteceu ao
+     corrigir só um valor. O sufixo diz sobre que fundo cada um se usa. */
+  --amber-500: #a35c00;   /* sobre claro — 5,1:1 sobre branco */
+  --amber-claro: #f0b45c; /* sobre escuro — 10,7:1 sobre a barra preta */
   --amber-600: #c9821f;
   --amber-100: #fbe8cf;
 
   /* Verde — pagamento garantido / estados OK */
-  --teal-600: #0f7a52;
+  /* Selo "verificado": #0f7a52 sobre o fundo verde-claro do próprio selo dava
+     4,2:1 a 10,5px. Escurecido para passar. */
+  --teal-600: #0b5c3e;
   --teal-500: #16a066;
   --teal-100: #d8efe2;
 
   /* Vermelho queimado — divergência / erro (distinto do vermelho da marca) */
-  --terracotta-600: #b3402a;
+  /* Dava 4,4:1 sobre o fundo do próprio banner de erro — abaixo do mínimo, e é
+     o texto que explica o que correu mal: o que menos se pode dar ao luxo de
+     ser difícil de ler. */
+  --terracotta-600: #97341f;
   --terracotta-100: #f6ddd5;
 
   --paper-050: #f7f7f8;
   --paper-100: #eeeef1;
   --ink-900: #16181d;
   --ink-600: #4b4f59;
-  --ink-400: #868b96;
+  /* #868b96 dava 3,3:1 sobre branco — abaixo dos 4,5:1 exigidos para texto
+     normal, e este token está em 73 sítios (legendas, migalhas, rótulos de
+     filtro). É o texto secundário de toda a aplicação: se ele não se lê, não
+     se lê metade da interface. #6b7280 dá 4,8:1 e mantém-se claramente
+     secundário. */
+  --ink-400: #6b7280;
+  /* Estava a ser usado em três sítios só com fallback — e com DOIS fallbacks
+     diferentes (#4b5563 e #64748b), ou seja, dois cinzentos ligeiramente
+     distintos a fingir que eram o mesmo token. */
+  --ink-500: #4b5563;
   --line: #e2e2e7;
 
   --font-display: 'Sora Variable', 'Sora', system-ui, 'Segoe UI', sans-serif;
@@ -111,6 +130,26 @@ textarea {
   outline-offset: 2px;
 }
 
+/* Saltar para o conteúdo. Fora do ecrã até receber o foco — não se esconde com
+   display:none nem visibility:hidden, que o retirariam também da ordem de
+   tabulação e dariam um link que nunca chega a poder ser usado. */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -60px;
+  z-index: 999;
+  background: var(--brand-600);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 0 0 8px 8px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: top .12s ease-out;
+}
+.skip-link:focus { top: 0; }
+@media (prefers-reduced-motion: reduce) { .skip-link { transition: none; } }
+
 /* --- Marca (logótipo da chama) ---------------------------------------- */
 
 .brand-logo {
@@ -157,10 +196,12 @@ textarea {
 
 .brand-sub {
   display: block;
-  font-size: 9px;
+  /* 9px é pequeno de mais para a única frase que explica o que isto é. 10px com
+     o cinzento já corrigido passa o contraste sem mudar a composição. */
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: var(--ink-400);
+  color: var(--ink-500, #4b5563);
   font-weight: 600;
   margin-top: 3px;
 }
@@ -1706,8 +1747,13 @@ tbody tr:hover {
   height: calc(100vh - 62px);
 }
 .sb-brand { display: flex; align-items: center; gap: 6px; padding: 2px 8px 6px; }
-.sb-num { color: rgba(255,255,255,0.45); font-size: 12px; font-weight: 700; width: 18px; flex-shrink: 0; }
-.sb-item.sb-active .sb-num, .sb-active-parent .sb-num { color: rgba(255,255,255,0.85); }
+/* 0.45 de opacidade sobre o vermelho da barra dava 3,2:1. O número da barra
+   lateral é a numeração dos itens do menu — quem não o lê perde a ordem. */
+.sb-num { color: rgba(255,255,255,0.92); font-size: 12px; font-weight: 700; width: 18px; flex-shrink: 0; }
+/* Branco PURO no item ativo: sobre o vermelho, 0.85 compõe para #fbdadc e dá
+   3,9:1. Branco cheio dá 4,9:1 — e a numeração do menu é o que dá a ordem a
+   quem não distingue bem o realce. */
+.sb-item.sb-active .sb-num, .sb-active-parent .sb-num { color: #fff; }
 .sb-tail { display: flex; flex-direction: column; gap: 2px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.10); }
 
 /* Área de navegação — scroll automático se o menu passar da tela. */
@@ -2003,7 +2049,8 @@ tbody tr:hover {
   position: sticky; top: 0; z-index: 40;
 }
 /* Subtítulo do logótipo claro sobre o header preto (wordmark mantém-se vermelho). */
-.navbar .brand-sub { color: rgba(255,255,255,0.55); }
+/* Sobre a barra escura: 0.55 dava 3,4:1 num texto de 10px. */
+.navbar .brand-sub { color: rgba(255,255,255,0.78); }
 .nav-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .nav-burger { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: #fff; }
 .nav-logo { text-decoration: none; }
@@ -2116,9 +2163,9 @@ tbody tr:hover {
 
 .protect-card { background: #0B0B0B; color: #fff; border-radius: 12px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; justify-content: center; }
 .protect-shield { color: var(--amber-500); }
-.protect-card h3 { color: var(--amber-500); font-size: 16px; letter-spacing: 0.02em; }
+.protect-card h3 { color: var(--amber-claro); font-size: 16px; letter-spacing: 0.02em; }
 .protect-card p { color: rgba(255,255,255,0.8); font-size: 13px; line-height: 1.5; }
-.protect-link { color: var(--amber-500); font-weight: 700; text-decoration: none; font-size: 13.5px; }
+.protect-link { color: var(--amber-claro); font-weight: 700; text-decoration: none; font-size: 13.5px; }
 
 .mini-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .mini-grid-5 { grid-template-columns: repeat(5, 1fr); }
@@ -2148,7 +2195,7 @@ tbody tr:hover {
 .sup-logo { width: 46px; height: 46px; border-radius: 10px; background: var(--paper-050); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--ink-600); overflow: hidden; }
 .sup-logo img { width: 100%; height: 100%; object-fit: contain; }
 .sup-name { font-size: 11.5px; line-height: 1.2; }
-.sup-rating { font-size: 11.5px; color: var(--amber-600); font-weight: 700; }
+.sup-rating { font-size: 11.5px; color: var(--amber-500); font-weight: 700; }
 
 @media (max-width: 1100px) {
   .home-kpis { grid-template-columns: repeat(2, 1fr); }
@@ -2225,9 +2272,13 @@ tbody tr:hover {
 .bz-sub2 { display: block; color: var(--ink-400); font-size: 11px; margin-top: 2px; }
 
 .bz-pill { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
-.bz-pill-success { background: #e7f6ec; color: #16884f; }
-.bz-pill-pending { background: #fdf3e3; color: #b9740f; }
-.bz-pill-info { background: #eaf1fb; color: #2f6fd6; }
+/* Os selos dizem o ESTADO — "Confirmada", "Por pagar", "Pendente". Três dos
+   quatro davam entre 3,4:1 e 4,2:1 sobre o próprio fundo: a informação mais
+   condensada da interface era a menos legível. Escurecidos para 5,5–6,2:1; o
+   fundo mantém-se, por isso a leitura de relance pela cor não muda. */
+.bz-pill-success { background: #e7f6ec; color: #0f6b3d; }
+.bz-pill-pending { background: #fdf3e3; color: #8c5709; }
+.bz-pill-info { background: #eaf1fb; color: #1f56ad; }
 .bz-pill-danger { background: #fdecec; color: #c0392b; }
 .bz-pill-neutral { background: var(--paper-100); color: var(--ink-600); }
 
@@ -2612,7 +2663,10 @@ tbody tr:hover {
 .sd-lang { max-width: 170px; padding: 6px 10px; font-size: 12.5px; }
 .sd-top-actions .btn-ghost { color: #fff; border-color: rgba(255,255,255,0.35); }
 .sd-hero { max-width: 900px; margin: 0 auto; padding: 44px 24px 10px; text-align: center; }
-.sd-tag { display: inline-block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brand-600); font-weight: 700; }
+/* --brand-700 e não --brand-600: como TEXTO sobre fundo claro o vermelho da
+   marca dá 4,4:1, abaixo do mínimo. Nos botões o --brand-600 mantém-se — aí é
+   fundo, com texto branco por cima, e o contraste é outro. */
+.sd-tag { display: inline-block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brand-700); font-weight: 700; }
 .sd-hero h1 { font-size: 34px; margin: 8px 0 12px; }
 .sd-hero p { font-size: 15px; line-height: 1.65; color: var(--ink-600, #555); max-width: 760px; margin: 0 auto; }
 .sd-tracks { max-width: 900px; margin: 26px auto 0; padding: 0 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -2692,7 +2746,7 @@ tbody tr:hover {
 .sd-fee-head { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
 .sd-fee-ico { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: #fff; color: var(--brand-600); flex-shrink: 0; }
 .sd-fee-head strong { display: block; font-size: 13px; }
-.sd-fee-amount { display: block; font-size: 18px; font-weight: 700; color: var(--brand-600); line-height: 1.25; }
+.sd-fee-amount { display: block; font-size: 18px; font-weight: 700; color: var(--brand-700); line-height: 1.25; }
 .sd-fee p { font-size: 12px; color: var(--ink-600, #666); line-height: 1.5; margin: 0 0 6px; }
 .sd-fee-accept { display: flex; gap: 10px; align-items: flex-start; margin-top: 10px; font-size: 12px; line-height: 1.45; cursor: pointer; }
 .sd-fee-accept input { margin-top: 2px; flex-shrink: 0; }

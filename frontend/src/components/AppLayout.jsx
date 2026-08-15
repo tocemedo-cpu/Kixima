@@ -43,6 +43,14 @@ export default function AppLayout() {
 
   return (
     <div className={`app-shell${menuOpen ? ' menu-open' : ''}`}>
+      {/* PRIMEIRO elemento focável da página, e tem de ser mesmo o primeiro: a
+          ordem de tabulação segue a ordem do DOM, por isso um salto colocado
+          depois da barra superior só se alcança já tendo passado por ela — que
+          é precisamente o que ele existe para evitar. Sem isto, quem navega por
+          teclado percorre os doze itens da barra lateral em CADA página antes
+          de chegar ao que veio ver. Só aparece quando recebe o foco. */}
+      <a href="#conteudo" className="skip-link">{t('Saltar para o conteúdo')}</a>
+
       <Navbar
         user={user}
         roleLabel={ROLE_LABELS[user.role]}
@@ -56,7 +64,7 @@ export default function AppLayout() {
       <Sidebar items={items} cartCount={cartCount} onLogout={logout} onNavigate={() => setMenuOpen(false)} />
       <div className="sb-scrim" onClick={() => setMenuOpen(false)} />
 
-      <main className="content">
+      <main className="content" id="conteudo" tabIndex={-1}>
         {notifOpen ? (
           <NotificationPanel
             notifications={notifications}

@@ -124,6 +124,7 @@ export const EN10 = {
   'Só pode cancelar cobranças da sua própria empresa.':
     'You can only cancel charges belonging to your own company.',
   'Indique o motivo do cancelamento.': 'State the reason for the cancellation.',
+  'Saltar para o conteúdo': 'Skip to content',
   // --- Caminhos para a subscrição ---------------------------------------------
   // O muro de plano é o momento em que alguém quer mudar de plano. Era o único
   // sítio da plataforma sem botão.
@@ -259,6 +260,7 @@ export const FR10 = {
   'Só pode cancelar cobranças da sua própria empresa.':
     'Vous ne pouvez annuler que les facturations de votre propre entreprise.',
   'Indique o motivo do cancelamento.': 'Indiquez le motif de l’annulation.',
+  'Saltar para o conteúdo': 'Aller au contenu',
   // --- Caminhos para a subscrição ---------------------------------------------
   'Ver planos e subscrever': 'Voir les forfaits et souscrire',
   'Ver a subscrição': 'Voir l’abonnement',

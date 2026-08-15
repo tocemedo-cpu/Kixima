@@ -84,12 +84,15 @@ export const LEGAL = {
         ] },
         { n: 6, title: 'Conservação', paras: [
           'Conservamos os dados enquanto a conta estiver ativa e, após o encerramento, pelos prazos exigidos por lei ou necessários à defesa de direitos — em particular, os registos de operações financeiras e o trilho de auditoria, que por natureza são conservados de forma imutável.',
+          'Os prazos concretos por categoria de dados estão publicados e são os mesmos que a plataforma aplica automaticamente: pode consultá-los a qualquer momento em /api/retencao. As notificações já lidas são eliminadas ao fim de 180 dias e os convites de funcionário expirados ou cancelados ao fim de 90 dias.',
         ] },
         { n: 7, title: 'Segurança', paras: [
           'Aplicamos medidas técnicas e organizativas adequadas: cifragem em trânsito (HTTPS), senhas com hash forte, controlo de acessos por perfil, registo de auditoria imutável, isolamento por empresa (multi-tenant) e monitorização de erros. Nenhum sistema é 100% seguro; incidentes relevantes serão comunicados nos termos da lei.',
         ] },
         { n: 8, title: 'Os seus direitos', paras: [
-          'Nos termos da Lei n.º 22/11, tem direito de acesso, retificação, atualização e, quando aplicável, eliminação dos seus dados pessoais, bem como de oposição ao tratamento em certas circunstâncias. Pode exercê-los através do módulo de Ajuda/Suporte. Note que dados integrados em registos de operações e auditoria podem ter de ser conservados por obrigação legal.',
+          'Nos termos da Lei n.º 22/11, tem direito de acesso, retificação, atualização e, quando aplicável, eliminação dos seus dados pessoais, bem como de oposição ao tratamento em certas circunstâncias.',
+          'Não precisa de pedir: em Configurações → Segurança pode descarregar tudo o que a plataforma sabe sobre si, num único ficheiro, e pode eliminar os seus dados pessoais sem passar por ninguém. A eliminação exige a sua senha porque é irreversível e fecha a conta.',
+          'Os registos de operações e o trilho de auditoria são conservados por obrigação legal, mas deixam de o identificar: o seu nome é substituído e a ligação à sua pessoa desaparece. Para o resto, ou dúvidas, use o módulo de Ajuda/Suporte.',
         ] },
         { n: 9, title: 'Cookies e tecnologias locais', paras: [
           'A plataforma usa apenas armazenamento local estritamente necessário ao funcionamento (ex.: manter a sessão iniciada). Não usamos cookies de publicidade nem rastreamento de terceiros.',
@@ -175,12 +178,15 @@ export const LEGAL = {
         ] },
         { n: 6, title: 'Retention', paras: [
           'We retain data while the account is active and, after closure, for the periods required by law or necessary to defend rights — in particular financial operation records and the audit trail, which by their nature are retained immutably.',
+          'The specific periods per data category are published and are the same ones the platform applies automatically: you can read them at any time at /api/retencao. Notifications you have already read are deleted after 180 days, and expired or cancelled employee invitations after 90 days.',
         ] },
         { n: 7, title: 'Security', paras: [
           'We apply appropriate technical and organisational measures: encryption in transit (HTTPS), strongly hashed passwords, role-based access control, an immutable audit trail, per-company isolation (multi-tenant) and error monitoring. No system is 100% secure; material incidents will be reported as required by law.',
         ] },
         { n: 8, title: 'Your rights', paras: [
-          'Under Law no. 22/11, you have the right of access, rectification, updating and, where applicable, erasure of your personal data, as well as objection to processing in certain circumstances. You may exercise these through the Help/Support module. Note that data embedded in operation and audit records may have to be retained by legal obligation.',
+          'Under Law no. 22/11, you have the right of access, rectification, updating and, where applicable, erasure of your personal data, as well as objection to processing in certain circumstances.',
+          'You do not have to ask: under Settings → Security you can download everything the platform knows about you in a single file, and you can erase your personal data without going through anyone. Erasure asks for your password because it is irreversible and closes the account.',
+          'Operation records and the audit trail are retained by legal obligation, but they stop identifying you: your name is replaced and the link to you disappears. For anything else, or for questions, use the Help/Support module.',
         ] },
         { n: 9, title: 'Cookies and local technologies', paras: [
           'The platform uses only local storage strictly necessary for operation (e.g. keeping you signed in). We do not use advertising cookies or third-party tracking.',
@@ -266,12 +272,15 @@ export const LEGAL = {
         ] },
         { n: 6, title: 'Conservation', paras: [
           "Nous conservons les données tant que le compte est actif et, après sa fermeture, pendant les durées exigées par la loi ou nécessaires à la défense de droits — en particulier les enregistrements d'opérations financières et la piste d'audit, conservés par nature de façon immuable.",
+          "Les durées précises par catégorie de données sont publiées et sont celles que la plateforme applique automatiquement : vous pouvez les consulter à tout moment sur /api/retencao. Les notifications déjà lues sont supprimées au bout de 180 jours et les invitations de collaborateur expirées ou annulées au bout de 90 jours.",
         ] },
         { n: 7, title: 'Sécurité', paras: [
           "Nous appliquons des mesures techniques et organisationnelles appropriées : chiffrement en transit (HTTPS), mots de passe hachés de façon robuste, contrôle d'accès par profil, piste d'audit immuable, isolement par entreprise (multi-tenant) et surveillance des erreurs. Aucun système n'est sûr à 100 % ; les incidents importants seront communiqués conformément à la loi.",
         ] },
         { n: 8, title: 'Vos droits', paras: [
-          "Au titre de la Loi n.º 22/11, vous disposez d'un droit d'accès, de rectification, de mise à jour et, le cas échéant, d'effacement de vos données personnelles, ainsi que d'opposition au traitement dans certaines circonstances. Vous pouvez les exercer via le module Aide/Support. Notez que les données intégrées aux enregistrements d'opérations et d'audit peuvent devoir être conservées par obligation légale.",
+          "Au titre de la Loi n.º 22/11, vous disposez d'un droit d'accès, de rectification, de mise à jour et, le cas échéant, d'effacement de vos données personnelles, ainsi que d'opposition au traitement dans certaines circonstances.",
+          "Vous n'avez pas besoin de le demander : dans Paramètres → Sécurité, vous pouvez télécharger tout ce que la plateforme sait de vous dans un seul fichier, et effacer vos données personnelles sans passer par personne. L'effacement demande votre mot de passe car il est irréversible et ferme le compte.",
+          "Les enregistrements d'opérations et la piste d'audit sont conservés par obligation légale, mais ils cessent de vous identifier : votre nom est remplacé et le lien vers vous disparaît. Pour le reste, ou en cas de question, utilisez le module Aide/Support.",
         ] },
         { n: 9, title: 'Cookies et technologies locales', paras: [
           "La plateforme n'utilise qu'un stockage local strictement nécessaire au fonctionnement (ex. : maintien de la session ouverte). Nous n'utilisons ni cookies publicitaires ni traceurs tiers.",

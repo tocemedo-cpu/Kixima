@@ -150,6 +150,10 @@ app.use('/api/v1/catalogo', apiCatalogoRoutes);
 // Tabela de planos e preços — pública, para a página de preços não ter os
 // números escritos à mão.
 app.use('/api/planos', planosRoutes);
+// Política de retenção — pública, e lida pela página de privacidade. Um prazo
+// escrito à mão no texto legal diverge do que o sistema faz e ninguém dá por
+// isso; aqui a página mostra o que a limpeza automática aplica.
+app.get('/api/retencao', (req, res) => res.json({ politica: require('./services/retencaoService').politica() }));
 // Subscrição: pedir plano, carregar comprovativo, confirmar. Autenticada —
 // ao contrário de /api/planos, que é a tabela pública de preços.
 app.use('/api/assinatura', assinaturaRoutes);

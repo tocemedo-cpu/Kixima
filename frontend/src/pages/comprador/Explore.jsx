@@ -120,7 +120,7 @@ export default function Explore() {
       <div className="svc-count">
         {loading ? t('A carregar…') : <>{q ? `${t('Resultado para')} "${q}"` : t('Resultado')} <span className="exp-total">{total.toLocaleString('pt-PT')} {t('resultados')}</span></>}
         <span className="svc-sortwrap">{t('Ordenar por')}{' '}
-          <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>
+          <select aria-label={t('Ordenar por')} value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>
             {SORTS.map(([v, l]) => <option key={v} value={v}>{t(l)}</option>)}
           </select>
         </span>
@@ -200,7 +200,7 @@ export default function Explore() {
                   : <button key={n} className={`svc-pagn${n === page ? ' on' : ''}`} onClick={() => setPage(n)}>{n}</button>)}
                 <button className="btn btn-ghost btn-sm" disabled={page >= pages} onClick={() => setPage((x) => x + 1)}>{t('Próximo')} →</button>
                 <span className="exp-perpage">{t('Resultados por página')}{' '}
-                  <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+                  <select aria-label={t('Resultados por página')} value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
                     {[12, 24, 48].map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </span>

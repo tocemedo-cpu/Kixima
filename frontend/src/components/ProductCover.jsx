@@ -12,10 +12,19 @@ export default function ProductCover({ imageUrl, category, name = '', caption = 
     return <img className="mk-photo" src={imageUrl} alt={name} loading="lazy" />;
   }
   const vis = categoryVisual(category);
-  return (
-    <div className="mk-ph" aria-label={t('Sem fotografia')}>
+  // Com legenda, "Sem fotografia" já está escrito no ecrã e um leitor de ecrã
+  // lê-o. Um aria-label por cima diria a mesma coisa duas vezes — e o
+  // role="img" que ele exige transforma a caixa numa folha, escondendo o texto
+  // visível da árvore de acessibilidade. Sem legenda a caixa é só um gráfico, e
+  // aí sim precisa de um nome, senão é anunciada como nada.
+  return caption ? (
+    <div className="mk-ph">
       <Icon name={vis.icon} size={28} />
-      {caption ? <span>{t('Sem fotografia')}</span> : null}
+      <span>{t('Sem fotografia')}</span>
+    </div>
+  ) : (
+    <div className="mk-ph" role="img" aria-label={t('Sem fotografia')}>
+      <Icon name={vis.icon} size={28} />
     </div>
   );
 }

@@ -9,6 +9,7 @@ const prisma = require('./config/database');
 const { schedulePolicyExpiryJob } = require('./jobs/policyExpiryJob');
 const { scheduleBackupJob } = require('./jobs/backupJob');
 const { scheduleMfaLembreteJob } = require('./jobs/mfaLembreteJob');
+const { scheduleRetencaoJob } = require('./jobs/retencaoJob');
 const eventBus = require('./services/eventBus');
 
 const server = app.listen(config.port, () => {
@@ -53,6 +54,7 @@ const server = app.listen(config.port, () => {
   schedulePolicyExpiryJob();
   scheduleBackupJob();
   scheduleMfaLembreteJob();
+  scheduleRetencaoJob();
   // Regista nos logs se a integração ERP (RabbitMQ) está ativa.
   eventBus.init();
 });

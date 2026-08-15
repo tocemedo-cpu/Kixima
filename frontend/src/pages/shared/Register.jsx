@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import AuthHero from '../../components/AuthHero';
+import { Field } from '../../components/Common';
 import { useI18n } from '../../i18n';
 
 const EMPTY_FORM = {
@@ -121,63 +122,65 @@ export default function Register() {
               <h2>{t('Cadastro de empresa')}</h2>
               <p>{t('Onboarding na KIXIMA — dados, conta de administrador e documentos.')}</p>
               <form onSubmit={handleSubmit}>
-                <div className="field">
-                  <label>{t('Tipo de empresa')}</label>
-                  <select value={form.type} onChange={(e) => update('type', e.target.value)}>
-                    <option value="CLIENTE">{t('Cliente (operadora)')}</option>
-                    <option value="FORNECEDOR">{t('Fornecedora')}</option>
-                  </select>
-                </div>
-                <div className="field">
-                  <label>{t('Nome da empresa')}</label>
-                  <input required value={form.name} onChange={(e) => update('name', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{t('NIF')}</label>
-                  <input required value={form.taxId} onChange={(e) => update('taxId', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{t('Email de contacto da empresa')}</label>
-                  <input type="email" required value={form.contactEmail} onChange={(e) => update('contactEmail', e.target.value)} />
-                </div>
+                <Field label={t('Tipo de empresa')}>
+                  {(id) => (<>
+                    <select id={id} value={form.type} onChange={(e) => update('type', e.target.value)}>
+                      <option value="CLIENTE">{t('Cliente (operadora)')}</option>
+                      <option value="FORNECEDOR">{t('Fornecedora')}</option>
+                    </select>
+                  </>)}
+                </Field>
+                <Field label={t('Nome da empresa')}>
+                  {(id) => (<>
+                    <input id={id} required value={form.name} onChange={(e) => update('name', e.target.value)} />
+                  </>)}
+                </Field>
+                <Field label={t('NIF')}>
+                  {(id) => (<>
+                    <input id={id} required value={form.taxId} onChange={(e) => update('taxId', e.target.value)} />
+                  </>)}
+                </Field>
+                <Field label={t('Email de contacto da empresa')}>
+                  {(id) => (<>
+                    <input id={id} type="email" required value={form.contactEmail} onChange={(e) => update('contactEmail', e.target.value)} />
+                  </>)}
+                </Field>
                 <div className="grid-cols grid-2">
-                  <div className="field">
-                    <label>{t('Telefone (opcional)')}</label>
-                    <input value={form.contactPhone} onChange={(e) => update('contactPhone', e.target.value)} />
-                  </div>
-                  <div className="field">
-                    <label>{t('Morada (opcional)')}</label>
-                    <input value={form.address} onChange={(e) => update('address', e.target.value)} />
-                  </div>
+                  <Field label={t('Telefone (opcional)')}>
+                    {(id) => <input id={id} value={form.contactPhone} onChange={(e) => update('contactPhone', e.target.value)} />}
+                  </Field>
+                  <Field label={t('Morada (opcional)')}>
+                    {(id) => <input id={id} value={form.address} onChange={(e) => update('address', e.target.value)} />}
+                  </Field>
                 </div>
 
                 <div className="reg-section">{t('Conta de administrador')}</div>
-                <div className="field">
-                  <label>{t('Nome do administrador')}</label>
-                  <input required value={form.adminName} onChange={(e) => update('adminName', e.target.value)} />
-                </div>
+                <Field label={t('Nome do administrador')}>
+                  {(id) => (<>
+                    <input id={id} required value={form.adminName} onChange={(e) => update('adminName', e.target.value)} />
+                  </>)}
+                </Field>
                 <div className="grid-cols grid-2">
-                  <div className="field">
-                    <label>{t('Email (login)')}</label>
-                    <input type="email" required value={form.adminEmail} onChange={(e) => update('adminEmail', e.target.value)} />
-                  </div>
-                  <div className="field">
-                    <label>{t('Senha (mín. 12)')}</label>
-                    <input type="password" required minLength={12} value={form.adminPassword} onChange={(e) => update('adminPassword', e.target.value)} />
-                  </div>
+                  <Field label={t('Email (login)')}>
+                    {(id) => <input id={id} type="email" required value={form.adminEmail} onChange={(e) => update('adminEmail', e.target.value)} />}
+                  </Field>
+                  <Field label={t('Senha (mín. 12)')}>
+                    {(id) => <input id={id} type="password" required minLength={12} value={form.adminPassword} onChange={(e) => update('adminPassword', e.target.value)} />}
+                  </Field>
                 </div>
 
                 <div className="reg-section">{t('Documentos de credenciamento')}</div>
                 {requiredDocs.map((d) => (
-                  <div className="field" key={d.type}>
-                    <label>{t(d.label)} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
-                    <input
-                      type="file"
-                      accept="application/pdf,image/*"
-                      onChange={(e) => setDocs((prev) => ({ ...prev, [d.type]: e.target.files[0] || undefined }))}
-                    />
-                    {docs[d.type] ? <small className="helptext">✓ {docs[d.type].name}</small> : null}
-                  </div>
+                  <Field label={t(d.label)} obrigatorio key={d.type}>
+                    {(id) => (<>
+                      <input id={id}
+                        type="file"
+                        accept="application/pdf,image/*"
+                        onChange={(e) => setDocs((prev) => ({ ...prev, [d.type]: e.target.files[0] || undefined }))}
+                      />
+                      {docs[d.type] ? <small className="helptext">✓ {docs[d.type].name}</small> : null}
+                    </>)}
+                  </Field>
                 ))}
                 <small className="helptext">{t('PDF ou imagem, até 10 MB cada.')}</small>
 
@@ -188,61 +191,68 @@ export default function Register() {
                       {t('Obrigatória no credenciamento de fornecedoras — garante a cobertura das transações realizadas na plataforma.')}
                     </p>
                     <div className="grid-cols grid-2">
-                      <div className="field">
-                        <label>{t('Seguradora')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
-                        <input required value={form.insurer} onChange={(e) => update('insurer', e.target.value)} />
-                      </div>
-                      <div className="field">
-                        <label>{t('Nº da apólice')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
-                        <input required value={form.policyNumber} onChange={(e) => update('policyNumber', e.target.value)} />
-                      </div>
+                      <Field label={t('Seguradora')} obrigatorio>
+                        {(id) => (<>
+                          <input id={id} required value={form.insurer} onChange={(e) => update('insurer', e.target.value)} />
+                        </>)}
+                      </Field>
+                      <Field label={t('Nº da apólice')} obrigatorio>
+                        {(id) => (<>
+                          <input id={id} required value={form.policyNumber} onChange={(e) => update('policyNumber', e.target.value)} />
+                        </>)}
+                      </Field>
                     </div>
                     <div className="grid-cols grid-2">
-                      <div className="field">
-                        <label>{t('Cobertura')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
-                        <input type="number" min="0" step="any" required value={form.coverageAmount} onChange={(e) => update('coverageAmount', e.target.value)} />
-                      </div>
-                      <div className="field">
-                        <label>{t('Moeda')}</label>
-                        <select value={form.policyCurrency} onChange={(e) => update('policyCurrency', e.target.value)}>
-                          <option value="AOA">AOA</option>
-                          <option value="USD">USD</option>
-                          <option value="EUR">EUR</option>
-                        </select>
-                      </div>
+                      <Field label={t('Cobertura')} obrigatorio>
+                        {(id) => (<>
+                          <input id={id} type="number" min="0" step="any" required value={form.coverageAmount} onChange={(e) => update('coverageAmount', e.target.value)} />
+                        </>)}
+                      </Field>
+                      <Field label={t('Moeda')}>
+                        {(id) => (<>
+                          <select id={id} value={form.policyCurrency} onChange={(e) => update('policyCurrency', e.target.value)}>
+                            <option value="AOA">AOA</option>
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                          </select>
+                        </>)}
+                      </Field>
                     </div>
                     <div className="grid-cols grid-2">
-                      <div className="field">
-                        <label>{t('Válida de')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
-                        <input type="date" required value={form.policyValidFrom} onChange={(e) => update('policyValidFrom', e.target.value)} />
-                      </div>
-                      <div className="field">
-                        <label>{t('Válida até')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
-                        <input type="date" required value={form.policyValidUntil} onChange={(e) => update('policyValidUntil', e.target.value)} />
-                      </div>
+                      <Field label={t('Válida de')} obrigatorio>
+                        {(id) => (<>
+                          <input id={id} type="date" required value={form.policyValidFrom} onChange={(e) => update('policyValidFrom', e.target.value)} />
+                        </>)}
+                      </Field>
+                      <Field label={t('Válida até')} obrigatorio>
+                        {(id) => (<>
+                          <input id={id} type="date" required value={form.policyValidUntil} onChange={(e) => update('policyValidUntil', e.target.value)} />
+                        </>)}
+                      </Field>
                     </div>
-                    <div className="field">
-                      <label>{t('Documento da apólice')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
-                      <input
-                        type="file"
-                        accept="application/pdf,image/*"
-                        onChange={(e) => setDocs((prev) => ({ ...prev, APOLICE_SEGURO: e.target.files[0] || undefined }))}
-                      />
-                      {docs.APOLICE_SEGURO ? <small className="helptext">✓ {docs.APOLICE_SEGURO.name}</small> : null}
-                    </div>
+                    <Field label={t('Documento da apólice')} obrigatorio>
+                      {(id) => (<>
+                        <input id={id}
+                          type="file"
+                          accept="application/pdf,image/*"
+                          onChange={(e) => setDocs((prev) => ({ ...prev, APOLICE_SEGURO: e.target.files[0] || undefined }))}
+                        />
+                        {docs.APOLICE_SEGURO ? <small className="helptext">✓ {docs.APOLICE_SEGURO.name}</small> : null}
+                      </>)}
+                    </Field>
                   </>
                 ) : null}
 
                 {/* Dimensão da empresa — decide o plano (grandes empresas: PRO). */}
                 <div className="grid-cols grid-2">
-                  <div className="field">
-                    <label>{t('Nº de trabalhadores')}</label>
-                    <input type="number" min="0" value={form.employees} onChange={(e) => update('employees', e.target.value)} />
-                  </div>
-                  <div className="field">
-                    <label>{t('Volume de negócios anual (USD)')}</label>
-                    <input type="number" min="0" step="1000" value={form.annualRevenueUsd} onChange={(e) => update('annualRevenueUsd', e.target.value)} />
-                  </div>
+                  <Field label={t('Nº de trabalhadores')}>
+                    {(id) => (<>
+                      <input id={id} type="number" min="0" value={form.employees} onChange={(e) => update('employees', e.target.value)} />
+                    </>)}
+                  </Field>
+                  <Field label={t('Volume de negócios anual (USD)')}>
+                    {(id) => <input id={id} type="number" min="0" step="1000" value={form.annualRevenueUsd} onChange={(e) => update('annualRevenueUsd', e.target.value)} />}
+                  </Field>
                 </div>
                 <p className="helptext" style={{ marginTop: -4 }}>
                   {t('Serve para classificar a dimensão da empresa e o plano aplicável. Empresas de grande dimensão subscrevem o plano PRO.')}{' '}
