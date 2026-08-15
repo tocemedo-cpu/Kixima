@@ -141,7 +141,7 @@ export default function HelpAdmin() {
                   <td className="bz-muted">{tk.category}</td>
                   <td className="bz-muted">{formatDateTime(tk.createdAt)}</td>
                   <td>
-                    <select className="hs-status-sel" value={tk.status} onChange={(e) => setStatus(tk.id, e.target.value)}>
+                    <select className="hs-status-sel" aria-label={t('Estado do pedido de suporte')} value={tk.status} onChange={(e) => setStatus(tk.id, e.target.value)}>
                       {Object.entries(ST).map(([v, o]) => <option key={v} value={v}>{t(o.label)}</option>)}
                     </select>
                   </td>

@@ -131,7 +131,7 @@ export default function Services() {
         {loading ? t('A carregar…') : t('Mostrando {a} - {b} de {n} serviços', { a: from, b: to, n: total.toLocaleString('pt-PT') })}
         <span className="svc-sortwrap">
           {t('Ordenar por')}{' '}
-          <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>
+          <select aria-label={t('Ordenar por')} value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>
             {SORTS.map(([v, l]) => <option key={v} value={v}>{t(l)}</option>)}
           </select>
         </span>

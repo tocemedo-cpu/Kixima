@@ -3,6 +3,7 @@
 // (/convite/:token); o convidado preenche o próprio cadastro. A conta fica
 // pendente até o Company Admin aceitar.
 import { useEffect, useState } from 'react';
+import { Field } from '../../components/Common';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import Logo from '../../components/Logo';
@@ -102,14 +103,16 @@ export default function AcceptInvite() {
                 <strong>{t(roleLabel(invite.role, invite.companyType))}</strong>.
               </p>
               <form onSubmit={handleSubmit}>
-                <div className="field">
-                  <label>{t('Nome completo')}</label>
-                  <input required value={form.name} onChange={(e) => update('name', e.target.value)} readOnly={!!invite.email} />
-                </div>
-                <div className="field">
-                  <label>{t('Email (login)')}</label>
-                  <input type="email" required value={form.email} onChange={(e) => update('email', e.target.value)} readOnly={!!invite.email} />
-                </div>
+                <Field label={t('Nome completo')}>
+                  {(id) => (<>
+                    <input id={id} required value={form.name} onChange={(e) => update('name', e.target.value)} readOnly={!!invite.email} />
+                  </>)}
+                </Field>
+                <Field label={t('Email (login)')}>
+                  {(id) => (<>
+                    <input id={id} type="email" required value={form.email} onChange={(e) => update('email', e.target.value)} readOnly={!!invite.email} />
+                  </>)}
+                </Field>
                 <div className="field">
                   <label>{minimoSenha(invite.role) === 12 ? t('Senha (mín. 12)') : t('Senha (mín. 10)')}</label>
                   <input type="password" required minLength={minimoSenha(invite.role)} value={form.password} onChange={(e) => update('password', e.target.value)} />

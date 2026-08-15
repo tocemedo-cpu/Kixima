@@ -119,7 +119,7 @@ export default function AdminPlans() {
                     <td><strong>{c.name}</strong><span className="bz-sub2 mono">{c.taxId}</span></td>
                     <td>
                       {isEditing ? (
-                        <select className="input" value={form.size} onChange={(e) => setForm((f) => ({ ...f, size: e.target.value }))}>
+                        <select className="input" aria-label={t('Dimensão da empresa')} value={form.size} onChange={(e) => setForm((f) => ({ ...f, size: e.target.value }))}>
                           {SIZES.map((s) => <option key={s} value={s}>{t(SIZE_LABEL[s])}</option>)}
                         </select>
                       ) : <Pill tone={c.size === 'GRANDE' ? 'pending' : 'neutral'}>{SIZE_LABEL[c.size] || c.size}</Pill>}

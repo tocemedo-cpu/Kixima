@@ -4,7 +4,7 @@
 // dinâmico, guardar (credenciais cifradas), testar a ligação e ver o histórico.
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { PageHeader, Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { Icon } from '../../components/icons';
 import { formatDateTime } from '../../domain';
@@ -116,12 +116,13 @@ export default function ErpIntegrations() {
                 {cfg.company.name} — {t('ERP atual')}: <Badge tone={cfg.erp === 'MANUAL' ? 'neutral' : 'success'}>{ERP_LABELS[cfg.erp]}</Badge>
               </div>
 
-              <div className="field">
-                <label>{t('Sistema ERP')}</label>
-                <select value={erp} onChange={(e) => onErpChange(e.target.value)}>
-                  {(cfg.systems || []).map((s) => <option key={s} value={s}>{t(ERP_LABELS[s] || s)}</option>)}
-                </select>
-              </div>
+              <Field label={t('Sistema ERP')}>
+                {(id) => (<>
+                  <select id={id} value={erp} onChange={(e) => onErpChange(e.target.value)}>
+                    {(cfg.systems || []).map((s) => <option key={s} value={s}>{t(ERP_LABELS[s] || s)}</option>)}
+                  </select>
+                </>)}
+              </Field>
 
               {erp === 'MANUAL' ? (
                 <p className="helptext">{t('Sem integração ERP — a empresa continua a usar o Kixima normalmente.')}</p>

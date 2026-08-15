@@ -47,7 +47,15 @@ export default function Settings() {
           <div className="set-row" key={x.key}>
             <div className="set-ico"><Icon name="settings" size={16} /></div>
             <div className="set-body"><strong>{t(x.t)}</strong><span className="bz-sub2">{t(x.d)}</span></div>
-            <button className={`set-switch${s[x.key] ? ' on' : ''}`} onClick={() => toggle(x.key)} aria-pressed={s[x.key]}><span /></button>
+            {/* O botão é só um <span> vazio estilizado: sem nome, um leitor de
+                ecrã anuncia "botão, pressionado" e a pessoa não sabe o quê. O
+                aria-pressed já dizia o ESTADO; faltava dizer de QUE definição. */}
+            <button
+              className={`set-switch${s[x.key] ? ' on' : ''}`}
+              onClick={() => toggle(x.key)}
+              aria-pressed={s[x.key]}
+              aria-label={t(x.t)}
+            ><span aria-hidden="true" /></button>
           </div>
         ))}
       </div>

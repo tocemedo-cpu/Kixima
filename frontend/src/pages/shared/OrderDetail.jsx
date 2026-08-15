@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
-import { Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import Badge from '../../components/Badge';
 import PaymentSlaRing from '../../components/PaymentSlaRing';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
@@ -226,15 +226,16 @@ export default function OrderDetail() {
               ? t('A divergência fica registada, mas a entrega é aceite (ex.: após acordo com o fornecedor) e a ordem é CONCLUÍDA.')
               : t('O fornecedor será notificado para corrigir/reentregar. A ordem volta a "Em execução" e, após a nova entrega, confirma a receção outra vez.')}
           </p>
-          <div className="field">
-            <label>{t('Notas')} {resolveOutcome === 'REPOSICAO' ? t('(o que deve ser corrigido)') : t('(opcional)')}</label>
-            <textarea
-              rows={3}
-              value={resolveNotes}
-              onChange={(e) => setResolveNotes(e.target.value)}
-              placeholder={resolveOutcome === 'REPOSICAO' ? t('Ex.: repor as 3 unidades danificadas…') : t('Ex.: acordado desconto de 10% com o fornecedor…')}
-            />
-          </div>
+          <Field label={`${t('Notas')} ${resolveOutcome === 'REPOSICAO' ? t('(o que deve ser corrigido)') : t('(opcional)')}`}>
+            {(id) => (<>
+              <textarea id={id}
+                rows={3}
+                value={resolveNotes}
+                onChange={(e) => setResolveNotes(e.target.value)}
+                placeholder={resolveOutcome === 'REPOSICAO' ? t('Ex.: repor as 3 unidades danificadas…') : t('Ex.: acordado desconto de 10% com o fornecedor…')}
+              />
+            </>)}
+          </Field>
           <button
             className={resolveOutcome === 'ACEITE' ? 'btn btn-accent' : 'btn btn-primary'}
             disabled={busy || (resolveOutcome === 'REPOSICAO' && !resolveNotes.trim())}
@@ -250,10 +251,11 @@ export default function OrderDetail() {
 
       {showReject && (
         <div className="card card-pad" style={{ marginTop: 12 }}>
-          <div className="field">
-            <label>{t('Motivo da rejeição')}</label>
-            <textarea rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
-          </div>
+          <Field label={t('Motivo da rejeição')}>
+            {(id) => (<>
+              <textarea id={id} rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+            </>)}
+          </Field>
           <button
             className="btn btn-danger"
             disabled={busy || !rejectReason.trim()}
@@ -266,10 +268,11 @@ export default function OrderDetail() {
 
       {showDivergence && (
         <div className="card card-pad" style={{ marginTop: 12 }}>
-          <div className="field">
-            <label>{t('Descreva a divergência')}</label>
-            <textarea rows={3} value={receptionNotes} onChange={(e) => setReceptionNotes(e.target.value)} placeholder={t('Ex.: quantidade incompleta, item danificado…')} />
-          </div>
+          <Field label={t('Descreva a divergência')}>
+            {(id) => (<>
+              <textarea id={id} rows={3} value={receptionNotes} onChange={(e) => setReceptionNotes(e.target.value)} placeholder={t('Ex.: quantidade incompleta, item danificado…')} />
+            </>)}
+          </Field>
           <p className="helptext" style={{ marginBottom: 10 }}>
             {t('A KIXIMA e o fornecedor serão notificados. Depois, resolve a divergência aqui mesmo: aceitar a entrega (após acordo) ou pedir reposição.')}
           </p>

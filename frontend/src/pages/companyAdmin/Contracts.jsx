@@ -78,7 +78,7 @@ export default function Contracts() {
         <div className="bz-side">
           <div className="bz-panel">
             <h3>{t('Resumo por Status')}</h3>
-            <div className="bz-panel-row"><span>{t('Ativos')}</span><strong style={{ color: '#16884f' }}>{kpis.ativos}</strong></div>
+            <div className="bz-panel-row"><span>{t('Ativos')}</span><strong style={{ color: 'var(--ok-700)' }}>{kpis.ativos}</strong></div>
             <div className="bz-panel-row"><span>{t('A Vencer')}</span><strong style={{ color: '#b9740f' }}>{kpis.aVencer}</strong></div>
             <div className="bz-panel-row"><span>{t('Vencidos')}</span><strong style={{ color: '#c0392b' }}>{kpis.vencidos}</strong></div>
           </div>

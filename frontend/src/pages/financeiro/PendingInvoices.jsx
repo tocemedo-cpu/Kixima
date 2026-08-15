@@ -2,6 +2,7 @@
 // Faturas Pendentes — o Financeiro analisa e paga as faturas recebidas dentro
 // do SLA. Ligado a /api/financeiro/invoices; pagamento via /api/payments.
 import { useEffect, useState } from 'react';
+import { Field } from '../../components/Common';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
@@ -104,11 +105,12 @@ export default function PendingInvoices() {
             <p className="bz-sub" style={{ marginTop: 8 }}>
               {t('Faça a transferência bancária e anexe o')} <strong>{t('comprovativo')}</strong> {t('(PDF ou imagem). Ele fica visível ao fornecedor como prova do pagamento.')}
             </p>
-            <div className="field" style={{ marginTop: 12 }}>
-              <label>{t('Comprovativo da transferência')} <span className="req">*</span></label>
-              <input type="file" accept=".pdf,image/*" onChange={(e) => setProof(e.target.files?.[0] || null)} />
-              {proof ? <small className="helptext">{t('Selecionado:')} {proof.name} ({Math.round(proof.size / 1024)} KB)</small> : null}
-            </div>
+            <Field label={t('Comprovativo da transferência')} obrigatorio style={{ marginTop: 12 }}>
+              {(id) => (<>
+                <input id={id} type="file" accept=".pdf,image/*" onChange={(e) => setProof(e.target.files?.[0] || null)} />
+                {proof ? <small className="helptext">{t('Selecionado:')} {proof.name} ({Math.round(proof.size / 1024)} KB)</small> : null}
+              </>)}
+            </Field>
             <div className="hs-form-actions">
               <button className="btn btn-ghost" onClick={() => { setPayModal(null); setProof(null); }}>{t('Cancelar')}</button>
               <button className="btn btn-accent" disabled={!proof || paying === payModal.id} onClick={confirmPay}>

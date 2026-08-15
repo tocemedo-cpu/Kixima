@@ -4,7 +4,7 @@
 // "Catálogo Visual" com fotos embebidas). Liga a POST /api/catalog/import.
 import { useState } from 'react';
 import { api } from '../../api/client';
-import { PageHeader, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { PageHeader, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import { useI18n } from '../../i18n';
 
 export default function CatalogImport() {
@@ -39,11 +39,12 @@ export default function CatalogImport() {
         <div className="card card-pad">
           <strong style={{ fontSize: 13.5 }}>{t('Ficheiro do catálogo')}</strong>
           <form onSubmit={handleSubmit} style={{ marginTop: 14 }}>
-            <div className="field">
-              <label>{t('Ficheiro Excel (.xlsx)')}</label>
-              <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                onChange={(e) => { setFile(e.target.files?.[0] || null); setResult(null); }} />
-            </div>
+            <Field label={t('Ficheiro Excel (.xlsx)')}>
+              {(id) => (<>
+                <input id={id} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={(e) => { setFile(e.target.files?.[0] || null); setResult(null); }} />
+              </>)}
+            </Field>
             {file ? <p className="helptext" style={{ marginTop: 2 }}>{t('Selecionado:')} <strong>{file.name}</strong> ({Math.round(file.size / 1024)} KB)</p> : null}
             <button className="btn btn-accent" disabled={busy} type="submit" style={{ marginTop: 8 }}>
               {busy ? t('A importar…') : t('Importar catálogo')}

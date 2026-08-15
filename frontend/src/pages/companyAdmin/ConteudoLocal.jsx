@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, EmptyRow } from '../../components/BuyerUI';
-import { ErrorBanner } from '../../components/Common';
+import { ErrorBanner , Field } from '../../components/Common';
 import { formatMoney, formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
 
@@ -56,14 +56,16 @@ export default function ConteudoLocal() {
       />
 
       <div className="bz-card card-pad" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div className="field" style={{ margin: 0 }}>
-          <label>{t('De')}</label>
-          <input type="date" value={de} onChange={(e) => setDe(e.target.value)} />
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>{t('Até')}</label>
-          <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} />
-        </div>
+        <Field label={t('De')} style={{ margin: 0 }}>
+          {(id) => (<>
+            <input id={id} type="date" value={de} onChange={(e) => setDe(e.target.value)} />
+          </>)}
+        </Field>
+        <Field label={t('Até')} style={{ margin: 0 }}>
+          {(id) => (<>
+            <input id={id} type="date" value={ate} onChange={(e) => setAte(e.target.value)} />
+          </>)}
+        </Field>
         <button className="btn btn-accent" onClick={carregar} disabled={busy}>
           {busy ? t('A calcular…') : t('Gerar relatório')}
         </button>

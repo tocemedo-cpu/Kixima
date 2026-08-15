@@ -104,7 +104,7 @@ export default function Inventory() {
                         <td><input type="number" min="0" style={{ width: 80 }} value={draft.stockQuantity} onChange={(e) => setDraft((d) => ({ ...d, stockQuantity: e.target.value }))} /></td>
                         <td><input type="number" min="0" style={{ width: 80 }} value={draft.minStock} onChange={(e) => setDraft((d) => ({ ...d, minStock: e.target.value }))} /></td>
                         <td>
-                          <select value={draft.availability} onChange={(e) => setDraft((d) => ({ ...d, availability: e.target.value }))}>
+                          <select aria-label={t('Disponibilidade')} value={draft.availability} onChange={(e) => setDraft((d) => ({ ...d, availability: e.target.value }))}>
                             {AVAILABILITY.map((a) => <option key={a} value={a}>{t(a)}</option>)}
                           </select>
                         </td>

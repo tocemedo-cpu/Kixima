@@ -63,7 +63,7 @@ export default function Payments() {
                         <td>{formatDate(r.dueAt)}</td>
                         <td className="r">{formatMoney(r.amount, r.currency)}</td>
                         <td className="r">{formatMoney(r.paid, r.currency)}</td>
-                        <td className="r"><strong style={{ color: r.open > 0 ? '#c0392b' : '#16884f' }}>{formatMoney(r.open, r.currency)}</strong></td>
+                        <td className="r"><strong style={{ color: r.open > 0 ? '#c0392b' : 'var(--ok-700)' }}>{formatMoney(r.open, r.currency)}</strong></td>
                         <td><Pill tone={INVOICE_STATUS[r.status]?.tone}>{INVOICE_STATUS[r.status]?.label || r.status}</Pill></td>
                         <td>
                           <div className="bz-actions">

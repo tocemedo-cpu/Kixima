@@ -1,7 +1,7 @@
 // src/pages/adminSistema/PolicyManagement.jsx
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { PageHeader, Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { POLICY_STATUS, formatDate, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
@@ -122,29 +122,34 @@ function ClientPolicyRow({ company, currentPolicy, onIssued }) {
         <form onSubmit={submit} className="card-pad" style={{ borderTop: '1px solid var(--line)' }}>
           <ErrorBanner message={error} />
           <div className="grid-cols grid-2">
-            <div className="field">
-              <label>{t('Nº da apólice')}</label>
-              <input required value={form.policyNumber} onChange={(e) => update('policyNumber', e.target.value)} />
-            </div>
-            <div className="field">
-              <label>{t('Seguradora')}</label>
-              <input required value={form.insurer} onChange={(e) => update('insurer', e.target.value)} />
-            </div>
+            <Field label={t('Nº da apólice')}>
+              {(id) => (<>
+                <input id={id} required value={form.policyNumber} onChange={(e) => update('policyNumber', e.target.value)} />
+              </>)}
+            </Field>
+            <Field label={t('Seguradora')}>
+              {(id) => (<>
+                <input id={id} required value={form.insurer} onChange={(e) => update('insurer', e.target.value)} />
+              </>)}
+            </Field>
           </div>
           <div className="grid-cols grid-2">
-            <div className="field">
-              <label>{t('Cobertura (AOA)')}</label>
-              <input required type="number" min="0" step="0.01" value={form.coverageAmount} onChange={(e) => update('coverageAmount', e.target.value)} />
-            </div>
-            <div className="field">
-              <label>{t('Válida até')}</label>
-              <input required type="date" value={form.validUntil} onChange={(e) => update('validUntil', e.target.value)} />
-            </div>
+            <Field label={t('Cobertura (AOA)')}>
+              {(id) => (<>
+                <input id={id} required type="number" min="0" step="0.01" value={form.coverageAmount} onChange={(e) => update('coverageAmount', e.target.value)} />
+              </>)}
+            </Field>
+            <Field label={t('Válida até')}>
+              {(id) => (<>
+                <input id={id} required type="date" value={form.validUntil} onChange={(e) => update('validUntil', e.target.value)} />
+              </>)}
+            </Field>
           </div>
-          <div className="field">
-            <label>{t('Válida a partir de')}</label>
-            <input required type="date" value={form.validFrom} onChange={(e) => update('validFrom', e.target.value)} />
-          </div>
+          <Field label={t('Válida a partir de')}>
+            {(id) => (<>
+              <input id={id} required type="date" value={form.validFrom} onChange={(e) => update('validFrom', e.target.value)} />
+            </>)}
+          </Field>
           <button className="btn btn-accent" disabled={busy} type="submit">{busy ? t('A emitir…') : t('Confirmar emissão')}</button>
         </form>
       )}

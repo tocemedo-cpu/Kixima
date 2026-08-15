@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, EmptyRow } from '../../components/BuyerUI';
-import { ErrorBanner, SuccessBanner } from '../../components/Common';
+import { ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import { formatDateTime } from '../../domain';
 import { useI18n } from '../../i18n';
 
@@ -79,13 +79,14 @@ export default function ApiCatalogo() {
 
       <div className="bz-card card-pad" style={{ marginBottom: 16 }}>
         <form onSubmit={criar} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div className="field" style={{ margin: 0, minWidth: 260 }}>
-            <label>{t('Nome da chave')}</label>
-            <input
-              required value={nome} onChange={(e) => setNome(e.target.value)}
-              placeholder={t('ex.: ERP da produção')}
-            />
-          </div>
+          <Field label={t('Nome da chave')} style={{ margin: 0, minWidth: 260 }}>
+            {(id) => (<>
+              <input id={id}
+                required value={nome} onChange={(e) => setNome(e.target.value)}
+                placeholder={t('ex.: ERP da produção')}
+              />
+            </>)}
+          </Field>
           <button className="btn btn-accent" type="submit" disabled={busy || !nome.trim()}>
             {busy ? t('A criar…') : t('Criar chave')}
           </button>

@@ -125,6 +125,14 @@ export const EN10 = {
     'You can only cancel charges belonging to your own company.',
   'Indique o motivo do cancelamento.': 'State the reason for the cancellation.',
   'Saltar para o conteúdo': 'Skip to content',
+  // --- Nomes de controlos sem rótulo visível ----------------------------------
+  // Filtros e interruptores que a interface identifica pela posição ou pelo
+  // ícone. Para quem usa leitor de ecrã não há posição nenhuma — há uma lista
+  // de "combobox" sem nome.
+  'Dimensão da empresa': 'Company size',
+  'Estado do pedido de suporte': 'Support request status',
+  'Filtrar por estado': 'Filter by status',
+  'Filtrar por tipo': 'Filter by type',
   // --- Caminhos para a subscrição ---------------------------------------------
   // O muro de plano é o momento em que alguém quer mudar de plano. Era o único
   // sítio da plataforma sem botão.
@@ -261,6 +269,11 @@ export const FR10 = {
     'Vous ne pouvez annuler que les facturations de votre propre entreprise.',
   'Indique o motivo do cancelamento.': 'Indiquez le motif de l’annulation.',
   'Saltar para o conteúdo': 'Aller au contenu',
+  // --- Nomes de controlos sem rótulo visível ----------------------------------
+  'Dimensão da empresa': 'Taille de l’entreprise',
+  'Estado do pedido de suporte': 'Statut de la demande d’assistance',
+  'Filtrar por estado': 'Filtrer par statut',
+  'Filtrar por tipo': 'Filtrer par type',
   // --- Caminhos para a subscrição ---------------------------------------------
   'Ver planos e subscrever': 'Voir les forfaits et souscrire',
   'Ver a subscrição': 'Voir l’abonnement',

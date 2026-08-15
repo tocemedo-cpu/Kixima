@@ -12,7 +12,7 @@
 // distância entre "desligado nos testes" e "desligado sem querer" é um erro de
 // configuração.
 import { chromium } from '@playwright/test';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 
 export const SENHA = 'Kixima@123';
 export const CONTAS = {
@@ -25,8 +25,32 @@ export const CONTAS = {
 
 const CHROMIUM = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
+/**
+ * A sessão guardada ainda serve?
+ *
+ * Reaproveitar poupa um login por persona em cada execução. Não é avareza: é a
+ * mesma razão de existir deste ficheiro — cada login gasta orçamento do limite
+ * por IP, e correr a suite três vezes seguidas esgotava-o.
+ */
+async function aindaServe(ficheiro, baseURL) {
+  if (!existsSync(ficheiro)) return false;
+  // Uma sessão de ontem pode ter expirado ou ter sido revogada por um "Sair".
+  if (Date.now() - statSync(ficheiro).mtimeMs > 30 * 60 * 1000) return false;
+  const browser = await chromium.launch(existsSync(CHROMIUM) ? { executablePath: CHROMIUM } : {});
+  try {
+    const ctx = await browser.newContext({ storageState: ficheiro, baseURL });
+    const r = await ctx.request.get(`${baseURL.replace('5173', '4000')}/api/auth/me`);
+    return r.ok();
+  } catch {
+    return false;
+  } finally {
+    await browser.close();
+  }
+}
+
 /** Entra uma vez e guarda o estado, para os testes seguintes o reutilizarem. */
 export async function guardarSessao(email, ficheiro, baseURL) {
+  if (await aindaServe(ficheiro, baseURL)) return;
   const browser = await chromium.launch(
     existsSync(CHROMIUM) ? { executablePath: CHROMIUM } : {},
   );

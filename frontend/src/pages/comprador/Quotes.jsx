@@ -2,7 +2,7 @@
 // Comprador → Cotações. Pede cotações a fornecedores e acompanha as respostas.
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { PageHeader, Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { formatDate, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
@@ -77,13 +77,14 @@ export default function Quotes() {
             <div className="reg-section" style={{ marginTop: 0 }}>{t('Produtos (do mesmo fornecedor)')}</div>
             {lines.map((l, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 8 }}>
-                <div className="field" style={{ margin: 0, flex: 1 }}>
-                  <label>{t('Produto')}</label>
-                  <select value={l.productId} onChange={(e) => setLine(i, 'productId', e.target.value)}>
-                    <option value="">{t('— escolher —')}</option>
-                    {catalog.map((p) => <option key={p.id} value={p.id}>{p.name} — {p.supplier?.name}</option>)}
-                  </select>
-                </div>
+                <Field label={t('Produto')} style={{ margin: 0, flex: 1 }}>
+                  {(id) => (<>
+                    <select id={id} value={l.productId} onChange={(e) => setLine(i, 'productId', e.target.value)}>
+                      <option value="">{t('— escolher —')}</option>
+                      {catalog.map((p) => <option key={p.id} value={p.id}>{p.name} — {p.supplier?.name}</option>)}
+                    </select>
+                  </>)}
+                </Field>
                 <div className="field" style={{ margin: 0, width: 90 }}><label>{t('Qtd.')}</label><input type="number" min="1" value={l.quantity} onChange={(e) => setLine(i, 'quantity', e.target.value)} /></div>
                 {lines.length > 1 ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => setLines((ls) => ls.filter((_, idx) => idx !== i))}>×</button> : null}
               </div>

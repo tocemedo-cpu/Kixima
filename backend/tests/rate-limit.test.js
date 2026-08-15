@@ -20,3 +20,35 @@ describe('A que endpoints se aplica o limite apertado', () => {
     expect(ultimo.status).toBe(401);
   });
 });
+
+describe('A quem se conta cada pedido', () => {
+  const { porUtilizadorOuIp } = require('../src/middleware/rateLimit');
+  const jwt = require('jsonwebtoken');
+  const config = require('../src/config/env');
+  const sessionCookie = require('../src/utils/sessionCookie');
+
+  const assinar = (sub) => jwt.sign({ sub }, config.auth.jwtSecret, { algorithm: 'HS256' });
+
+  test('sem sessão, conta ao endereço', () => {
+    expect(porUtilizadorOuIp({ headers: {}, ip: '10.0.0.7' })).toMatch(/^ip:/);
+  });
+
+  test('com sessão, conta à PESSOA — para um escritório atrás de um NAT não partilhar o mesmo balde', () => {
+    const req = { headers: {}, ip: '10.0.0.7', cookies: { [sessionCookie.NOME]: assinar('utilizador-1') } };
+    expect(porUtilizadorOuIp(req)).toBe('u:utilizador-1');
+  });
+
+  test('duas pessoas no MESMO endereço têm baldes diferentes', () => {
+    const base = { headers: {}, ip: '10.0.0.7' };
+    const a = porUtilizadorOuIp({ ...base, cookies: { [sessionCookie.NOME]: assinar('ana') } });
+    const b = porUtilizadorOuIp({ ...base, cookies: { [sessionCookie.NOME]: assinar('bruno') } });
+    expect(a).not.toBe(b);
+  });
+
+  test('um token forjado não gasta o orçamento de outra pessoa', () => {
+    // Assinado com outro segredo: a verificação recusa-o e volta ao endereço.
+    const falso = jwt.sign({ sub: 'vitima' }, 'segredo-errado', { algorithm: 'HS256' });
+    const req = { headers: { authorization: `Bearer ${falso}` }, ip: '10.0.0.9' };
+    expect(porUtilizadorOuIp(req)).toMatch(/^ip:/);
+  });
+});

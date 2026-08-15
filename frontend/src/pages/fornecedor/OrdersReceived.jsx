@@ -28,7 +28,7 @@ export default function OrdersReceived() {
       <ErrorBanner message={error} />
 
       <div className="field" style={{ maxWidth: 260, marginBottom: 16 }}>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+        <select aria-label={t('Filtrar por estado')} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">{t('Todos os estados')}</option>
           {Object.entries(PO_STATUS).map(([key, val]) => (
             <option key={key} value={key}>{val.label}</option>

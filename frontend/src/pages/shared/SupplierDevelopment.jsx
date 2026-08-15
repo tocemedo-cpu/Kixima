@@ -5,6 +5,7 @@
 // conta: qualquer empresa angolana se pode candidatar e acompanhar por
 // referência.
 import { useEffect, useState } from 'react';
+import { Field } from '../../components/Common';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../api/client';
 import Logo from '../../components/Logo';
@@ -155,50 +156,59 @@ export default function SupplierDevelopment({ initialTrack = 'BUROCRACIA' }) {
 
             <form onSubmit={handleSubmit}>
               <div className="grid-cols grid-2">
-                <div className="field">
-                  <label>{t('Nome da empresa')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
-                  <input required value={form.companyName} onChange={(e) => update('companyName', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{t('NIF')}</label>
-                  <input value={form.taxId} onChange={(e) => update('taxId', e.target.value)} />
-                </div>
+                <Field label={t('Nome da empresa')} obrigatorio>
+                  {(id) => (<>
+                    <input id={id} required value={form.companyName} onChange={(e) => update('companyName', e.target.value)} />
+                  </>)}
+                </Field>
+                <Field label={t('NIF')}>
+                  {(id) => (<>
+                    <input id={id} value={form.taxId} onChange={(e) => update('taxId', e.target.value)} />
+                  </>)}
+                </Field>
               </div>
               <div className="grid-cols grid-2">
-                <div className="field">
-                  <label>{t('Nome do contacto')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
-                  <input required value={form.contactName} onChange={(e) => update('contactName', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{t('Email')} <span style={{ color: 'var(--brand-600)' }}>*</span></label>
-                  <input type="email" required value={form.contactEmail} onChange={(e) => update('contactEmail', e.target.value)} />
-                </div>
+                <Field label={t('Nome do contacto')} obrigatorio>
+                  {(id) => (<>
+                    <input id={id} required value={form.contactName} onChange={(e) => update('contactName', e.target.value)} />
+                  </>)}
+                </Field>
+                <Field label={t('Email')} obrigatorio>
+                  {(id) => (<>
+                    <input id={id} type="email" required value={form.contactEmail} onChange={(e) => update('contactEmail', e.target.value)} />
+                  </>)}
+                </Field>
               </div>
               <div className="grid-cols grid-2">
-                <div className="field">
-                  <label>{t('Telefone')}</label>
-                  <input value={form.contactPhone} onChange={(e) => update('contactPhone', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{t('Província')}</label>
-                  <input value={form.province} onChange={(e) => update('province', e.target.value)} />
-                </div>
+                <Field label={t('Telefone')}>
+                  {(id) => (<>
+                    <input id={id} value={form.contactPhone} onChange={(e) => update('contactPhone', e.target.value)} />
+                  </>)}
+                </Field>
+                <Field label={t('Província')}>
+                  {(id) => (<>
+                    <input id={id} value={form.province} onChange={(e) => update('province', e.target.value)} />
+                  </>)}
+                </Field>
               </div>
               <div className="grid-cols grid-2">
-                <div className="field">
-                  <label>{t('Área de atividade')}</label>
-                  <input value={form.sector} onChange={(e) => update('sector', e.target.value)} placeholder={t('Ex.: Metalomecânica, Logística, Inspeção')} />
-                </div>
-                <div className="field">
-                  <label>{t('Nº de trabalhadores')}</label>
-                  <input type="number" min="0" value={form.employees} onChange={(e) => update('employees', e.target.value)} />
-                </div>
+                <Field label={t('Área de atividade')}>
+                  {(id) => (<>
+                    <input id={id} value={form.sector} onChange={(e) => update('sector', e.target.value)} placeholder={t('Ex.: Metalomecânica, Logística, Inspeção')} />
+                  </>)}
+                </Field>
+                <Field label={t('Nº de trabalhadores')}>
+                  {(id) => (<>
+                    <input id={id} type="number" min="0" value={form.employees} onChange={(e) => update('employees', e.target.value)} />
+                  </>)}
+                </Field>
               </div>
-              <div className="field">
-                <label>{t('O que precisa do programa?')}</label>
-                <textarea rows={4} value={form.needs} onChange={(e) => update('needs', e.target.value)}
-                  placeholder={t('Ex.: apoio no licenciamento e um parceiro para soldadura certificada.')} />
-              </div>
+              <Field label={t('O que precisa do programa?')}>
+                {(id) => (<>
+                  <textarea id={id} rows={4} value={form.needs} onChange={(e) => update('needs', e.target.value)}
+                    placeholder={t('Ex.: apoio no licenciamento e um parceiro para soldadura certificada.')} />
+                </>)}
+              </Field>
 
               {/* A taxa é cobrada no acto: tem de estar à vista antes de submeter. */}
               <div className="sd-fee">

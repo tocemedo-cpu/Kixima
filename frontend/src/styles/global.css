@@ -65,6 +65,28 @@
      diferentes (#4b5563 e #64748b), ou seja, dois cinzentos ligeiramente
      distintos a fingir que eram o mesmo token. */
   --ink-500: #4b5563;
+
+  /* --- Tokens que estavam a ser usados SÓ com fallback ---------------------
+     Dez nomes apareciam em var(--x, #valor) sem nunca terem sido definidos. O
+     efeito é traiçoeiro: parece que existe um sistema de tokens, mas mudar o
+     token não muda nada — o fallback é que estava a pintar. E o --surface-2
+     tinha DOIS fallbacks diferentes (#f1f5f9 e #f8fafc), ou seja, dois
+     cinzentos a fingir que eram a mesma coisa. Ficam aqui com o valor que
+     efetivamente estavam a usar; a partir de agora mudam-se num sítio só. */
+  --brand: #e11d2a;
+  --brand-300: #e6a9a9;
+  --amber-050: #fff7e6;
+  --amber-200: #f0d9a8;
+  --amber-700: #8a5a00;
+  --gold-400: #f5c451;
+  --ink-300: #cbd5e1;
+  --ink-700: #334155;
+  --ok-600: #16a066;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  /* Verde de "está tudo bem". O #16884f andava escrito à mão em quatro ecrãs e
+     dava 3,4:1 sobre branco: o estado positivo era o menos legível. */
+  --ok-700: #0f6b3d;
   --line: #e2e2e7;
 
   --font-display: 'Sora Variable', 'Sora', system-ui, 'Segoe UI', sans-serif;
@@ -2231,7 +2253,10 @@ tbody tr:hover {
 .bz-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 14px; flex-wrap: wrap; }
 .bz-tab { background: none; border: none; padding: 10px 14px; font-size: 13.5px; color: var(--ink-600); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; gap: 6px; }
 .bz-tab:hover { color: var(--ink-900); }
-.bz-tab.on { color: var(--brand-600); border-bottom-color: var(--brand-600); font-weight: 600; }
+/* --brand-700 no TEXTO da aba ativa (4,4:1 com o --brand-600 sobre o fundo
+   claro), mas --brand-600 no traço por baixo: o traço é decoração e o realce
+   perde força se escurecer. */
+.bz-tab.on { color: var(--brand-700); border-bottom-color: var(--brand-600); font-weight: 600; }
 .bz-tab-count { background: var(--paper-100); color: var(--ink-600); font-size: 11px; padding: 1px 7px; border-radius: 999px; }
 
 .bz-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -2396,7 +2421,7 @@ tbody tr:hover {
 .hs-channel:last-child { border-bottom: none; }
 .hs-channel-ico { width: 34px; height: 34px; border-radius: 9px; background: var(--paper-100); color: var(--brand-600); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .hs-channel strong { font-size: 13px; display: block; }
-.hs-status { display: flex; align-items: center; gap: 10px; color: #16884f; }
+.hs-status { display: flex; align-items: center; gap: 10px; color: var(--ok-700, #0f6b3d); }
 .hs-form { background: #fff; border-radius: 14px; padding: 22px; width: min(520px, 94vw); display: flex; flex-direction: column; gap: 12px; }
 .hs-form h3 { margin: 0; font-size: 17px; }
 .hs-form .field { display: flex; flex-direction: column; gap: 5px; }
@@ -2454,7 +2479,9 @@ tbody tr:hover {
 .pdoc-ref { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 700; background: var(--brand-600); color: #fff; padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
 
 .pdoc-lbl { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 4px; font-weight: 700; }
-.pdoc-muted { color: #888; }
+/* #888 dava 3,5:1. É a linha que remete para o outro documento legal — não é
+   nota de rodapé decorativa. */
+.pdoc-muted { color: var(--ink-500); }
 
 .pdoc-meta { display: flex; flex-wrap: wrap; gap: 26px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-bottom: 18px; }
 .pdoc-meta-v { font-size: 13px; font-weight: 600; }
@@ -2597,7 +2624,7 @@ tbody tr:hover {
 
 .pc-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line, #e5e7eb); margin-bottom: 16px; overflow-x: auto; }
 .pc-tab { border: none; background: transparent; padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--ink-500, #64748b); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
-.pc-tab.on { color: var(--brand, #e11d2a); border-bottom-color: var(--brand, #e11d2a); }
+.pc-tab.on { color: var(--brand-700); border-bottom-color: var(--brand-600); }
 .pc-tab-count { margin-left: 6px; background: var(--surface-2, #f1f5f9); border-radius: 20px; padding: 1px 7px; font-size: 11px; color: var(--ink-500, #64748b); }
 .pc-tab.on .pc-tab-count { background: rgba(225,29,42,0.12); color: var(--brand, #e11d2a); }
 

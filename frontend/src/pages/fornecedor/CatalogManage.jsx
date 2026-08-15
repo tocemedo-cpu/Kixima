@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { PageHeader, Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import { formatMoney } from '../../domain';
 import ProductCover from '../../components/ProductCover';
 import { Icon } from '../../components/icons';
@@ -244,30 +244,33 @@ export default function CatalogManage() {
               <label className="reg-section" style={{ display: 'block' }}>{t('Classificação')}</label>
               <p className="helptext" style={{ marginTop: 0 }}>{t('Escolha o item na lista — o código de classificação, o tipo e a unidade preenchem-se automaticamente.')}</p>
               <div className="grid-cols grid-2">
-                <div className="field">
-                  <label>{t('Setor')}</label>
-                  <select value={setor} onChange={(e) => pickSetor(e.target.value)}>
-                    <option value="">{t('— Escolher setor —')}</option>
-                    {SETORES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>{t('Categoria')}</label>
-                  <select value={categoria} onChange={(e) => setCategoria(e.target.value)} disabled={!setor}>
-                    <option value="">{setor ? t('— Escolher categoria —') : t('Escolha o setor primeiro')}</option>
-                    {setor && categoriasDe(setor).map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
+                <Field label={t('Setor')}>
+                  {(id) => (<>
+                    <select id={id} value={setor} onChange={(e) => pickSetor(e.target.value)}>
+                      <option value="">{t('— Escolher setor —')}</option>
+                      {SETORES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </>)}
+                </Field>
+                <Field label={t('Categoria')}>
+                  {(id) => (<>
+                    <select id={id} value={categoria} onChange={(e) => setCategoria(e.target.value)} disabled={!setor}>
+                      <option value="">{setor ? t('— Escolher categoria —') : t('Escolha o setor primeiro')}</option>
+                      {setor && categoriasDe(setor).map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </>)}
+                </Field>
               </div>
-              <div className="field">
-                <label>{t('Produto ou Serviço')}</label>
-                <select value={form.unspscCode} onChange={(e) => pickItem(e.target.value)} disabled={!setor || !categoria}>
-                  <option value="">{categoria ? t('— Escolher item —') : t('Escolha setor e categoria primeiro')}</option>
-                  {setor && categoria && itensDe(setor, categoria).map((i) => (
-                    <option key={i.code} value={i.code}>{i.nome} — {i.tipo}</option>
-                  ))}
-                </select>
-              </div>
+              <Field label={t('Produto ou Serviço')}>
+                {(id) => (<>
+                  <select id={id} value={form.unspscCode} onChange={(e) => pickItem(e.target.value)} disabled={!setor || !categoria}>
+                    <option value="">{categoria ? t('— Escolher item —') : t('Escolha setor e categoria primeiro')}</option>
+                    {setor && categoria && itensDe(setor, categoria).map((i) => (
+                      <option key={i.code} value={i.code}>{i.nome} — {i.tipo}</option>
+                    ))}
+                  </select>
+                </>)}
+              </Field>
               {form.unspscCode ? (
                 <div className="cls-box cls-box-img">
                   {form.imageUrl ? <img className="cls-thumb" src={form.imageUrl} alt={form.name} /> : null}
@@ -284,98 +287,113 @@ export default function CatalogManage() {
               ) : null}
 
               <label className="reg-section" style={{ display: 'block', marginTop: 16 }}>{t('Dados do item')}</label>
-              <div className="field">
-                <label>{t('Nome do Produto')} <span className="req">*</span></label>
-                <input value={form.name} onChange={(e) => update('name', e.target.value)} placeholder={t('Preenchido pela escolha acima; pode ajustar.')} />
+              <Field label={t('Nome do Produto')} obrigatorio>
+                {(id) => (<>
+                  <input id={id} value={form.name} onChange={(e) => update('name', e.target.value)} placeholder={t('Preenchido pela escolha acima; pode ajustar.')} />
+                </>)}
+              </Field>
+              <div className="grid-cols grid-2">
+                <Field label={t('Categoria')} obrigatorio>
+                  {(id) => (<>
+                    <select id={id} value={form.category} onChange={(e) => { update('category', e.target.value); update('subcategory', ''); }}>
+                      <option value="">{t('Selecione…')}</option>
+                      {CATEGORIES.map((c) => <option key={c} value={c}>{t(c)}</option>)}
+                    </select>
+                  </>)}
+                </Field>
+                <Field label={t('Subcategoria')}>
+                  {(id) => (<>
+                    <input id={id}
+                      list="subcat-list"
+                      value={form.subcategory}
+                      onChange={(e) => update('subcategory', e.target.value)}
+                      placeholder={form.category ? t('Selecione ou escreva…') : t('Escolha a categoria primeiro')}
+                      disabled={!form.category}
+                    />
+                    <datalist id="subcat-list">{(TAXONOMY[form.category] || []).map((s) => <option key={s} value={s} />)}</datalist>
+                  </>)}
+                </Field>
               </div>
               <div className="grid-cols grid-2">
-                <div className="field">
-                  <label>{t('Categoria')} <span className="req">*</span></label>
-                  <select value={form.category} onChange={(e) => { update('category', e.target.value); update('subcategory', ''); }}>
-                    <option value="">{t('Selecione…')}</option>
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{t(c)}</option>)}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>{t('Subcategoria')}</label>
-                  <input
-                    list="subcat-list"
-                    value={form.subcategory}
-                    onChange={(e) => update('subcategory', e.target.value)}
-                    placeholder={form.category ? t('Selecione ou escreva…') : t('Escolha a categoria primeiro')}
-                    disabled={!form.category}
-                  />
-                  <datalist id="subcat-list">{(TAXONOMY[form.category] || []).map((s) => <option key={s} value={s} />)}</datalist>
-                </div>
+                <Field label={t('Marca')}>
+                  {(id) => (<>
+                    <input id={id} value={form.brand} onChange={(e) => update('brand', e.target.value)} />
+                  </>)}
+                </Field>
+                <Field label={t('Unidade de Medida')}>
+                  {(id) => (<>
+                    <input id={id} value={form.measurementUnit} onChange={(e) => update('measurementUnit', e.target.value)} placeholder={t('Ex.: un, m, kg, caixa')} />
+                  </>)}
+                </Field>
               </div>
-              <div className="grid-cols grid-2">
-                <div className="field">
-                  <label>{t('Marca')}</label>
-                  <input value={form.brand} onChange={(e) => update('brand', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{t('Unidade de Medida')}</label>
-                  <input value={form.measurementUnit} onChange={(e) => update('measurementUnit', e.target.value)} placeholder={t('Ex.: un, m, kg, caixa')} />
-                </div>
-              </div>
-              <div className="field">
-                <label>{t('País de origem (proveniência do fabrico)')}</label>
-                <input value={form.countryOfOrigin} onChange={(e) => update('countryOfOrigin', e.target.value)} placeholder={t('Ex.: Angola, EUA, China, UE — opcional')} />
-                <small className="helptext">{t('Opcional. O fornecedor é sempre angolano; este campo indica só a origem do fabrico do bem.')}</small>
-              </div>
-              <div className="field">
-                <label>{t('Descrição Curta')} <span className="req">*</span></label>
-                <textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} />
-                <small className="helptext">{t('Aparece nos cartões do marketplace.')}</small>
-              </div>
+              <Field label={t('País de origem (proveniência do fabrico)')}>
+                {(id) => (<>
+                  <input id={id} value={form.countryOfOrigin} onChange={(e) => update('countryOfOrigin', e.target.value)} placeholder={t('Ex.: Angola, EUA, China, UE — opcional')} />
+                  <small className="helptext">{t('Opcional. O fornecedor é sempre angolano; este campo indica só a origem do fabrico do bem.')}</small>
+                </>)}
+              </Field>
+              <Field label={t('Descrição Curta')} obrigatorio>
+                {(id) => (<>
+                  <textarea id={id} rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} />
+                  <small className="helptext">{t('Aparece nos cartões do marketplace.')}</small>
+                </>)}
+              </Field>
 
               <label className="reg-section" style={{ display: 'block', marginTop: 8 }}>{t('Atributos (comuns a qualquer item)')}</label>
               <div className="grid-cols grid-2">
                 {UNIVERSAL_FIELDS.map(([k, label, help]) => (
-                  <div className="field" key={k}>
-                    <label>{t(label)}</label>
-                    <input value={form[k]} onChange={(e) => update(k, e.target.value)} placeholder={t(help)} />
-                  </div>
+                  <Field label={t(label)} key={k}>
+                    {(id) => (<>
+                      <input id={id} value={form[k]} onChange={(e) => update(k, e.target.value)} placeholder={t(help)} />
+                    </>)}
+                  </Field>
                 ))}
               </div>
-              <div className="field">
-                <label>{t('Comentários')}</label>
-                <textarea rows={3} value={form.supplierNotes} onChange={(e) => update('supplierNotes', e.target.value)}
-                  placeholder={t('Qualquer requisito ou informação adicional que não caiba nos campos acima.')} />
-              </div>
+              <Field label={t('Comentários')}>
+                {(id) => (<>
+                  <textarea id={id} rows={3} value={form.supplierNotes} onChange={(e) => update('supplierNotes', e.target.value)}
+                    placeholder={t('Qualquer requisito ou informação adicional que não caiba nos campos acima.')} />
+                </>)}
+              </Field>
             </div>
 
             {/* ABA 2 — Preço & Disponibilidade */}
             <div className="tab-panel" style={{ display: tab === 1 ? 'block' : 'none' }}>
               <div className="grid-cols grid-2">
-                <div className="field">
-                  <label>{t('Moeda')}</label>
-                  <select value={form.currency} onChange={(e) => update('currency', e.target.value)}>
-                    {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>{t('Preço Unitário')} <span className="req">*</span></label>
-                  <input type="number" min="0" step="0.01" value={form.unitPrice} onChange={(e) => update('unitPrice', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{t('Preço Promocional')}</label>
-                  <input type="number" min="0" step="0.01" value={form.promoPrice} onChange={(e) => update('promoPrice', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{t('Disponibilidade')}</label>
-                  <select value={form.availability} onChange={(e) => update('availability', e.target.value)}>
-                    {AVAILABILITY.map((a) => <option key={a} value={a}>{t(a)}</option>)}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>{t('Quantidade em Stock')}</label>
-                  <input type="number" min="0" value={form.stockQuantity} onChange={(e) => update('stockQuantity', e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{t('Prazo de Entrega (dias)')}</label>
-                  <input type="number" min="0" value={form.leadTimeDays} onChange={(e) => update('leadTimeDays', e.target.value)} />
-                </div>
+                <Field label={t('Moeda')}>
+                  {(id) => (<>
+                    <select id={id} value={form.currency} onChange={(e) => update('currency', e.target.value)}>
+                      {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </>)}
+                </Field>
+                <Field label={t('Preço Unitário')} obrigatorio>
+                  {(id) => (<>
+                    <input id={id} type="number" min="0" step="0.01" value={form.unitPrice} onChange={(e) => update('unitPrice', e.target.value)} />
+                  </>)}
+                </Field>
+                <Field label={t('Preço Promocional')}>
+                  {(id) => (<>
+                    <input id={id} type="number" min="0" step="0.01" value={form.promoPrice} onChange={(e) => update('promoPrice', e.target.value)} />
+                  </>)}
+                </Field>
+                <Field label={t('Disponibilidade')}>
+                  {(id) => (<>
+                    <select id={id} value={form.availability} onChange={(e) => update('availability', e.target.value)}>
+                      {AVAILABILITY.map((a) => <option key={a} value={a}>{t(a)}</option>)}
+                    </select>
+                  </>)}
+                </Field>
+                <Field label={t('Quantidade em Stock')}>
+                  {(id) => (<>
+                    <input id={id} type="number" min="0" value={form.stockQuantity} onChange={(e) => update('stockQuantity', e.target.value)} />
+                  </>)}
+                </Field>
+                <Field label={t('Prazo de Entrega (dias)')}>
+                  {(id) => (<>
+                    <input id={id} type="number" min="0" value={form.leadTimeDays} onChange={(e) => update('leadTimeDays', e.target.value)} />
+                  </>)}
+                </Field>
               </div>
               {form.unitPrice ? (
                 <div className="cls-box">
@@ -422,19 +440,20 @@ export default function CatalogManage() {
               <label className="reg-section" style={{ display: 'block', marginTop: 16 }}>{t('Documentos')}</label>
               <p className="helptext" style={{ marginTop: 0 }}>{t('PDF ou imagem, até 15 MB cada. Opcional — pode anexar vários por tipo.')}</p>
               {DOC_TYPES.map(([type, label]) => (
-                <div className="field" key={type}>
-                  <label>{t(label)}</label>
-                  <input type="file" multiple accept="application/pdf,image/*" onChange={(e) => { addDocs(type, e.target.files); e.target.value = ''; }} />
-                  {(docs[type] || []).length > 0 && (
-                    <ul className="doc-chips">
-                      {docs[type].map((f, i) => (
-                        <li key={i}><Icon name="invoice" size={13} /> {f.name}
-                          <button type="button" onClick={() => removeDoc(type, i)} aria-label={t('Remover')}>×</button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                <Field label={t(label)} key={type}>
+                  {(id) => (<>
+                    <input id={id} type="file" multiple accept="application/pdf,image/*" onChange={(e) => { addDocs(type, e.target.files); e.target.value = ''; }} />
+                    {(docs[type] || []).length > 0 && (
+                      <ul className="doc-chips">
+                        {docs[type].map((f, i) => (
+                          <li key={i}><Icon name="invoice" size={13} /> {f.name}
+                            <button type="button" onClick={() => removeDoc(type, i)} aria-label={t('Remover')}>×</button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>)}
+                </Field>
               ))}
             </div>
 

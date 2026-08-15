@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { PageHeader, Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import { formatDateTime } from '../../domain';
 import { useI18n } from '../../i18n';
 
@@ -68,21 +68,24 @@ export default function StockMovements() {
 
       <div className="card card-pad" style={{ marginBottom: 18, maxWidth: 560 }}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div className="field" style={{ margin: 0, flex: '1 1 220px' }}>
-            <label>{t('Produto')}</label>
-            <select value={form.productId} onChange={(e) => update('productId', e.target.value)}>
-              <option value="">{t('— escolher —')}</option>
-              {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({t('stock')}: {p.stockQuantity ?? 0})</option>)}
-            </select>
-          </div>
-          <div className="field" style={{ margin: 0, width: 110 }}>
-            <label>{t('Quantidade')}</label>
-            <input type="number" min="1" value={form.quantity} onChange={(e) => update('quantity', e.target.value)} />
-          </div>
-          <div className="field" style={{ margin: 0, flex: '1 1 160px' }}>
-            <label>{t('Nota (opcional)')}</label>
-            <input value={form.note} onChange={(e) => update('note', e.target.value)} />
-          </div>
+          <Field label={t('Produto')} style={{ margin: 0, flex: '1 1 220px' }}>
+            {(id) => (<>
+              <select id={id} value={form.productId} onChange={(e) => update('productId', e.target.value)}>
+                <option value="">{t('— escolher —')}</option>
+                {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({t('stock')}: {p.stockQuantity ?? 0})</option>)}
+              </select>
+            </>)}
+          </Field>
+          <Field label={t('Quantidade')} style={{ margin: 0, width: 110 }}>
+            {(id) => (<>
+              <input id={id} type="number" min="1" value={form.quantity} onChange={(e) => update('quantity', e.target.value)} />
+            </>)}
+          </Field>
+          <Field label={t('Nota (opcional)')} style={{ margin: 0, flex: '1 1 160px' }}>
+            {(id) => (<>
+              <input id={id} value={form.note} onChange={(e) => update('note', e.target.value)} />
+            </>)}
+          </Field>
           <button className="btn btn-accent" type="submit" disabled={saving}>{saving ? t('A registar…') : (isEntrada ? t('Registar entrada') : t('Registar saída'))}</button>
         </form>
       </div>

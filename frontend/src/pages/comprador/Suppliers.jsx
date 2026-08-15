@@ -83,7 +83,7 @@ export default function Suppliers() {
             {top.length === 0 ? <p className="bz-sub">{t('Sem dados.')}</p> : top.map((s, i) => (
               <div className="bz-panel-row" key={s.id}>
                 <span>{i + 1}. {s.name}</span>
-                <strong style={{ color: '#16884f' }}>{s.rating.toFixed(1)}</strong>
+                <strong style={{ color: 'var(--ok-700)' }}>{s.rating.toFixed(1)}</strong>
               </div>
             ))}
           </div>

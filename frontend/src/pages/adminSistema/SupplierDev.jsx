@@ -3,6 +3,7 @@
 // fornecedor nacional (emancipação burocrática e parcerias internacionais),
 // recebidas pela página pública. O Admin acompanha o estado de cada caso.
 import { useEffect, useState } from 'react';
+import { Field } from '../../components/Common';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, EmptyRow, Pagination } from '../../components/BuyerUI';
 import { formatDate } from '../../domain';
@@ -157,12 +158,13 @@ export default function AdminSupplierDev() {
               </p>
               <p className="bz-sub2">{t('Cobrada na submissão da intenção. O restante do programa é orçamentado aqui.')}</p>
               <div className="grid-cols grid-2" style={{ alignItems: 'end' }}>
-                <div className="field" style={{ marginBottom: 0 }}>
-                  <label>{t('Orçamento do restante do programa (USD)')}</label>
-                  <input type="number" min="0" step="0.01" value={programFee}
-                    onChange={(e) => setProgramFee(e.target.value)}
-                    placeholder={r.customPricing ? t('Por orçamentar') : ''} />
-                </div>
+                <Field label={t('Orçamento do restante do programa (USD)')} style={{ marginBottom: 0 }}>
+                  {(id) => (<>
+                    <input id={id} type="number" min="0" step="0.01" value={programFee}
+                      onChange={(e) => setProgramFee(e.target.value)}
+                      placeholder={r.customPricing ? t('Por orçamentar') : ''} />
+                  </>)}
+                </Field>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 2 }}>
                   <button className="btn btn-ghost btn-sm" disabled={saving || programFee === ''}
                     onClick={() => saveProgramFee(r.id)}>{t('Guardar orçamento')}</button>
@@ -172,10 +174,11 @@ export default function AdminSupplierDev() {
               </div>
             </div>
 
-            <div className="field">
-              <label>{t('Notas de acompanhamento (internas)')}</label>
-              <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
-            </div>
+            <Field label={t('Notas de acompanhamento (internas)')}>
+              {(id) => (<>
+                <textarea id={id} rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+              </>)}
+            </Field>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button className="btn btn-ghost btn-sm" disabled={saving} onClick={() => setRequestStatus(r.id, 'EM_ANALISE')}>{t('Marcar em análise')}</button>
               <button className="btn btn-primary btn-sm" disabled={saving} onClick={() => setRequestStatus(r.id, 'EM_ACOMPANHAMENTO')}>{t('Em acompanhamento')}</button>

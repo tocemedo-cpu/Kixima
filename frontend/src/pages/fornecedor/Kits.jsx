@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { PageHeader, Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import { formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
 
@@ -82,17 +82,19 @@ export default function Kits() {
             <div className="reg-section">{t('Produtos do kit')}</div>
             {lines.map((l, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 8 }}>
-                <div className="field" style={{ margin: 0, flex: 1 }}>
-                  <label>{t('Produto')}</label>
-                  <select value={l.productId} onChange={(e) => setLine(i, 'productId', e.target.value)}>
-                    <option value="">{t('— escolher —')}</option>
-                    {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
-                </div>
-                <div className="field" style={{ margin: 0, width: 90 }}>
-                  <label>{t('Qtd.')}</label>
-                  <input type="number" min="1" value={l.quantity} onChange={(e) => setLine(i, 'quantity', e.target.value)} />
-                </div>
+                <Field label={t('Produto')} style={{ margin: 0, flex: 1 }}>
+                  {(id) => (<>
+                    <select id={id} value={l.productId} onChange={(e) => setLine(i, 'productId', e.target.value)}>
+                      <option value="">{t('— escolher —')}</option>
+                      {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </>)}
+                </Field>
+                <Field label={t('Qtd.')} style={{ margin: 0, width: 90 }}>
+                  {(id) => (<>
+                    <input id={id} type="number" min="1" value={l.quantity} onChange={(e) => setLine(i, 'quantity', e.target.value)} />
+                  </>)}
+                </Field>
                 {lines.length > 1 ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => removeLine(i)}>×</button> : null}
               </div>
             ))}

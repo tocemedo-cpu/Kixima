@@ -5,7 +5,7 @@
 // poService.createPurchaseOrder).
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { PageHeader, Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
 import { CONTRACT_STATUS, BILLING_PERIODICITY, formatMoney, formatDate } from '../../domain';
@@ -109,73 +109,82 @@ export default function Contracts() {
       {showForm && (
         <form className="card card-pad" style={{ marginBottom: 16 }} onSubmit={submit}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div className="field">
-              <label>{t('Empresa cliente')}</label>
-              <select value={form.clientCompanyId} onChange={set('clientCompanyId')} required>
-                <option value="">{t('Selecione o cliente…')}</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label>{t('Empresa fornecedora')}</label>
-              <select value={form.supplierCompanyId} onChange={set('supplierCompanyId')} required>
-                <option value="">{t('Selecione o fornecedor…')}</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
+            <Field label={t('Empresa cliente')}>
+              {(id) => (<>
+                <select id={id} value={form.clientCompanyId} onChange={set('clientCompanyId')} required>
+                  <option value="">{t('Selecione o cliente…')}</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </>)}
+            </Field>
+            <Field label={t('Empresa fornecedora')}>
+              {(id) => (<>
+                <select id={id} value={form.supplierCompanyId} onChange={set('supplierCompanyId')} required>
+                  <option value="">{t('Selecione o fornecedor…')}</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </>)}
+            </Field>
           </div>
 
-          <div className="field" style={{ marginTop: 16 }}>
-            <label>{t('Categorias cobertas')}</label>
-            <input
-              type="text"
-              value={form.categoriesCovered}
-              onChange={set('categoriesCovered')}
-              placeholder={t('Ex.: Válvulas, Tubagem, Bombas (separadas por vírgula)')}
-              required
-            />
-            <small className="helptext">
-              {t('Uma PO só vira Call-off se todas as categorias dos seus itens estiverem cobertas.')}
-            </small>
+          <Field label={t('Categorias cobertas')} style={{ marginTop: 16 }}>
+            {(id) => (<>
+              <input id={id}
+                type="text"
+                value={form.categoriesCovered}
+                onChange={set('categoriesCovered')}
+                placeholder={t('Ex.: Válvulas, Tubagem, Bombas (separadas por vírgula)')}
+                required
+              />
+              <small className="helptext">
+                {t('Uma PO só vira Call-off se todas as categorias dos seus itens estiverem cobertas.')}
+              </small>
+            </>)}
+          </Field>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 16 }}>
+            <Field label={t('Valor total do contrato')}>
+              {(id) => (<>
+                <input id={id} type="number" min="0" step="0.01" value={form.totalValue} onChange={set('totalValue')} required />
+              </>)}
+            </Field>
+            <Field label={t('Moeda')}>
+              {(id) => (<>
+                <input id={id} type="text" value={form.currency} onChange={set('currency')} />
+              </>)}
+            </Field>
+            <Field label={t('Periodicidade de faturação')}>
+              {(id) => (<>
+                <select id={id} value={form.billingPeriodicity} onChange={set('billingPeriodicity')}>
+                  {Object.entries(BILLING_PERIODICITY).map(([key, label]) => (
+                    <option key={key} value={key}>{t(label)}</option>
+                  ))}
+                </select>
+              </>)}
+            </Field>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 16 }}>
-            <div className="field">
-              <label>{t('Valor total do contrato')}</label>
-              <input type="number" min="0" step="0.01" value={form.totalValue} onChange={set('totalValue')} required />
-            </div>
-            <div className="field">
-              <label>{t('Moeda')}</label>
-              <input type="text" value={form.currency} onChange={set('currency')} />
-            </div>
-            <div className="field">
-              <label>{t('Periodicidade de faturação')}</label>
-              <select value={form.billingPeriodicity} onChange={set('billingPeriodicity')}>
-                {Object.entries(BILLING_PERIODICITY).map(([key, label]) => (
-                  <option key={key} value={key}>{t(label)}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 16 }}>
-            <div className="field">
-              <label>{t('Prazo de pagamento (dias)')}</label>
-              <input type="number" min="1" step="1" value={form.paymentTermDays} onChange={set('paymentTermDays')} required />
-              <small className="helptext">{t('Substitui os 7 dias padrão para os call-offs deste contrato.')}</small>
-            </div>
-            <div className="field">
-              <label>{t('Válido de')}</label>
-              <input type="date" value={form.validFrom} onChange={set('validFrom')} required />
-            </div>
-            <div className="field">
-              <label>{t('Válido até')}</label>
-              <input type="date" value={form.validUntil} onChange={set('validUntil')} required />
-            </div>
+            <Field label={t('Prazo de pagamento (dias)')}>
+              {(id) => (<>
+                <input id={id} type="number" min="1" step="1" value={form.paymentTermDays} onChange={set('paymentTermDays')} required />
+                <small className="helptext">{t('Substitui os 7 dias padrão para os call-offs deste contrato.')}</small>
+              </>)}
+            </Field>
+            <Field label={t('Válido de')}>
+              {(id) => (<>
+                <input id={id} type="date" value={form.validFrom} onChange={set('validFrom')} required />
+              </>)}
+            </Field>
+            <Field label={t('Válido até')}>
+              {(id) => (<>
+                <input id={id} type="date" value={form.validUntil} onChange={set('validUntil')} required />
+              </>)}
+            </Field>
           </div>
 
           <div style={{ marginTop: 20 }}>

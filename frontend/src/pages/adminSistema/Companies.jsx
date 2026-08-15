@@ -29,14 +29,14 @@ export default function Companies() {
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <div className="field" style={{ maxWidth: 200 }}>
-          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <select aria-label={t('Filtrar por tipo')} value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
             <option value="">{t('Todos os tipos')}</option>
             <option value="CLIENTE">{t('Cliente')}</option>
             <option value="FORNECEDOR">{t('Fornecedor')}</option>
           </select>
         </div>
         <div className="field" style={{ maxWidth: 220 }}>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <select aria-label={t('Filtrar por estado')} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="">{t('Todos os estados')}</option>
             {Object.entries(COMPANY_STATUS).map(([key, val]) => (
               <option key={key} value={key}>{t(val.label)}</option>

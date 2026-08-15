@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { api } from '../../api/client';
-import { PageHeader, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { PageHeader, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import { useI18n } from '../../i18n';
 
 // Secção da verificação em dois passos.
@@ -93,10 +93,11 @@ function TwoFactorSection() {
               {' — '}
               {status.metodo === 'EMAIL' ? t('por email') : t('por app de autenticação')}.
             </p>
-            <div className="field" style={{ marginTop: 10 }}>
-              <label>{t('Para desativar, confirme um código atual')}</label>
-              <input inputMode="numeric" maxLength={6} placeholder="000000" value={disableCode} onChange={(e) => setDisableCode(e.target.value)} />
-            </div>
+            <Field label={t('Para desativar, confirme um código atual')} style={{ marginTop: 10 }}>
+              {(id) => (<>
+                <input id={id} inputMode="numeric" maxLength={6} placeholder="000000" value={disableCode} onChange={(e) => setDisableCode(e.target.value)} />
+              </>)}
+            </Field>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {status.metodo === 'EMAIL' ? (
                 <button className="btn btn-ghost btn-sm" disabled={busy} onClick={pedirCodigoParaDesativar}>
@@ -140,10 +141,11 @@ function TwoFactorSection() {
               {t('Enviámos um código de 6 dígitos para')} <strong>{envio?.enviadoPara}</strong>.{' '}
               {t('É válido durante')} {envio?.validadeMinutos} {t('minutos. Confirme também a pasta de spam.')}
             </p>
-            <div className="field">
-              <label>{t('Código recebido por email')}</label>
-              <input inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={(e) => setCode(e.target.value)} />
-            </div>
+            <Field label={t('Código recebido por email')}>
+              {(id) => (<>
+                <input id={id} inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={(e) => setCode(e.target.value)} />
+              </>)}
+            </Field>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button className="btn btn-accent" disabled={busy || code.trim().length !== 6} onClick={confirmar}>
                 {t('Confirmar e ativar')}
@@ -166,10 +168,11 @@ function TwoFactorSection() {
             <p className="helptext" style={{ margin: '0 0 12px', wordBreak: 'break-all' }}>
               {t('Chave manual:')} <span className="mono">{setup?.secret}</span>
             </p>
-            <div className="field">
-              <label>{t('3. Introduza o código de 6 dígitos que a app está a mostrar')}</label>
-              <input inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={(e) => setCode(e.target.value)} />
-            </div>
+            <Field label={t('3. Introduza o código de 6 dígitos que a app está a mostrar')}>
+              {(id) => (<>
+                <input id={id} inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={(e) => setCode(e.target.value)} />
+              </>)}
+            </Field>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-accent" disabled={busy || code.trim().length !== 6} onClick={confirmar}>
                 {t('Confirmar e ativar')}
@@ -216,18 +219,21 @@ export default function Security() {
       <SuccessBanner message={success} />
       <div className="card card-pad" style={{ maxWidth: 420 }}>
         <form onSubmit={handleSubmit}>
-          <div className="field">
-            <label>{t('Senha atual')}</label>
-            <input type="password" required value={form.currentPassword} onChange={(e) => update('currentPassword', e.target.value)} />
-          </div>
-          <div className="field">
-            <label>{t('Nova senha (mín. 10)')}</label>
-            <input type="password" required minLength={10} value={form.newPassword} onChange={(e) => update('newPassword', e.target.value)} />
-          </div>
-          <div className="field">
-            <label>{t('Confirmar nova senha')}</label>
-            <input type="password" required minLength={10} value={form.confirm} onChange={(e) => update('confirm', e.target.value)} />
-          </div>
+          <Field label={t('Senha atual')}>
+            {(id) => (<>
+              <input id={id} type="password" required value={form.currentPassword} onChange={(e) => update('currentPassword', e.target.value)} />
+            </>)}
+          </Field>
+          <Field label={t('Nova senha (mín. 10)')}>
+            {(id) => (<>
+              <input id={id} type="password" required minLength={10} value={form.newPassword} onChange={(e) => update('newPassword', e.target.value)} />
+            </>)}
+          </Field>
+          <Field label={t('Confirmar nova senha')}>
+            {(id) => (<>
+              <input id={id} type="password" required minLength={10} value={form.confirm} onChange={(e) => update('confirm', e.target.value)} />
+            </>)}
+          </Field>
           <button className="btn btn-accent" type="submit" disabled={saving}>{saving ? t('A guardar…') : t('Alterar senha')}</button>
         </form>
       </div>
@@ -303,10 +309,11 @@ function DadosPessoaisSection() {
             <strong>{t('Isto não tem volta.')}</strong>{' '}
             {t('O seu nome, email e foto são apagados e a conta é fechada. As ordens, faturas e pagamentos em que participou continuam a existir, mas deixam de o identificar — a lei fiscal obriga a conservá-los.')}
           </p>
-          <div className="field">
-            <label>{t('Confirme a sua senha atual')}</label>
-            <input type="password" required value={senha} onChange={(ev) => setSenha(ev.target.value)} />
-          </div>
+          <Field label={t('Confirme a sua senha atual')}>
+            {(id) => (<>
+              <input id={id} type="password" required value={senha} onChange={(ev) => setSenha(ev.target.value)} />
+            </>)}
+          </Field>
           {erro ? <p className="error-text">{erro}</p> : null}
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-danger" type="submit">{t('Eliminar definitivamente')}</button>

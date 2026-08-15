@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
-import { Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
 import { Icon, Stars } from '../../components/icons';
 import ProductCover from '../../components/ProductCover';
 import { formatMoney, formatDate } from '../../domain';
@@ -76,10 +76,11 @@ export default function ServiceDetail() {
           <div className="card card-pad">
             <strong style={{ fontSize: 13.5 }}>{t('Avaliações')}</strong>
             <form onSubmit={submitReview} style={{ margin: '12px 0', display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <div className="field" style={{ margin: 0, width: 90 }}>
-                <label>{t('Nota')}</label>
-                <select value={rating} onChange={(e) => setRating(e.target.value)}>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} ★</option>)}</select>
-              </div>
+              <Field label={t('Nota')} style={{ margin: 0, width: 90 }}>
+                {(id) => (<>
+                  <select id={id} value={rating} onChange={(e) => setRating(e.target.value)}>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} ★</option>)}</select>
+                </>)}
+              </Field>
               <div className="field" style={{ margin: 0, flex: 1 }}><label>{t('Comentário')}</label><input value={comment} onChange={(e) => setComment(e.target.value)} /></div>
               <button className="btn btn-ghost btn-sm" type="submit">{t('Avaliar')}</button>
             </form>

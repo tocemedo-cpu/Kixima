@@ -3,6 +3,7 @@
 // (utilizadores, contratos, documentos, certificações). É a MESMA página para
 // o Company Admin e para o Fornecedor. Ligado a /api/company-admin/organizacao.
 import { useEffect, useState } from 'react';
+import { Field } from '../../components/Common';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, Pill } from '../../components/BuyerUI';
@@ -48,10 +49,11 @@ function BankDetailsPanel({ companyId }) {
         {t('Aparecem na secção')} <em>{t('Dados bancários do fornecedor')}</em> {t('das faturas — preencha para que o cliente saiba para onde pagar.')}
       </p>
       <form onSubmit={save}>
-        <div className="field">
-          <label>{t('Banco')}</label>
-          <input value={bank.bankName} onChange={(e) => update('bankName', e.target.value)} placeholder={t('Ex.: Banco de Fomento Angola (BFA)')} />
-        </div>
+        <Field label={t('Banco')}>
+          {(id) => (<>
+            <input id={id} value={bank.bankName} onChange={(e) => update('bankName', e.target.value)} placeholder={t('Ex.: Banco de Fomento Angola (BFA)')} />
+          </>)}
+        </Field>
         <div className="grid-cols grid-2">
           <div className="field">
             <label>IBAN</label>

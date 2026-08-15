@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../../api/client';
-import { Loading, ErrorBanner } from '../../components/Common';
+import { Loading, ErrorBanner , Field } from '../../components/Common';
 import { formatMoney } from '../../domain';
 import { useCart } from './CartContext';
 import ProductCover from '../../components/ProductCover';
@@ -131,19 +131,20 @@ export default function ItemDetail() {
             </div>
           ) : null}
 
-          <div className="field" style={{ marginTop: 20 }}>
-            <label>{t('Quantidade')}</label>
-            <input
-              type="number"
-              min={1}
-              value={quantity}
-              onChange={(e) => {
-                setQuantity(Math.max(1, Number(e.target.value)));
-                setAdded(false);
-              }}
-              style={{ maxWidth: 120 }}
-            />
-          </div>
+          <Field label={t('Quantidade')} style={{ marginTop: 20 }}>
+            {(id) => (<>
+              <input id={id}
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={(e) => {
+                  setQuantity(Math.max(1, Number(e.target.value)));
+                  setAdded(false);
+                }}
+                style={{ maxWidth: 120 }}
+              />
+            </>)}
+          </Field>
 
           <div style={{ fontSize: 13, color: 'var(--ink-600)', marginBottom: 16 }}>
             {t('Subtotal')}: <strong>{formatMoney(Number(product.unitPrice) * quantity, product.currency)}</strong>

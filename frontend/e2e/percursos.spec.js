@@ -101,7 +101,11 @@ test.describe('Comprar', () => {
     await page.waitForSelector('main a[href*="/comprador/catalogo/"]', { timeout: 20000 });
     await page.locator('main a[href*="/comprador/catalogo/"]').first().click();
     await page.waitForURL(/\/comprador\/catalogo\/[0-9a-f-]{36}/);
-    await expect(page.locator('button:has-text("Adicionar à cesta")')).toBeVisible();
+    // Esperar pelo URL não chega: o endereço muda antes de a lista sair do
+    // ecrã, e nesse intervalo os botões "Adicionar à Cesta" dos cartões da
+    // lista ainda lá estão. Espera-se por algo que SÓ existe no detalhe.
+    await expect(page.locator('button:has-text("Voltar ao catálogo")')).toBeVisible();
+    await expect(page.locator('button:has-text("Adicionar à cesta")')).toHaveCount(1);
   });
 });
 
