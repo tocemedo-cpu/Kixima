@@ -530,6 +530,27 @@ textarea {
   padding: 18px 20px;
 }
 
+/* KPI que leva a algum lado. Só se aplica quando o cartão recebe `to` — um
+   número que não navega não pode ganhar afordância de clique. */
+a.stat-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+a.stat-card-link:hover {
+  border-color: var(--brand-600);
+  transform: translateY(-1px);
+}
+a.stat-card-link:focus-visible {
+  outline: 2px solid var(--brand-600);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  a.stat-card-link { transition: none; }
+  a.stat-card-link:hover { transform: none; }
+}
+
 .stat-label {
   font-size: 12px;
   text-transform: uppercase;

@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner, StatCard } from '../../components/Common';
+import { PageHeader, Loading, ErrorBanner, StatCard, JanelaDoHistorico } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { PO_STATUS, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
@@ -27,6 +27,8 @@ export default function Reports() {
   return (
     <div>
       <PageHeader title="Relatórios — Estatísticas" subtitle="Visão geral do desempenho da sua empresa na plataforma." />
+
+      <JanelaDoHistorico janela={stats.janela} />
 
       <div className="grid-cols grid-3" style={{ marginBottom: 16 }}>
         <StatCard label="Receita reconhecida" value={formatMoney(stats.revenue)} sub="Ordens já pagas" />

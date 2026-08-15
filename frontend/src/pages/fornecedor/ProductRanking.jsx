@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { api } from '../../api/client';
-import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
+import { PageHeader, Loading, ErrorBanner, JanelaDoHistorico } from '../../components/Common';
 import { formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
 
@@ -32,6 +32,11 @@ export default function ProductRanking() {
         title={isViewed ? 'Relatórios — Produtos mais vistos' : 'Relatórios — Produtos mais vendidos'}
         subtitle={isViewed ? 'Ranking dos produtos com mais visualizações de compradores.' : 'Ranking dos produtos com mais unidades vendidas.'}
       />
+
+      {/* Só o ranking de VENDAS respeita a janela do plano. As visualizações
+          vêm de um contador corrido, sem datas — não há por onde cortá-las, e
+          dizer que cobrem três meses seria inventar. */}
+      {isViewed ? null : <JanelaDoHistorico janela={stats.janela} />}
 
       {rows.length === 0 ? (
         <div className="empty-state">

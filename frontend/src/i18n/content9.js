@@ -164,6 +164,12 @@ export const EN10 = {
     'Companies of size {dimensao} must subscribe to plan {minimo}.',
   'O plano {plano} inclui {lugares} lugares e a empresa tem {ocupados} (utilizadores ativos mais convites por aceitar). Desative os utilizadores em excesso antes de descer de plano.':
     'Plan {plano} includes {lugares} seats and the company has {ocupados} (active users plus pending invitations). Deactivate the extra users before moving down a plan.',
+
+  // --- Janela de histórico dos relatórios (limite do plano, à vista) -----------
+  'Receita, ordens e mais vendidos cobrem os últimos {n} meses — o histórico incluído no seu plano.':
+    'Revenue, orders and best sellers cover the last {n} months — the history included in your plan.',
+  'Produtos, estoque e visualizações mostram sempre o estado atual.':
+    'Products, stock and views always show the current state.',
 };
 
 export const FR10 = {
@@ -300,4 +306,10 @@ export const FR10 = {
     'Les entreprises de taille {dimensao} doivent souscrire le forfait {minimo}.',
   'O plano {plano} inclui {lugares} lugares e a empresa tem {ocupados} (utilizadores ativos mais convites por aceitar). Desative os utilizadores em excesso antes de descer de plano.':
     'Le forfait {plano} comprend {lugares} sièges et l’entreprise en a {ocupados} (utilisateurs actifs plus invitations en attente). Désactivez les utilisateurs en trop avant de passer à un forfait inférieur.',
+
+  // --- Fenêtre d’historique des rapports (limite du forfait, visible) ----------
+  'Receita, ordens e mais vendidos cobrem os últimos {n} meses — o histórico incluído no seu plano.':
+    'Le chiffre d’affaires, les commandes et les meilleures ventes couvrent les {n} derniers mois — l’historique inclus dans votre forfait.',
+  'Produtos, estoque e visualizações mostram sempre o estado atual.':
+    'Les produits, le stock et les vues affichent toujours l’état actuel.',
 };

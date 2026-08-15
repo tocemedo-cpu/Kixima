@@ -11,15 +11,40 @@ function useT() {
   return (v) => (typeof v === 'string' ? t(v) : v);
 }
 
-export function StatCard({ label, value, sub }) {
-  const tr = useT();
+/**
+ * A janela de histórico que um relatório aplicou.
+ *
+ * Sem isto, um fornecedor no plano BASE vê a receita dos últimos três meses ao
+ * lado de um contador de visitas que conta desde sempre, e não tem como saber
+ * que são períodos diferentes. Parece um erro de cálculo — e a queixa que chega
+ * não é "o meu plano tem pouco histórico", é "os números do KIXIMA estão
+ * errados". Um limite comercial só é legítimo quando está à vista.
+ */
+export function JanelaDoHistorico({ janela }) {
+  const { t } = useI18n();
+  if (!janela || janela.ilimitado || !janela.meses) return null;
   return (
-    <div className="card stat-card">
+    <p className="helptext" style={{ margin: '-6px 0 16px' }}>
+      {t('Receita, ordens e mais vendidos cobrem os últimos {n} meses — o histórico incluído no seu plano.', { n: janela.meses })}
+      {' '}
+      {t('Produtos, estoque e visualizações mostram sempre o estado atual.')}
+    </p>
+  );
+}
+
+export function StatCard({ label, value, sub, to }) {
+  const tr = useT();
+  const corpo = (
+    <>
       <div className="stat-label">{tr(label)}</div>
       <div className="stat-value">{tr(value)}</div>
       {sub ? <div className="stat-sub">{tr(sub)}</div> : null}
-    </div>
+    </>
   );
+  // Sem `to`, sai exatamente o que saía antes: mesmo elemento, mesmas classes.
+  // Um KPI que não leva a lado nenhum não pode parecer que leva.
+  if (!to) return <div className="card stat-card">{corpo}</div>;
+  return <Link to={to} className="card stat-card stat-card-link">{corpo}</Link>;
 }
 
 export function PageHeader({ title, subtitle, action }) {

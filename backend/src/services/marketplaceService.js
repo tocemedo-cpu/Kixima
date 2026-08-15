@@ -2,6 +2,7 @@
 // Pesquisa do marketplace: paginação no backend, filtros e ordenação seguros.
 const prisma = require('../config/database');
 const { NotFoundError } = require('../utils/errors');
+const planService = require('./planService');
 
 // A POSIÇÃO DO PLANO SÓ ENTRA NA RELEVÂNCIA — e é uma decisão de produto, não
 // uma omissão. Quem escolhe "preço mais baixo" quer o preço mais baixo; se o
@@ -21,8 +22,29 @@ const SORTS = {
   vendidos: [{ reviewCount: 'desc' }, { viewCount: 'desc' }], // proxy até haver contador de vendas
 };
 
-// `searchRank` vai no select para a interface poder mostrar o selo do Pro.
-const SUPPLIER = { select: { id: true, name: true, verified: true, logoUrl: true, searchRank: true } };
+// O `plan` entra no select para o selo ser calculado AQUI, e não sai daqui:
+// qual é o plano de um fornecedor não é assunto de quem compra. Vai só o
+// booleano `destaque`.
+const SUPPLIER = {
+  select: { id: true, name: true, verified: true, logoUrl: true, searchRank: true, plan: true },
+};
+
+/**
+ * O selo de destaque, a partir da matriz de planos.
+ *
+ * Antes o frontend decidia com `searchRank >= 2`. Dava o resultado certo, mas
+ * por uma coincidência: 2 é a POSIÇÃO NA PESQUISA do Pro, não o selo. São duas
+ * funcionalidades diferentes que hoje calham no mesmo degrau. No dia em que o
+ * selo descesse para o CORE — uma decisão comercial, não técnica — a matriz
+ * mudava e o frontend continuava a olhar para a posição, a mostrar o selo a
+ * quem já não o tem e a escondê-lo de quem passou a tê-lo. Ninguém daria por
+ * isso a não ser o cliente que pagou.
+ */
+function comSelo(supplier) {
+  if (!supplier) return supplier;
+  const { plan, ...resto } = supplier;
+  return { ...resto, destaque: planService.hasFeature(plan, 'selo') };
+}
 
 // Constrói o `where` do Prisma a partir de parâmetros já validados/saneados.
 function buildWhere(f) {
@@ -83,7 +105,7 @@ async function search(filters, { userId } = {}) {
     favSet = new Set(favs.map((f) => f.productId));
   }
 
-  const items = rows.map((p) => ({ ...p, isFavorite: favSet.has(p.id) }));
+  const items = rows.map((p) => ({ ...p, supplier: comSelo(p.supplier), isFavorite: favSet.has(p.id) }));
   return { items, total, page, pages: Math.max(1, Math.ceil(total / limit)), limit };
 }
 

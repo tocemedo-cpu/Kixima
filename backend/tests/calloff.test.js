@@ -8,6 +8,7 @@ const { auth, prisma, loginAll, USERS } = require('./helpers');
 let tokens;
 let product;
 let clientCompanyId;
+let planoOriginalDoCliente;
 
 beforeAll(async () => {
   tokens = await loginAll();
@@ -16,6 +17,16 @@ beforeAll(async () => {
 
   const comprador = await prisma.user.findUnique({ where: { email: USERS.comprador } });
   clientCompanyId = comprador.companyId;
+
+  // O contrato-quadro é uma funcionalidade do plano Pro do CLIENTE. A empresa
+  // semeada é CORE, por isso sobe-se aqui — é o estado em que uma operadora
+  // que usa contratos-quadro está mesmo. O plano é reposto no fim para não
+  // contaminar as outras suites, que partilham a mesma base semeada.
+  const cliente = await prisma.company.findUnique({
+    where: { id: clientCompanyId }, select: { plan: true },
+  });
+  planoOriginalDoCliente = cliente.plan;
+  await prisma.company.update({ where: { id: clientCompanyId }, data: { plan: 'PRO' } });
 });
 
 afterAll(async () => {
@@ -34,6 +45,11 @@ afterAll(async () => {
     await prisma.purchaseOrder.deleteMany({ where: { id: { in: ids } } });
   }
   await prisma.contract.deleteMany({});
+  if (planoOriginalDoCliente) {
+    await prisma.company.update({
+      where: { id: clientCompanyId }, data: { plan: planoOriginalDoCliente },
+    });
+  }
   await prisma.$disconnect();
 });
 

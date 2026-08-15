@@ -11,8 +11,10 @@ const router = express.Router();
 router.use(authenticate);
 
 // Estatísticas do fornecedor (catálogo, ordens, receita, mais vendidos).
+// `meses` é opcional: sem ele vale a janela do plano. Com ele, vale o menor
+// dos dois — pedir menos histórico é sempre legítimo.
 router.get('/fornecedor', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), async (req, res) => {
-  const stats = await reportsService.supplierStats(req.user.companyId);
+  const stats = await reportsService.supplierStats(req.user.companyId, { meses: req.query.meses });
   res.json(stats);
 });
 

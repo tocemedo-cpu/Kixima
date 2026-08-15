@@ -5,6 +5,29 @@ const prisma = require('../config/database');
 const { NotFoundError, BusinessRuleError } = require('../utils/errors');
 const { nextReference } = require('../utils/reference');
 const taxService = require('./taxService');
+const planService = require('./planService');
+
+/**
+ * O contrato-quadro está no plano Pro — mas de QUEM?
+ *
+ * Um contrato-quadro tem duas partes, e as duas beneficiam. A tentação é exigir
+ * o plano às duas; seria errado. O contrato-quadro é um instrumento de COMPRA:
+ * é a operadora que estabelece condições e depois emite call-offs contra elas.
+ * Exigi-lo também ao fornecedor bloquearia uma operadora Pro de contratar um
+ * fornecedor pequeno — e o marketplace perde mais com um catálogo estreito do
+ * que ganha a empurrar fornecedores para cima de plano. É a mesma decisão que
+ * já está tomada na ordenação da pesquisa, e pelo mesmo motivo.
+ *
+ * A guarda vale também quando é o Admin do Sistema a criar: a regra é sobre o
+ * que o plano do cliente inclui, não sobre quem carregou no botão. Sem isso, a
+ * via de administração passa a ser a porta por onde a funcionalidade paga se
+ * oferece de graça, sem ninguém reparar.
+ */
+async function exigirPlanoParaContrato(clientCompanyId) {
+  const cliente = await prisma.company.findUnique({ where: { id: clientCompanyId } });
+  if (!cliente) throw new NotFoundError('Empresa cliente');
+  planService.assertFeature(cliente, 'frameworkContracts', 'Contratos-quadro');
+}
 
 async function createContract({
   clientCompanyId,
@@ -17,6 +40,8 @@ async function createContract({
   validFrom,
   validUntil,
 }) {
+  await exigirPlanoParaContrato(clientCompanyId);
+
   const reference = await nextReference('CTR', 'contract');
   return prisma.contract.create({
     data: {

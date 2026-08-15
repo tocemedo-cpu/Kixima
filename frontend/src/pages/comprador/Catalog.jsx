@@ -84,7 +84,11 @@ export default function Catalog() {
   // Selo do plano Pro. É a contrapartida visível de "Destaque + selo" na tabela
   // de preços — sem isto, o fornecedor paga o Pro e não vê diferença nenhuma
   // além de uma posição que ele próprio não consegue confirmar.
-  const isDestaque = (p) => (p.supplier?.searchRank ?? 0) >= 2;
+  //
+  // Quem decide é o servidor, a partir da matriz de planos. Aqui só se lê o
+  // resultado: o degrau em que o selo vive é uma decisão comercial, e não pode
+  // estar escrita em dois sítios que se podem desencontrar.
+  const isDestaque = (p) => Boolean(p.supplier?.destaque);
   const handleAdd = (p) => { addItem(p, 1); setAdded(p.id); setTimeout(() => setAdded(null), 1200); };
   const toggleCompare = (p) => setCompare((c) => (c.some((x) => x.id === p.id) ? c.filter((x) => x.id !== p.id) : [...c, p]));
   const inCompare = (id) => compare.some((x) => x.id === id);
