@@ -4,7 +4,7 @@
 // utilizador; e o que distingue os três planos (Entrada, Core e Pro).
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api, getToken } from '../../api/client';
+import { api, temSessao } from '../../api/client';
 import Logo from '../../components/Logo';
 import { Icon } from '../../components/icons';
 import { useI18n, LANGS } from '../../i18n';
@@ -78,10 +78,11 @@ export default function Plans() {
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
   const [precos, setPrecos] = useState(null);
-  // Página pública, mas também alcançável com sessão aberta. Basta a presença
-  // do token: chamar /api/auth/me só para escolher o destino de um botão faria
-  // um pedido autenticado numa página que tem de abrir sem sessão nenhuma.
-  const autenticado = Boolean(getToken());
+  // Página pública, mas também alcançável com sessão aberta. Usa-se a marca
+  // local: o cookie de sessão é httpOnly e não se lê daqui, e chamar
+  // /api/auth/me só para escolher o destino de um botão faria um pedido
+  // autenticado numa página que tem de abrir sem sessão nenhuma.
+  const autenticado = temSessao();
 
   useEffect(() => {
     api.get('/api/planos')

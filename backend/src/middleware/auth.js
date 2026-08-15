@@ -6,13 +6,28 @@ const config = require('../config/env');
 const prisma = require('../config/database');
 const { UnauthorizedError, ForbiddenError } = require('../utils/errors');
 const mfaPolicy = require('../services/mfaPolicy');
+const sessionCookie = require('../utils/sessionCookie');
+
+/**
+ * O token desta sessão: primeiro o cookie httpOnly (é assim que a interface
+ * autentica), depois o cabeçalho Bearer (clientes programáticos e testes).
+ *
+ * O cookie tem prioridade de propósito: se alguém enviasse os dois, o que vale
+ * é o que o browser gere — não um cabeçalho que o JavaScript da página possa
+ * ter posto lá.
+ */
+function tokenDoPedido(req) {
+  const doCookie = sessionCookie.ler(req);
+  if (doCookie) return doCookie;
+  const [scheme, token] = String(req.headers.authorization || '').split(' ');
+  return scheme === 'Bearer' && token ? token : null;
+}
 
 async function authenticate(req, res, next) {
-  const header = req.headers.authorization || '';
-  const [scheme, token] = header.split(' ');
+  const token = tokenDoPedido(req);
 
-  if (scheme !== 'Bearer' || !token) {
-    throw new UnauthorizedError('Token em falta. Envie "Authorization: Bearer <token>".');
+  if (!token) {
+    throw new UnauthorizedError('Sessão em falta. Inicie sessão para continuar.');
   }
 
   let payload;
@@ -76,9 +91,7 @@ async function authenticate(req, res, next) {
 // houver sessão (ex.: candidatura ao Supplier Development feita por alguém já
 // dentro da plataforma). Nunca bloqueia — sem token válido, segue sem req.user.
 async function optionalAuthenticate(req, res, next) {
-  const header = req.headers.authorization || '';
-  const [scheme, token] = header.split(' ');
-  if (scheme !== 'Bearer' || !token) return next();
+  if (!tokenDoPedido(req)) return next();
   try {
     await authenticate(req, res, () => {});
   } catch {

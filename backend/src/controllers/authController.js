@@ -1,4 +1,5 @@
 const authService = require('../services/authService');
+const sessionCookie = require('../utils/sessionCookie');
 const auditService = require('../services/auditService');
 
 // Entrar. O trilho de auditoria cobria as operações com dinheiro mas nada sobre
@@ -17,6 +18,16 @@ async function login(req, res) {
       entityRef: email,
       detail: auditService.contextoFrom(req),
     });
+    // A sessão vai no cookie httpOnly — é assim que a interface autentica.
+    //
+    // O `token` continua a sair no corpo para os clientes programáticos e para
+    // a suite de testes. É a exposição que resta e é preciso ser exato sobre
+    // ela: o token deixa de estar GUARDADO num sítio legível por JavaScript,
+    // mas passa uma vez pelo corpo desta resposta. Um XSS já presente na página
+    // no momento exato do login conseguiria lê-lo; um XSS que apareça depois,
+    // não — e era esse o cenário mau, porque o localStorage entregava a sessão
+    // a qualquer momento, sem precisar de apanhar o login a acontecer.
+    sessionCookie.definir(res, result.token);
     res.json(result);
   } catch (err) {
     // Regista a tentativa e deixa o erro seguir — a resposta ao utilizador não
@@ -61,6 +72,10 @@ async function logout(req, res) {
     entityRef: req.user.email || req.user.name,
     detail: auditService.contextoFrom(req),
   });
+  // Apaga o cookie deste browser. A revogação acima já invalidou o token em
+  // todo o lado; isto é para o browser não continuar a enviar um cookie morto
+  // e a receber 401 em cada pedido.
+  sessionCookie.limpar(res);
   res.json({ ok: true });
 }
 
@@ -151,7 +166,9 @@ async function totpDisable(req, res) {
 
 // 2º passo do login (público): desafio + código TOTP → sessão completa.
 async function totpVerify(req, res) {
-  res.json(await authService.verify2fa(req.body.challenge, req.body.code));
+  const resultado = await authService.verify2fa(req.body.challenge, req.body.code);
+  sessionCookie.definir(res, resultado.token);
+  res.json(resultado);
 }
 
 module.exports = {

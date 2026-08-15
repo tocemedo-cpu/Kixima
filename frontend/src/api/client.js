@@ -7,15 +7,35 @@
 // err.message já a recebe no idioma ativo, sem ter de traduzir em cada sítio.
 import { translate } from '../i18n';
 
-const TOKEN_KEY = 'kixima_token';
+// A SESSÃO JÁ NÃO PASSA POR AQUI.
+//
+// Estava no localStorage, que é legível por qualquer JavaScript da página. Uma
+// única falha de XSS — num campo de texto, numa dependência, num ficheiro
+// servido na mesma origem — entregava uma sessão completa de alguém que aprova
+// pagamentos, válida até expirar. Agora o servidor põe um cookie httpOnly: o
+// browser envia-o em cada pedido e o código desta aplicação nunca lhe toca,
+// nem consegue.
+//
+// É por isso que não há aqui nenhum getToken/setToken. Se voltarem a aparecer,
+// a proteção desaparece com eles.
 
-export function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
+// `credentials: 'include'` em TODOS os pedidos: sem isto o browser não envia o
+// cookie para outra origem, e em desenvolvimento (Vite na 5173, API na 4000) o
+// login funcionava e o pedido seguinte vinha sem sessão.
+const COM_SESSAO = { credentials: 'include' };
+
+// Ainda é preciso saber se HÁ sessão, para decisões de interface (o destino de
+// um botão numa página pública). O cookie é httpOnly e não se lê — o servidor
+// devolve esta marca, que não é credencial nenhuma e não serve para autenticar.
+const MARCA_DE_SESSAO = 'kixima_tem_sessao';
+
+export function temSessao() {
+  return localStorage.getItem(MARCA_DE_SESSAO) === '1';
 }
 
-export function setToken(token) {
-  if (token) localStorage.setItem(TOKEN_KEY, token);
-  else localStorage.removeItem(TOKEN_KEY);
+export function marcarSessao(ativa) {
+  if (ativa) localStorage.setItem(MARCA_DE_SESSAO, '1');
+  else localStorage.removeItem(MARCA_DE_SESSAO);
 }
 
 async function request(path, { method = 'GET', body, params } = {}) {
@@ -26,14 +46,11 @@ async function request(path, { method = 'GET', body, params } = {}) {
     });
   }
 
-  const token = getToken();
   const res = await fetch(url.pathname + url.search, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
+    ...COM_SESSAO,
   });
 
   const isJson = res.headers.get('content-type')?.includes('application/json');
@@ -58,12 +75,7 @@ async function request(path, { method = 'GET', body, params } = {}) {
 async function uploadFile(path, file, field = 'image') {
   const formData = new FormData();
   formData.append(field, file);
-  const token = getToken();
-  const res = await fetch(path, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: formData,
-  });
+  const res = await fetch(path, { method: 'POST', body: formData, ...COM_SESSAO });
   const data = res.headers.get('content-type')?.includes('application/json')
     ? await res.json().catch(() => null)
     : null;
@@ -81,12 +93,7 @@ async function uploadFile(path, file, field = 'image') {
 
 // POST de um FormData já montado (multipart) — ex.: cadastro com documentos.
 async function postForm(path, formData) {
-  const token = getToken();
-  const res = await fetch(path, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: formData,
-  });
+  const res = await fetch(path, { method: 'POST', body: formData, ...COM_SESSAO });
   const data = res.headers.get('content-type')?.includes('application/json')
     ? await res.json().catch(() => null)
     : null;

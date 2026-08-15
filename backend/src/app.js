@@ -11,6 +11,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 
 const config = require('./config/env');
 const prisma = require('./config/database');
@@ -81,10 +82,18 @@ app.use(cors({
     // browser bloqueia a resposta cross-origin.
     return cb(null, false);
   },
-  credentials: false,
+  // A sessão viaja num cookie httpOnly, e um cookie só atravessa origens
+  // diferentes com isto ligado. Em produção o SPA é servido na mesma origem e
+  // nem seria preciso; em desenvolvimento o Vite está noutra porta, e sem isto
+  // o login parecia funcionar e o pedido seguinte vinha sem sessão.
+  //
+  // Ligar credenciais obriga a que a origem devolvida NUNCA seja "*" — é por
+  // isso que a função acima devolve a origem concreta ou nada.
+  credentials: true,
 }));
 // Guarda o corpo bruto (rawBody) para verificação de assinatura HMAC dos
 // callbacks de integração; não altera o comportamento normal do parser.
+app.use(cookieParser());
 app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 // Imagens de produtos no modo de armazenamento 'local' (em S3 são servidas
@@ -125,7 +134,22 @@ app.get('/ready', async (req, res) => {
 // Rate limiting: limite geral em toda a API + limites apertados nos endpoints
 // sensíveis (login e fluxos públicos de registo/convite).
 app.use('/api/', apiLimiter);
-app.use('/api/auth', authLimiter);
+// O limite APERTADO é só para os endpoints que verificam credenciais.
+//
+// Estava em '/api/auth' inteiro, o que apanhava também o '/api/auth/me' — que
+// a interface chama em CADA carregamento de página. Com skipSuccessfulRequests
+// os /me bem sucedidos não contam, mas os que devolvem 401 contam: e um /me a
+// 401 é o caso normalíssimo de alguém cuja sessão expirou e que recarrega a
+// página. Bastava isso para o limite se esgotar e a pessoa deixar de conseguir
+// sequer TENTAR entrar — o limitador de força bruta a trancar a porta a quem
+// tem a chave.
+//
+// A lista é explícita: quem acrescentar um endpoint que verifica credenciais
+// tem de o pôr aqui, e isso é melhor do que um prefixo que apanha demais em
+// silêncio.
+for (const caminho of ['/api/auth/login', '/api/auth/2fa/verify', '/api/auth/forgot-password', '/api/auth/reset-password']) {
+  app.use(caminho, authLimiter);
+}
 app.use('/api/companies/register', sensitiveLimiter);
 app.use('/api/companies/invite', sensitiveLimiter);
 
