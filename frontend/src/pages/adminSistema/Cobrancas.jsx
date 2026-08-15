@@ -16,10 +16,9 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Pill, EmptyRow } from '../../components/BuyerUI';
 import { ErrorBanner, SuccessBanner } from '../../components/Common';
-import { formatDate } from '../../domain';
+import { formatDate, formatUsd } from '../../domain';
 import { useI18n } from '../../i18n';
 
-const usd = (v) => `${Number(v ?? 0).toLocaleString('pt-AO', { minimumFractionDigits: 0 })} USD`;
 
 export default function Cobrancas() {
   const { t } = useI18n();
@@ -40,7 +39,7 @@ export default function Cobrancas() {
     // executada. Por isso a pergunta é essa, e não "tem a certeza?".
     const ok = window.confirm(
       t('Confirma que o valor de {valor} referente a {ref} ({empresa}) entrou na conta da KIXIMA?', {
-        valor: usd(c.valorUsd), ref: c.referencia, empresa: c.company?.name || '',
+        valor: formatUsd(c.valorUsd), ref: c.referencia, empresa: c.company?.name || '',
       })
     );
     if (!ok) return;
@@ -124,7 +123,7 @@ export default function Cobrancas() {
                 <td>{c.referencia}</td>
                 <td>{c.company?.name}</td>
                 <td>{c.planoAtual} → <strong>{c.planoNovo}</strong></td>
-                <td>{usd(c.valorUsd)}</td>
+                <td>{formatUsd(c.valorUsd)}</td>
                 <td>
                   <a href={c.comprovativoUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>
                     {t('Abrir')}
@@ -166,7 +165,7 @@ export default function Cobrancas() {
                 <td>{c.referencia}</td>
                 <td>{c.company?.name}</td>
                 <td>{c.planoAtual} → <strong>{c.planoNovo}</strong></td>
-                <td>{usd(c.valorUsd)}</td>
+                <td>{formatUsd(c.valorUsd)}</td>
                 <td>{formatDate(c.createdAt)}</td>
                 <td>
                   <button className="btn btn-ghost btn-sm" disabled={busy === c.id} onClick={() => cancelar(c)}>

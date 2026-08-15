@@ -128,8 +128,8 @@ export default function ConteudoLocal() {
                   : data.porCategoria.map((c) => (
                     <tr key={c.categoria}>
                       <td><strong>{c.categoria}</strong></td>
-                      <td>{formatMoney(c.total, moeda)}</td>
-                      <td>{formatMoney(c.nacional, moeda)}</td>
+                      <td className="r">{formatMoney(c.total, moeda)}</td>
+                      <td className="r">{formatMoney(c.nacional, moeda)}</td>
                       <td>{c.percentagemNacional}%</td>
                     </tr>
                   ))}
@@ -153,7 +153,7 @@ export default function ConteudoLocal() {
                     <td>{f.pais || '—'}</td>
                     <td className="bz-muted">{f.dimensao}</td>
                     <td>{f.ordens}</td>
-                    <td>{formatMoney(f.valor, moeda)}</td>
+                    <td className="r">{formatMoney(f.valor, moeda)}</td>
                   </tr>
                 ))}
               </tbody>

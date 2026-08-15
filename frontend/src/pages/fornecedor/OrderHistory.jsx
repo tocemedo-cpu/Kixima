@@ -41,7 +41,7 @@ export default function OrderHistory() {
                   <td>{o.buyerCompany?.name || '—'}</td>
                   <td>{formatDate(o.createdAt)}</td>
                   <td><Badge tone={PO_STATUS[o.status]?.tone}>{PO_STATUS[o.status]?.label || o.status}</Badge></td>
-                  <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatMoney(o.totalAmount, o.currency)}</td>
+                  <td className="r" style={{ fontWeight: 700 }}>{formatMoney(o.totalAmount, o.currency)}</td>
                 </tr>
               ))}
             </tbody>

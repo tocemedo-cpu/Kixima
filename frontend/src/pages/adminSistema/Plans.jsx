@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
+import { formatUsd } from '../../domain';
 import { Crumbs, PageHead, KpiRow, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { useI18n } from '../../i18n';
 
@@ -12,7 +13,6 @@ const SIZES = ['MICRO', 'PEQUENA', 'MEDIA', 'GRANDE'];
 const SIZE_LABEL = { MICRO: 'Micro', PEQUENA: 'Pequena', MEDIA: 'Média', GRANDE: 'Grande' };
 const PLAN_TONE = { PRO: 'success', BASICO: 'info' };
 
-const usd = (v) => `${Number(v ?? 0).toLocaleString('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
 
 export default function AdminPlans() {
   const { t } = useI18n();
@@ -92,7 +92,7 @@ export default function AdminPlans() {
         { icon: 'building', tone: 'info', label: 'Empresas', value: rows.length, sub: 'Credenciadas' },
         { icon: 'offshore', tone: 'success', label: 'No plano PRO', value: pro, sub: 'Com integração ERP' },
         { icon: 'users', tone: 'pending', label: 'Grandes empresas', value: grandes, sub: 'Exigem PRO' },
-        { icon: 'wallet', tone: 'success', label: 'Acesso mensal', value: usd(totalMensal), sub: 'Total faturável/mês' },
+        { icon: 'wallet', tone: 'success', label: 'Acesso mensal', value: formatUsd(totalMensal), sub: 'Total faturável/mês' },
       ]} />
 
       <Toolbar placeholder="Pesquisar por empresa ou NIF…" q={q} onQ={setQ} />
@@ -138,10 +138,10 @@ export default function AdminPlans() {
                         <input className="input" type="number" min="0" max="100" step="1"
                           value={form.seatPriceUsd}
                           onChange={(e) => setForm((f) => ({ ...f, seatPriceUsd: e.target.value }))} />
-                      ) : usd(c.seatPriceUsd)}
+                      ) : formatUsd(c.seatPriceUsd)}
                     </td>
                     <td className="bz-muted">{sub?.activeUsers ?? '—'}</td>
-                    <td><strong>{sub ? usd(sub.monthly.amountUsd) : '—'}</strong></td>
+                    <td><strong>{sub ? formatUsd(sub.monthly.amountUsd) : '—'}</strong></td>
                     <td>
                       {isEditing ? (
                         <div style={{ display: 'flex', gap: 6 }}>

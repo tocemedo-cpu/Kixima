@@ -81,7 +81,7 @@ export default function Wallet() {
                   <td className="mono">{o.reference}</td>
                   <td>{o.buyerCompany?.name || '—'}</td>
                   <td><Badge tone={PO_STATUS[o.status]?.tone}>{PO_STATUS[o.status]?.label || o.status}</Badge></td>
-                  <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatMoney(o.totalAmount, o.currency)}</td>
+                  <td className="r" style={{ fontWeight: 700 }}>{formatMoney(o.totalAmount, o.currency)}</td>
                 </tr>
               ))}
             </tbody>

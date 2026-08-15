@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, temSessao } from '../../api/client';
+import { formatUsd } from '../../domain';
 import Logo from '../../components/Logo';
 import { Icon } from '../../components/icons';
 import { useI18n, LANGS } from '../../i18n';
@@ -139,14 +140,14 @@ export default function Plans() {
               {p.highlight ? <span className="pl-badge">{t('Grandes empresas')}</span> : null}
               <h2>{t(p.name)}</h2>
               <div className="pl-price">
-                <strong>{precos?.[p.key] ? `${precos[p.key].valorUsd.toLocaleString('pt-AO')} USD` : t('Sob consulta')}</strong>
+                <strong>{precos?.[p.key] ? formatUsd(precos[p.key].valorUsd) : t('Sob consulta')}</strong>
                 <span>{precos?.[p.key] ? t(PERIODOS[precos[p.key].periodo] || '') : ''} {t(p.unit)}</span>
               </div>
               {/* O equivalente mensal, sempre. Sem ele, "100 USD" no Base e
                   "100 USD" no Core leem-se como o mesmo preço. */}
               {precos?.[p.key] && precos[p.key].meses > 1 ? (
                 <p className="helptext" style={{ margin: '-6px 0 10px' }}>
-                  ≈ {precos[p.key].porMesUsd.toLocaleString('pt-AO')} {t('USD por mês')}
+                  ≈ {formatUsd(precos[p.key].porMesUsd, { decimais: 2 }).replace(' USD', '')} {t('USD por mês')}
                 </p>
               ) : null}
               <p className="pl-for">{t(p.forWho)}</p>

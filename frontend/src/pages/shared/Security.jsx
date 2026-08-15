@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { api } from '../../api/client';
 import { PageHeader, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
+import { formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
 
 // Secção da verificação em dois passos.
@@ -89,7 +90,7 @@ function TwoFactorSection() {
         : status.enabled ? (
           <>
             <p style={{ fontSize: 13 }}>
-              ✅ <strong>{t('Ativa')}</strong> {t('desde')} {new Date(status.enabledAt).toLocaleDateString('pt-AO')}
+              ✅ <strong>{t('Ativa')}</strong> {t('desde')} {formatDate(status.enabledAt)}
               {' — '}
               {status.metodo === 'EMAIL' ? t('por email') : t('por app de autenticação')}.
             </p>

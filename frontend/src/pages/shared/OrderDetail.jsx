@@ -113,8 +113,8 @@ export default function OrderDetail() {
                 <tr key={item.id}>
                   <td>{item.product?.name || item.productId}</td>
                   <td>{item.quantity}</td>
-                  <td>{formatMoney(item.unitPrice, po.currency)}</td>
-                  <td>{formatMoney(item.lineTotal, po.currency)}</td>
+                  <td className="r">{formatMoney(item.unitPrice, po.currency)}</td>
+                  <td className="r">{formatMoney(item.lineTotal, po.currency)}</td>
                 </tr>
               ))}
             </tbody>

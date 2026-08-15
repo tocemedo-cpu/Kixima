@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, Pill, EmptyRow } from '../../components/BuyerUI';
 import { ErrorBanner, SuccessBanner } from '../../components/Common';
-import { formatDate } from '../../domain';
+import { formatDate, formatUsd } from '../../domain';
 import { useI18n } from '../../i18n';
 import { useAuth } from '../../auth/AuthContext';
 
@@ -40,7 +40,6 @@ const ESTADO_TEXTO = {
   CANCELADA: 'Cancelada',
 };
 
-const usd = (v) => `${Number(v).toLocaleString('pt-AO', { minimumFractionDigits: 0 })} USD`;
 
 export default function Assinatura() {
   const { t } = useI18n();
@@ -150,7 +149,7 @@ export default function Assinatura() {
               <p style={{ margin: '6px 0 0', fontSize: 14 }}>
                 {t('Plano {plano} — {valor} {periodo}', {
                   plano: aberta.planoNovo,
-                  valor: usd(aberta.valorUsd),
+                  valor: formatUsd(aberta.valorUsd),
                   periodo: t(PERIODOS[aberta.periodo] || aberta.periodo),
                 })}
               </p>
@@ -278,7 +277,7 @@ export default function Assinatura() {
               <tr key={c.id}>
                 <td>{c.referencia}</td>
                 <td>{c.planoNovo}</td>
-                <td>{usd(c.valorUsd)}</td>
+                <td>{formatUsd(c.valorUsd)}</td>
                 <td><Pill tone={ESTADO_PILL[c.status]}>{ESTADO_TEXTO[c.status]}</Pill></td>
                 <td>{c.confirmadaEm ? formatDate(c.confirmadaEm) : '—'}</td>
                 <td>{c.validoAte ? formatDate(c.validoAte) : '—'}</td>
@@ -336,13 +335,13 @@ function Opcao({ opcao, busy, temCobrancaAberta, podeEscolherPlano, onPedir }) {
         {opcao.atual ? <Pill tone="success">Atual</Pill> : null}
       </div>
 
-      <div style={{ margin: '10px 0 4px', fontSize: 26, fontWeight: 700 }}>{usd(preco.valorUsd)}</div>
+      <div style={{ margin: '10px 0 4px', fontSize: 26, fontWeight: 700 }}>{formatUsd(preco.valorUsd)}</div>
       <div className="helptext">{t(PERIODOS[preco.periodo] || preco.periodo)}</div>
       {/* O equivalente mensal vem do servidor. Base e Core custam ambos "100
           USD" — sem esta linha os dois preços leem-se como iguais. */}
       {preco.meses > 1 ? (
         <div className="helptext" style={{ marginTop: 2 }}>
-          {t('equivale a {v} USD por mês', { v: preco.porMesUsd.toLocaleString('pt-AO') })}
+          {t('equivale a {v} USD por mês', { v: formatUsd(preco.porMesUsd, { decimais: 2 }).replace(' USD', '') })}
         </div>
       ) : null}
 

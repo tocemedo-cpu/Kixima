@@ -33,5 +33,11 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test/setup.js',
     css: false,
+    // Os testes de ponta a ponta correm no Playwright, num browser a sério, e
+    // importam '@playwright/test' — que o vitest não sabe executar. Sem esta
+    // exclusão apanhava-os pelo sufixo .spec.js e reportava dois ficheiros
+    // falhados enquanto dizia que todos os testes passavam: um resultado que
+    // não se percebe e que ensina a ignorar o vermelho.
+    exclude: ['node_modules/**', 'dist/**', 'e2e/**'],
   },
 });

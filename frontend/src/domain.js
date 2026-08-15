@@ -84,6 +84,31 @@ export function computeCartTotals(subtotal) {
   return { subtotal, iva, total: subtotal + iva };
 }
 
+/**
+ * Valor em dólares — o preço dos planos e das cobranças de subscrição.
+ *
+ * Existe porque a mesma quantia estava a ser escrita de quatro maneiras: cada
+ * ecrã que mostrava dólares tinha o seu próprio `toLocaleString`, e três deles
+ * discordavam nas casas decimais. O mesmo plano custava "5 000 USD" na página
+ * pública e "5 000,00 USD" no ecrã do Admin do Sistema — o que num contexto de
+ * preços não é um detalhe estético: é a pessoa a perguntar-se se são valores
+ * diferentes.
+ *
+ * Todos eles fixavam também 'pt-AO' à mão, por isso com a interface em inglês
+ * os números continuavam com agrupamento angolano. Aqui segue o idioma ativo,
+ * como o formatMoney já fazia.
+ *
+ * SEM CASAS DECIMAIS por omissão: os preços dos planos são valores redondos
+ * (100, 5000) e ".00" só acrescenta ruído. Quem precisa dos cêntimos — o
+ * equivalente mensal, 416,67 — pede-os.
+ */
+export function formatUsd(amount, { decimais = 0 } = {}) {
+  return new Intl.NumberFormat(activeLocale(), {
+    minimumFractionDigits: decimais,
+    maximumFractionDigits: decimais,
+  }).format(Number(amount ?? 0)) + ' USD';
+}
+
 export function formatMoney(amount, currency = 'AOA') {
   const value = Number(amount ?? 0);
   // O Kwanza angolano mostra-se como "Kz" (a moeda local da plataforma).
