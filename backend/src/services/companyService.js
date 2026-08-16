@@ -146,14 +146,21 @@ async function registerCompany(data, uploadedDocs = [], policyFile = null) {
   });
 }
 
-async function listCompanies({ status, type } = {}) {
-  return prisma.company.findMany({
+async function listCompanies({ status, type, comSubscricao } = {}) {
+  const companies = await prisma.company.findMany({
     where: {
       ...(status ? { status } : {}),
       ...(type ? { type } : {}),
     },
     orderBy: { createdAt: 'desc' },
   });
+
+  // A subscrição só vem quando é pedida. Sem isto, quem só quer a lista pagava
+  // a consulta de contagem de utilizadores sem a usar.
+  if (String(comSubscricao) !== 'true') return companies;
+
+  const subs = await subscriptionsFor(companies);
+  return companies.map((c) => ({ ...c, subscricao: subs.get(c.id) || null }));
 }
 
 async function getCompany(id) {
@@ -271,24 +278,66 @@ async function updatePlan(companyId, data) {
   });
 }
 
-// Resumo de subscrição de uma empresa: plano, dimensão e custo mensal de acesso
-// (nº de utilizadores ativos × preço por utilizador).
+const SUBSCRICAO_SELECT = {
+  id: true, name: true, type: true, size: true, plan: true,
+  seatPriceUsd: true, employees: true, annualRevenueUsd: true, planNotes: true,
+};
+
+/**
+ * Resumo de subscrição de VÁRIAS empresas, em DUAS consultas — não duas por
+ * empresa.
+ *
+ * O ecrã de Planos do Admin do Sistema listava as empresas e depois pedia a
+ * subscrição de cada uma, uma a uma. Com duas empresas de demonstração não se
+ * nota; com duzentas são ~204 pedidos HTTP por abertura da página, e cada um
+ * deles fazia mais duas consultas à base. O limitador da plataforma é de 600
+ * pedidos por 15 minutos e por utilizador — a esse ritmo, o Admin trancava-se
+ * a si próprio ao TERCEIRO carregamento, e a mensagem que recebia era
+ * "demasiados pedidos", que não aponta para aqui.
+ *
+ * A contagem de utilizadores ativos passa a ser um `groupBy` só. O custo deixa
+ * de crescer com o número de empresas.
+ */
+async function subscriptionsFor(companies) {
+  const saida = new Map();
+  if (!companies.length) return saida;
+
+  const ids = companies.map((c) => c.id);
+  const contagens = await prisma.user.groupBy({
+    by: ['companyId'],
+    where: { companyId: { in: ids }, active: true },
+    _count: { _all: true },
+  });
+  // Uma empresa sem utilizadores ativos não aparece no groupBy — tem de contar
+  // como zero e não como ausente, senão o custo mensal dela desaparece do ecrã
+  // em vez de ser zero.
+  const porEmpresa = new Map(contagens.map((c) => [c.companyId, c._count._all]));
+
+  for (const c of companies) {
+    const activeUsers = porEmpresa.get(c.id) || 0;
+    const company = Object.fromEntries(Object.keys(SUBSCRICAO_SELECT).map((k) => [k, c[k]]));
+    saida.set(c.id, {
+      company,
+      activeUsers,
+      monthly: planService.monthlyAccessCost({ activeUsers, seatPriceUsd: Number(c.seatPriceUsd) }),
+      requiredPlan: planService.requiredPlan(c.size),
+      features: planService.features(c.plan),
+      seatPriceCapUsd: planService.SEAT_PRICE_CAP_USD,
+    });
+  }
+  return saida;
+}
+
+// Resumo de subscrição de UMA empresa. Construído sobre a versão em lote de
+// propósito: duas implementações do mesmo cálculo divergem, e a que diverge é
+// sempre a que menos gente lê.
 async function subscriptionFor(companyId) {
   const company = await prisma.company.findUnique({
     where: { id: companyId },
-    select: { id: true, name: true, type: true, size: true, plan: true, seatPriceUsd: true, employees: true, annualRevenueUsd: true, planNotes: true },
+    select: SUBSCRICAO_SELECT,
   });
   if (!company) throw new NotFoundError('Empresa');
-  const activeUsers = await prisma.user.count({ where: { companyId, active: true } });
-  const cost = planService.monthlyAccessCost({ activeUsers, seatPriceUsd: Number(company.seatPriceUsd) });
-  return {
-    company,
-    activeUsers,
-    monthly: cost,
-    requiredPlan: planService.requiredPlan(company.size),
-    features: planService.features(company.plan),
-    seatPriceCapUsd: planService.SEAT_PRICE_CAP_USD,
-  };
+  return (await subscriptionsFor([company])).get(companyId);
 }
 
 // ---------------------------------------------------------------------------
@@ -539,6 +588,7 @@ module.exports = {
   updateBankDetails,
   updatePlan,
   subscriptionFor,
+  subscriptionsFor,
   createInvite,
   listInvites,
   resendInvite,

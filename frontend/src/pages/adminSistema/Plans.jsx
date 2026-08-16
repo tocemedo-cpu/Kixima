@@ -50,15 +50,18 @@ export default function AdminPlans() {
   }, []);
 
   function load() {
-    api.get('/api/companies')
-      .then(async (list) => {
+    // UM pedido, e não um por empresa.
+    //
+    // Isto pedia a lista e depois a subscrição de CADA empresa, uma a uma. Com
+    // as duas empresas de demonstração passava despercebido; com duzentas eram
+    // ~204 pedidos por abertura da página. O limitador da plataforma é de 600
+    // por 15 minutos e por utilizador — o Admin trancava-se a si próprio ao
+    // terceiro carregamento, e a mensagem que via era "demasiados pedidos",
+    // que não aponta para aqui.
+    api.get('/api/companies', { comSubscricao: 'true' })
+      .then((list) => {
         setCompanies(list);
-        // Carrega a subscrição de cada empresa (custo mensal = utilizadores × preço).
-        const entries = await Promise.all(list.map(async (c) => {
-          try { return [c.id, await api.get(`/api/companies/${c.id}/subscription`)]; }
-          catch { return [c.id, null]; }
-        }));
-        setSubs(Object.fromEntries(entries));
+        setSubs(Object.fromEntries(list.map((c) => [c.id, c.subscricao || null])));
       })
       .catch((e) => setError(e.message));
   }
