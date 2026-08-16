@@ -118,7 +118,7 @@ export default function Cobrancas() {
           </thead>
           <tbody>
             {porConfirmar.length === 0 ? (
-              <tr><td colSpan={7}><EmptyRow>{t('Nada por confirmar.')}</EmptyRow></td></tr>
+              <tr><td colSpan={7}><EmptyRow>{t('Nada por confirmar. As cobranças aparecem aqui quando uma empresa carrega o comprovativo da transferência.')}</EmptyRow></td></tr>
             ) : porConfirmar.map((c) => (
               <tr key={c.id}>
                 <td>{c.referencia}</td>
@@ -162,7 +162,7 @@ export default function Cobrancas() {
           </thead>
           <tbody>
             {porPagar.length === 0 ? (
-              <tr><td colSpan={6}><EmptyRow>{t('Nenhuma cobrança por liquidar.')}</EmptyRow></td></tr>
+              <tr><td colSpan={6}><EmptyRow>{t('Nenhuma cobrança por liquidar. Aparecem aqui as que foram emitidas e ainda não foram pagas.')}</EmptyRow></td></tr>
             ) : porPagar.map((c) => (
               <tr key={c.id}>
                 <td>{c.referencia}</td>
@@ -199,7 +199,7 @@ export default function Cobrancas() {
           </thead>
           <tbody>
             {data.vencidas.length === 0 ? (
-              <tr><td colSpan={4}><EmptyRow>{t('Nenhuma subscrição vencida.')}</EmptyRow></td></tr>
+              <tr><td colSpan={4}><EmptyRow>{t('Nenhuma subscrição vencida. A plataforma não corta planos sozinha — as que passarem do prazo aparecem aqui para serem contactadas.')}</EmptyRow></td></tr>
             ) : data.vencidas.map((c) => (
               <tr key={c.id}>
                 <td>{c.name}</td>

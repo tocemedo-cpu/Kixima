@@ -180,7 +180,11 @@ export default function LoginPage() {
               <span className="login-program-ico"><Icon name="wallet" size={16} /></span>
               <span>
                 <strong>{t('Planos e preços')}</strong>
-                <span>{t('Básico e Pro — taxas por transação e acesso por utilizador')}</span>
+                {/* Não se nomeiam os degraus num cartão de entrada. A escada
+                    real é BASE → CORE → PRO e vive em /api/planos; repeti-la
+                    aqui garante que um dia diz outra coisa que a página de
+                    planos — e já dizia, tinha ficado nos dois planos antigos. */}
+                <span>{t('Taxas por transação e acesso por utilizador, com os limites de cada plano')}</span>
               </span>
             </Link>
           </div>

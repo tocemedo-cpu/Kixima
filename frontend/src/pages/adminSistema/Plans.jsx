@@ -1,7 +1,16 @@
 // src/pages/adminSistema/Plans.jsx
 // Admin do Sistema → Planos e Subscrições. Confirma/corrige a dimensão declarada
-// por cada empresa no cadastro, define o plano (BÁSICO/PRO) e o preço por
-// utilizador/mês (teto 100 USD), e mostra o custo mensal de acesso resultante.
+// por cada empresa no cadastro, define o plano e o preço por utilizador/mês
+// (teto 100 USD), e mostra o custo mensal de acesso resultante.
+//
+// A LISTA DE PLANOS VEM DE /api/planos, e não escrita aqui.
+//
+// Estava escrita à mão, com dois valores: BASICO e PRO. A escada real tem três
+// — BASE, CORE, PRO — e BASICO é o ALIAS LEGADO que o servidor mapeia para
+// CORE. O efeito não era cosmético: este ecrã é o único sítio onde se muda o
+// plano de uma empresa, e por ele era impossível pôr alguém em BASE ou nomear
+// CORE. As duas apareciam coladas como "Básico", e um Admin a olhar para a
+// plataforma via um mundo de dois planos enquanto se vendiam três.
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
@@ -11,7 +20,9 @@ import { useI18n } from '../../i18n';
 
 const SIZES = ['MICRO', 'PEQUENA', 'MEDIA', 'GRANDE'];
 const SIZE_LABEL = { MICRO: 'Micro', PEQUENA: 'Pequena', MEDIA: 'Média', GRANDE: 'Grande' };
-const PLAN_TONE = { PRO: 'success', BASICO: 'info' };
+// O tom é por degrau da escada; o alias legado herda o do CORE, que é o plano
+// para onde o servidor o mapeia.
+const PLAN_TONE = { PRO: 'success', CORE: 'info', BASE: 'neutral', BASICO: 'info' };
 
 
 export default function AdminPlans() {
@@ -23,6 +34,16 @@ export default function AdminPlans() {
   const [form, setForm] = useState({ size: 'PEQUENA', plan: 'BASICO', seatPriceUsd: 100, planNotes: '' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  // A escada real, tal como o servidor a publica. Vazia enquanto carrega — e
+  // nesse intervalo o <select> mostra apenas o plano atual da empresa, em vez
+  // de oferecer uma lista inventada.
+  const [planos, setPlanos] = useState([]);
+
+  useEffect(() => {
+    api.get('/api/planos')
+      .then((r) => setPlanos((r.planos || []).map((p) => p.plano)))
+      .catch(() => setPlanos([]));
+  }, []);
 
   function load() {
     api.get('/api/companies')
@@ -127,11 +148,15 @@ export default function AdminPlans() {
                     <td className="bz-muted">{c.employees ?? '—'}</td>
                     <td>
                       {isEditing ? (
-                        <select className="input" value={form.plan} onChange={(e) => setForm((f) => ({ ...f, plan: e.target.value }))}>
-                          <option value="BASICO">{t('Básico')}</option>
-                          <option value="PRO">PRO</option>
+                        <select className="input" aria-label={t('Plano')} value={form.plan} onChange={(e) => setForm((f) => ({ ...f, plan: e.target.value }))}>
+                          {/* Se a empresa estiver num plano fora da escada (o
+                              alias legado BASICO), ele aparece na lista para
+                              não desaparecer em silêncio ao abrir a edição. */}
+                          {(planos.includes(form.plan) ? planos : [form.plan, ...planos]).map((p) => (
+                            <option key={p} value={p}>{p}</option>
+                          ))}
                         </select>
-                      ) : <Pill tone={PLAN_TONE[c.plan] || 'neutral'}>{c.plan === 'PRO' ? 'PRO' : t('Básico')}</Pill>}
+                      ) : <Pill tone={PLAN_TONE[c.plan] || 'neutral'}>{c.plan}</Pill>}
                     </td>
                     <td>
                       {isEditing ? (

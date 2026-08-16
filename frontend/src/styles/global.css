@@ -532,23 +532,52 @@ textarea {
 
 /* KPI que leva a algum lado. Só se aplica quando o cartão recebe `to` — um
    número que não navega não pode ganhar afordância de clique. */
-a.stat-card-link {
+/* Os TRÊS componentes de KPI desta aplicação partilham o mesmo estado de
+   clicável — StatCard, o KpiRow das telas de empresa/financeiro e o Kpi da home
+   do comprador. São componentes distintos por razões visuais legítimas, mas a
+   afordância de "isto leva a algum lado" tem de ser a mesma em todos: um KPI
+   que se acende de maneira diferente conforme a página ensina o utilizador a
+   desconfiar do que vê.
+
+   Só se aplica a <a>: um cartão sem `to` continua a ser um <div> e não apanha
+   nada disto. */
+a.stat-card-link,
+a.bz-kpi-link,
+a.kpi-link {
   display: block;
   text-decoration: none;
   color: inherit;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
-a.stat-card-link:hover {
+a.bz-kpi-link,
+a.kpi-link { display: flex; }
+a.stat-card-link:hover,
+a.bz-kpi-link:hover,
+a.kpi-link:hover {
   border-color: var(--brand-600);
   transform: translateY(-1px);
 }
-a.stat-card-link:focus-visible {
+a.stat-card-link:focus-visible,
+a.bz-kpi-link:focus-visible,
+a.kpi-link:focus-visible {
   outline: 2px solid var(--brand-600);
   outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
-  a.stat-card-link { transition: none; }
-  a.stat-card-link:hover { transform: none; }
+  a.stat-card-link, a.bz-kpi-link, a.kpi-link { transition: none; }
+  a.stat-card-link:hover, a.bz-kpi-link:hover, a.kpi-link:hover { transform: none; }
+}
+
+/* Migalhas navegáveis. O ancestral é um link a sério; a página atual não. */
+.bz-crumb-link {
+  color: inherit;
+  text-decoration: none;
+}
+.bz-crumb-link:hover { text-decoration: underline; }
+.bz-crumb-link:focus-visible {
+  outline: 2px solid var(--brand-600);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .stat-label {

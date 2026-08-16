@@ -48,9 +48,9 @@ function SupplierFinanceCenter() {
       <PageHead title="Centro Financeiro" subtitle="Recebimentos dos clientes, compras a pagar e Taxa KIXIMA." />
 
       <KpiRow cards={[
-        { icon: 'wallet', tone: 'success', label: 'Recebido (confirmado)', value: formatMoney(sum(confirmados)), sub: `${confirmados.length} pagamentos` },
-        { icon: 'payment', tone: 'pending', label: 'Por confirmar receção', value: formatMoney(sum(porConfirmar)), sub: `${porConfirmar.length} pagamentos` },
-        { icon: 'invoice', tone: 'danger', label: 'Compras a pagar', value: formatMoney(aPagar), sub: `${pendingInvoices.length} faturas pendentes` },
+        { icon: 'wallet', tone: 'success', label: 'Recebido (confirmado)', value: formatMoney(sum(confirmados)), sub: `${confirmados.length} pagamentos`, to: '/financeiro/recebidos' },
+        { icon: 'payment', tone: 'pending', label: 'Por confirmar receção', value: formatMoney(sum(porConfirmar)), sub: `${porConfirmar.length} pagamentos`, to: '/financeiro/recebidos' },
+        { icon: 'invoice', tone: 'danger', label: 'Compras a pagar', value: formatMoney(aPagar), sub: `${pendingInvoices.length} faturas pendentes`, to: '/financeiro/faturas' },
         { icon: 'orders', tone: 'info', label: 'Taxa KIXIMA por liquidar', value: fees ? formatMoney(fees.kpis.pendingAOA) : '—', sub: fees ? `${fees.kpis.pendentes} taxas pendentes` : '' },
       ]} />
 
@@ -136,10 +136,11 @@ export default function FinanceiroHome() {
       <PageHead title="Centro Financeiro" subtitle="Visão geral da saúde financeira e atividades pendentes." />
 
       <KpiRow cards={[
-        { icon: 'payment', tone: 'danger', label: 'Pagamentos Pendentes', value: formatMoney(d.kpis.pagamentosPendentes), sub: `${d.kpis.pagamentosPendentesCount} faturas` },
-        { icon: 'invoice', tone: 'info', label: 'Faturas Recebidas', value: d.kpis.faturasRecebidas, sub: 'Total' },
+        { icon: 'payment', tone: 'danger', label: 'Pagamentos Pendentes', value: formatMoney(d.kpis.pagamentosPendentes), sub: `${d.kpis.pagamentosPendentesCount} faturas`, to: '/financeiro/faturas' },
+        { icon: 'invoice', tone: 'info', label: 'Faturas Recebidas', value: d.kpis.faturasRecebidas, sub: 'Total', to: '/financeiro/historico' },
+        // "Pagamentos (Mês)" é um total fechado do passado — informativo.
         { icon: 'wallet', tone: 'success', label: 'Pagamentos (Mês)', value: formatMoney(d.kpis.pagosMes), sub: 'Processados' },
-        { icon: 'approvals', tone: 'pending', label: 'A Aprovar/Pagar', value: d.kpis.aprovacoesPendentes, sub: `${d.kpis.aVencer7} a vencer em 7 dias` },
+        { icon: 'approvals', tone: 'pending', label: 'A Aprovar/Pagar', value: d.kpis.aprovacoesPendentes, sub: `${d.kpis.aVencer7} a vencer em 7 dias`, to: '/financeiro/faturas' },
       ]} />
 
       <div className="bz-layout">

@@ -222,6 +222,11 @@ export default function Catalog() {
             <div className="empty-state">
               <h3>{t('Nenhum item encontrado')}</h3>
               <p>{t('Ajuste a pesquisa ou os filtros.')}</p>
+              {/* Tipo A: quem chega aqui pôs filtros a mais e está preso neles.
+                  Dizer "ajuste os filtros" e obrigar a desfazê-los um a um é
+                  deixar o trabalho para quem já se enganou. `clearFilters` já
+                  existe nesta página — reutiliza-se, não se duplica. */}
+              <button className="btn btn-accent btn-sm" onClick={clearFilters}>{t('Limpar filtros')}</button>
             </div>
           ) : (
             <div className={view === 'grid' ? 'pc-grid' : 'pc-grid pc-grid-list'}>

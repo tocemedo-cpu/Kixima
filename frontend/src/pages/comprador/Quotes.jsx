@@ -98,7 +98,13 @@ export default function Quotes() {
       )}
 
       {quotes.length === 0 ? (
-        <div className="empty-state"><h3>{t('Sem cotações')}</h3><p>{t('Peça uma cotação para começar.')}</p></div>
+        <div className="empty-state">
+          <h3>{t('Sem cotações')}</h3>
+          <p>{t('Peça uma cotação quando quiser preço e prazo antes de emitir uma ordem.')}</p>
+          {/* Tipo A. Abre o MESMO formulário do botão do cabeçalho — dois
+              caminhos para a mesma ação, e não duas ações parecidas. */}
+          <button className="btn btn-accent btn-sm" onClick={() => setShowForm(true)}>{t('+ Pedir cotação')}</button>
+        </div>
       ) : (
         quotes.map((q) => (
           <div key={q.id} className="card card-pad" style={{ marginBottom: 14 }}>

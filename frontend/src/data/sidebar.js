@@ -20,16 +20,20 @@ const FORNECEDOR = [
   //
   // O resto do menu são 27 entradas dentro de sete acordeões — uma estrutura
   // de ERP, correta para quem a conhece e cara para quem a usa todos os dias:
-  // aceitar uma ordem custava abrir "Pedidos" e escolher entre quatro; repor
-  // stock custava abrir "Inventário". São os três gestos que um fornecedor
-  // repete todos os dias, e estavam todos a dois cliques.
+  // aceitar uma ordem custava abrir "Pedidos" e escolher entre quatro.
   //
   // Continuam nos acordeões de onde vieram, e isso é deliberado: quem já
   // aprendeu o caminho antigo não o perde. A duplicação é o preço de não
   // reeducar ninguém.
+  //
+  // Estas três são o CICLO COMPLETO do fornecedor — publicar, receber a ordem,
+  // ser pago. Numa versão anterior estava aqui "Stock" em vez de "Faturas";
+  // stock é manutenção do catálogo (e chega-se lá por Produtos), enquanto a
+  // fatura é o fim da linha de cada venda. Não ter as faturas à vista deixava
+  // o percurso do dinheiro a ser o único dos três que ficava escondido.
+  { label: 'Catálogo', icon: 'catalog', to: '/fornecedor/catalogo', end: true },
   { label: 'Ordens', icon: 'orders', to: '/fornecedor/ordens' },
-  { label: 'Produtos & Serviços', icon: 'catalog', to: '/fornecedor/catalogo', end: true },
-  { label: 'Stock', icon: 'warehouse', to: '/fornecedor/inventario/stock' },
+  { label: 'Faturas', icon: 'invoice', to: '/fornecedor/faturas' },
 
   // O Perfil da Empresa é a tela do Company Admin — não aparece aqui. O Vendedor
   // vê a empresa em que está pelo seu perfil pessoal (/perfil).

@@ -4,6 +4,7 @@
 // Linhas com stock no/abaixo do mínimo são destacadas.
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
+import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner, StatCard } from '../../components/Common';
 import Badge from '../../components/Badge';
@@ -79,6 +80,8 @@ export default function Inventory() {
         <div className="empty-state">
           <h3>{t('Sem produtos')}</h3>
           <p>{t('Publique itens no catálogo para gerir o respetivo stock.')}</p>
+          {/* Tipo A: o texto já dizia o que fazer e não dizia ONDE. */}
+          <Link className="btn btn-accent btn-sm" to="/fornecedor/catalogo">{t('Ir para o catálogo')}</Link>
         </div>
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>

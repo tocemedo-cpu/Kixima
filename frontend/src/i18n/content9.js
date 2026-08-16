@@ -186,6 +186,18 @@ export const EN10 = {
   'Ver solicitações por responder': 'View requests awaiting reply',
   'A mostrar os {n} movimentos mais recentes de {total} no total.':
     'Showing the {n} most recent movements out of {total} in total.',
+
+  // --- FASE 1: dashboards acionáveis, estados vazios, migalhas ---------------
+  'Caminho': 'Breadcrumb',
+  'Ir para o catálogo': 'Go to catalogue',
+  'Peça uma cotação quando quiser preço e prazo antes de emitir uma ordem.':
+    'Request a quote whenever you want price and lead time before issuing an order.',
+  'Nada por confirmar. As cobranças aparecem aqui quando uma empresa carrega o comprovativo da transferência.':
+    'Nothing to confirm. Charges appear here when a company uploads the transfer proof.',
+  'Nenhuma cobrança por liquidar. Aparecem aqui as que foram emitidas e ainda não foram pagas.':
+    'No outstanding charges. Those issued and not yet paid appear here.',
+  'Nenhuma subscrição vencida. A plataforma não corta planos sozinha — as que passarem do prazo aparecem aqui para serem contactadas.':
+    'No overdue subscriptions. The platform does not cut plans on its own — those past due appear here to be contacted.',
 };
 
 export const FR10 = {
@@ -344,4 +356,16 @@ export const FR10 = {
   'Ver solicitações por responder': 'Voir les demandes en attente de réponse',
   'A mostrar os {n} movimentos mais recentes de {total} no total.':
     'Affichage des {n} mouvements les plus récents sur {total} au total.',
+
+  // --- PHASE 1 : tableaux de bord actionnables, états vides, fil d\u2019Ariane ---
+  'Caminho': 'Fil d\u2019Ariane',
+  'Ir para o catálogo': 'Aller au catalogue',
+  'Peça uma cotação quando quiser preço e prazo antes de emitir uma ordem.':
+    'Demandez un devis lorsque vous voulez prix et délai avant d\u2019émettre une commande.',
+  'Nada por confirmar. As cobranças aparecem aqui quando uma empresa carrega o comprovativo da transferência.':
+    'Rien à confirmer. Les facturations apparaissent ici lorsqu\u2019une entreprise téléverse la preuve de virement.',
+  'Nenhuma cobrança por liquidar. Aparecem aqui as que foram emitidas e ainda não foram pagas.':
+    'Aucune facturation en attente. Celles émises et non encore payées apparaissent ici.',
+  'Nenhuma subscrição vencida. A plataforma não corta planos sozinha — as que passarem do prazo aparecem aqui para serem contactadas.':
+    'Aucun abonnement échu. La plateforme ne coupe pas les forfaits d\u2019elle-même — ceux en retard apparaissent ici pour être contactés.',
 };

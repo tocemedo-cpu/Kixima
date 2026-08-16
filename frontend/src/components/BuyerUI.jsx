@@ -3,6 +3,7 @@
 // de estado, toolbar, paginação). Todas traduzem automaticamente as strings que
 // recebem (título, subtítulo, labels, tabs, estados, etc.) via i18n, por isso
 // quase todo o conteúdo estrutural muda de idioma sem alterar cada página.
+import { Link } from 'react-router-dom';
 import { Icon } from './icons';
 import { useI18n } from '../i18n';
 
@@ -12,17 +13,36 @@ function useT() {
   return (v) => (typeof v === 'string' ? t(v) : v);
 }
 
+/**
+ * Migalhas de navegação.
+ *
+ * Cada item do rasto pode ser uma string (só texto, como sempre foi) ou
+ * `{ label, to }`. Com `to`, o ancestral passa a navegar de verdade.
+ *
+ * Antes eram TODOS texto: uma linha "Home › Catálogo › Produtos" que parece um
+ * caminho navegável e não navega em lado nenhum. Quem clica e não acontece nada
+ * não conclui "isto não é um link" — conclui que a aplicação está partida, e
+ * volta a clicar. O último item continua sem ligação de propósito: já se está
+ * nele, e um link para a página atual só serve para recarregar.
+ */
 export function Crumbs({ trail = [] }) {
   const tr = useT();
   return (
-    <div className="bz-crumbs">
-      {trail.map((t, i) => (
-        <span key={i}>
-          {i > 0 ? <span className="bz-crumb-sep">›</span> : null}
-          {i === trail.length - 1 ? <strong>{tr(t)}</strong> : tr(t)}
-        </span>
-      ))}
-    </div>
+    <nav className="bz-crumbs" aria-label={tr('Caminho')}>
+      {trail.map((item, i) => {
+        const texto = typeof item === 'string' ? item : item.label;
+        const destino = typeof item === 'string' ? null : item.to;
+        const ultimo = i === trail.length - 1;
+        return (
+          <span key={i}>
+            {i > 0 ? <span className="bz-crumb-sep" aria-hidden="true">›</span> : null}
+            {ultimo
+              ? <strong aria-current="page">{tr(texto)}</strong>
+              : (destino ? <Link className="bz-crumb-link" to={destino}>{tr(texto)}</Link> : tr(texto))}
+          </span>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -43,16 +63,24 @@ export function KpiRow({ cards = [] }) {
   const tr = useT();
   return (
     <div className="bz-kpis">
-      {cards.map((c, i) => (
-        <div className="bz-kpi" key={i}>
-          <div className={`bz-kpi-ico ${c.tone || 'info'}`}><Icon name={c.icon} size={20} /></div>
-          <div className="bz-kpi-body">
-            <span className="bz-kpi-label">{tr(c.label)}</span>
-            <strong className="bz-kpi-value">{tr(c.value)}</strong>
-            <span className="bz-kpi-sub">{tr(c.sub)}</span>
-          </div>
-        </div>
-      ))}
+      {cards.map((c, i) => {
+        const corpo = (
+          <>
+            <div className={`bz-kpi-ico ${c.tone || 'info'}`}><Icon name={c.icon} size={20} /></div>
+            <div className="bz-kpi-body">
+              <span className="bz-kpi-label">{tr(c.label)}</span>
+              <strong className="bz-kpi-value">{tr(c.value)}</strong>
+              <span className="bz-kpi-sub">{tr(c.sub)}</span>
+            </div>
+          </>
+        );
+        // Sem `to`, sai exatamente o mesmo <div> de sempre — mesmas classes,
+        // mesma estrutura. Só os KPIs que representam uma PENDÊNCIA ganham
+        // ligação: um número informativo ("Volume de negócios") que parecesse
+        // clicável e não levasse a lado nenhum seria pior do que não o ser.
+        if (!c.to) return <div className="bz-kpi" key={i}>{corpo}</div>;
+        return <Link className="bz-kpi bz-kpi-link" to={c.to} key={i}>{corpo}</Link>;
+      })}
     </div>
   );
 }

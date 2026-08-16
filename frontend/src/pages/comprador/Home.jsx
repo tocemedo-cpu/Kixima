@@ -69,10 +69,10 @@ export default function Home() {
       </div>
 
       <div className="home-kpis">
-        <Kpi icon="invoice" label={t('Ordens de Compra')} value={k.emAndamento} sub={t('Em andamento')} tone="brand" />
-        <Kpi icon="payment" label={t('Aguardando Pagamento')} value={k.aguardandoPagamento.count} sub={`${t('Total')}: ${formatMoney(k.aguardandoPagamento.total)}`} tone="amber" />
-        <Kpi icon="truck" label={t('Em Entrega')} value={k.emEntrega.count} sub={`${t('Total')}: ${formatMoney(k.emEntrega.total)}`} tone="teal" />
-        <Kpi icon="reception" label={t('Recebidas')} value={k.recebidasMes} sub={t('Este mês')} tone="info" />
+        <Kpi icon="invoice" label={t('Ordens de Compra')} value={k.emAndamento} sub={t('Em andamento')} tone="brand" to="/comprador/ordens" />
+        <Kpi icon="payment" label={t('Aguardando Pagamento')} value={k.aguardandoPagamento.count} sub={`${t('Total')}: ${formatMoney(k.aguardandoPagamento.total)}`} tone="amber" to="/comprador/pagamentos" />
+        <Kpi icon="truck" label={t('Em Entrega')} value={k.emEntrega.count} sub={`${t('Total')}: ${formatMoney(k.emEntrega.total)}`} tone="teal" to="/comprador/entregas" />
+        <Kpi icon="reception" label={t('Recebidas')} value={k.recebidasMes} sub={t('Este mês')} tone="info" to="/comprador/recepcao" />
       </div>
 
       {/* Programas KIXIMA — abertos a qualquer empresa. */}
@@ -198,13 +198,18 @@ function SectionHead({ title, sub, to }) {
   );
 }
 
-function Kpi({ icon, label, value, sub, tone }) {
-  return (
-    <div className={`kpi kpi-${tone}`}>
+// `to` opcional. Sem ele sai o mesmo <div> de sempre — este componente é local
+// a esta página de propósito (tem `tone` e disposição próprias), e unificá-lo
+// com o KpiRow seria refazer o visual da home do comprador sem necessidade.
+function Kpi({ icon, label, value, sub, tone, to }) {
+  const corpo = (
+    <>
       <div className="kpi-body"><div className="kpi-label">{label}</div><div className="kpi-value">{value}</div><div className="kpi-sub">{sub}</div></div>
       <span className="kpi-ico"><Icon name={icon} size={20} /></span>
-    </div>
+    </>
   );
+  if (!to) return <div className={`kpi kpi-${tone}`}>{corpo}</div>;
+  return <Link className={`kpi kpi-${tone} kpi-link`} to={to}>{corpo}</Link>;
 }
 
 function MiniCard({ p, fromPrice, onClick }) {

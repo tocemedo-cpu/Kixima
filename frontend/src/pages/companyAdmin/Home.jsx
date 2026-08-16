@@ -28,10 +28,12 @@ export default function CompanyAdminHome() {
       <PageHead title="Dashboard" subtitle="Visão geral da sua empresa em tempo real." />
 
       <KpiRow cards={[
-        { icon: 'orders', tone: 'info', label: 'Ordens de Compra', value: d.kpis.pedidos, sub: 'Total da empresa' },
-        { icon: 'truck', tone: 'pending', label: 'Em Execução', value: d.kpis.emExecucao, sub: 'A decorrer' },
+        // Só os que representam uma lista onde se AGE. "Volume de Negócios" é
+        // um número informativo e fica sem ligação de propósito.
+        { icon: 'orders', tone: 'info', label: 'Ordens de Compra', value: d.kpis.pedidos, sub: 'Total da empresa', to: '/empresa/aprovacoes' },
+        { icon: 'truck', tone: 'pending', label: 'Em Execução', value: d.kpis.emExecucao, sub: 'A decorrer', to: '/empresa/aprovacoes' },
         { icon: 'payment', tone: 'success', label: 'Volume de Negócios', value: formatMoney(d.kpis.volumeNegocios), sub: 'Valor total' },
-        { icon: 'approvals', tone: 'danger', label: 'POs a Aprovar', value: d.kpis.aprovarPO, sub: 'Requerem a sua ação' },
+        { icon: 'approvals', tone: 'danger', label: 'POs a Aprovar', value: d.kpis.aprovarPO, sub: 'Requerem a sua ação', to: '/empresa/aprovacoes' },
       ]} />
 
       <div className="bz-layout">
@@ -59,8 +61,8 @@ export default function CompanyAdminHome() {
 
       <h3 className="pf-h2">{t('Resumo Geral')}</h3>
       <KpiRow cards={[
-        { icon: 'users', tone: 'info', label: 'Usuários Ativos', value: d.resumo.usuariosAtivos, sub: 'Na empresa' },
-        { icon: 'contract', tone: 'success', label: 'Contratos Ativos', value: d.resumo.contratosAtivos, sub: `de ${d.resumo.totalContratos}` },
+        { icon: 'users', tone: 'info', label: 'Usuários Ativos', value: d.resumo.usuariosAtivos, sub: 'Na empresa', to: '/empresa/utilizadores' },
+        { icon: 'contract', tone: 'success', label: 'Contratos Ativos', value: d.resumo.contratosAtivos, sub: `de ${d.resumo.totalContratos}`, to: '/empresa/contratos' },
         { icon: 'reception', tone: 'pending', label: 'Ordens Concluídas', value: d.resumo.concluidas, sub: 'Recebidas' },
         { icon: 'shield', tone: 'success', label: 'Compliance', value: `${d.resumo.compliance}%`, sub: 'Conformidade' },
       ]} />
