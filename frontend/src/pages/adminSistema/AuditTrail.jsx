@@ -44,14 +44,33 @@ const DETAIL_LABEL = {
   banco: 'Banco', iban: 'IBAN', swift: 'SWIFT', papel: 'Perfil',
 };
 
-function DetailCell({ detail }) {
+/**
+ * Detalhe do registo, e agora também o IP.
+ *
+ * O IP tinha coluna própria. Medido a 1280px: esta tabela era a ÚNICA da
+ * aplicação que não cabia — 130px escondidos atrás de scroll horizontal, e a
+ * 1024px eram 384px. Todas as outras cabem, e por isso nenhuma outra foi
+ * mexida: acrescentar "mostrar mais" a quinze tabelas que já cabem seria
+ * complexidade para um problema que não existe.
+ *
+ * O IP é metadado forense — interessa quando já se está a investigar uma
+ * linha concreta, não a percorrer a lista. É exatamente a mesma natureza do
+ * que já vive neste campo, por isso junta-se aqui em vez de se inventar um
+ * mecanismo de expansão. Nenhuma informação sai do ecrã.
+ */
+function DetailCell({ detail, ip }) {
   const { t } = useI18n();
-  if (!detail || typeof detail !== 'object') return <span className="bz-muted">—</span>;
+  const comIp = (partes) => (ip ? [...partes, `IP: ${ip}`] : partes);
+  if (!detail || typeof detail !== 'object') {
+    const so = comIp([]);
+    return so.length ? <span className="bz-muted">{so.join(' · ')}</span> : <span className="bz-muted">—</span>;
+  }
   const parts = Object.entries(detail)
     .filter(([, v]) => v !== null && v !== undefined && v !== '')
     .map(([k, v]) => `${t(DETAIL_LABEL[k] || k)}: ${v === true ? t('sim') : v === false ? t('não') : v}`);
-  if (!parts.length) return <span className="bz-muted">—</span>;
-  return <span className="bz-muted">{parts.join(' · ')}</span>;
+  const todas = comIp(parts);
+  if (!todas.length) return <span className="bz-muted">—</span>;
+  return <span className="bz-muted">{todas.join(' · ')}</span>;
 }
 
 export default function AuditTrail() {
@@ -110,12 +129,12 @@ export default function AuditTrail() {
             <table className="bz-table">
               <thead>
                 <tr>
-                  <th>{t('Data')}</th><th>{t('Ação')}</th><th>{t('Referência')}</th><th>{t('Ator')}</th><th>{t('Perfil')}</th><th>IP</th><th>{t('Detalhe')}</th>
+                  <th>{t('Data')}</th><th>{t('Ação')}</th><th>{t('Referência')}</th><th>{t('Ator')}</th><th>{t('Perfil')}</th><th>{t('Detalhe')}</th>
                 </tr>
               </thead>
               <tbody>
-                {!data ? <tr><td colSpan={7}><EmptyRow>A carregar…</EmptyRow></td></tr>
-                  : items.length === 0 ? <tr><td colSpan={7}><EmptyRow>Ainda não há registos de auditoria. São criados automaticamente nas aprovações, pagamentos e alterações sensíveis.</EmptyRow></td></tr>
+                {!data ? <tr><td colSpan={6}><EmptyRow>A carregar…</EmptyRow></td></tr>
+                  : items.length === 0 ? <tr><td colSpan={6}><EmptyRow>Ainda não há registos de auditoria. São criados automaticamente nas aprovações, pagamentos e alterações sensíveis.</EmptyRow></td></tr>
                   : items.map((l) => (
                     <tr key={l.id}>
                       <td className="bz-muted">{formatDateTime(l.createdAt)}</td>
@@ -123,8 +142,7 @@ export default function AuditTrail() {
                       <td className="mono">{l.entityRef || '—'}</td>
                       <td><strong>{l.actorName || '—'}</strong></td>
                       <td className="bz-muted">{l.actorRole ? t(ROLE_LABEL[l.actorRole] || l.actorRole) : '—'}</td>
-                      <td className="mono bz-muted">{l.ip || '—'}</td>
-                      <td><DetailCell detail={l.detail} /></td>
+                      <td><DetailCell detail={l.detail} ip={l.ip} /></td>
                     </tr>
                   ))}
               </tbody>

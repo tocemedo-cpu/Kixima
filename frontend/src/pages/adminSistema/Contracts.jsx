@@ -10,6 +10,7 @@ import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
 import { CONTRACT_STATUS, BILLING_PERIODICITY, formatMoney, formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
+import Button from '../../components/Button';
 
 const EMPTY_FORM = {
   clientCompanyId: '',
@@ -97,9 +98,9 @@ export default function Contracts() {
         title="Contratos-Quadro"
         subtitle="Contratos ativos geram Call-offs automáticos, com faturação consolidada e prazo próprio."
         action={
-          <button className="btn btn-primary" onClick={() => { setShowForm((v) => !v); setSuccess(''); setError(''); }}>
+          <Button variant="primary"  onClick={() => { setShowForm((v) => !v); setSuccess(''); setError(''); }}>
             {showForm ? t('Cancelar') : t('Novo contrato-quadro')}
-          </button>
+          </Button>
         }
       />
 
@@ -188,9 +189,9 @@ export default function Contracts() {
           </div>
 
           <div style={{ marginTop: 20 }}>
-            <button className="btn btn-primary" type="submit" disabled={saving}>
+            <Button variant="primary"  type="submit" disabled={saving}>
               {saving ? t('A criar…') : t('Criar contrato-quadro')}
-            </button>
+            </Button>
           </div>
         </form>
       )}

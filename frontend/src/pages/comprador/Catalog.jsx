@@ -5,7 +5,7 @@
 // (itens paginados) e /api/marketplace/facets (contagens por categoria e limites
 // de preço) — filtrados no backend, escala para milhares de produtos.
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import { ErrorBanner } from '../../components/Common';
 import { formatMoney } from '../../domain';
@@ -14,6 +14,7 @@ import { Icon, Stars } from '../../components/icons';
 import ProductCover from '../../components/ProductCover';
 import { Crumbs, PageHead } from '../../components/BuyerUI';
 import { useI18n } from '../../i18n';
+import Button from '../../components/Button';
 
 const PAGE_SIZES = [16, 24, 48];
 const SORT_MAP = { rel: 'relevantes', price_asc: 'preco_asc', price_desc: 'preco_desc', rating: 'avaliacao', recent: 'recentes' };
@@ -30,18 +31,28 @@ export default function Catalog() {
   const { addItem } = useCart();
   const [error, setError] = useState('');
 
-  // Filtros
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
-  const [priceMin, setPriceMin] = useState('');
-  const [priceMax, setPriceMax] = useState('');
-  const [onlyVerified, setOnlyVerified] = useState(false);
-  const [minRating, setMinRating] = useState(0);
-  const [tab, setTab] = useState('TODOS');
-  const [sort, setSort] = useState('rel');
+  // Filtros — TODOS no endereço, como no Explorar.
+  //
+  // Sem isto, um comprador que filtrasse por categoria e faixa de preço não
+  // conseguia mandar o resultado a um colega: o link levava-o ao catálogo sem
+  // filtro nenhum. Recarregar a página tinha o mesmo efeito, e o botão "voltar"
+  // do browser saía da página em vez de desfazer o último filtro.
+  const [sp, setSp] = useSearchParams();
+  const num = (chave, omissao) => (Number(sp.get(chave)) > 0 ? Number(sp.get(chave)) : omissao);
+  const [search, setSearch] = useState(sp.get('q') || '');
+  const [category, setCategory] = useState(sp.get('category') || '');
+  const [priceMin, setPriceMin] = useState(sp.get('minPrice') || '');
+  const [priceMax, setPriceMax] = useState(sp.get('maxPrice') || '');
+  const [onlyVerified, setOnlyVerified] = useState(sp.get('verified') === 'true');
+  const [minRating, setMinRating] = useState(num('minRating', 0));
+  const [tab, setTab] = useState(sp.get('tab') || 'TODOS');
+  const [sort, setSort] = useState(sp.get('sort') || 'rel');
+  // `view` (grelha/lista) fica FORA do endereço de propósito: é preferência de
+  // quem olha, não parte da pesquisa. Partilhar um link não deve impor ao outro
+  // a forma como eu gosto de ver a lista.
   const [view, setView] = useState('grid');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(16);
+  const [page, setPage] = useState(num('page', 1));
+  const [pageSize, setPageSize] = useState(num('limit', 16));
 
   // Dados do servidor
   const [data, setData] = useState(null); // { items, total, page, pages }
@@ -66,6 +77,24 @@ export default function Catalog() {
 
   // Ao mudar de filtro/ordenação/tamanho, volta à 1ª página.
   useEffect(() => { setPage(1); }, [filterParams, sort, pageSize]);
+
+  // Estado -> endereço. `replace` e não `push`: cada clique num filtro a criar
+  // uma entrada no histórico tornaria o botão "voltar" inútil — seriam precisos
+  // dez toques para sair da página.
+  useEffect(() => {
+    const seguinte = new URLSearchParams();
+    if (search.trim()) seguinte.set('q', search.trim());
+    if (category) seguinte.set('category', category);
+    if (priceMin) seguinte.set('minPrice', priceMin);
+    if (priceMax) seguinte.set('maxPrice', priceMax);
+    if (onlyVerified) seguinte.set('verified', 'true');
+    if (minRating) seguinte.set('minRating', String(minRating));
+    if (tab !== 'TODOS') seguinte.set('tab', tab);
+    if (sort !== 'rel') seguinte.set('sort', sort);
+    if (page > 1) seguinte.set('page', String(page));
+    if (pageSize !== 16) seguinte.set('limit', String(pageSize));
+    if (seguinte.toString() !== sp.toString()) setSp(seguinte, { replace: true });
+  }, [search, category, priceMin, priceMax, onlyVerified, minRating, tab, sort, page, pageSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Itens paginados.
   useEffect(() => {
@@ -259,9 +288,9 @@ export default function Catalog() {
                         <span className="pc-price">{formatMoney(p.promoPrice ?? p.unitPrice, p.currency)}{unit}</span>
                       </div>
                       <div className="pc-actions">
-                        <button className="btn btn-primary btn-sm pc-add" onClick={() => handleAdd(p)}>
+                        <Button variant="primary" size="sm" className="pc-add"  onClick={() => handleAdd(p)}>
                           {added === p.id ? t('Adicionado ✓') : t('Adicionar à Cesta')}
-                        </button>
+                        </Button>
                         <button className={`pc-cmp${inCompare(p.id) ? ' on' : ''}`} onClick={() => toggleCompare(p)} aria-label={t('Comparar')} title={t('Comparar')}>
                           <Icon name="report" size={15} />
                         </button>

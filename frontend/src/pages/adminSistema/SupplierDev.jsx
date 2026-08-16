@@ -8,6 +8,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, EmptyRow, Pagination } from '../../components/BuyerUI';
 import { formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
+import Button from '../../components/Button';
 
 const STATUS = [
   { key: '', label: 'Todas' },
@@ -168,8 +169,8 @@ export default function AdminSupplierDev() {
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 2 }}>
                   <button className="btn btn-ghost btn-sm" disabled={saving || programFee === ''}
                     onClick={() => saveProgramFee(r.id)}>{t('Guardar orçamento')}</button>
-                  <button className="btn btn-primary btn-sm" disabled={saving || r.feeStatus === 'COBRADO'}
-                    onClick={() => markFeePaid(r.id)}>{t('Registar receção da taxa')}</button>
+                  <Button variant="primary" size="sm"  disabled={saving || r.feeStatus === 'COBRADO'}
+                    onClick={() => markFeePaid(r.id)}>{t('Registar receção da taxa')}</Button>
                 </div>
               </div>
             </div>
@@ -181,7 +182,7 @@ export default function AdminSupplierDev() {
             </Field>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button className="btn btn-ghost btn-sm" disabled={saving} onClick={() => setRequestStatus(r.id, 'EM_ANALISE')}>{t('Marcar em análise')}</button>
-              <button className="btn btn-primary btn-sm" disabled={saving} onClick={() => setRequestStatus(r.id, 'EM_ACOMPANHAMENTO')}>{t('Em acompanhamento')}</button>
+              <Button variant="primary" size="sm"  disabled={saving} onClick={() => setRequestStatus(r.id, 'EM_ACOMPANHAMENTO')}>{t('Em acompanhamento')}</Button>
               <button className="btn btn-accent btn-sm" disabled={saving} onClick={() => setRequestStatus(r.id, 'CONCLUIDA')}>{t('Concluir')}</button>
               <button className="btn btn-danger btn-sm" disabled={saving} onClick={() => setRequestStatus(r.id, 'REJEITADA')}>{t('Rejeitar')}</button>
             </div>

@@ -8,6 +8,7 @@ import Badge from '../../components/Badge';
 import PaymentSlaRing from '../../components/PaymentSlaRing';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
+import Button from '../../components/Button';
 
 const BACK_BY_ROLE = {
   COMPRADOR: '/comprador/ordens',
@@ -171,15 +172,15 @@ export default function OrderDetail() {
           )}
 
           {canDispatch && (
-            <button className="btn btn-primary" disabled={busy} onClick={() => runAction(() => api.patch(`/api/purchase-orders/${id}/dispatch`))}>
+            <Button variant="primary"  disabled={busy} onClick={() => runAction(() => api.patch(`/api/purchase-orders/${id}/dispatch`))}>
               {t('Despachar entrega')}
-            </button>
+            </Button>
           )}
 
           {canMarkDelivered && (
-            <button className="btn btn-primary" disabled={busy} onClick={() => runAction(() => api.patch(`/api/purchase-orders/${id}/delivered`))}>
+            <Button variant="primary"  disabled={busy} onClick={() => runAction(() => api.patch(`/api/purchase-orders/${id}/delivered`))}>
               {t('Marcar como entregue')}
-            </button>
+            </Button>
           )}
 
           {canReceive && (
@@ -206,13 +207,13 @@ export default function OrderDetail() {
               >
                 {t('Aceitar entrega e concluir')}
               </button>
-              <button
-                className="btn btn-primary"
+              <Button variant="primary"
+                
                 disabled={busy}
                 onClick={() => setResolveOutcome((v) => (v === 'REPOSICAO' ? null : 'REPOSICAO'))}
               >
                 {t('Pedir reposição ao fornecedor')}
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -238,8 +239,18 @@ export default function OrderDetail() {
               />
             </>)}
           </Field>
-          <button
-            className={resolveOutcome === 'ACEITE' ? 'btn btn-accent' : 'btn btn-primary'}
+          {/* Estava aqui um ternário entre `btn-accent` e `btn-primary` — duas
+              classes com exatamente o mesmo fundo e o mesmo hover. Quem o
+              escreveu queria que "aceitar e concluir" e "pedir reposição"
+              tivessem aparências diferentes; nunca tiveram, e o ternário
+              limitava-se a dar trabalho ao browser.
+
+              A aparência fica EXATAMENTE como está hoje: preserva-se o que se
+              vê e remove-se o que engana. Se a distinção visual for mesmo
+              desejada, faz-se dando outra `variant` a um dos dois — que é
+              agora uma alteração de uma palavra. */}
+          <Button
+            variant="primary"
             disabled={busy || (resolveOutcome === 'REPOSICAO' && !resolveNotes.trim())}
             onClick={() => runAction(
               (body) => api.patch(`/api/purchase-orders/${id}/resolve-divergence`, body),
@@ -247,7 +258,7 @@ export default function OrderDetail() {
             )}
           >
             {resolveOutcome === 'ACEITE' ? t('Confirmar: aceitar e concluir') : t('Confirmar: pedir reposição')}
-          </button>
+          </Button>
         </div>
       )}
 
