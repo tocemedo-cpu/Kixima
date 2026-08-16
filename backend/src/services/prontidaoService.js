@@ -519,6 +519,69 @@ function verCobrancas() {
  * Estado de prontidão do ambiente onde este processo corre.
  * Nunca devolve o valor de nenhum segredo.
  */
+/**
+ * Faturação certificada e canais de pagamento.
+ *
+ * Estas duas coisas partilham a pior propriedade possível: por omissão estão
+ * desligadas e a plataforma funciona na mesma. Ninguém recebe erro nenhum — as
+ * faturas saem sem série, os pagamentos continuam a ser conferidos à mão, e a
+ * ausência só se nota numa inspeção ou quando o volume cresce. Por isso
+ * aparecem aqui: para serem uma decisão tomada e não uma omissão descoberta.
+ */
+function verFaturacao() {
+  const checks = [];
+  const f = config.faturacao;
+
+  if (!f.serie) {
+    checks.push({ id: 'agt-serie', titulo: 'Série de faturação (KIXIMA_SERIE_FATURACAO)', estado: AVISO,
+      detalhe: 'Não está definida — as faturas saem sem numeração certificada.',
+      acao: 'Defina-a SÓ depois de a série estar declarada à AGT. Ligá-la antes disso emite documentos numa série que não existe, e a numeração não se corrige para trás.' });
+  } else {
+    checks.push({ id: 'agt-serie', titulo: 'Série de faturação', estado: OK, detalhe: f.serie,
+      acao: 'Confirme em Faturação → Integridade que a cadeia não tem buracos.' });
+  }
+
+  checks.push(f.nif
+    ? { id: 'agt-nif', titulo: 'NIF da KIXIMA (KIXIMA_NIF)', estado: OK, detalhe: f.nif }
+    : { id: 'agt-nif', titulo: 'NIF da KIXIMA (KIXIMA_NIF)', estado: AVISO,
+      detalhe: 'Não está definido.',
+      acao: 'O SAF-T sai com o campo por preencher. É preferível a um número inventado, mas a AGT recusa o ficheiro assim.' });
+
+  checks.push(f.certificadoAgt
+    ? { id: 'agt-certificado', titulo: 'Certificado do programa (AGT)', estado: OK, detalhe: f.certificadoAgt }
+    : { id: 'agt-certificado', titulo: 'Certificado do programa (AGT)', estado: AVISO,
+      detalhe: 'Ainda não atribuído.',
+      acao: 'Sai do processo de certificação junto da AGT. Fica vazio até existir — um número de certificado inventado num ficheiro fiscal é uma declaração falsa.' });
+
+  return checks;
+}
+
+function verCanaisDePagamento() {
+  const multicaixa = require('./multicaixaService');
+  const checks = [];
+
+  checks.push({ id: 'pag-manual', titulo: 'Transferência com comprovativo', estado: OK,
+    detalhe: 'Sempre disponível.',
+    acao: 'É a alternativa que fica de pé quando um canal automático falha — não a desligue.' });
+
+  const iban = process.env.KIXIMA_BANCO_IBAN;
+  checks.push(iban
+    ? { id: 'pag-referencia', titulo: 'Referência bancária', estado: OK,
+      detalhe: 'Cada fatura recebe uma referência única, conciliada pelo extrato.' }
+    : { id: 'pag-referencia', titulo: 'Referência bancária (KIXIMA_BANCO_IBAN)', estado: FALHA,
+      detalhe: 'O IBAN não está definido.',
+      acao: 'Sem ele a plataforma gera a referência mas não tem para onde dizer que se transfira — o comprador vê uma referência e nenhuma conta.' });
+
+  const m = multicaixa.estado();
+  checks.push(m.disponivel
+    ? { id: 'pag-multicaixa', titulo: 'Multicaixa Express', estado: OK, detalhe: 'Configurado.' }
+    : { id: 'pag-multicaixa', titulo: 'Multicaixa Express', estado: AVISO,
+      detalhe: m.nota,
+      acao: `Requer contrato com a EMIS. Em falta: ${m.emFalta.join(', ')}. Sem isto o canal recusa-se a funcionar em vez de simular — que é o comportamento certo.` });
+
+  return checks;
+}
+
 async function verificar() {
   const [copias, mfa, baseDeDados, armazenamento, contas] = await Promise.all([
     verCopias(), verMfa(), verBaseDeDados(), verArmazenamento(), verContasBloqueadas(),
@@ -532,6 +595,8 @@ async function verificar() {
     { grupo: 'Segredos', checks: verSegredos() },
     { grupo: 'Contas sob ataque', checks: contas },
     { grupo: 'Cobranças de subscrição', checks: verCobrancas() },
+    { grupo: 'Faturação certificada (AGT)', checks: verFaturacao() },
+    { grupo: 'Canais de pagamento', checks: verCanaisDePagamento() },
   ];
 
   const todos = grupos.flatMap((g) => g.checks);
