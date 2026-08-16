@@ -9,6 +9,7 @@ const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 const faturacaoService = require('../services/faturacaoService');
 const saftService = require('../services/saftService');
+const metricasService = require('../services/metricasService');
 
 const router = express.Router();
 router.use(authenticate, requireRole('ADMIN_SISTEMA'));
@@ -36,6 +37,12 @@ router.get('/saft', async (req, res) => {
 router.get('/saft/resumo', async (req, res) => {
   const { resumo } = await saftService.gerar({ de: req.query.de, ate: req.query.ate });
   res.json(resumo);
+});
+
+// Métricas de negócio. Aqui e não num painel à parte: quem olha para a
+// integridade da faturação é quem olha para o volume que passou por ela.
+router.get('/metricas', async (req, res) => {
+  res.json(await metricasService.resumo({ dias: req.query.dias }));
 });
 
 module.exports = router;
