@@ -3,7 +3,8 @@
 // Atividades de todo o sistema).
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
-const { requireRole } = require('../middleware/rbac');
+const { requireRole, requirePermission, requireSuperAdmin } = require('../middleware/rbac');
+const { FINANCEIRO, OPERACOES, AREAS_ADMIN } = require('../utils/adminAreas');
 const adminService = require('../services/adminService');
 const auditService = require('../services/auditService');
 const prontidaoService = require('../services/prontidaoService');
@@ -16,9 +17,12 @@ const router = express.Router();
 router.use(authenticate);
 router.use(requireRole('ADMIN_SISTEMA'));
 
-router.get('/users', async (req, res) => res.json(await adminService.listUsers()));
+// Gerir QUEM tem acesso ao sistema e a que ÁREAS, não se delega — ver a nota em
+// requireSuperAdmin(). É por isto que estas duas rotas não têm
+// requirePermission nenhum: são a camada que decide as permissões das outras.
+router.get('/users', requireSuperAdmin(), async (req, res) => res.json(await adminService.listUsers()));
 
-router.patch('/users/:id/status', async (req, res) => {
+router.patch('/users/:id/status', requireSuperAdmin(), async (req, res) => {
   const user = await adminService.setUserStatus({ id: req.params.id, active: req.body.active, actingUserId: req.user.id });
   await auditService.recordSafe({
     actor: auditService.actorFrom(req),
@@ -31,11 +35,33 @@ router.patch('/users/:id/status', async (req, res) => {
   res.json(user);
 });
 
-router.get('/activities', async (req, res) => res.json(await adminService.systemActivities()));
+// Atribuir áreas a um Admin do Sistema — o que o torna um assessor (áreas
+// preenchidas) ou um Super Admin (vazio). Ver a nota em requireSuperAdmin():
+// só quem já é Super Admin pode fazer isto, para ninguém se poder atribuir
+// mais poder a si próprio.
+router.patch('/users/:id/areas', requireSuperAdmin(), async (req, res) => {
+  const areas = Array.isArray(req.body?.areas) ? req.body.areas : [];
+  const invalidas = areas.filter((a) => !AREAS_ADMIN.includes(a));
+  if (invalidas.length) {
+    return res.status(422).json({ error: { message: `Área desconhecida: ${invalidas.join(', ')}.` } });
+  }
+  const user = await adminService.setUserAreas({ id: req.params.id, areas, actingUserId: req.user.id });
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'AREAS_DE_ADMIN_ALTERADAS',
+    entityType: 'User',
+    entityId: user.id,
+    entityRef: user.name,
+    detail: { areas: user.adminAreas },
+  });
+  res.json(user);
+});
+
+router.get('/activities', requirePermission(OPERACOES), async (req, res) => res.json(await adminService.systemActivities()));
 
 // Livro de taxas da plataforma (KIXIMA).
-router.get('/platform-fees', async (req, res) => res.json(await adminService.listPlatformFees()));
-router.patch('/platform-fees/:id/charge', async (req, res) => {
+router.get('/platform-fees', requirePermission(FINANCEIRO), async (req, res) => res.json(await adminService.listPlatformFees()));
+router.patch('/platform-fees/:id/charge', requirePermission(FINANCEIRO), async (req, res) => {
   const fee = await adminService.chargePlatformFee(req.params.id);
   await auditService.recordSafe({
     actor: auditService.actorFrom(req),
@@ -60,7 +86,7 @@ router.get('/audit-logs', async (req, res) => {
 // definidas noutro sítio (o painel do Render), e uma variável esquecida ou mal
 // escrita não dá erro nenhum: a aplicação arranca e finge que está tudo bem. O
 // plano gratuito não dá shell, por isso esta é a única forma de ir confirmar.
-router.get('/prontidao', async (req, res) => res.json(await prontidaoService.verificar()));
+router.get('/prontidao', requirePermission(OPERACOES), async (req, res) => res.json(await prontidaoService.verificar()));
 
 // Fazer uma cópia de segurança AGORA.
 //
@@ -68,7 +94,7 @@ router.get('/prontidao', async (req, res) => res.json(await prontidaoService.ver
 // Este botão confirma, de uma vez, que o pg_dump está na imagem, que a
 // DIRECT_URL serve, que as credenciais S3 são aceites e que o bucket privado
 // recebe o ficheiro — antes de se confiar no agendamento das 03:00.
-router.post('/backup', async (req, res) => {
+router.post('/backup', requirePermission(OPERACOES), async (req, res) => {
   const motivo = backupJob.motivoParaNaoCorrer();
   if (motivo) return res.status(422).json({ error: { message: motivo } });
 
@@ -101,7 +127,7 @@ router.post('/backup', async (req, res) => {
 // Fazer a cópia prova que ela se escreve. Não prova que se lê — e um objeto
 // truncado, um gzip corrompido ou um bucket esvaziado por uma política de
 // retenção só se descobrem no dia em que a cópia é precisa.
-router.post('/backup/verificar', async (req, res) => {
+router.post('/backup/verificar', requirePermission(OPERACOES), async (req, res) => {
   try {
     const r = await backupVerificacao.verificar();
     await auditService.recordSafe({
@@ -123,7 +149,7 @@ router.post('/backup/verificar', async (req, res) => {
 // significa que uma chave errada ou um remetente por verificar não dá sinal
 // nenhum a quem está a configurar — os emails apenas nunca chegam. Aqui o erro
 // vem por inteiro, que é o que diz o que corrigir.
-router.post('/email-teste', async (req, res) => {
+router.post('/email-teste', requirePermission(OPERACOES), async (req, res) => {
   try {
     const r = await notificationService.enviarEmailDeTeste(req.user.email);
     await auditService.recordSafe({
@@ -144,11 +170,11 @@ router.post('/email-teste', async (req, res) => {
 // com o último login — que muda o que se faz a seguir: quem entra todas as
 // semanas precisa de um empurrão; quem não entra há meses pode ser uma conta que
 // já ninguém usa, e essa desativa-se em vez de se andar atrás dela.
-router.get('/mfa-pendentes', async (req, res) => res.json(await mfaLembreteService.pendentes()));
+router.get('/mfa-pendentes', requirePermission(OPERACOES), async (req, res) => res.json(await mfaLembreteService.pendentes()));
 
 // Pedir a essas pessoas que a ativem. Não se pode ativar por elas — se um
 // administrador o fizesse, ficaria com os dois fatores e deixava de haver dois.
-router.post('/mfa-lembrete', async (req, res) => {
+router.post('/mfa-lembrete', requirePermission(OPERACOES), async (req, res) => {
   const r = await mfaLembreteService.enviarLembretes({
     userIds: Array.isArray(req.body?.userIds) ? req.body.userIds : null,
     actor: auditService.actorFrom(req),

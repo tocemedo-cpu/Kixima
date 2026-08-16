@@ -5,7 +5,8 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { authenticate, optionalAuthenticate } = require('../middleware/auth');
-const { requireRole } = require('../middleware/rbac');
+const { requireRole, requirePermission } = require('../middleware/rbac');
+const { SUPORTE } = require('../utils/adminAreas');
 const { validate } = require('../utils/validate');
 const { supplierDevSchema, supplierDevUpdateSchema } = require('../utils/schemas');
 const svc = require('../services/supplierDevService');
@@ -38,13 +39,13 @@ router.get('/requests/:reference/track', async (req, res) => {
 });
 
 // --- Admin do Sistema --------------------------------------------------------
-router.get('/requests', authenticate, requireRole('ADMIN_SISTEMA'), async (req, res) => {
+router.get('/requests', authenticate, requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
   res.json(await svc.list({
     page: req.query.page, limit: req.query.limit, status: req.query.status, track: req.query.track, q: req.query.q,
   }));
 });
 
-router.patch('/requests/:id', authenticate, requireRole('ADMIN_SISTEMA'), validate(supplierDevUpdateSchema), async (req, res) => {
+router.patch('/requests/:id', authenticate, requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), validate(supplierDevUpdateSchema), async (req, res) => {
   res.json(await svc.update(req.params.id, req.body, req.user));
 });
 

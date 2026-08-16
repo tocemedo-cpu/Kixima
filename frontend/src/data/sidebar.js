@@ -175,34 +175,66 @@ const FINANCEIRO_FORNECEDOR = [
 ];
 
 // Admin do Sistema KIXIMA — credenciamento, apólices e contratos-quadro.
+// Cada entrada do Admin do Sistema abaixo com `area` corresponde a uma área de
+// backend/src/utils/adminAreas.js — filtrarPorAreas() esconde o que um
+// assessor restrito não pode tocar. Sem `area`, o item é sempre visível
+// (Dashboard, Perfil, Segurança, Ajuda) ou é a Auditoria, que fica visível a
+// qualquer Admin do Sistema de propósito (ver a nota em adminRoutes.js: quem
+// vigia um assessor precisa de ver o rasto de tudo, não só da própria área).
+// 'SUPER_ADMIN_ONLY' não é uma área atribuível — nunca aparece em AREAS_ADMIN,
+// por isso nenhum assessor a tem, e o item fica reservado ao Super Admin.
+const SUPER_ADMIN_ONLY = 'SUPER_ADMIN_ONLY';
+
 const ADMIN_SISTEMA = [
   { label: 'Dashboard', icon: 'home', to: '/sistema', end: true },
   {
-    label: 'Credenciamento', icon: 'dueDiligence', children: [
+    label: 'Credenciamento', icon: 'dueDiligence', area: 'cadastro', children: [
       { label: 'Cadastro de Empresas', to: '/sistema/due-diligence' },
       { label: 'Empresas', to: '/sistema/empresas' },
     ],
   },
-  { label: 'Gestão de Apólices', icon: 'policy', to: '/sistema/apolices' },
-  { label: 'Integrações ERP', icon: 'offshore', to: '/sistema/integracoes-erp' },
-  { label: 'Contratos-Quadro', icon: 'contract', to: '/sistema/contratos' },
-  { label: 'Taxa KIXIMA', icon: 'wallet', to: '/sistema/taxas' },
-  { label: 'Planos e Subscrições', icon: 'building', to: '/sistema/planos' },
-  { label: 'Cobranças de subscrição', icon: 'invoice', to: '/sistema/cobrancas' },
-  { label: 'Supplier Development', icon: 'suppliers', to: '/sistema/supplier-development' },
+  { label: 'Gestão de Apólices', icon: 'policy', to: '/sistema/apolices', area: 'apolices' },
+  { label: 'Integrações ERP', icon: 'offshore', to: '/sistema/integracoes-erp', area: 'cadastro' },
+  { label: 'Contratos-Quadro', icon: 'contract', to: '/sistema/contratos', area: 'cadastro' },
+  { label: 'Taxa KIXIMA', icon: 'wallet', to: '/sistema/taxas', area: 'financeiro' },
+  { label: 'Planos e Subscrições', icon: 'building', to: '/sistema/planos', area: 'cadastro' },
+  { label: 'Cobranças de subscrição', icon: 'invoice', to: '/sistema/cobrancas', area: 'financeiro' },
+  { label: 'Supplier Development', icon: 'suppliers', to: '/sistema/supplier-development', area: 'suporte' },
   {
     // No Admin do Sistema, o suporte e a ajuda vivem dentro das configurações.
+    // Grupo sem `area` própria — mistura itens pessoais (sempre visíveis) com
+    // itens de área, marcados um a um.
     label: 'Configurações e Suporte', icon: 'settings', children: [
       { label: 'Perfil', to: '/perfil' },
       { label: 'Segurança', to: '/seguranca' },
-      { label: 'Permissões', to: '/sistema/permissoes' },
-      { label: 'Gestão de Atividades', to: '/sistema/atividades' },
+      { label: 'Permissões', to: '/sistema/permissoes', area: SUPER_ADMIN_ONLY },
+      { label: 'Gestão de Atividades', to: '/sistema/atividades', area: 'operacoes' },
       { label: 'Auditoria', to: '/sistema/auditoria' },
-      { label: 'Prontidão para produção', to: '/sistema/prontidao' },
+      { label: 'Prontidão para produção', to: '/sistema/prontidao', area: 'operacoes' },
       { label: 'Ajuda', to: '/ajuda' },
     ],
   },
   { label: 'Sair', icon: 'logout', action: 'logout' },
 ];
+
+/**
+ * Filtra o menu do Admin do Sistema pelas áreas de quem está a ver.
+ *
+ * `areas` VAZIO (Super Admin) devolve tudo sem tocar — é o comportamento de
+ * sempre, para ninguém que já tinha o papel ver o menu encolher. Só um
+ * assessor com áreas de facto atribuídas vê o menu reduzido à sua área.
+ */
+export function filtrarPorAreas(items, areas) {
+  if (!areas || areas.length === 0) return items;
+  const permitido = (area) => !area || areas.includes(area);
+  return items
+    .filter((item) => permitido(item.area))
+    .map((item) => {
+      if (!item.children) return item;
+      const children = item.children.filter((c) => permitido(c.area));
+      return children.length ? { ...item, children } : null;
+    })
+    .filter(Boolean);
+}
 
 export const SIDEBAR_MENUS = { COMPRADOR, COMPANY_ADMIN, FORNECEDOR, FINANCEIRO, FINANCEIRO_FORNECEDOR, ADMIN_SISTEMA };

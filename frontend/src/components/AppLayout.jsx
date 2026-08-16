@@ -5,7 +5,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { ROLE_LABELS } from '../domain';
-import { SIDEBAR_MENUS } from '../data/sidebar';
+import { SIDEBAR_MENUS, filtrarPorAreas } from '../data/sidebar';
 import { api } from '../api/client';
 import NotificationPanel from './NotificationPanel';
 import Sidebar from './Sidebar';
@@ -44,7 +44,11 @@ export default function AppLayout() {
   const menuKey = user.role === 'FINANCEIRO' && user.companyType === 'FORNECEDOR'
     ? 'FINANCEIRO_FORNECEDOR'
     : user.role;
-  const items = SIDEBAR_MENUS[menuKey] || [];
+  // Um assessor do Admin do Sistema restrito a certas áreas não vê no menu o
+  // que o servidor lhe recusaria de qualquer forma (ver filtrarPorAreas em
+  // data/sidebar.js). Para o Super Admin (adminAreas vazio) é uma cópia
+  // idêntica ao array original.
+  const items = filtrarPorAreas(SIDEBAR_MENUS[menuKey] || [], user.adminAreas);
   // Contado pelo servidor sobre TODAS as notificações, e não sobre as desta
   // página: um sino que diz "3" e ao paginar passa a dizer "1" parece uma
   // avaria. Ao marcar como lida desconta-se aqui, para o número reagir já.

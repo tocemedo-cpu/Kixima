@@ -1,7 +1,8 @@
 const express = require('express');
 const policyController = require('../controllers/policyController');
 const { authenticate } = require('../middleware/auth');
-const { requireRole } = require('../middleware/rbac');
+const { requireRole, requirePermission } = require('../middleware/rbac');
+const { APOLICES } = require('../utils/adminAreas');
 const { validate } = require('../utils/validate');
 const { supplierPolicySchema, clientPolicySchema } = require('../utils/schemas');
 
@@ -16,12 +17,13 @@ router.post(
   validate(supplierPolicySchema),
   policyController.submitSupplierPolicy
 );
-router.patch('/supplier-to-kixima/:id/decision', requireRole('ADMIN_SISTEMA'), policyController.decideSupplierPolicy);
+router.patch('/supplier-to-kixima/:id/decision', requireRole('ADMIN_SISTEMA'), requirePermission(APOLICES), policyController.decideSupplierPolicy);
 
 // KIXIMA → Cliente: emitida pelo Admin do Sistema após due diligence.
 router.post(
   '/kixima-to-client/:companyId',
   requireRole('ADMIN_SISTEMA'),
+  requirePermission(APOLICES),
   validate(clientPolicySchema),
   policyController.issueClientPolicy
 );

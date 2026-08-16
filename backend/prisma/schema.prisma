@@ -373,6 +373,12 @@ model User {
   role         PersonaRole
   approvalCap  Decimal?    @map("approval_cap") @db.Decimal(14, 2) // teto para aprovações delegadas (Comprador)
 
+  // Só tem sentido para ADMIN_SISTEMA. VAZIO = Super Admin, sem restrição — é
+  // o valor por omissão, para que ninguém que já tenha ADMIN_SISTEMA perca
+  // acesso a nada só por este campo passar a existir. Não-vazio = assessor,
+  // restrito às áreas listadas (ver AREAS_ADMIN em utils/adminAreas.js).
+  adminAreas String[] @default([]) @map("admin_areas")
+
   companyId String?  @map("company_id") // null para ADMIN_SISTEMA
   company   Company? @relation(fields: [companyId], references: [id])
 

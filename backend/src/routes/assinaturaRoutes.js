@@ -6,7 +6,8 @@
 // cada uma — nunca um `router.use` que apanhasse as duas metades.
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
-const { requireRole } = require('../middleware/rbac');
+const { requireRole, requirePermission } = require('../middleware/rbac');
+const { FINANCEIRO } = require('../utils/adminAreas');
 const { uploadDocuments } = require('../config/upload');
 const auditService = require('../services/auditService');
 const svc = require('../services/assinaturaService');
@@ -16,11 +17,11 @@ router.use(authenticate);
 
 // --- Lado KIXIMA ------------------------------------------------------------
 // Antes das rotas da empresa: `/fila` seria apanhado por um `/:id` a seguir.
-router.get('/fila', requireRole('ADMIN_SISTEMA'), async (req, res) => {
+router.get('/fila', requireRole('ADMIN_SISTEMA'), requirePermission(FINANCEIRO), async (req, res) => {
   res.json(await svc.fila());
 });
 
-router.post('/:id/confirmar', requireRole('ADMIN_SISTEMA'), async (req, res) => {
+router.post('/:id/confirmar', requireRole('ADMIN_SISTEMA'), requirePermission(FINANCEIRO), async (req, res) => {
   res.json(await svc.confirmar(req.params.id, req.user.id, { notas: req.body?.notas }, auditService.actorFrom(req)));
 });
 
@@ -57,7 +58,7 @@ router.post(
 
 // Cancelar. O Admin do Sistema cancela qualquer uma (não passa companyId); a
 // empresa só as suas.
-router.post('/:id/cancelar', requireRole('COMPANY_ADMIN', 'ADMIN_SISTEMA'), async (req, res) => {
+router.post('/:id/cancelar', requireRole('COMPANY_ADMIN', 'ADMIN_SISTEMA'), requirePermission(FINANCEIRO), async (req, res) => {
   const escopo = req.user.role === 'ADMIN_SISTEMA' ? {} : { companyId: req.user.companyId };
   res.json(await svc.cancelar(
     req.params.id, { motivo: req.body?.motivo, ...escopo }, auditService.actorFrom(req),

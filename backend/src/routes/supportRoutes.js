@@ -5,7 +5,8 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { authenticate } = require('../middleware/auth');
-const { requireRole } = require('../middleware/rbac');
+const { requireRole, requirePermission } = require('../middleware/rbac');
+const { SUPORTE } = require('../utils/adminAreas');
 const { upload } = require('../config/upload');
 const storageService = require('../services/storageService');
 const prisma = require('../config/database');
@@ -142,9 +143,18 @@ router.get('/overview', async (req, res) => {
     categories, channels, hours: HOURS, system: { operational: true },
     faqCount: CATEGORIES.reduce((n, c) => n + c.faq.length, 0),
     images: imgByKey, // hero, mascot, quick_*, channel_*, categorias
-    openTickets: open, canManageImages: req.user.role === 'ADMIN_SISTEMA',
+    openTickets: open, canManageImages: podeGerirSuporte(req.user),
   });
 });
+
+// Mesma regra do requirePermission(SUPORTE): Super Admin (adminAreas vazio)
+// ou assessor com a área. A interface usa isto para não oferecer um botão de
+// gerir imagens a quem o pedido a seguir devolveria 403.
+function podeGerirSuporte(user) {
+  if (user.role !== 'ADMIN_SISTEMA') return false;
+  const areas = user.adminAreas || [];
+  return areas.length === 0 || areas.includes(SUPORTE);
+}
 
 // Upload da imagem de um local (slot) da página de Ajuda — só o Admin do Sistema.
 async function uploadSlotImage(req, res) {
@@ -158,13 +168,13 @@ async function uploadSlotImage(req, res) {
   const row = await prisma.supportCategoryImage.upsert({ where: { key }, create: { key, imageUrl }, update: { imageUrl } });
   res.json(row);
 }
-router.post('/images/:key', requireRole('ADMIN_SISTEMA'), upload.single('image'), uploadSlotImage);
-router.delete('/images/:key', requireRole('ADMIN_SISTEMA'), async (req, res) => {
+router.post('/images/:key', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), upload.single('image'), uploadSlotImage);
+router.delete('/images/:key', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
   await prisma.supportCategoryImage.deleteMany({ where: { key: req.params.key } });
   res.json({ key: req.params.key });
 });
 // Compatibilidade com o endpoint anterior (categorias).
-router.post('/categories/:key/image', requireRole('ADMIN_SISTEMA'), upload.single('image'), uploadSlotImage);
+router.post('/categories/:key/image', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), upload.single('image'), uploadSlotImage);
 
 router.get('/tickets', async (req, res) => {
   const tickets = await prisma.supportTicket.findMany({
@@ -194,7 +204,7 @@ router.post('/tickets', async (req, res) => {
 // -------------------------------------------------------------------------
 const STATUSES = ['ABERTO', 'EM_ANDAMENTO', 'AGUARDANDO_RESPOSTA', 'RESOLVIDO', 'FECHADO'];
 
-router.get('/admin/overview', requireRole('ADMIN_SISTEMA'), async (req, res) => {
+router.get('/admin/overview', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
   const [counts, imgByKey] = await Promise.all([
     prisma.supportTicket.groupBy({ by: ['status'], _count: { _all: true } }),
     loadImageMap(),
@@ -217,7 +227,7 @@ router.get('/admin/overview', requireRole('ADMIN_SISTEMA'), async (req, res) => 
   });
 });
 
-router.get('/admin/tickets', requireRole('ADMIN_SISTEMA'), async (req, res) => {
+router.get('/admin/tickets', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
   const where = {};
   if (req.query.status && STATUSES.includes(req.query.status)) where.status = req.query.status;
   const tickets = await prisma.supportTicket.findMany({ where, orderBy: { createdAt: 'desc' }, take: 100 });
@@ -237,7 +247,7 @@ router.get('/admin/tickets', requireRole('ADMIN_SISTEMA'), async (req, res) => {
   })));
 });
 
-router.patch('/tickets/:id', requireRole('ADMIN_SISTEMA'), async (req, res) => {
+router.patch('/tickets/:id', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
   const status = String(req.body?.status || '');
   if (!STATUSES.includes(status)) return res.status(400).json({ error: { code: 'INVALID', message: 'Estado inválido.' } });
   const t = await prisma.supportTicket.update({ where: { id: req.params.id }, data: { status } });

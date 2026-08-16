@@ -6,13 +6,14 @@
 // ficheiro mais sensível que a plataforma produz.
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
-const { requireRole } = require('../middleware/rbac');
+const { requireRole, requirePermission } = require('../middleware/rbac');
+const { FATURACAO } = require('../utils/adminAreas');
 const faturacaoService = require('../services/faturacaoService');
 const saftService = require('../services/saftService');
 const metricasService = require('../services/metricasService');
 
 const router = express.Router();
-router.use(authenticate, requireRole('ADMIN_SISTEMA'));
+router.use(authenticate, requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO));
 
 // Estado da série e integridade da cadeia.
 router.get('/integridade', async (req, res) => {

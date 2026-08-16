@@ -8,10 +8,14 @@ const pretty = (s) => String(s || '').replaceAll('_', ' ').toLowerCase();
 
 async function listUsers() {
   const users = await prisma.user.findMany({
-    select: { id: true, name: true, email: true, role: true, active: true, companyId: true, createdAt: true, company: { select: { name: true } } },
+    select: {
+      id: true, name: true, email: true, role: true, active: true, companyId: true, createdAt: true, adminAreas: true, company: { select: { name: true } },
+    },
     orderBy: [{ active: 'asc' }, { createdAt: 'desc' }],
   });
-  return users.map((u) => ({ id: u.id, name: u.name, email: u.email, role: u.role, active: u.active, companyName: u.company?.name || null, createdAt: u.createdAt }));
+  return users.map((u) => ({
+    id: u.id, name: u.name, email: u.email, role: u.role, active: u.active, companyName: u.company?.name || null, createdAt: u.createdAt, adminAreas: u.adminAreas,
+  }));
 }
 
 // Bloquear/desbloquear qualquer utilizador do sistema.
@@ -20,6 +24,22 @@ async function setUserStatus({ id, active, actingUserId }) {
   if (!user) throw new NotFoundError('Utilizador');
   if (id === actingUserId) throw new BusinessRuleError('Não pode bloquear a própria conta.');
   return prisma.user.update({ where: { id }, data: { active: Boolean(active) }, select: { id: true, name: true, active: true, role: true } });
+}
+
+// Atribuir áreas a um Admin do Sistema (vazio = Super Admin).
+//
+// Não pode alterar a PRÓPRIA conta: um Super Admin que restringisse as suas
+// próprias áreas por engano ficava de fora das rotas que só o Super Admin
+// gere — incluindo esta, que devolveria o próprio acesso. Sem outro Super
+// Admin para o desfazer, é um bloqueio sem saída.
+async function setUserAreas({ id, areas, actingUserId }) {
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) throw new NotFoundError('Utilizador');
+  if (user.role !== 'ADMIN_SISTEMA') throw new BusinessRuleError('Áreas só se aplicam a Admin do Sistema.');
+  if (id === actingUserId) throw new BusinessRuleError('Não pode alterar as próprias áreas.');
+  return prisma.user.update({
+    where: { id }, data: { adminAreas: areas }, select: { id: true, name: true, role: true, adminAreas: true },
+  });
 }
 
 // Feed de atividades de todo o sistema.
@@ -76,4 +96,6 @@ async function chargePlatformFee(id) {
   return prisma.platformFee.update({ where: { id }, data: { status: 'COBRADO', chargedAt: new Date() } });
 }
 
-module.exports = { listUsers, setUserStatus, systemActivities, listPlatformFees, chargePlatformFee };
+module.exports = {
+  listUsers, setUserStatus, setUserAreas, systemActivities, listPlatformFees, chargePlatformFee,
+};

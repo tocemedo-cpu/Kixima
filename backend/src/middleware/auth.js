@@ -53,6 +53,9 @@ async function authenticate(req, res, next) {
   req.user = {
     id: user.id,
     role: user.role,
+    // Só tem efeito para ADMIN_SISTEMA (ver requirePermission em rbac.js);
+    // vazio para os outros papéis, sem significado nenhum para eles.
+    adminAreas: user.adminAreas || [],
     companyId: user.companyId,
     // Tipo da empresa (CLIENTE/FORNECEDOR) — permite adaptar telas ao lado do
     // negócio (ex.: Financeiro numa fornecedora vê "recebimentos", não "faturas

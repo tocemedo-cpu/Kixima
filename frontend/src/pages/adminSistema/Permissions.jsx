@@ -10,6 +10,7 @@ export default function AdminPermissions() {
       subtitle="Bloqueie ou desbloqueie o acesso de qualquer perfil dentro da plataforma."
       listUrl="/api/admin/users"
       statusUrl={(id) => `/api/admin/users/${id}/status`}
+      areasUrl={(id) => `/api/admin/users/${id}/areas`}
       showCompany
     />
   );

@@ -22,6 +22,20 @@ export const ROLE_LABELS = {
   ADMIN_SISTEMA: 'Admin do Sistema KIXIMA',
 };
 
+// As áreas em que o Admin do Sistema se pode dividir — espelha
+// backend/src/utils/adminAreas.js. adminAreas VAZIO (a omissão de quem já
+// tinha o papel) significa Super Admin: acede a tudo, sem nada aqui marcado.
+export const ADMIN_AREAS = ['cadastro', 'financeiro', 'faturacao', 'apolices', 'suporte', 'operacoes'];
+
+export const ADMIN_AREA_LABELS = {
+  cadastro: 'Cadastro & Empresas',
+  financeiro: 'Financeiro',
+  faturacao: 'Faturação (AGT)',
+  apolices: 'Apólices',
+  suporte: 'Suporte',
+  operacoes: 'Operação da Plataforma',
+};
+
 export const ROLE_HOME = {
   COMPRADOR: '/comprador',
   COMPANY_ADMIN: '/empresa',
