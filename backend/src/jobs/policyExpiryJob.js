@@ -5,6 +5,7 @@
 const cron = require('node-cron');
 const logger = require('../config/logger');
 const policyService = require('../services/policyService');
+const alertaOperacional = require('../services/alertaOperacionalService');
 
 function schedulePolicyExpiryJob() {
   // Todos os dias às 07:00.
@@ -16,6 +17,13 @@ function schedulePolicyExpiryJob() {
       }
     } catch (err) {
       logger.error('Falha ao processar alertas de expiração de apólice', { message: err.message });
+      await alertaOperacional.avisarFalha(
+        'EXPIRACAO_APOLICES',
+        'os avisos de expiração de apólice falharam',
+        `O processamento não correu.\n\nErro: ${err.message}\n\n`
+        + 'Uma apólice que expira sem aviso deixa uma transação sem cobertura — que é a garantia '
+        + 'que a plataforma promete.',
+      ).catch(() => {});
     }
   });
 }

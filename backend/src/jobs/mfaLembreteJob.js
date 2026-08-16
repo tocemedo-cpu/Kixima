@@ -16,6 +16,7 @@
 const logger = require('../config/logger');
 const config = require('../config/env');
 const mfaLembreteService = require('../services/mfaLembreteService');
+const alertaOperacional = require('../services/alertaOperacionalService');
 
 const INTERVALO_MS = 60 * 60 * 1000;              // de hora a hora, enquanto acordado
 const ESPERA_APOS_ARRANQUE_MS = 5 * 60 * 1000;    // não competir com o arranque
@@ -31,6 +32,13 @@ async function correr() {
     }
   } catch (err) {
     logger.error('Falha ao processar lembretes de 2FA', { erro: err.message });
+    await alertaOperacional.avisarFalha(
+      'LEMBRETES_2FA',
+      'os lembretes de 2FA falharam',
+      `O processamento não correu.\n\nErro: ${err.message}\n\n`
+      + 'Sem lembrete, quem aprova ordens e autoriza pagamentos pode chegar à data limite '
+      + 'sem ter configurado a 2FA — e ficar de fora no dia em que passa a ser exigida.',
+    ).catch(() => {});
   }
 }
 

@@ -11,6 +11,7 @@
 // os três dias de uma vez.
 const logger = require('../config/logger');
 const retencao = require('../services/retencaoService');
+const alertaOperacional = require('../services/alertaOperacionalService');
 
 // Uma hora depois do arranque: o arranque já tem migrações, seed e a primeira
 // vaga de pedidos: não é altura para uma limpeza.
@@ -31,6 +32,13 @@ async function correr() {
       // caminho crítico. Mas fica registado: uma limpeza que nunca corre é uma
       // política de retenção que não se cumpre.
       logger.error(`Retenção: a limpeza falhou — ${err.message}`);
+      await alertaOperacional.avisarFalha(
+        'RETENCAO_DADOS',
+        'a limpeza de retenção de dados falhou',
+        `A limpeza automática não correu.\n\nErro: ${err.message}\n\n`
+        + 'A política de retenção publicada em /api/retencao promete apagar dados ao fim de um prazo. '
+        + 'Enquanto isto falhar, a plataforma guarda mais do que diz guardar.',
+      ).catch(() => {});
       return null;
     } finally {
       emCurso = null;

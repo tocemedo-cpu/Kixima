@@ -28,6 +28,7 @@ const logger = require('../config/logger');
 const storage = require('../services/storageService');
 const prisma = require('../config/database');
 const auditService = require('../services/auditService');
+const alertaOperacional = require('../services/alertaOperacionalService');
 
 const execFileAsync = promisify(execFile);
 
@@ -234,6 +235,13 @@ function scheduleBackupJob() {
       // Uma cópia que falha em silêncio é o mesmo que não existir.
       logger.error('FALHA NA CÓPIA DE SEGURANÇA — a base ficou sem cópia hoje', { erro: err.message });
       await registar('COPIA_SEGURANCA_FALHOU', { erro: String(err.message).slice(0, 500) });
+      await alertaOperacional.avisarFalha(
+        'COPIA_SEGURANCA',
+        'a cópia de segurança falhou',
+        `A cópia automática da base de dados não correu.\n\nErro: ${err.message}\n\n`
+        + 'Enquanto isto não for resolvido, a plataforma está a acumular dias sem cópia. '
+        + 'Pode forçar uma agora em Prontidão para produção → "Fazer cópia agora".',
+      ).catch(() => {});
     }
   });
 }

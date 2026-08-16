@@ -3,11 +3,11 @@
 // (folha "Catálogo" + folha opcional "Catálogo Visual" com fotos embebidas).
 // Cada Fornecedor importa o SEU próprio catálogo — os produtos são criados/
 // atualizados para a empresa do utilizador. Idempotente por slug (código+empresa).
-const XLSX = require('xlsx');
 const AdmZip = require('adm-zip');
 const prisma = require('../config/database');
 const planService = require('./planService');
 const storageService = require('./storageService');
+const xlsxSeguro = require('./xlsxSeguro');
 const { BusinessRuleError } = require('../utils/errors');
 
 const norm = (s) => String(s == null ? '' : s).trim().toLowerCase();
@@ -102,11 +102,6 @@ function extractImages(buffer) {
   return out;
 }
 
-function pickSheet(wb, names) {
-  for (const n of wb.SheetNames) if (names.includes(norm(n))) return wb.Sheets[n];
-  return null;
-}
-
 /**
  * Importa o catálogo de um Excel para o fornecedor indicado.
  * @returns {{ total, created, updated, withImages, errors: Array<{row,error}> }}
@@ -119,13 +114,16 @@ async function importCatalog(buffer, supplierId) {
   const empresa = await prisma.company.findUnique({ where: { id: supplierId } });
   planService.assertFeature(empresa, 'carregamentoEmMassa', 'Carregamento em massa');
 
-  let wb;
-  try { wb = XLSX.read(buffer, { type: 'buffer' }); }
-  catch { throw new BusinessRuleError('Não foi possível ler o ficheiro Excel. Verifique se é um .xlsx válido.'); }
-
-  const ws = pickSheet(wb, ['catálogo', 'catalogo', 'catalog', 'produtos', 'itens'])
-    || wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+  // A leitura corre num ISOLADO com tempo-limite e tecto de memória.
+  //
+  // A biblioteca `xlsx` tem Prototype Pollution e ReDoS de severidade alta, com
+  // aviso explícito de "No fix available" — não há versão para onde subir. Só
+  // lá chega um fornecedor autenticado com plano Pro, mas o contentor é
+  // partilhado por toda a plataforma: uma expressão regular a arder derrubava o
+  // serviço para todos os clientes, não só para quem carregou o ficheiro.
+  //
+  // Contém-se em vez de se reescrever. Ver src/services/xlsxSeguro.js.
+  const rows = await xlsxSeguro.lerLinhas(buffer, ['catálogo', 'catalogo', 'catalog', 'produtos', 'itens']);
   if (!rows.length) throw new BusinessRuleError('A folha do catálogo está vazia.');
 
   const hdr = rows[0].map(norm);
