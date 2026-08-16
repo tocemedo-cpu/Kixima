@@ -5,11 +5,29 @@ import { useI18n } from '../i18n';
 import { ROLE_HOME } from '../domain';
 
 export function RequireAuth() {
-  const { user, loading } = useAuth();
+  const { user, loading, sessaoIndeterminada, refreshUser } = useAuth();
   const { t } = useI18n();
   if (loading) return <div className="loading-text">{t('A verificar sessão…')}</div>;
-  if (!user) return <Navigate to="/login" replace />;
-  return <Outlet />;
+  if (user) return <Outlet />;
+
+  // NÃO CONSEGUIR PERGUNTAR NÃO É ESTAR DE FORA.
+  //
+  // Mandar para o ecrã de entrada quem falhou a verificação por um 429 ou por
+  // uma falha de rede é dizer-lhe que a sessão acabou — e a seguir vai escrever
+  // a senha outra vez para descobrir que nunca tinha acabado. Aqui diz-se o que
+  // realmente se passa e deixa-se tentar de novo, sem perder a sessão.
+  if (sessaoIndeterminada) {
+    return (
+      <div className="loading-text">
+        <p>{t('Não foi possível confirmar a sua sessão. A ligação ao servidor falhou.')}</p>
+        <button type="button" className="btn btn-accent" onClick={refreshUser}>
+          {t('Tentar de novo')}
+        </button>
+      </div>
+    );
+  }
+
+  return <Navigate to="/login" replace />;
 }
 
 /**
