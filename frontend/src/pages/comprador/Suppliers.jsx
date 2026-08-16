@@ -7,6 +7,7 @@ import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow }
 import { Icon, Stars } from '../../components/icons';
 import { formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
+import { ErrorBanner } from '../../components/Common';
 
 const TABS = [
   { key: '', label: 'Todos' }, { key: 'ATIVOS', label: 'Ativos' },
@@ -46,7 +47,10 @@ export default function Suppliers() {
         <div>
           <Tabs tabs={TABS} value={tab} onChange={setTab} />
           <Toolbar placeholder="Pesquisar por nome, categoria, cidade…" q={q} onQ={setQ} />
-          {error ? <div className="empty-state"><p>{error}</p></div> : (
+          {/* Um erro NÃO é um estado vazio. "Não há ordens" e "não foi possível
+              carregar as ordens" são coisas opostas, e apareciam iguais — quem
+              via a segunda concluía que não tinha ordens nenhumas. */}
+          {error ? <ErrorBanner message={error} /> : (
             <div className="bz-card bz-tablewrap">
               <table className="bz-table">
                 <thead><tr>

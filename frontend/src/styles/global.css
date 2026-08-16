@@ -35,6 +35,12 @@
   --amber-500: #a35c00;   /* sobre claro — 5,1:1 sobre branco */
   --amber-claro: #f0b45c; /* sobre escuro — 10,7:1 sobre a barra preta */
   --amber-600: #c9821f;
+  /* Texto sobre o fundo do emblema "pendente" (--amber-100).
+     A escolha óbvia era reutilizar o --amber-500, que já é o âmbar "sobre
+     claro" — e NÃO chega: dá 4,29:1 sobre #fbe8cf, abaixo do mínimo de 4,5.
+     Passa sobre branco (5,14:1) e falha sobre este fundo, porque o fundo do
+     emblema não é branco. É preciso um degrau mais escuro. 5,29:1. */
+  --amber-700: #8f5000;
   --amber-100: #fbe8cf;
 
   /* Verde — pagamento garantido / estados OK */
@@ -59,8 +65,14 @@
      normal, e este token está em 73 sítios (legendas, migalhas, rótulos de
      filtro). É o texto secundário de toda a aplicação: se ele não se lê, não
      se lê metade da interface. #6b7280 dá 4,8:1 e mantém-se claramente
-     secundário. */
-  --ink-400: #6b7280;
+     secundário.
+
+     CORREÇÃO POSTERIOR: 4,8:1 era medido SOBRE BRANCO, e este token também se
+     usa sobre --surface-2 (#f1f5f9), onde caía para 4,41:1 — abaixo do mínimo.
+     Um token validado contra um fundo e usado sobre outro passa a auditoria e
+     falha no ecrã. #646b78 dá 5,36:1 sobre branco e 4,89:1 sobre a superfície
+     tingida: seguro nos dois, e a diferença a olho é imperceptível. */
+  --ink-400: #646b78;
   /* Estava a ser usado em três sítios só com fallback — e com DOIS fallbacks
      diferentes (#4b5563 e #64748b), ou seja, dois cinzentos ligeiramente
      distintos a fingir que eram o mesmo token. */
@@ -692,7 +704,10 @@ tbody tr:hover {
 
 .badge-pending {
   background: var(--amber-100);
-  color: var(--amber-600);
+  /* Era --amber-600: 2,62:1 a 11,5px, o pior contraste da aplicação. Aparecia
+     em cinco páginas, entre elas as ordens e as faturas do fornecedor — onde
+     "pendente" é justamente o estado que tem de saltar à vista. */
+  color: var(--amber-700);
 }
 
 .badge-success {
@@ -2705,9 +2720,13 @@ tbody tr:hover {
 .pc-cats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow: auto; }
 .pc-cats li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 9px; border-radius: 8px; font-size: var(--fs-lg); cursor: pointer; color: var(--ink-700, #334155); }
 .pc-cats li:hover { background: var(--surface-2, #f1f5f9); }
-.pc-cats li.on { background: rgba(225,29,42,0.08); color: var(--brand, #e11d2a); font-weight: 600; }
+/* O vermelho de marca (--brand-600) sobre o seu próprio tinte dá 4,20:1 —
+   falha por pouco, e é a categoria SELECIONADA, ou seja, a que tem de se
+   distinguir das outras. O --brand-700 já existia e dá 6,10:1: reutiliza-se
+   em vez de inventar um tom novo. */
+.pc-cats li.on { background: rgba(225,29,42,0.08); color: var(--brand-700); font-weight: 600; }
 .pc-c { color: var(--ink-400, #94a3b8); font-size: var(--fs-md); font-variant-numeric: tabular-nums; }
-.pc-cats li.on .pc-c { color: var(--brand, #e11d2a); }
+.pc-cats li.on .pc-c { color: var(--brand-700); }
 .pc-price { display: flex; gap: 8px; }
 .pc-price input { width: 100%; border: 1px solid var(--line, #e5e7eb); border-radius: 8px; padding: 8px 10px; font-size: var(--fs-lg); }
 .pc-price-hint { margin-top: 8px; font-size: var(--fs-xs); color: var(--ink-400, #94a3b8); }

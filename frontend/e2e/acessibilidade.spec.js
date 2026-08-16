@@ -34,11 +34,42 @@ for (const [nome, caminho] of PUBLICAS) {
   });
 }
 
+// A LISTA É O QUE ESTÁ VIGIADO. Fora dela, a acessibilidade regride sem
+// ninguém dar por isso — que é exatamente o que este ficheiro existe para
+// impedir. Eram quatro páginas autenticadas; uma varredura manual em 26 páginas
+// encontrou um defeito real (o emblema "pendente", 2,62:1) numa página que não
+// estava aqui. A lição não foi "corrigir o emblema" — foi que a lista era
+// curta de mais para o número de páginas que a aplicação tem.
+//
+// Cobre-se agora pelo menos uma página de cada PERSONA e de cada tipo de ecrã:
+// listagem, formulário, detalhe e painel. Não são as 81 páginas — são as que,
+// se regredirem, levam as outras atrás por partilharem os mesmos componentes.
 const AUTENTICADAS = [
+  // Comprador
   ['comprador', 'comprador', '/comprador'],
   ['explorar', 'comprador', '/comprador/explorar'],
+  ['catálogo', 'comprador', '/comprador/catalogo'],
+  ['ordens do comprador', 'comprador', '/comprador/ordens'],
+  ['cesta', 'comprador', '/comprador/cesta'],
+  ['perfil', 'comprador', '/perfil'],
+  // Fornecedor — foi aqui que o emblema ilegível apareceu.
+  ['painel do fornecedor', 'fornecedor', '/fornecedor'],
+  ['ordens do fornecedor', 'fornecedor', '/fornecedor/ordens'],
+  ['faturas do fornecedor', 'fornecedor', '/fornecedor/faturas'],
+  ['catálogo do fornecedor', 'fornecedor', '/fornecedor/catalogo'],
+  // Administração da empresa
   ['subscrição', 'admin', '/empresa/assinatura'],
   ['utilizadores', 'admin', '/empresa/utilizadores'],
+  ['contratos', 'admin', '/empresa/contratos'],
+  // Financeiro
+  ['centro financeiro', 'financeiro', '/financeiro'],
+  ['faturas a pagar', 'financeiro', '/financeiro/faturas'],
+  // KIXIMA
+  ['painel do sistema', 'kixima', '/sistema'],
+  ['planos e subscrições', 'kixima', '/sistema/planos'],
+  ['cobranças', 'kixima', '/sistema/cobrancas'],
+  ['auditoria', 'kixima', '/sistema/auditoria'],
+  ['prontidão', 'kixima', '/sistema/prontidao'],
 ];
 
 for (const [nome, conta, caminho] of AUTENTICADAS) {

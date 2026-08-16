@@ -58,9 +58,18 @@ const DETAIL_LABEL = {
  * que já vive neste campo, por isso junta-se aqui em vez de se inventar um
  * mecanismo de expansão. Nenhuma informação sai do ecrã.
  */
-function DetailCell({ detail, ip }) {
+function DetailCell({ detail, ip, perfil }) {
   const { t } = useI18n();
-  const comIp = (partes) => (ip ? [...partes, `IP: ${ip}`] : partes);
+  // Perfil e IP juntam-se ao detalhe pela mesma razão: são qualificadores do
+  // ATOR, e a coluna do ator já está ao lado. Percorrer a lista faz-se pela
+  // ação e pela data; o resto interessa quando já se parou numa linha.
+  const comExtras = (partes) => {
+    const fim = [...partes];
+    if (perfil) fim.push(`${t('Perfil')}: ${perfil}`);
+    if (ip) fim.push(`IP: ${ip}`);
+    return fim;
+  };
+  const comIp = comExtras;
   if (!detail || typeof detail !== 'object') {
     const so = comIp([]);
     return so.length ? <span className="bz-muted">{so.join(' · ')}</span> : <span className="bz-muted">—</span>;
@@ -129,20 +138,19 @@ export default function AuditTrail() {
             <table className="bz-table">
               <thead>
                 <tr>
-                  <th>{t('Data')}</th><th>{t('Ação')}</th><th>{t('Referência')}</th><th>{t('Ator')}</th><th>{t('Perfil')}</th><th>{t('Detalhe')}</th>
+                  <th>{t('Data')}</th><th>{t('Ação')}</th><th>{t('Referência')}</th><th>{t('Ator')}</th><th>{t('Detalhe')}</th>
                 </tr>
               </thead>
               <tbody>
-                {!data ? <tr><td colSpan={6}><EmptyRow>A carregar…</EmptyRow></td></tr>
-                  : items.length === 0 ? <tr><td colSpan={6}><EmptyRow>Ainda não há registos de auditoria. São criados automaticamente nas aprovações, pagamentos e alterações sensíveis.</EmptyRow></td></tr>
+                {!data ? <tr><td colSpan={5}><EmptyRow>A carregar…</EmptyRow></td></tr>
+                  : items.length === 0 ? <tr><td colSpan={5}><EmptyRow>Ainda não há registos de auditoria. São criados automaticamente nas aprovações, pagamentos e alterações sensíveis.</EmptyRow></td></tr>
                   : items.map((l) => (
                     <tr key={l.id}>
                       <td className="bz-muted">{formatDateTime(l.createdAt)}</td>
                       <td><Pill tone={ACTION_TONE[l.action] || 'neutral'}>{ACTION_LABEL[l.action] || l.action}</Pill></td>
                       <td className="mono">{l.entityRef || '—'}</td>
                       <td><strong>{l.actorName || '—'}</strong></td>
-                      <td className="bz-muted">{l.actorRole ? t(ROLE_LABEL[l.actorRole] || l.actorRole) : '—'}</td>
-                      <td><DetailCell detail={l.detail} ip={l.ip} /></td>
+                      <td><DetailCell detail={l.detail} ip={l.ip} perfil={l.actorRole ? t(ROLE_LABEL[l.actorRole] || l.actorRole) : null} /></td>
                     </tr>
                   ))}
               </tbody>
