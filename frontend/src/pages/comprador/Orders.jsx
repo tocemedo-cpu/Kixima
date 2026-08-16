@@ -35,7 +35,7 @@ export default function Orders() {
   const k = data?.kpis;
   return (
     <div>
-      <Crumbs trail={['Home', 'Ordens de Compra']} />
+      <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Ordens de Compra']} />
       <PageHead title="Ordens de Compra" subtitle="Acompanhe todas as suas Ordens de Compra emitidas aos fornecedores." />
 
       <KpiRow cards={[

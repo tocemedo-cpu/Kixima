@@ -198,6 +198,12 @@ export const EN10 = {
     'No outstanding charges. Those issued and not yet paid appear here.',
   'Nenhuma subscrição vencida. A plataforma não corta planos sozinha — as que passarem do prazo aparecem aqui para serem contactadas.':
     'No overdue subscriptions. The platform does not cut plans on its own — those past due appear here to be contacted.',
+
+  // --- FASE 3: confirmações e rótulo de perfil ------------------------------
+  'Plano da empresa atualizado.': 'Company plan updated.',
+  'Taxa marcada como cobrada.': 'Fee marked as charged.',
+  'Pedido atualizado.': 'Request updated.',
+  'Administrador da Empresa': 'Company Admin',
 };
 
 export const FR10 = {
@@ -368,4 +374,10 @@ export const FR10 = {
     'Aucune facturation en attente. Celles émises et non encore payées apparaissent ici.',
   'Nenhuma subscrição vencida. A plataforma não corta planos sozinha — as que passarem do prazo aparecem aqui para serem contactadas.':
     'Aucun abonnement échu. La plateforme ne coupe pas les forfaits d\u2019elle-même — ceux en retard apparaissent ici pour être contactés.',
+
+  // --- PHASE 3 : confirmations et libellé de profil --------------------------
+  'Plano da empresa atualizado.': 'Forfait de l\u2019entreprise mis à jour.',
+  'Taxa marcada como cobrada.': 'Frais marqués comme facturés.',
+  'Pedido atualizado.': 'Demande mise à jour.',
+  'Administrador da Empresa': 'Admin entreprise',
 };

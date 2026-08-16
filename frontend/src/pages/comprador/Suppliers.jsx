@@ -31,7 +31,7 @@ export default function Suppliers() {
 
   return (
     <div>
-      <Crumbs trail={['Home', 'Fornecedores']} />
+      <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Fornecedores']} />
       <PageHead title="Fornecedores" subtitle="Gerencie a sua base de fornecedores e acompanhe o seu desempenho." />
 
       <KpiRow cards={[

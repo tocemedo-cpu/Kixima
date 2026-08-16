@@ -17,6 +17,7 @@ import { api } from '../../api/client';
 import { formatUsd } from '../../domain';
 import { Crumbs, PageHead, KpiRow, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { useI18n } from '../../i18n';
+import { SuccessBanner } from '../../components/Common';
 
 const SIZES = ['MICRO', 'PEQUENA', 'MEDIA', 'GRANDE'];
 const SIZE_LABEL = { MICRO: 'Micro', PEQUENA: 'Pequena', MEDIA: 'Média', GRANDE: 'Grande' };
@@ -33,6 +34,9 @@ export default function AdminPlans() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ size: 'PEQUENA', plan: 'BASICO', seatPriceUsd: 100, planNotes: '' });
   const [error, setError] = useState('');
+  // Confirmação depois da API responder — nunca antes. Um "guardado"
+  // mostrado antes do servidor confirmar é uma mentira com bom aspeto.
+  const [sucesso, setSucesso] = useState('');
   const [saving, setSaving] = useState(false);
   // A escada real, tal como o servidor a publica. Vazia enquanto carrega — e
   // nesse intervalo o <select> mostra apenas o plano atual da empresa, em vez
@@ -80,6 +84,8 @@ export default function AdminPlans() {
         planNotes: form.planNotes,
       });
       setEditing(null);
+      setSucesso(t('Plano da empresa atualizado.'));
+      setTimeout(() => setSucesso(''), 3500);
       load();
     } catch (e) { setError(e.message); } finally { setSaving(false); }
   }
@@ -118,6 +124,7 @@ export default function AdminPlans() {
 
       <Toolbar placeholder="Pesquisar por empresa ou NIF…" q={q} onQ={setQ} />
 
+      <SuccessBanner message={sucesso} />
       {error ? <div className="banner banner-error" style={{ marginBottom: 12 }}>{error}</div> : null}
 
       <div className="bz-card bz-tablewrap">

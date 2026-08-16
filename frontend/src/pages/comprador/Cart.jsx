@@ -32,7 +32,7 @@ export default function Cart() {
   if (items.length === 0) {
     return (
       <div>
-        <Crumbs trail={['Home', 'Minha Cesta']} />
+        <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Minha Cesta']} />
         <div className="empty-state"><h3>{t('A sua cesta está vazia')}</h3><p>{t('Explore o catálogo e adicione produtos ou serviços.')}</p>
           <button className="btn btn-accent" onClick={() => nav('/comprador/catalogo')}>{t('Explorar catálogo')}</button></div>
       </div>
@@ -42,7 +42,7 @@ export default function Cart() {
   return (
     <div>
       {toast ? <div className="svc-toast">{toast}</div> : null}
-      <Crumbs trail={['Home', 'Minha Cesta']} />
+      <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Minha Cesta']} />
       <PageHead title="Minha Cesta" subtitle={`${items.length} ${items.length === 1 ? t('item') : t('itens')} ${t('na sua cesta')}`}
         actions={<>
           <button className="btn btn-ghost btn-sm" onClick={saveCart}><Icon name="policy" size={14} /> {t('Guardar Cesta')}</button>

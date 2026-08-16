@@ -138,7 +138,7 @@ export default function Catalog() {
 
   return (
     <div>
-      <Crumbs trail={['Home', 'Catálogo', 'Produtos']} />
+      <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Catálogo', 'Produtos']} />
       <PageHead
         title="Produtos"
         actions={(

@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Icon, Stars } from '../../components/icons';
 import ProductCover from '../../components/ProductCover';
-import { formatMoney } from '../../domain';
+import { formatMoney, formatNumber } from '../../domain';
 import { useI18n } from '../../i18n';
 
 const SORTS = [
@@ -148,7 +148,7 @@ export default function Explore() {
       </form>
 
       <div className="svc-count">
-        {loading ? t('A carregar…') : <>{q ? `${t('Resultado para')} "${q}"` : t('Resultado')} <span className="exp-total">{total.toLocaleString('pt-PT')} {t('resultados')}</span></>}
+        {loading ? t('A carregar…') : <>{q ? `${t('Resultado para')} "${q}"` : t('Resultado')} <span className="exp-total">{formatNumber(total)} {t('resultados')}</span></>}
         <span className="svc-sortwrap">{t('Ordenar por')}{' '}
           <select aria-label={t('Ordenar por')} value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>
             {SORTS.map(([v, l]) => <option key={v} value={v}>{t(l)}</option>)}

@@ -34,7 +34,7 @@ export default function Deliveries() {
   const k = data?.kpis;
   return (
     <div>
-      <Crumbs trail={['Home', 'Acompanhar Entrega']} />
+      <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Acompanhar Entrega']} />
       <PageHead title="Acompanhar Entrega" subtitle="Acompanhe o status e o progresso das entregas das suas ordens de compra." />
 
       <KpiRow cards={[

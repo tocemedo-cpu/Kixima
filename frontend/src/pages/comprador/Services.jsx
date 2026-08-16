@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import ProductCover from '../../components/ProductCover';
 import { Icon, Stars } from '../../components/icons';
-import { formatMoney } from '../../domain';
+import { formatMoney, formatNumber } from '../../domain';
 import { useI18n } from '../../i18n';
 
 const SORTS = [
@@ -128,7 +128,7 @@ export default function Services() {
       </div>
 
       <div className="svc-count">
-        {loading ? t('A carregar…') : t('Mostrando {a} - {b} de {n} serviços', { a: from, b: to, n: total.toLocaleString('pt-PT') })}
+        {loading ? t('A carregar…') : t('Mostrando {a} - {b} de {n} serviços', { a: from, b: to, n: formatNumber(total) })}
         <span className="svc-sortwrap">
           {t('Ordenar por')}{' '}
           <select aria-label={t('Ordenar por')} value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>

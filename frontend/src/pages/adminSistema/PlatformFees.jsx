@@ -7,6 +7,7 @@ import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, EmptyRow } from '../../components/BuyerUI';
 import { formatDateTime, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
+import { SuccessBanner } from '../../components/Common';
 
 const STATUS_TONE = { PENDENTE: 'pending', COBRADO: 'success' };
 const STATUS_LABEL = { PENDENTE: 'Pendente', COBRADO: 'Cobrada' };
@@ -17,6 +18,9 @@ export default function PlatformFees() {
   const [tab, setTab] = useState('');
   const [q, setQ] = useState('');
   const [error, setError] = useState('');
+  // Confirmação depois da API responder — nunca antes. Um "guardado"
+  // mostrado antes do servidor confirmar é uma mentira com bom aspeto.
+  const [sucesso, setSucesso] = useState('');
   const [busy, setBusy] = useState('');
 
   function load() {
@@ -29,6 +33,8 @@ export default function PlatformFees() {
     setError('');
     try {
       await api.patch(`/api/admin/platform-fees/${id}/charge`);
+      setSucesso(t('Taxa marcada como cobrada.'));
+      setTimeout(() => setSucesso(''), 3500);
       load();
     } catch (e) {
       setError(e.message);
@@ -65,6 +71,7 @@ export default function PlatformFees() {
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
       <Toolbar placeholder="Pesquisar por empresa ou fatura…" q={q} onQ={setQ} />
 
+      <SuccessBanner message={sucesso} />
       {error ? <div className="empty-state"><p>{error}</p></div> : (
         <div className="bz-card bz-tablewrap">
           <table className="bz-table">

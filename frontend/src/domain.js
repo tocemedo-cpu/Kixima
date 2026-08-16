@@ -4,9 +4,19 @@
 // mostra passa-os por t() (os componentes partilhados fazem-no sozinhos).
 import { activeLocale } from './i18n';
 
+// O rótulo de cada perfil, em português — que é a língua-chave do dicionário.
+//
+// `COMPANY_ADMIN` era o ÚNICO dos cinco em inglês: um utilizador português via
+// "Comprador", "Fornecedor", "Financeiro", "Admin do Sistema KIXIMA"... e
+// "Company Admin". Não era falta de tradução (a chave tinha EN e FR); era a
+// própria chave portuguesa escrita em inglês.
+//
+// "Dashboard" fica como está de propósito: é usado de forma consistente em toda
+// a aplicação e é um estrangeirismo assente no software de gestão. Trocá-lo por
+// "Painel" seria decisão de produto, não correção de defeito.
 export const ROLE_LABELS = {
   COMPRADOR: 'Comprador',
-  COMPANY_ADMIN: 'Company Admin',
+  COMPANY_ADMIN: 'Administrador da Empresa',
   FORNECEDOR: 'Fornecedor',
   FINANCEIRO: 'Financeiro',
   ADMIN_SISTEMA: 'Admin do Sistema KIXIMA',
@@ -107,6 +117,19 @@ export function formatUsd(amount, { decimais = 0 } = {}) {
     minimumFractionDigits: decimais,
     maximumFractionDigits: decimais,
   }).format(Number(amount ?? 0)) + ' USD';
+}
+
+/**
+ * Número simples (contagens, quantidades), no locale ativo.
+ *
+ * Existia por todo o lado como `n.toLocaleString('pt-PT')` — com o locale
+ * ESCRITO À MÃO. O efeito só se via mudando de idioma: um utilizador em inglês
+ * ou francês recebia a contagem com separadores portugueses, enquanto os
+ * valores em dinheiro ao lado, esses, seguiam o idioma escolhido. Dois números
+ * na mesma frase formatados por regras diferentes.
+ */
+export function formatNumber(value) {
+  return new Intl.NumberFormat(activeLocale()).format(Number(value ?? 0));
 }
 
 export function formatMoney(amount, currency = 'AOA') {

@@ -3,12 +3,13 @@
 // fornecedor nacional (emancipação burocrática e parcerias internacionais),
 // recebidas pela página pública. O Admin acompanha o estado de cada caso.
 import { useEffect, useState } from 'react';
-import { Field } from '../../components/Common';
+import { Field, SuccessBanner } from '../../components/Common';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, EmptyRow, Pagination } from '../../components/BuyerUI';
 import { formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
 import Button from '../../components/Button';
+
 
 const STATUS = [
   { key: '', label: 'Todas' },
@@ -38,6 +39,9 @@ export default function AdminSupplierDev() {
   const [notes, setNotes] = useState('');
   const [programFee, setProgramFee] = useState('');
   const [error, setError] = useState('');
+  // Confirmação depois da API responder — nunca antes. Um "guardado"
+  // mostrado antes do servidor confirmar é uma mentira com bom aspeto.
+  const [sucesso, setSucesso] = useState('');
   const [saving, setSaving] = useState(false);
 
   function load() {
@@ -52,6 +56,8 @@ export default function AdminSupplierDev() {
     setSaving(true); setError('');
     try {
       await api.patch(`/api/supplier-development/requests/${id}`, { adminNotes: notes || undefined, ...body });
+      setSucesso(t('Pedido atualizado.'));
+      setTimeout(() => setSucesso(''), 3500);
       if (close) { setOpen(null); setNotes(''); setProgramFee(''); }
       load();
     } catch (e) { setError(e.message); } finally { setSaving(false); }
@@ -86,6 +92,7 @@ export default function AdminSupplierDev() {
       <Tabs tabs={STATUS} value={status} onChange={(v) => { setStatus(v); setPage(1); }} />
       <Toolbar placeholder="Pesquisar por empresa, referência ou email…" q={q} onQ={(v) => { setQ(v); setPage(1); }} />
 
+      <SuccessBanner message={sucesso} />
       {error ? <div className="banner banner-error" style={{ marginBottom: 12 }}>{error}</div> : null}
 
       <div className="bz-card bz-tablewrap">

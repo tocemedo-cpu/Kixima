@@ -9,10 +9,12 @@ import { Crumbs, PageHead, KpiRow, Pill } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import AvatarUploader from '../../components/AvatarUploader';
 import { useI18n } from '../../i18n';
-import { PO_STATUS, ROLE_LABELS, formatMoney, formatDateTime } from '../../domain';
+import { PO_STATUS, ROLE_LABELS, formatMoney, formatDateTime, ROLE_HOME } from '../../domain';
 
 export default function Profile() {
-  const { updateUser } = useAuth();
+  // `utilizador` e não `user`: mais abaixo há um `user` vindo dos dados da
+  // página, e duas variáveis com o mesmo nome no mesmo âmbito não compilam.
+  const { user: utilizador, updateUser } = useAuth();
   const { t } = useI18n();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -30,7 +32,11 @@ export default function Profile() {
 
   return (
     <div>
-      <Crumbs trail={['Home', 'Perfil']} />
+      {/* Esta página é partilhada pelos cinco perfis, e "Home" não é o mesmo
+          sítio para todos. O destino sai do ROLE_HOME que já existe em
+          domain.js — fixar /comprador aqui levaria um fornecedor para uma
+          área a que nem tem acesso. */}
+      <Crumbs trail={[{ label: 'Home', to: ROLE_HOME[utilizador?.role] || '/' }, 'Perfil']} />
       <PageHead title="Meu Perfil" subtitle="Gerencie as suas informações pessoais, preferências e configurações da sua conta." />
 
       <div className="pf-top">

@@ -41,7 +41,7 @@ export default function Activities() {
 
   return (
     <div>
-      <Crumbs trail={['Home', 'Atividades']} />
+      <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Atividades']} />
       <PageHead title="Atividades" subtitle="Acompanhe e gerencie todas as suas atividades e tarefas relacionadas ao procurement." />
 
       <KpiRow cards={[

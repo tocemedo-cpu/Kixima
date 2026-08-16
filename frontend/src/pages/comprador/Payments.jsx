@@ -31,7 +31,7 @@ export default function Payments() {
   const k = data?.kpis;
   return (
     <div>
-      <Crumbs trail={['Home', 'Pagamento']} />
+      <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Pagamento']} />
       <PageHead title="Pagamentos" subtitle="Acompanhe e gerencie todos os pagamentos das suas ordens de compra." />
 
       <KpiRow cards={[

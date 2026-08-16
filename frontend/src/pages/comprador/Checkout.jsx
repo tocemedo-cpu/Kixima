@@ -51,7 +51,7 @@ export default function Checkout() {
   if (done) {
     return (
       <div>
-        <Crumbs trail={['Home', 'Minha Cesta', 'Checkout']} />
+        <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Minha Cesta', 'Checkout']} />
         <div className="empty-state">
           <div className="pf-avatar" style={{ margin: '0 auto 14px', background: '#16a066' }}><Icon name="reception" size={26} /></div>
           <h3>{done.length} {done.length === 1 ? t('Ordem de Compra gerada') : t('Ordens de Compra geradas')}</h3>
@@ -65,7 +65,7 @@ export default function Checkout() {
   if (items.length === 0) {
     return (
       <div>
-        <Crumbs trail={['Home', 'Minha Cesta', 'Checkout']} />
+        <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Minha Cesta', 'Checkout']} />
         <div className="empty-state"><h3>{t('A sua cesta está vazia')}</h3><p>{t('Adicione itens antes de finalizar a compra.')}</p>
           <button className="btn btn-accent" onClick={() => nav('/comprador/catalogo')}>{t('Explorar catálogo')}</button></div>
       </div>
@@ -74,7 +74,7 @@ export default function Checkout() {
 
   return (
     <div>
-      <Crumbs trail={['Home', 'Minha Cesta', 'Checkout']} />
+      <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Minha Cesta', 'Checkout']} />
       <PageHead title="Checkout" subtitle="Revise os itens e confirme a sua compra." />
 
       <div className="co-banner"><Icon name="shield" size={16} /> {t('Os itens estão agrupados por fornecedor. Cada fornecedor receberá uma Ordem de Compra (PO) diferente.')}</div>

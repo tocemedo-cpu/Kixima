@@ -60,7 +60,7 @@ export default function SupplierCompare() {
     api.get('/api/marketplace/compare', { productId }).then(setData).catch((e) => setError(e.message));
   }, [productId]);
 
-  if (error) return <div><Crumbs trail={['Home', 'Comparar fornecedores']} /><ErrorBanner message={error} /></div>;
+  if (error) return <div><Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Comparar fornecedores']} /><ErrorBanner message={error} /></div>;
   if (!data) return <Loading />;
 
   const offers = data.offers || [];
@@ -75,7 +75,7 @@ export default function SupplierCompare() {
 
   return (
     <div>
-      <Crumbs trail={['Home', 'Catálogo', 'Comparar fornecedores']} />
+      <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Catálogo', 'Comparar fornecedores']} />
       <PageHead
         title="Comparar fornecedores"
         subtitle={`${t('Ofertas para')}: ${itemName}${data.base?.unspscCode ? ` · UNSPSC ${data.base.unspscCode}` : ''}`}

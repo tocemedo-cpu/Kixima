@@ -36,7 +36,7 @@ export default function Receptions() {
   const k = data?.kpis;
   return (
     <div>
-      <Crumbs trail={['Home', 'Recepção']} />
+      <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Recepção']} />
       <PageHead title="Recepção" subtitle="Acompanhe e gestione a recepção de mercadorias e serviços das suas ordens de compra." />
 
       <KpiRow cards={[
