@@ -99,6 +99,15 @@ jobs:
       JWT_SECRET: ci-e2e-secret-com-comprimento-suficiente-para-passar
       NODE_ENV: development
       PORT: 4000
+      # O e2e corre ~90 testes seguidos com sessões reais (login, navegação,
+      # chat em tempo real) contra o MESMO backend — em NODE_ENV=development
+      # (não "test") o limitador geral da API está ativo, como em produção, e
+      # o volume de pedidos de uma suite inteira a correr sem as pausas de uma
+      # pessoa a sério esgota-o a meio (confirmado: os testes que falhavam
+      # aqui — navbar do mobile, catálogo, fronteira de cobranças — todos
+      # recebiam 429 do próprio backend, não um erro da aplicação). Sem isto
+      # não é a funcionalidade que se testa, é o limitador contra a suite.
+      API_RATE_LIMIT: '5000'
 
     steps:
       - uses: actions/checkout@v4
