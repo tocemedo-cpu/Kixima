@@ -123,6 +123,23 @@ jobs:
             backend/package-lock.json
             frontend/package-lock.json
 
+      # O checkpoint por tempo (checkpoint_timeout, por omissão 5 min) caiu
+      # bem no meio de uma corrida — confirmado no log do próprio serviço:
+      # "checkpoint starting: time" ... 47s a escrever, exatamente 5 min
+      # depois do Postgres arrancar. Durante esses 47s TODA a query bloqueia,
+      # e foi o suficiente para um teste (à espera de resposta do backend)
+      # exceder os 60s e falhar — não é a aplicação, é o I/O do contentor
+      # efémero do runner. Esta base morre com o job; não há razão para lhe
+      # exigir durabilidade a sério.
+      - name: Postgres — sem checkpoint a meio da suite (base efémera do CI)
+        env:
+          PGPASSWORD: kixima
+        run: |
+          psql -h 127.0.0.1 -U kixima -d kixima_e2e -c "ALTER SYSTEM SET checkpoint_timeout = '1h';"
+          psql -h 127.0.0.1 -U kixima -d kixima_e2e -c "ALTER SYSTEM SET max_wal_size = '4GB';"
+          psql -h 127.0.0.1 -U kixima -d kixima_e2e -c "ALTER SYSTEM SET synchronous_commit = off;"
+          psql -h 127.0.0.1 -U kixima -d kixima_e2e -c "SELECT pg_reload_conf();"
+
       - name: Backend — instalar, migrar e semear
         working-directory: backend
         run: |
