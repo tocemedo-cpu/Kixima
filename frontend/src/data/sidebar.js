@@ -8,6 +8,8 @@
 
 // Itens comuns ao rodapé de todas as personas.
 const COMMON_TAIL = [
+  { label: 'Suporte — Chat', icon: 'chat', to: '/suporte/chat', badge: 'suporte' },
+  { label: 'Chat Comercial', icon: 'chat', to: '/mensagens/chat-comercial', badge: 'chatComercial' },
   { label: 'Ajuda', icon: 'help', to: '/ajuda' },
   { label: 'Sair', icon: 'logout', action: 'logout' },
 ];
@@ -200,6 +202,8 @@ const ADMIN_SISTEMA = [
   { label: 'Planos e Subscrições', icon: 'building', to: '/sistema/planos', area: 'cadastro' },
   { label: 'Cobranças de subscrição', icon: 'invoice', to: '/sistema/cobrancas', area: 'financeiro' },
   { label: 'Supplier Development', icon: 'suppliers', to: '/sistema/supplier-development', area: 'suporte' },
+  { label: 'Chat de Suporte', icon: 'chat', to: '/suporte/chat', area: 'suporte', badge: 'suporte' },
+  { label: 'Alertas de Segurança', icon: 'alert', to: '/sistema/alertas-seguranca', area: 'suporte', badge: 'alertas' },
   {
     // No Admin do Sistema, o suporte e a ajuda vivem dentro das configurações.
     // Grupo sem `area` própria — mistura itens pessoais (sempre visíveis) com

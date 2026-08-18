@@ -6,6 +6,7 @@ import { Loading, ErrorBanner , Field } from '../../components/Common';
 import { formatMoney } from '../../domain';
 import { useCart } from './CartContext';
 import ProductCover from '../../components/ProductCover';
+import StartConversationButton from '../../components/chat/StartConversationButton';
 import { useI18n } from '../../i18n';
 
 const DOC_LABELS = {
@@ -83,7 +84,11 @@ export default function ItemDetail() {
           {product.benefits ? <DescBlock title={t('Benefícios')}>{product.benefits}</DescBlock> : null}
 
           <div style={{ marginTop: 20, display: 'grid', gap: 10, fontSize: 13.5 }}>
-            <Row label={t('Fornecedor')}>{product.supplier?.name}</Row>
+            <Row label={t('Fornecedor')}>
+              {product.supplier?.name}
+              {' '}
+              <StartConversationButton contextType="product" contextId={product.id} label="Falar com o fornecedor" className="pf-link" />
+            </Row>
             {idents.map(([k, label]) => <Row key={k} label={t(label)}>{product[k]}</Row>)}
             {product.leadTimeDays ? <Row label={t('Prazo de entrega')}>{product.leadTimeDays} {t('dias')}</Row> : null}
             {product.availability ? <Row label={t('Disponibilidade')}>{product.availability}</Row> : null}

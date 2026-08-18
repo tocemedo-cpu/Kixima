@@ -51,6 +51,8 @@ const PATHS = {
   shield: <g {...P}><path d="M12 3l7 3v5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z" /></g>,
   bell: <g {...P}><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></g>,
   report: <g {...P}><path d="M6 2h9l3 3v17H6z" /><path d="M9 13l2 2 4-4M9 8h6" /></g>,
+  chat: <g {...P}><path d="M4 4h16v11H8l-4 4z" /><path d="M8 9h8M8 12.5h5" /></g>,
+  alert: <g {...P}><path d="M12 3 2 20h20z" /><path d="M12 9v5M12 17h.01" /></g>,
 };
 
 export function Icon({ name, size = 18, className }) {

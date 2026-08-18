@@ -4,9 +4,15 @@
 // aparecem sem número no fundo. O logótipo e o utilizador vivem na navbar.
 import SidebarItem from './SidebarItem';
 
-export default function Sidebar({ items, cartCount = 0, onLogout, onNavigate }) {
-  const badgeFor = (item) => (item.badge === 'cart' && cartCount > 0 ? cartCount : null);
-  const isTail = (item) => item.action === 'logout' || item.to === '/ajuda';
+const TAIL_PATHS = new Set(['/ajuda', '/suporte/chat', '/mensagens/chat-comercial']);
+
+export default function Sidebar({ items, cartCount = 0, badges = {}, onLogout, onNavigate }) {
+  const badgeFor = (item) => {
+    if (item.badge === 'cart') return cartCount > 0 ? cartCount : null;
+    const n = badges[item.badge];
+    return n > 0 ? n : null;
+  };
+  const isTail = (item) => item.action === 'logout' || TAIL_PATHS.has(item.to);
   const main = items.filter((i) => !isTail(i));
   const tail = items.filter(isTail);
 

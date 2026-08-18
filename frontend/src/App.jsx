@@ -6,6 +6,7 @@ import { RequireAuth, RequireRole } from './auth/RequireAuth';
 import { ROLE_HOME } from './domain';
 import AppLayout from './components/AppLayout';
 import { CartProvider } from './pages/comprador/CartContext';
+import { RealtimeProvider } from './realtime/RealtimeContext';
 
 // A página de login fica eager (é o primeiro ecrã) — evita um flash de "a
 // carregar" no arranque. Todas as outras páginas são carregadas a pedido
@@ -22,6 +23,8 @@ const Plans = lazy(() => import('./pages/shared/Plans'));
 const Notifications = lazy(() => import('./pages/shared/Notifications'));
 const Profile = lazy(() => import('./pages/shared/Profile'));
 const Help = lazy(() => import('./pages/shared/Help'));
+const SuporteChat = lazy(() => import('./pages/shared/SuporteChat'));
+const ChatComercial = lazy(() => import('./pages/shared/ChatComercial'));
 const OrderDetail = lazy(() => import('./pages/shared/OrderDetail'));
 const ModulePlaceholder = lazy(() => import('./pages/shared/ModulePlaceholder'));
 const Security = lazy(() => import('./pages/shared/Security'));
@@ -96,6 +99,7 @@ const AdminPlans = lazy(() => import('./pages/adminSistema/Plans'));
 const AdminSupplierDev = lazy(() => import('./pages/adminSistema/SupplierDev'));
 const Prontidao = lazy(() => import('./pages/adminSistema/Prontidao'));
 const Cobrancas = lazy(() => import('./pages/adminSistema/Cobrancas'));
+const SecurityAlerts = lazy(() => import('./pages/adminSistema/SecurityAlerts'));
 
 // Ecrã de recurso enquanto o chunk de uma rota é carregado.
 function PageLoading() {
@@ -112,9 +116,11 @@ function Landing() {
 // de itens. Para as outras personas o provider fica inativo (sem custo).
 function Shell() {
   return (
-    <CartProvider>
-      <AppLayout />
-    </CartProvider>
+    <RealtimeProvider>
+      <CartProvider>
+        <AppLayout />
+      </CartProvider>
+    </RealtimeProvider>
   );
 }
 
@@ -145,6 +151,8 @@ export default function App() {
           <Route path="/notificacoes" element={<Notifications />} />
           <Route path="/perfil" element={<Profile />} />
           <Route path="/ajuda" element={<Help />} />
+          <Route path="/suporte/chat" element={<SuporteChat />} />
+          <Route path="/mensagens/chat-comercial" element={<ChatComercial />} />
           <Route path="/seguranca" element={<Security />} />
 
           {/* Comprador */}
@@ -254,6 +262,7 @@ export default function App() {
             <Route path="/sistema/supplier-development" element={<AdminSupplierDev />} />
             <Route path="/sistema/prontidao" element={<Prontidao />} />
             <Route path="/sistema/cobrancas" element={<Cobrancas />} />
+            <Route path="/sistema/alertas-seguranca" element={<SecurityAlerts />} />
           </Route>
         </Route>
       </Route>

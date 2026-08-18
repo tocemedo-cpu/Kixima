@@ -9,6 +9,7 @@ import PaymentSlaRing from '../../components/PaymentSlaRing';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
 import Button from '../../components/Button';
+import StartConversationButton from '../../components/chat/StartConversationButton';
 
 const BACK_BY_ROLE = {
   COMPRADOR: '/comprador/ordens',
@@ -96,6 +97,12 @@ export default function OrderDetail() {
           <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/fatura/${po.id}`, '_blank')}>
             {t('Ver / Imprimir Fatura')}
           </button>
+        ) : null}
+        {user.companyId ? (
+          <StartConversationButton
+            contextType="purchase_order" contextId={po.id}
+            label={user.companyType === 'FORNECEDOR' ? 'Falar com o comprador' : 'Falar com o fornecedor'}
+          />
         ) : null}
       </div>
 

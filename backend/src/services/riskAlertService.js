@@ -32,7 +32,10 @@ async function listarAlertas({ status } = {}) {
     const c = convPorId[a.conversationId];
     return {
       ...a,
-      conversation: c ? { id: c.id, buyerCompany: empPorId[c.buyerCompanyId], supplierCompany: empPorId[c.supplierCompanyId] } : null,
+      conversation: c ? {
+        id: c.id, buyerCompanyId: c.buyerCompanyId, supplierCompanyId: c.supplierCompanyId,
+        buyerCompany: empPorId[c.buyerCompanyId], supplierCompany: empPorId[c.supplierCompanyId],
+      } : null,
     };
   });
 }

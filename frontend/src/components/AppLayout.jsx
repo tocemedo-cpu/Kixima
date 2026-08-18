@@ -23,6 +23,12 @@ export default function AppLayout() {
   const [porLer, setPorLer] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const { count: cartCount } = useCart();
+  // Três contadores SEPARADOS do sino de notificações genérico — "Suporte: X
+  // mensagens", "Chat Comercial: X mensagens", "Alertas de Segurança: X" não
+  // se misturam entre si nem com o resto (ver a regra explícita do pedido).
+  const [suporteNaoLidas, setSuporteNaoLidas] = useState(0);
+  const [comercialNaoLidas, setComercialNaoLidas] = useState(0);
+  const [alertasAbertos, setAlertasAbertos] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,6 +40,18 @@ export default function AppLayout() {
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [location.pathname]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/api/support/unread-count').then((d) => { if (!cancelled) setSuporteNaoLidas(d.count || 0); }).catch(() => {});
+    api.get('/api/conversations/unread-count').then((d) => { if (!cancelled) setComercialNaoLidas(d.count || 0); }).catch(() => {});
+    // Só quem gere Suporte tem alertas para ver — a rota devolve 403 para o
+    // resto, e o contador fica calado (0) sem mostrar erro nenhum.
+    if (user?.role === 'ADMIN_SISTEMA') {
+      api.get('/api/conversations/admin/alerts', { status: 'ABERTO' }).then((d) => { if (!cancelled) setAlertasAbertos(Array.isArray(d) ? d.length : 0); }).catch(() => {});
+    }
+    return () => { cancelled = true; };
+  }, [location.pathname, user?.role]);
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
@@ -74,7 +92,11 @@ export default function AppLayout() {
         onLogout={logout}
       />
 
-      <Sidebar items={items} cartCount={cartCount} onLogout={logout} onNavigate={() => setMenuOpen(false)} />
+      <Sidebar
+        items={items} cartCount={cartCount}
+        badges={{ suporte: suporteNaoLidas, chatComercial: comercialNaoLidas, alertas: alertasAbertos }}
+        onLogout={logout} onNavigate={() => setMenuOpen(false)}
+      />
       <div className="sb-scrim" onClick={() => setMenuOpen(false)} />
 
       <main className="content" id="conteudo" tabIndex={-1}>
