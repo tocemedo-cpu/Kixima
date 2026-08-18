@@ -45,18 +45,18 @@ enum CompanySize {
 // pagamentos, utilizadores nem documentos —, guarda-se em hash, mostra-se uma
 // única vez e revoga-se sem apagar o histórico de uso.
 model ApiKey {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id         String    @id @default(uuid())
+  companyId  String    @map("company_id")
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   // Nome dado por quem a criou ("ERP da produção"), para saber o que revogar.
-  nome      String
+  nome       String
   // Prefixo visível (kxm_a1b2…) — permite identificar a chave sem a guardar.
-  prefixo   String   @unique
-  hash      String
-  criadaPor String?  @map("criada_por")
-  ultimoUso DateTime? @map("ultimo_uso")
+  prefixo    String    @unique
+  hash       String
+  criadaPor  String?   @map("criada_por")
+  ultimoUso  DateTime? @map("ultimo_uso")
   revogadaEm DateTime? @map("revogada_em")
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   @@index([companyId])
   @@map("api_keys")
@@ -84,39 +84,39 @@ enum CompanyPlan {
 // pedisse o Pro e ficasse logo com o Pro tinha o plano de graça enquanto a
 // transferência não chegasse — ou nunca chegasse.
 enum CobrancaStatus {
-  PENDENTE            // emitida, à espera de pagamento
+  PENDENTE // emitida, à espera de pagamento
   COMPROVATIVO_ENVIADO // empresa carregou o comprovativo, aguarda confirmação
-  CONFIRMADA          // KIXIMA confirmou: o plano muda AQUI
+  CONFIRMADA // KIXIMA confirmou: o plano muda AQUI
   CANCELADA
 }
 
 model PlanoCobranca {
-  id          String         @id @default(uuid())
-  referencia  String         @unique          // SUB-2026-000001
-  companyId   String         @map("company_id")
-  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id         String  @id @default(uuid())
+  referencia String  @unique // SUB-2026-000001
+  companyId  String  @map("company_id")
+  company    Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  planoAtual  CompanyPlan    @map("plano_atual")
-  planoNovo   CompanyPlan    @map("plano_novo")
+  planoAtual CompanyPlan @map("plano_atual")
+  planoNovo  CompanyPlan @map("plano_novo")
   // Preço GRAVADO no momento do pedido. Se a tabela mudar amanhã, esta cobrança
   // continua a valer o que foi acordado — uma cobrança que muda de valor
   // sozinha não é uma cobrança.
-  valorUsd    Decimal        @map("valor_usd") @db.Decimal(12, 2)
-  periodo     String                          // MENSAL | TRIMESTRAL | ANUAL
-  meses       Int
+  valorUsd   Decimal     @map("valor_usd") @db.Decimal(12, 2)
+  periodo    String // MENSAL | TRIMESTRAL | ANUAL
+  meses      Int
 
-  status      CobrancaStatus @default(PENDENTE)
-  comprovativoUrl String?    @map("comprovativo_url")
-  submetidoEm DateTime?      @map("submetido_em")
-  confirmadaPor String?      @map("confirmada_por")
-  confirmadaEm  DateTime?    @map("confirmada_em")
+  status          CobrancaStatus @default(PENDENTE)
+  comprovativoUrl String?        @map("comprovativo_url")
+  submetidoEm     DateTime?      @map("submetido_em")
+  confirmadaPor   String?        @map("confirmada_por")
+  confirmadaEm    DateTime?      @map("confirmada_em")
   // Até quando a subscrição fica paga, calculado na confirmação.
-  validoAte     DateTime?    @map("valido_ate")
-  notas         String?
+  validoAte       DateTime?      @map("valido_ate")
+  notas           String?
 
-  createdById String?        @map("created_by_id")
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@index([companyId])
   @@index([status])
@@ -186,40 +186,42 @@ model Company {
 
   // Nome + cidade + país normalizados (ver migração 20260831010000).
   // Mantido por gatilho, como o dos produtos.
-  searchText       String?     @map("search_text")
-  apiKeys          ApiKey[]
+  searchText     String?         @map("search_text")
+  apiKeys        ApiKey[]
   // Até quando a subscrição está paga. Null = nunca foi cobrada (o Base de
   // arranque, ou uma empresa que a KIXIMA pôs num plano à mão).
-  planoValidoAte   DateTime?   @map("plano_valido_ate")
-  cobrancas        PlanoCobranca[]
+  planoValidoAte DateTime?       @map("plano_valido_ate")
+  cobrancas      PlanoCobranca[]
   // Preço por utilizador/mês (USD). Teto do plano BASICO: 100 USD.
-  seatPriceUsd     Decimal     @default(100) @map("seat_price_usd") @db.Decimal(10, 2)
-  planNotes        String?     @map("plan_notes")
+  seatPriceUsd   Decimal         @default(100) @map("seat_price_usd") @db.Decimal(10, 2)
+  planNotes      String?         @map("plan_notes")
 
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
   approvedAt DateTime? @map("approved_at")
   rejectedAt DateTime? @map("rejected_at")
 
-  users               User[]
-  productsOffered     Product[]                @relation("SupplierProducts")
-  purchaseOrdersMade  PurchaseOrder[]          @relation("BuyerCompanyOrders")
-  purchaseOrdersRecv  PurchaseOrder[]          @relation("SupplierCompanyOrders")
-  contractsAsClient   Contract[]               @relation("ClientContracts")
-  contractsAsSupplier Contract[]               @relation("SupplierContracts")
-  supplierPolicies    SupplierToKiximaPolicy[]
-  clientPolicies      KiximaToClientPolicy[]
-  notifications       Notification[]
-  budgetLimit         BudgetLimit?
-  documents           CompanyDocument[]
-  kits                Kit[]                    @relation("SupplierKits")
-  quotesAsBuyer       QuoteRequest[]           @relation("BuyerQuotes")
-  quotesAsSupplier    QuoteRequest[]           @relation("SupplierQuotes")
-  erpConfig           CompanyErpConfig?
-  erpConfigAudits     CompanyErpConfigAudit[]
-  employeeInvites     EmployeeInvite[]
-  platformFees        PlatformFee[]
-  supplierDevRequests SupplierDevRequest[]
+  users                   User[]
+  productsOffered         Product[]                @relation("SupplierProducts")
+  purchaseOrdersMade      PurchaseOrder[]          @relation("BuyerCompanyOrders")
+  purchaseOrdersRecv      PurchaseOrder[]          @relation("SupplierCompanyOrders")
+  contractsAsClient       Contract[]               @relation("ClientContracts")
+  contractsAsSupplier     Contract[]               @relation("SupplierContracts")
+  supplierPolicies        SupplierToKiximaPolicy[]
+  clientPolicies          KiximaToClientPolicy[]
+  notifications           Notification[]
+  budgetLimit             BudgetLimit?
+  documents               CompanyDocument[]
+  kits                    Kit[]                    @relation("SupplierKits")
+  quotesAsBuyer           QuoteRequest[]           @relation("BuyerQuotes")
+  quotesAsSupplier        QuoteRequest[]           @relation("SupplierQuotes")
+  erpConfig               CompanyErpConfig?
+  erpConfigAudits         CompanyErpConfigAudit[]
+  employeeInvites         EmployeeInvite[]
+  platformFees            PlatformFee[]
+  supplierDevRequests     SupplierDevRequest[]
+  conversationsAsBuyer    Conversation[]           @relation("ConversationAsBuyer")
+  conversationsAsSupplier Conversation[]           @relation("ConversationAsSupplier")
 
   @@map("companies")
 }
@@ -388,17 +390,17 @@ model User {
   companyId String?  @map("company_id") // null para ADMIN_SISTEMA
   company   Company? @relation(fields: [companyId], references: [id])
 
-  avatarUrl       String?   @map("avatar_url") // foto de perfil (upload ou câmera)
+  avatarUrl         String?   @map("avatar_url") // foto de perfil (upload ou câmera)
   // Idioma escolhido na plataforma (pt/en/fr). Guardado no servidor para os
   // EMAILS saírem na língua do destinatário — o localStorage do browser não
   // serve para nada quando é o servidor a escrever a mensagem.
-  locale          String?   @map("locale")
-  active          Boolean   @default(true)
+  locale            String?   @map("locale")
+  active            Boolean   @default(true)
   // Versão de sessão: incrementar invalida imediatamente todos os tokens JWT
   // já emitidos para este utilizador (logout global, troca de senha, etc.).
-  tokenVersion    Int       @default(0) @map("token_version")
+  tokenVersion      Int       @default(0) @map("token_version")
   // Aceite individual dos Termos/Privacidade (registo por convite).
-  termsAcceptedAt DateTime? @map("terms_accepted_at")
+  termsAcceptedAt   DateTime? @map("terms_accepted_at")
   // --- Verificação em dois passos -------------------------------------------
   // NOTA SOBRE O NOME: `totpEnabledAt` é histórico — hoje significa "2FA ativa
   // desde", seja qual for o método. Mantém-se assim de propósito: renomear a
@@ -407,16 +409,16 @@ model User {
   //
   //   EMAIL → o código de 6 dígitos é enviado para o email da pessoa (omissão)
   //   TOTP  → app de autenticação; mantido para quem já a tinha configurada
-  mfaMethod       String?   @map("mfa_method")
-  totpSecret      String?   @map("totp_secret")
-  totpEnabledAt   DateTime? @map("totp_enabled_at")
+  mfaMethod         String?   @map("mfa_method")
+  totpSecret        String?   @map("totp_secret")
+  totpEnabledAt     DateTime? @map("totp_enabled_at")
   // Código enviado por email, à espera de confirmação. Guarda-se o HASH: é uma
   // credencial, e quem lê a base não pode entrar na conta de ninguém.
-  mfaCodeHash     String?   @map("mfa_code_hash")
-  mfaCodeExpiraEm DateTime? @map("mfa_code_expira_em")
+  mfaCodeHash       String?   @map("mfa_code_hash")
+  mfaCodeExpiraEm   DateTime? @map("mfa_code_expira_em")
   // Tentativas falhadas neste código. Ao fim de poucas, o código morre — sem
   // isto, dez minutos de validade dariam para tentar muitos dos 10^6 valores.
-  mfaCodeTentativas Int     @default(0) @map("mfa_code_tentativas")
+  mfaCodeTentativas Int       @default(0) @map("mfa_code_tentativas")
 
   // --- Tentativas de entrada falhadas (bloqueio progressivo) ----------------
   // O limite por IP não protege uma CONTA: quem rode endereços tenta senhas sem
@@ -435,15 +437,19 @@ model User {
   // Trava reenvios seguidos (e impede usar a plataforma para enviar email a
   // outra pessoa em catadupa).
   mfaCodeEnviadoEm DateTime? @map("mfa_code_enviado_em")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
-  purchaseOrdersCreated  PurchaseOrder[] @relation("PoCreatedBy")
-  purchaseOrdersApproved PurchaseOrder[] @relation("PoApprovedBy")
-  notifications          Notification[]
-  favorites              Favorite[]
-  reviews                Review[]
-  savedSearches          SavedSearch[]
+  purchaseOrdersCreated   PurchaseOrder[]       @relation("PoCreatedBy")
+  purchaseOrdersApproved  PurchaseOrder[]       @relation("PoApprovedBy")
+  notifications           Notification[]
+  favorites               Favorite[]
+  reviews                 Review[]
+  savedSearches           SavedSearch[]
+  supportTicketsAssumidos SupportTicket[]       @relation("SupportTicketAssignee")
+  supportMessages         SupportMessage[]
+  conversationMessages    ConversationMessage[]
+  riskAlertsAnalisados    RiskAlert[]           @relation("RiskAlertReviewer")
 
   @@index([companyId])
   @@map("users")
@@ -543,15 +549,15 @@ model Product {
 
   // Reputação (marketplace) — média de avaliações e nº de avaliações.
   rating      Float?
-  reviewCount Int     @default(0) @map("review_count")
-  viewCount   Int     @default(0) @map("view_count") // nº de visualizações por compradores
+  reviewCount Int    @default(0) @map("review_count")
+  viewCount   Int    @default(0) @map("view_count") // nº de visualizações por compradores
 
   // Texto de pesquisa normalizado (minúsculas, sem acentos), mantido por um
   // GATILHO na base — nunca escrito pela aplicação. Ver a migração
   // 20260831000000_pesquisa_sem_acentos para o porquê do gatilho e não de
   // código aqui. Nullable porque o gatilho a preenche; nunca fica vazia.
-  searchText  String? @map("search_text")
-  imageUrl    String? @map("image_url") // imagem principal (destaque no marketplace)
+  searchText String? @map("search_text")
+  imageUrl   String? @map("image_url") // imagem principal (destaque no marketplace)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -878,17 +884,17 @@ model Invoice {
   // --- Faturação certificada (AGT) ------------------------------------------
   // Nulos nas faturas anteriores à série certificada, e é assim que se
   // distinguem. Ver a migração 20260901000000_faturacao_agt.
-  serie          String?   @map("serie")
-  numeroNaSerie  Int?      @map("numero_na_serie")
+  serie         String?   @map("serie")
+  numeroNaSerie Int?      @map("numero_na_serie")
   // Cada documento assina o anterior: adulterar um deles parte a cadeia a partir dele.
-  hashDocumento  String?   @map("hash_documento")
-  hashAnterior   String?   @map("hash_anterior")
-  assinadaEm     DateTime? @map("assinada_em")
+  hashDocumento String?   @map("hash_documento")
+  hashAnterior  String?   @map("hash_anterior")
+  assinadaEm    DateTime? @map("assinada_em")
 
   // Referência que o pagador escreve na transferência. Única em toda a
   // plataforma — é por ela que a conciliação encontra a fatura, e duas iguais
   // tornariam a conciliação ambígua, que é o mesmo que inútil.
-  referenciaPagamento String? @unique @map("referencia_pagamento")
+  referenciaPagamento String?        @unique @map("referencia_pagamento")
   linhasExtrato       LinhaExtrato[]
 
   payment     Payment?
@@ -916,19 +922,19 @@ model Invoice {
 // mal: "o dinheiro entrou?". "Não encontrámos nada" e "entrou mas não casou"
 // são respostas diferentes — a segunda tem uma linha aqui, a primeira não.
 model LinhaExtrato {
-  id        String   @id @default(uuid())
+  id           String    @id @default(uuid())
   // Identificador da linha no banco: é o que torna a importação idempotente.
   // Reenviar um extrato é banal, e não pode pagar a mesma fatura duas vezes.
-  idNoBanco String   @unique @map("id_no_banco")
-  dataValor DateTime @map("data_valor")
-  montante  Decimal  @db.Decimal(14, 2)
-  moeda     String   @default("AOA")
-  descricao String?
-  referencia String?
-  estado    String   @default("POR_CONCILIAR")
-  invoiceId String?  @map("invoice_id")
-  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
-  motivo    String?
+  idNoBanco    String    @unique @map("id_no_banco")
+  dataValor    DateTime  @map("data_valor")
+  montante     Decimal   @db.Decimal(14, 2)
+  moeda        String    @default("AOA")
+  descricao    String?
+  referencia   String?
+  estado       String    @default("POR_CONCILIAR")
+  invoiceId    String?   @map("invoice_id")
+  invoice      Invoice?  @relation(fields: [invoiceId], references: [id])
+  motivo       String?
   importadaEm  DateTime  @default(now()) @map("importada_em")
   conciliadaEm DateTime? @map("conciliada_em")
 
@@ -938,15 +944,15 @@ model LinhaExtrato {
 }
 
 model SerieFaturacao {
-  id            String   @id @default(uuid())
-  codigo        String
-  ano           Int
-  ultimoNumero  Int      @default(0) @map("ultimo_numero")
+  id           String   @id @default(uuid())
+  codigo       String
+  ano          Int
+  ultimoNumero Int      @default(0) @map("ultimo_numero")
   // O elo a que a próxima fatura se agarra.
-  ultimoHash    String?  @map("ultimo_hash")
-  ativa         Boolean  @default(true)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  ultimoHash   String?  @map("ultimo_hash")
+  ativa        Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@unique([codigo, ano])
   @@map("series_faturacao")
@@ -971,15 +977,15 @@ model Payment {
   invoiceId String  @unique @map("invoice_id")
   invoice   Invoice @relation(fields: [invoiceId], references: [id])
 
-  amount        Decimal       @db.Decimal(14, 2)
-  currency      String        @default("AOA")
-  status        PaymentStatus @default(PROCESSADO)
+  amount        Decimal        @db.Decimal(14, 2)
+  currency      String         @default("AOA")
+  status        PaymentStatus  @default(PROCESSADO)
   canal         CanalPagamento @default(TRANSFERENCIA_MANUAL)
   // Nulo quando o pagamento foi conciliado automaticamente: ninguém o
   // executou, foi o extrato que bateu certo. Um utilizador "sistema" seria
   // pior — uma conta que executa pagamentos e a quem ninguém pede contas.
-  processedById String?       @map("processed_by_id") // utilizador Financeiro que executou
-  reference     String        @unique // referência da transação
+  processedById String?        @map("processed_by_id") // utilizador Financeiro que executou
+  reference     String         @unique // referência da transação
 
   // Comprovativo da transferência (obrigatório ao pagar) — prova de que o
   // dinheiro saiu, visível ao fornecedor.
@@ -1145,6 +1151,13 @@ enum NotificationType {
   CADASTRO_EMPRESA_REJEITADO
   SUBSCRICAO_COMPROVATIVO
   SUBSCRICAO_CONFIRMADA
+  // Chat de Suporte, Chat Comercial e Trust & Safety — três tipos distintos
+  // de propósito: é o que permite ao frontend mostrar três contadores
+  // separados (Suporte / Chat Comercial / Alertas de Segurança) sem misturar
+  // mensagens de naturezas diferentes.
+  SUPORTE_MENSAGEM
+  CHAT_COMERCIAL_MENSAGEM
+  ALERTA_SEGURANCA
 }
 
 model Notification {
@@ -1205,8 +1218,157 @@ model SupportTicket {
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
 
+  // Chat de Suporte — acrescentado por cima do ticket já existente, sem mudar
+  // nenhum campo/estado dos que já lá estavam. Quem da equipa assumiu a
+  // conversa (nulo = ninguém assumiu, está na fila) e o histórico de
+  // mensagens que se seguem à primeira (que continua a viver em `message`).
+  assignedToId String?          @map("assigned_to_id")
+  assignedTo   User?            @relation("SupportTicketAssignee", fields: [assignedToId], references: [id])
+  messages     SupportMessage[]
+
   @@index([userId])
+  @@index([assignedToId])
   @@map("support_tickets")
+}
+
+// Mensagens do Chat de Suporte, associadas a um SupportTicket.
+model SupportMessage {
+  id       String        @id @default(uuid())
+  ticketId String        @map("ticket_id")
+  ticket   SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  authorId   String      @map("author_id")
+  author     User        @relation(fields: [authorId], references: [id])
+  // Denormalizado: poupa um join só para saber se quem escreveu é o cliente
+  // ou alguém da equipa de suporte (a UI colore a bolha de forma diferente).
+  authorRole PersonaRole @map("author_role")
+
+  body           String
+  attachmentUrl  String? @map("attachment_url")
+  attachmentName String? @map("attachment_name")
+
+  // Lida pelo OUTRO LADO. O "lido" é da equipa, não de um agente — é uma
+  // fila partilhada, não caixas de correio pessoais: se um agente já leu a
+  // mensagem do cliente, não faz sentido outro agente vê-la como nova.
+  readAt DateTime? @map("read_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([ticketId])
+  @@map("support_messages")
+}
+
+enum ConversationStatus {
+  ABERTA
+  FECHADA
+}
+
+// ---------------------------------------------------------------------------
+// Chat Comercial — comprador ↔ fornecedor/prestador. contextType/contextId
+// seguem o mesmo padrão polimórfico já usado em
+// Notification.relatedEntityType/relatedEntityId, para associar a conversa a
+// uma cotação, ordem de compra ou contrato quando existir um — mas a
+// conversa também pode existir só entre as duas empresas, sem contexto.
+// ---------------------------------------------------------------------------
+model Conversation {
+  id String @id @default(uuid())
+
+  buyerCompanyId String  @map("buyer_company_id")
+  buyerCompany   Company @relation("ConversationAsBuyer", fields: [buyerCompanyId], references: [id])
+
+  supplierCompanyId String  @map("supplier_company_id")
+  supplierCompany   Company @relation("ConversationAsSupplier", fields: [supplierCompanyId], references: [id])
+
+  contextType String? @map("context_type") // "QuoteRequest" | "PurchaseOrder" | "Contract" | "Product"
+  contextId   String? @map("context_id")
+
+  status ConversationStatus @default(ABERTA)
+
+  createdById String @map("created_by_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  messages   ConversationMessage[]
+  riskAlerts RiskAlert[]
+
+  @@index([buyerCompanyId])
+  @@index([supplierCompanyId])
+  @@index([contextType, contextId])
+  @@map("conversations")
+}
+
+model ConversationMessage {
+  id             String       @id @default(uuid())
+  conversationId String       @map("conversation_id")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId        String @map("sender_id")
+  sender          User   @relation(fields: [senderId], references: [id])
+  // Denormalizado: de que EMPRESA a mensagem partiu. É o que torna a
+  // verificação de posse uma comparação direta em vez de um join por
+  // mensagem antiga — e o que sobrevive se o autor um dia sair da empresa.
+  senderCompanyId String @map("sender_company_id")
+
+  body           String
+  attachmentUrl  String? @map("attachment_url")
+  attachmentName String? @map("attachment_name")
+
+  readAt DateTime? @map("read_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  riskAlert RiskAlert?
+
+  @@index([conversationId])
+  @@map("conversation_messages")
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RiskAlertStatus {
+  ABERTO
+  EM_ANALISE
+  FALSO_POSITIVO
+  RESOLVIDO
+}
+
+// ---------------------------------------------------------------------------
+// Trust & Safety — possível tentativa de levar a negociação/pagamento para
+// fora do Kixima. Só existe um registo aqui quando o risco já é MEDIUM ou
+// mais: risco baixo é classificado mas não persseguido (ver
+// riskAnalysisService.js) — é o que impede o suporte de "receber todas as
+// conversas comerciais".
+// ---------------------------------------------------------------------------
+model RiskAlert {
+  id             String       @id @default(uuid())
+  conversationId String       @map("conversation_id")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  messageId String?              @unique @map("message_id")
+  message   ConversationMessage? @relation(fields: [messageId], references: [id])
+
+  level   RiskLevel
+  reason  String // frase curta e legível do motivo
+  signals Json? // nomes internos dos sinais que dispararam
+  context Json? // excerto da conversa relevante para a análise
+
+  status       RiskAlertStatus @default(ABERTO)
+  reviewedById String?         @map("reviewed_by_id")
+  reviewedBy   User?           @relation("RiskAlertReviewer", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?       @map("reviewed_at")
+  decision     String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([conversationId])
+  @@index([status])
+  @@map("risk_alerts")
 }
 
 // ---------------------------------------------------------------------------

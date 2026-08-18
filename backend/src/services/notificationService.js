@@ -11,6 +11,7 @@ const logger = require('../config/logger');
 // sem tocar no resto do código.
 const config = require('../config/env');
 const emailI18n = require('../i18n/emails');
+const realtimeService = require('./realtimeService');
 
 // Separa o EMAIL_FROM ("Nome <email>" ou "email") em nome + email.
 function parseFrom(from) {
@@ -164,6 +165,12 @@ async function notifyUser({ userId, type, title, message, channel = 'IN_APP', re
     // português porque a interface a traduz do lado do cliente.
     await dispatchEmail(emailTo, emailI18n.t(title, locale), emailI18n.t(message, locale));
   }
+
+  // Sem efeito se o Socket.IO não estiver inicializado (testes, ou o
+  // utilizador sem sessão aberta) — a notificação já ficou gravada acima de
+  // qualquer forma; isto só evita que a interface precise de recarregar a
+  // página para a ver.
+  realtimeService.emitToUser(userId, 'notification:new', notification);
 
   return notification;
 }

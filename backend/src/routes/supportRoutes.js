@@ -7,8 +7,10 @@ const path = require('path');
 const { authenticate } = require('../middleware/auth');
 const { requireRole, requirePermission } = require('../middleware/rbac');
 const { SUPORTE } = require('../utils/adminAreas');
-const { upload } = require('../config/upload');
+const { upload, uploadDocuments } = require('../config/upload');
+const { chatMessageLimiter } = require('../middleware/rateLimit');
 const storageService = require('../services/storageService');
+const supportChat = require('../services/supportChatService');
 const prisma = require('../config/database');
 
 const router = express.Router();
@@ -252,6 +254,89 @@ router.patch('/tickets/:id', requireRole('ADMIN_SISTEMA'), requirePermission(SUP
   if (!STATUSES.includes(status)) return res.status(400).json({ error: { code: 'INVALID', message: 'Estado inválido.' } });
   const t = await prisma.supportTicket.update({ where: { id: req.params.id }, data: { status } });
   res.json(t);
+});
+
+// -------------------------------------------------------------------------
+// Chat de Suporte — mensagens em tempo real por cima do ticket. O ticket em
+// si (criação, listagem simples, mudança de estado avulsa) continua exatamente
+// como estava acima; isto só acrescenta a conversa.
+// -------------------------------------------------------------------------
+
+// Contador para o separador "Suporte: X mensagens" — serve tanto ao cliente
+// (mensagens não lidas nos SEUS pedidos) como ao assessor (nos que atende).
+router.get('/unread-count', async (req, res) => {
+  res.json({ count: await supportChat.contarNaoLidas(req.user) });
+});
+
+router.get('/tickets/:id', async (req, res) => {
+  const ticket = await supportChat.ticketComAcesso(req.params.id, req.user);
+  res.json({ ...ticket, statusLabel: supportChat.LABEL_ESTADO[ticket.status] });
+});
+
+router.get('/tickets/:id/messages', async (req, res) => {
+  res.json(await supportChat.listarMensagens(req.params.id, req.user));
+});
+
+router.post('/tickets/:id/messages', chatMessageLimiter, uploadDocuments.single('attachment'), async (req, res) => {
+  let attachmentUrl;
+  let attachmentName;
+  if (req.file) {
+    attachmentUrl = await storageService.saveFile({
+      buffer: req.file.buffer, originalname: req.file.originalname,
+      mimetype: req.file.mimetype, keyHint: `support-msg-${req.params.id}`, folder: 'support-chat',
+    });
+    attachmentName = req.file.originalname;
+  }
+  const mensagem = await supportChat.enviarMensagem(
+    req.params.id, req.user, { body: req.body?.body, attachmentUrl, attachmentName }, req,
+  );
+  res.status(201).json(mensagem);
+});
+
+router.post('/tickets/:id/read', async (req, res) => {
+  await supportChat.marcarLidas(req.params.id, req.user);
+  res.json({ ok: true });
+});
+
+// --- Painel do agente (fila, assumir, transferir) --------------------------
+
+router.get('/admin/queue', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
+  res.json(await supportChat.listarFila());
+});
+
+router.get('/admin/my-tickets', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
+  res.json(await supportChat.listarMeusAtendimentos(req.user.id));
+});
+
+router.post('/admin/tickets/:id/assume', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
+  res.json(await supportChat.assumir(req.params.id, req.user, req));
+});
+
+router.post('/admin/tickets/:id/transfer', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
+  const toUserId = String(req.body?.toUserId || '');
+  if (!toUserId) return res.status(400).json({ error: { code: 'INVALID', message: 'Indique o assessor de destino.' } });
+  res.json(await supportChat.transferir(req.params.id, req.user, toUserId, req));
+});
+
+router.post('/admin/tickets/:id/resolve', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
+  res.json(await supportChat.mudarEstado(req.params.id, req.user, 'RESOLVIDO', req));
+});
+
+router.post('/admin/tickets/:id/close', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
+  res.json(await supportChat.mudarEstado(req.params.id, req.user, 'FECHADO', req));
+});
+
+router.post('/admin/tickets/:id/reopen', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
+  res.json(await supportChat.mudarEstado(req.params.id, req.user, 'EM_ANDAMENTO', req));
+});
+
+// Lista de assessores de Suporte, para o seletor de "Transferir para...".
+router.get('/admin/agents', requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), async (req, res) => {
+  const admins = await prisma.user.findMany({
+    where: { role: 'ADMIN_SISTEMA', active: true },
+    select: { id: true, name: true, email: true, adminAreas: true },
+  });
+  res.json(admins.filter((a) => supportChat.podeGerirSuporte(a)).map(({ adminAreas, ...a }) => a));
 });
 
 module.exports = router;

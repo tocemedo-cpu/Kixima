@@ -85,4 +85,15 @@ const authLimiter = make({
 // convite) — evita abuso/enumeração.
 const sensitiveLimiter = make({ windowMs: 15 * 60 * 1000, max: 30 });
 
-module.exports = { apiLimiter, authLimiter, sensitiveLimiter, porUtilizadorOuIp };
+// Envio de mensagens de chat (Suporte e Comercial) — mais apertado do que o
+// limite geral da API, propositadamente: o resto da API é "uma pessoa a
+// clicar", isto é "uma pessoa a escrever", e um flood de mensagens é o vetor
+// de abuso mais direto num chat. 60/min é generoso para conversa humana e
+// travaria um script a martelar o endpoint.
+const chatMessageLimiter = make({
+  windowMs: 60 * 1000,
+  max: Number(process.env.CHAT_RATE_LIMIT) || 60,
+  keyGenerator: porUtilizadorOuIp,
+});
+
+module.exports = { apiLimiter, authLimiter, sensitiveLimiter, chatMessageLimiter, porUtilizadorOuIp };
