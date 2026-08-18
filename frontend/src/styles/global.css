@@ -3125,3 +3125,13 @@ tbody tr:hover {
   .chat-list-panel { max-height: 240px; }
 }
 .login-panel .grid-cols.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* Linha do tempo auditável da PO (OrderDetail) — cada evento é uma entrada
+   append-only do AuditLog; a lista lê-se de cima para baixo, mais antigo
+   primeiro, como um extrato. */
+.po-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.po-timeline-item { display: flex; gap: 10px; align-items: flex-start; }
+.po-timeline-icon {
+  flex-shrink: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+  background: var(--paper-100); border-radius: 50%; font-size: 13px;
+}

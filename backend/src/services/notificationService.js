@@ -246,6 +246,18 @@ const events = {
       relatedEntityId: po.id,
     }),
 
+  poRecusadaPeloFornecedor: (po) =>
+    notifyUsersByRole({
+      companyId: po.buyerCompanyId,
+      roles: ['COMPRADOR', 'COMPANY_ADMIN'],
+      type: 'PO_RECUSADA_FORNECEDOR',
+      title: 'PO recusada pelo fornecedor',
+      message: `A ordem de compra ${po.reference} foi recusada pelo fornecedor. Motivo: ${po.refusalReason}`,
+      channel: 'IN_APP_EMAIL',
+      relatedEntityType: 'PurchaseOrder',
+      relatedEntityId: po.id,
+    }),
+
   faturaGerada: (invoice, po) =>
     notifyUsersByRole({
       companyId: po.buyerCompanyId,
@@ -278,6 +290,30 @@ const events = {
       title: 'Entrega despachada',
       message: `A entrega da PO ${po.reference} foi despachada.`,
       channel: 'IN_APP',
+      relatedEntityType: 'PurchaseOrder',
+      relatedEntityId: po.id,
+    }),
+
+  poEntregue: (po) =>
+    notifyUsersByRole({
+      companyId: po.buyerCompanyId,
+      roles: ['COMPRADOR', 'COMPANY_ADMIN'],
+      type: 'PO_ENTREGUE',
+      title: 'Entrega marcada como concluída pelo fornecedor',
+      message: `O fornecedor marcou a entrega da PO ${po.reference} como concluída. Confirme a receção.`,
+      channel: 'IN_APP_EMAIL',
+      relatedEntityType: 'PurchaseOrder',
+      relatedEntityId: po.id,
+    }),
+
+  poRecebidaConforme: (po) =>
+    notifyUsersByRole({
+      companyId: po.supplierCompanyId,
+      roles: ['FORNECEDOR', 'COMPANY_ADMIN'],
+      type: 'PO_RECEBIDA_CONFORME',
+      title: 'Receção confirmada sem divergências',
+      message: `O comprador confirmou a receção da PO ${po.reference} sem divergências. A ordem foi concluída.`,
+      channel: 'IN_APP_EMAIL',
       relatedEntityType: 'PurchaseOrder',
       relatedEntityId: po.id,
     }),

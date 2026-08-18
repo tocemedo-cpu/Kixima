@@ -3,7 +3,7 @@ const poController = require('../controllers/poController');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 const { validate } = require('../utils/validate');
-const { createPoSchema, rejectPoSchema, receptionSchema, resolveDivergenceSchema } = require('../utils/schemas');
+const { createPoSchema, rejectPoSchema, refusePoSchema, receptionSchema, resolveDivergenceSchema } = require('../utils/schemas');
 
 const router = express.Router();
 
@@ -13,6 +13,9 @@ router.use(authenticate);
 router.post('/', requireRole('COMPRADOR', 'COMPANY_ADMIN'), validate(createPoSchema), poController.create);
 router.get('/', poController.list);
 router.get('/:id', poController.getOne);
+// Linha do tempo auditável — a mesma lista de todas as personas autorizadas
+// (RBAC validado no service, não no cliente).
+router.get('/:id/history', poController.history);
 
 // 2. Aprovação — Company Admin (ponto único).
 router.patch('/:id/approve', requireRole('COMPANY_ADMIN'), poController.approve);
@@ -20,7 +23,7 @@ router.patch('/:id/reject', requireRole('COMPANY_ADMIN'), validate(rejectPoSchem
 
 // 3. Fornecedor aceita/recusa -> 4. gera fatura + inicia relógio dos 7 dias.
 router.patch('/:id/accept', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), poController.accept);
-router.patch('/:id/refuse', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), poController.refuse);
+router.patch('/:id/refuse', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), validate(refusePoSchema), poController.refuse);
 
 // 6. Execução/despacho — só após pagamento confirmado (validado no service).
 router.patch('/:id/dispatch', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), poController.dispatch);

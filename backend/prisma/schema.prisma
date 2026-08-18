@@ -816,6 +816,12 @@ model PurchaseOrder {
   rejectedAt      DateTime? @map("rejected_at")
   rejectionReason String?   @map("rejection_reason")
 
+  // Recusa do fornecedor (distinta da rejeição do Company Admin acima): o
+  // motivo é obrigatório — sem ele a ordem fica num beco sem explicação para
+  // quem a emitiu.
+  refusedAt      DateTime? @map("refused_at")
+  refusalReason  String?   @map("refusal_reason")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1158,6 +1164,12 @@ enum NotificationType {
   SUPORTE_MENSAGEM
   CHAT_COMERCIAL_MENSAGEM
   ALERTA_SEGURANCA
+  // Fluxo de PO — cobertura que faltava (recusa do fornecedor, entrega
+  // marcada, receção conforme, conclusão automática da ordem).
+  PO_RECUSADA_FORNECEDOR
+  PO_ENTREGUE
+  PO_RECEBIDA_CONFORME
+  PO_CONCLUIDA
 }
 
 model Notification {

@@ -22,7 +22,7 @@ export default function FornecedorHome() {
   if (!orders) return <Loading />;
 
   const novas = orders.filter((o) => o.status === 'APROVADA');
-  const aguardandoPagamento = orders.filter((o) => o.status === 'ACEITE_FORNECEDOR');
+  const aguardandoPagamento = orders.filter((o) => o.status === 'ACEITE_FORNECEDOR' || o.status === 'AGUARDANDO_PAGAMENTO');
   const pagas = orders.filter((o) => o.paidAt);
 
   return (

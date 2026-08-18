@@ -329,6 +329,12 @@ const rejectPoSchema = z.object({
   reason: z.string().min(3),
 });
 
+// Recusa pelo fornecedor (distinta da rejeição do Company Admin acima): sem
+// motivo, quem emitiu a PO fica sem explicação nenhuma do porquê.
+const refusePoSchema = z.object({
+  reason: z.string().min(3),
+});
+
 const receptionSchema = z.object({
   conforme: z.boolean(),
   notes: z.string().optional(),
@@ -412,6 +418,7 @@ module.exports = {
   favoriteSchema,
   createPoSchema,
   rejectPoSchema,
+  refusePoSchema,
   receptionSchema,
   resolveDivergenceSchema,
   supplierPolicySchema,

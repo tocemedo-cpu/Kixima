@@ -8,6 +8,14 @@ async function create(req, res) {
     createdById: req.user.id,
     items: req.body.items,
   });
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'PO_CRIADA',
+    entityType: 'PurchaseOrder',
+    entityId: po.id,
+    entityRef: po.reference,
+    detail: { valor: String(po.totalAmount), moeda: po.currency, fornecedor: po.supplierCompanyId },
+  });
   res.status(201).json(po);
 }
 
@@ -26,6 +34,11 @@ async function list(req, res) {
 async function getOne(req, res) {
   const po = await poService.getPurchaseOrder(req.params.id, req.user);
   res.json(po);
+}
+
+async function history(req, res) {
+  const events = await poService.getPurchaseOrderHistory(req.params.id, req.user);
+  res.json(events);
 }
 
 async function approve(req, res) {
@@ -68,17 +81,39 @@ async function accept(req, res) {
 }
 
 async function refuse(req, res) {
-  const po = await poService.refusePurchaseOrder(req.params.id, req.user.companyId);
+  const po = await poService.refusePurchaseOrder(req.params.id, req.user.companyId, req.body.reason);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'PO_RECUSADA_FORNECEDOR',
+    entityType: 'PurchaseOrder',
+    entityId: po.id,
+    entityRef: po.reference,
+    detail: { motivo: req.body.reason },
+  });
   res.json(po);
 }
 
 async function dispatch(req, res) {
   const po = await poService.dispatchPurchaseOrder(req.params.id, req.user.companyId);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'PO_DESPACHADA',
+    entityType: 'PurchaseOrder',
+    entityId: po.id,
+    entityRef: po.reference,
+  });
   res.json(po);
 }
 
 async function delivered(req, res) {
   const po = await poService.markDelivered(req.params.id, req.user.companyId);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'PO_ENTREGUE',
+    entityType: 'PurchaseOrder',
+    entityId: po.id,
+    entityRef: po.reference,
+  });
   res.json(po);
 }
 
@@ -107,7 +142,20 @@ async function receive(req, res) {
     entityRef: po.reference,
     detail: { conforme: Boolean(req.body.conforme), notas: req.body.notes || null },
   });
+  // Receção conforme fecha a ordem automaticamente (poService.confirmReception)
+  // — fica marcado como um evento próprio na linha do tempo, distinto da
+  // receção em si.
+  if (po.status === 'CONCLUIDA') {
+    await auditService.recordSafe({
+      actor: auditService.actorFrom(req),
+      action: 'PO_CONCLUIDA',
+      entityType: 'PurchaseOrder',
+      entityId: po.id,
+      entityRef: po.reference,
+      detail: { motivo: 'receção conforme' },
+    });
+  }
   res.json(po);
 }
 
-module.exports = { create, list, getOne, approve, reject, accept, refuse, dispatch, delivered, receive, resolveDivergence };
+module.exports = { create, list, getOne, history, approve, reject, accept, refuse, dispatch, delivered, receive, resolveDivergence };

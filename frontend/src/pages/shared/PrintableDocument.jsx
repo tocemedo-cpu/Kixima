@@ -3,8 +3,8 @@
 // oficial KIXIMA (folha A4). O botão "Imprimir / Guardar PDF" abre o diálogo do
 // browser (imprimir OU guardar como PDF). O CSS de impressão esconde a barra de
 // ações e deixa só o documento.
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Loading, ErrorBanner } from '../../components/Common';
 import { PO_STATUS, INVOICE_STATUS } from '../../domain';
@@ -53,10 +53,27 @@ export default function PrintableDocument({ kind }) {
   const { t } = useI18n();
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // "Baixar PDF" chega aqui com ?baixar=1 (ver OrderDetail) — poupa o clique
+  // extra no botão, abrindo já o diálogo de impressão do navegador.
+  const baixarAutomatico = searchParams.get('baixar') === '1';
+  const jaImprimiu = useRef(false);
   const [po, setPo] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => { api.get(`/api/purchase-orders/${id}`).then(setPo).catch((e) => setError(e.message)); }, [id]);
+
+  useEffect(() => {
+    if (po && baixarAutomatico && !jaImprimiu.current) {
+      jaImprimiu.current = true;
+      // O documento só existe depois de o browser desenhar a página — sem o
+      // atraso, o diálogo de impressão às vezes abre sobre uma folha ainda
+      // em branco.
+      const timer = setTimeout(() => window.print(), 300);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [po, baixarAutomatico]);
 
   if (error) return <div style={{ padding: 24 }}><ErrorBanner message={error} /></div>;
   if (!po) return <Loading />;
@@ -99,8 +116,12 @@ export default function PrintableDocument({ kind }) {
     <div className="doc-page">
       <div className="doc-toolbar no-print">
         <button className="btn btn-ghost" onClick={() => navigate(-1)}>{t('← Voltar')}</button>
-        <button className="btn btn-accent" onClick={() => window.print()}>{t('Imprimir / Guardar PDF')}</button>
+        <button className="btn btn-ghost" onClick={() => window.print()}>{t('Visualizar PDF')}</button>
+        <button className="btn btn-accent" onClick={() => window.print()}>{t('Baixar PDF')}</button>
       </div>
+      <p className="helptext no-print" style={{ margin: '8px 0 0', textAlign: 'center' }}>
+        {t('Este documento é gerado pelo seu navegador: no diálogo que se abre, escolha "Imprimir" para pré-visualizar ou "Guardar como PDF" para transferir o ficheiro.')}
+      </p>
 
       <div className="pdoc-sheet">
         {/* Cabeçalho: logótipo do cliente + tagline KIXIMA */}

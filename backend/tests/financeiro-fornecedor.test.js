@@ -89,7 +89,7 @@ describe('Financeiro numa empresa fornecedora', () => {
         supplierCompanyId: otherSupplier.id,
         createdById: finUser.id,
         totalAmount: 500000,
-        status: 'ACEITE_FORNECEDOR',
+        status: 'AGUARDANDO_PAGAMENTO',
       },
     });
     const invoice = await prisma.invoice.create({

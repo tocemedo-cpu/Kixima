@@ -46,7 +46,7 @@ describe('Fluxo principal da Purchase Order', () => {
     // 3. Fornecedor aceita -> 4. gera fatura + relógio dos 7 dias
     const accepted = await auth(tokens.fornecedor).patch(`/api/purchase-orders/${po.id}/accept`);
     expect(accepted.status).toBe(200);
-    expect(accepted.body.status).toBe('ACEITE_FORNECEDOR');
+    expect(accepted.body.status).toBe('AGUARDANDO_PAGAMENTO');
 
     const full = await auth(tokens.financeiro).get(`/api/purchase-orders/${po.id}`);
     const invoice = full.body.invoice;
@@ -99,7 +99,7 @@ describe('Fluxo principal da Purchase Order', () => {
 
     // O estado não avançou.
     const dbPo = await prisma.purchaseOrder.findUnique({ where: { id: po.id } });
-    expect(dbPo.status).toBe('ACEITE_FORNECEDOR');
+    expect(dbPo.status).toBe('AGUARDANDO_PAGAMENTO');
   });
 
   test('receção com divergência não fecha a ordem', async () => {

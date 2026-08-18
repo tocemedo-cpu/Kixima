@@ -30,13 +30,19 @@ export default function OrderDetail() {
   const [busy, setBusy] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [showReject, setShowReject] = useState(false);
+  const [refuseReason, setRefuseReason] = useState('');
+  const [showRefuse, setShowRefuse] = useState(false);
   const [receptionNotes, setReceptionNotes] = useState('');
   const [showDivergence, setShowDivergence] = useState(false);
   const [resolveOutcome, setResolveOutcome] = useState(null); // 'ACEITE' | 'REPOSICAO'
   const [resolveNotes, setResolveNotes] = useState('');
+  const [history, setHistory] = useState(null);
 
   const load = useCallback(() => {
     api.get(`/api/purchase-orders/${id}`).then(setPo).catch((e) => setError(e.message));
+    // Linha do tempo auditável — não bloqueia o resto do ecrã se falhar (ex.:
+    // pedido concorrente); a página principal já tem os dados que precisa.
+    api.get(`/api/purchase-orders/${id}/history`).then(setHistory).catch(() => setHistory([]));
   }, [id]);
 
   useEffect(() => {
@@ -91,12 +97,20 @@ export default function OrderDetail() {
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/po/${po.id}`, '_blank')}>
-          {t('Ver / Imprimir PO')}
+          {t('Visualizar PDF (PO)')}
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/po/${po.id}?baixar=1`, '_blank')}>
+          {t('Baixar PDF (PO)')}
         </button>
         {po.invoice ? (
-          <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/fatura/${po.id}`, '_blank')}>
-            {t('Ver / Imprimir Fatura')}
-          </button>
+          <>
+            <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/fatura/${po.id}`, '_blank')}>
+              {t('Visualizar PDF (Fatura)')}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/fatura/${po.id}?baixar=1`, '_blank')}>
+              {t('Baixar PDF (Fatura)')}
+            </button>
+          </>
         ) : null}
         {user.companyId ? (
           <StartConversationButton
@@ -172,7 +186,7 @@ export default function OrderDetail() {
               <button className="btn btn-accent" disabled={busy} onClick={() => runAction(() => api.patch(`/api/purchase-orders/${id}/accept`))}>
                 {t('Aceitar PO')}
               </button>
-              <button className="btn btn-danger" disabled={busy} onClick={() => runAction(() => api.patch(`/api/purchase-orders/${id}/refuse`))}>
+              <button className="btn btn-danger" disabled={busy} onClick={() => setShowRefuse((v) => !v)}>
                 {t('Recusar PO')}
               </button>
             </>
@@ -286,6 +300,26 @@ export default function OrderDetail() {
         </div>
       )}
 
+      {showRefuse && (
+        <div className="card card-pad" style={{ marginTop: 12 }}>
+          <Field label={t('Motivo da recusa')}>
+            {(id) => (<>
+              <textarea id={id} rows={3} value={refuseReason} onChange={(e) => setRefuseReason(e.target.value)} placeholder={t('Ex.: sem stock suficiente para cumprir a quantidade pedida…')} />
+            </>)}
+          </Field>
+          <p className="helptext" style={{ marginBottom: 10 }}>
+            {t('O comprador é notificado do motivo — é obrigatório para recusar.')}
+          </p>
+          <button
+            className="btn btn-danger"
+            disabled={busy || !refuseReason.trim()}
+            onClick={() => runAction((body) => api.patch(`/api/purchase-orders/${id}/refuse`, body), { reason: refuseReason.trim() })}
+          >
+            {t('Confirmar recusa')}
+          </button>
+        </div>
+      )}
+
       {showDivergence && (
         <div className="card card-pad" style={{ marginTop: 12 }}>
           <Field label={t('Descreva a divergência')}>
@@ -309,6 +343,78 @@ export default function OrderDetail() {
       {po.rejectionReason ? (
         <div className="banner banner-error" style={{ marginTop: 16 }}>{t('Motivo da rejeição')}: {po.rejectionReason}</div>
       ) : null}
+      {po.refusalReason ? (
+        <div className="banner banner-error" style={{ marginTop: 16 }}>{t('Motivo da recusa do fornecedor')}: {po.refusalReason}</div>
+      ) : null}
+
+      <OrderTimeline events={history} t={t} />
+    </div>
+  );
+}
+
+// Ações de auditoria (AuditLog.action) -> título e ícone legíveis. Uma
+// entrada sem tradução aqui ainda aparece (com a ação em cru) — não fica
+// invisível só porque um evento novo esqueceu de ser mapeado.
+const TIMELINE_LABELS = {
+  PO_CRIADA: { label: 'PO criada', icon: '📝' },
+  PO_APROVADA: { label: 'Aprovada pelo Company Admin', icon: '✅' },
+  PO_REJEITADA: { label: 'Rejeitada pelo Company Admin', icon: '⛔' },
+  PO_ACEITE: { label: 'Aceite pelo fornecedor', icon: '🤝' },
+  PO_RECUSADA_FORNECEDOR: { label: 'Recusada pelo fornecedor', icon: '⛔' },
+  PAGAMENTO_EXECUTADO: { label: 'Pagamento efetuado', icon: '💳' },
+  PO_DESPACHADA: { label: 'Entrega despachada', icon: '🚚' },
+  PO_ENTREGUE: { label: 'Marcada como entregue', icon: '📦' },
+  RECECAO_MERCADORIA: { label: 'Receção confirmada', icon: '📥' },
+  DIVERGENCIA_RESOLVIDA: { label: 'Divergência resolvida', icon: '🛠️' },
+  PO_CONCLUIDA: { label: 'Ordem concluída', icon: '🏁' },
+};
+
+// Detalhe do registo (JSON livre) -> uma linha curta, quando há algo que vale
+// a pena mostrar. O resto do `detail` fica no registo, só não neste resumo.
+function timelineDetail(action, detail, t) {
+  if (!detail) return null;
+  if (detail.motivo) return `${t('Motivo')}: ${detail.motivo}`;
+  if (detail.desfecho) return `${t('Desfecho')}: ${detail.desfecho === 'REPOSICAO' ? t('reposição solicitada') : t('entrega aceite')}`;
+  if (typeof detail.conforme === 'boolean') return detail.conforme ? t('Sem divergências') : t('Com divergência');
+  if (detail.valor) return `${t('Valor')}: ${formatMoney(detail.valor, detail.moeda || 'AOA')}`;
+  return null;
+}
+
+// Linha do tempo auditável — vem do AuditLog (append-only: sem caminho de
+// update/delete no backend), por isso é o mais perto que a KIXIMA tem de um
+// registo à prova de alteração. Visível a todas as personas autorizadas pela
+// PO (RBAC validado no servidor, não aqui).
+function OrderTimeline({ events, t }) {
+  return (
+    <div className="card card-pad" style={{ marginTop: 16 }}>
+      <strong style={{ fontSize: 13.5 }}>{t('Linha do tempo')}</strong>
+      <p className="helptext" style={{ margin: '4px 0 12px' }}>
+        {t('Registo de auditoria — cada evento é gravado no momento em que acontece e não pode ser alterado.')}
+      </p>
+      {events === null ? (
+        <Loading />
+      ) : events.length === 0 ? (
+        <p className="helptext">{t('Ainda sem eventos registados.')}</p>
+      ) : (
+        <ol className="po-timeline">
+          {events.map((ev) => {
+            const info = TIMELINE_LABELS[ev.action] || { label: ev.action, icon: '•' };
+            const detail = timelineDetail(ev.action, ev.detail, t);
+            return (
+              <li key={ev.id} className="po-timeline-item">
+                <span className="po-timeline-icon" aria-hidden="true">{info.icon}</span>
+                <div>
+                  <div><strong>{t(info.label)}</strong> — {formatDate(ev.createdAt)}</div>
+                  <div className="helptext">
+                    {ev.actorName ? `${ev.actorName} (${ev.actorRole || ''})` : t('Sistema')}
+                  </div>
+                  {detail ? <div className="helptext">{detail}</div> : null}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
     </div>
   );
 }

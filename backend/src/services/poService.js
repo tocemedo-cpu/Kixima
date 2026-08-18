@@ -141,6 +141,18 @@ async function getPurchaseOrder(id, user = null) {
   return po;
 }
 
+// Linha do tempo auditável da PO: o trilho de AuditLog já é append-only e já
+// tem tudo o que uma timeline precisa (ator, ação, quando, detalhe) — reusa-se
+// em vez de duplicar num histórico próprio. Mesma verificação de acesso que
+// getPurchaseOrder (404, não 403 — não revela a existência a quem é alheio).
+async function getPurchaseOrderHistory(id, user = null) {
+  await getPurchaseOrder(id, user);
+  return prisma.auditLog.findMany({
+    where: { entityType: 'PurchaseOrder', entityId: id },
+    orderBy: { createdAt: 'asc' },
+  });
+}
+
 async function listPurchaseOrders({ companyId, role, status, invoiced, page, limit }) {
   const where = { ...(status ? { status } : {}) };
   if (role === 'FORNECEDOR' || role === 'FINANCEIRO_FORNECEDOR') {
@@ -247,7 +259,10 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
   const [updated, invoice] = await prisma.$transaction(async (tx) => {
     const updatedPo = await tx.purchaseOrder.update({
       where: { id },
-      data: { status: 'ACEITE_FORNECEDOR', acceptedAt, paymentDueAt },
+      // Estado correto para esta janela: "à espera de pagamento", não
+      // apenas "aceite" — é isso que o Financeiro vê na fila e é o que o
+      // relógio dos 7 dias mede.
+      data: { status: 'AGUARDANDO_PAGAMENTO', acceptedAt, paymentDueAt },
     });
 
     const reference = await nextReference('FAT', 'invoice');
@@ -294,7 +309,7 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
   return updated;
 }
 
-async function refusePurchaseOrder(id, supplierCompanyId) {
+async function refusePurchaseOrder(id, supplierCompanyId, reason) {
   const po = await getPurchaseOrder(id);
   if (po.supplierCompanyId !== supplierCompanyId) {
     throw new ForbiddenError('Só o fornecedor da PO pode recusá-la.');
@@ -302,7 +317,13 @@ async function refusePurchaseOrder(id, supplierCompanyId) {
   if (po.status !== 'APROVADA') {
     throw new ConflictError(`PO no estado "${po.status}" não pode ser recusada.`);
   }
-  return prisma.purchaseOrder.update({ where: { id }, data: { status: 'RECUSADA_FORNECEDOR' } });
+  const updated = await prisma.purchaseOrder.update({
+    where: { id },
+    data: { status: 'RECUSADA_FORNECEDOR', refusedAt: new Date(), refusalReason: reason },
+  });
+
+  await notificationService.events.poRecusadaPeloFornecedor(updated);
+  return updated;
 }
 
 // --- 6. Execução/despacho (só após pagamento confirmado) --------------------
@@ -339,10 +360,13 @@ async function markDelivered(id, supplierCompanyId) {
   if (po.status !== 'EM_EXECUCAO') {
     throw new ConflictError(`PO no estado "${po.status}" não pode ser marcada como entregue.`);
   }
-  return prisma.purchaseOrder.update({
+  const updated = await prisma.purchaseOrder.update({
     where: { id },
     data: { status: 'ENTREGUE', deliveredAt: new Date() },
   });
+
+  await notificationService.events.poEntregue(updated);
+  return updated;
 }
 
 // --- 7. Receção (Comprador) --------------------------------------------------
@@ -382,6 +406,7 @@ async function confirmReception(id, buyerCompanyId, { conforme, notes }) {
     where: { id },
     data: { status: 'CONCLUIDA' },
   });
+  await notificationService.events.poRecebidaConforme(concluida);
   return concluida;
 }
 
@@ -426,6 +451,7 @@ async function resolveDivergence(id, buyerCompanyId, { outcome, notes }) {
 module.exports = {
   createPurchaseOrder,
   getPurchaseOrder,
+  getPurchaseOrderHistory,
   listPurchaseOrders,
   approvePurchaseOrder,
   rejectPurchaseOrder,
