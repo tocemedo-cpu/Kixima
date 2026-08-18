@@ -11,6 +11,7 @@ import NotificationPanel from './NotificationPanel';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import { useCart } from '../pages/comprador/CartContext';
+import { useRealtime } from '../realtime/RealtimeContext';
 import { Icon } from './icons';
 import { useI18n } from '../i18n';
 
@@ -23,6 +24,7 @@ export default function AppLayout() {
   const [porLer, setPorLer] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const { count: cartCount } = useCart();
+  const { socket } = useRealtime();
   // Três contadores SEPARADOS do sino de notificações genérico — "Suporte: X
   // mensagens", "Chat Comercial: X mensagens", "Alertas de Segurança: X" não
   // se misturam entre si nem com o resto (ver a regra explícita do pedido).
@@ -41,17 +43,40 @@ export default function AppLayout() {
     return () => { cancelled = true; };
   }, [location.pathname]);
 
+  // Uma vez por sessão (não a cada navegação, ao contrário do sino de
+  // notificações acima): o AppLayout não desmonta ao trocar de rota — só o
+  // Outlet lá dentro — por isso isto já não repete em cada clique. Repetir a
+  // cada navegação chegou a esgotar o limite geral da API numa sessão com
+  // muitas trocas de página seguidas (visto na suite E2E): três pedidos extra
+  // por navegação, antes só havia um (as notificações).
   useEffect(() => {
+    if (!user) return undefined;
     let cancelled = false;
     api.get('/api/support/unread-count').then((d) => { if (!cancelled) setSuporteNaoLidas(d.count || 0); }).catch(() => {});
     api.get('/api/conversations/unread-count').then((d) => { if (!cancelled) setComercialNaoLidas(d.count || 0); }).catch(() => {});
     // Só quem gere Suporte tem alertas para ver — a rota devolve 403 para o
     // resto, e o contador fica calado (0) sem mostrar erro nenhum.
-    if (user?.role === 'ADMIN_SISTEMA') {
+    if (user.role === 'ADMIN_SISTEMA') {
       api.get('/api/conversations/admin/alerts', { status: 'ABERTO' }).then((d) => { if (!cancelled) setAlertasAbertos(Array.isArray(d) ? d.length : 0); }).catch(() => {});
     }
     return () => { cancelled = true; };
-  }, [location.pathname, user?.role]);
+  }, [user?.id]);
+
+  // Em vez de voltar a pedir por HTTP a cada navegação, os contadores sobem
+  // ao vivo pelo mesmo evento que o sino de notificações já recebe — reutiliza
+  // a ligação Socket.IO, sem pedido extra nenhum. Só SOBE: descer é sempre que
+  // a própria conversa é aberta e marcada como lida (ver SuporteChat/
+  // ChatComercial), que é a mesma regra que já vale para o sino genérico.
+  useEffect(() => {
+    if (!socket) return undefined;
+    function onNotification(n) {
+      if (n.type === 'SUPORTE_MENSAGEM') setSuporteNaoLidas((c) => c + 1);
+      else if (n.type === 'CHAT_COMERCIAL_MENSAGEM') setComercialNaoLidas((c) => c + 1);
+      else if (n.type === 'ALERTA_SEGURANCA') setAlertasAbertos((c) => c + 1);
+    }
+    socket.on('notification:new', onNotification);
+    return () => socket.off('notification:new', onNotification);
+  }, [socket]);
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
