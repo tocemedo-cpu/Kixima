@@ -11,9 +11,12 @@ import { readFileSync } from 'node:fs';
 const sessao = (nome) => `e2e/.sessoes/${nome}.json`;
 const PRODUTO_KIANDA = 'fef4c884-aea0-42e7-abe6-6068545004bc'; // fornecedor@kianda.co.ao
 
-// Ligação da base de DESENVOLVIMENTO (a mesma que os servidores de e2e usam) —
-// lida do .env do backend, para não haver uma credencial escrita à mão aqui.
+// Ligação da mesma base que os servidores de e2e usam — sem credencial
+// nenhuma escrita à mão aqui. Em CI vem diretamente do ambiente (o workflow
+// define DATABASE_URL, não há .env nenhum no runner); em desenvolvimento
+// local lê-se do .env do backend, exatamente como o backend faz.
 function databaseUrl() {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
   const env = readFileSync(new URL('../../backend/.env', import.meta.url), 'utf8');
   const linha = env.split(/\r?\n/).find((l) => l.startsWith('DATABASE_URL='));
   return linha.slice('DATABASE_URL='.length).trim();
