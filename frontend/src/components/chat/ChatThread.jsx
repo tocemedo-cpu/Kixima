@@ -19,7 +19,7 @@ export default function ChatThread({
   const endRef = useRef(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    endRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'end' });
   }, [messages?.length]);
 
   async function submit(e) {
