@@ -9,12 +9,34 @@ export default function AdminHome() {
   const { t } = useI18n();
   const [companies, setCompanies] = useState(null);
   const [error, setError] = useState('');
+  const [semAcesso, setSemAcesso] = useState(false);
 
   useEffect(() => {
-    api.get('/api/companies').then(setCompanies).catch((e) => setError(e.message));
+    api.get('/api/companies').then(setCompanies).catch((e) => {
+      // Um 403 aqui não é uma falha — é um assessor cuja área não inclui
+      // Cadastro & Empresas. Este painel é inteiro sobre isso (cadastros
+      // pendentes, empresas ativas); mostrar o banner de erro vermelho da
+      // aplicação assustaria alguém a fazer exatamente o que devia — entrar
+      // com a conta que lhe foi dada.
+      if (e.status === 403) setSemAcesso(true);
+      else setError(e.message);
+    });
   }, []);
 
   if (error) return <ErrorBanner message={error} />;
+  if (semAcesso) {
+    return (
+      <div>
+        <PageHeader title="Visão geral" subtitle="Cadastros pendentes, apólices a expirar e empresas ativas." />
+        <div className="card card-pad">
+          <strong style={{ fontSize: 13.5 }}>{t('Sem acesso a Cadastro & Empresas')}</strong>
+          <p className="helptext" style={{ marginTop: 8 }}>
+            {t('O seu acesso não inclui esta área. Veja no menu à esquerda as páginas que já pode usar.')}
+          </p>
+        </div>
+      </div>
+    );
+  }
   if (!companies) return <Loading />;
 
   const pendentes = companies.filter((c) => c.status === 'PENDENTE');

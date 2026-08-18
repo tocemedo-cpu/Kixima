@@ -208,6 +208,7 @@ const ADMIN_SISTEMA = [
       { label: 'Perfil', to: '/perfil' },
       { label: 'Segurança', to: '/seguranca' },
       { label: 'Permissões', to: '/sistema/permissoes', area: SUPER_ADMIN_ONLY },
+      { label: 'Administradores do Sistema', to: '/sistema/administradores', area: SUPER_ADMIN_ONLY },
       { label: 'Gestão de Atividades', to: '/sistema/atividades', area: 'operacoes' },
       { label: 'Auditoria', to: '/sistema/auditoria' },
       { label: 'Prontidão para produção', to: '/sistema/prontidao', area: 'operacoes' },

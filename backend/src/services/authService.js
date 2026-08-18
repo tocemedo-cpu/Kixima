@@ -127,6 +127,14 @@ function buildSession(user) {
       name: user.name,
       email: user.email,
       role: user.role,
+      // Sem isto, o primeiro ecrã depois do login mostrava o menu inteiro a um
+      // assessor restrito: o AuthContext guarda a RESPOSTA do login tal e qual,
+      // sem voltar a perguntar a /api/auth/me — e essa resposta era a única
+      // fonte de adminAreas que não vinha daqui. O servidor continuava a
+      // recusar os pedidos certos (cada um deles relê o utilizador da base),
+      // por isso nada ficava realmente acessível — só o MENU é que mentia,
+      // mostrando atalhos para portas que continuavam fechadas.
+      adminAreas: user.adminAreas ?? [],
       companyId: user.companyId,
       companyName: user.company?.name ?? null,
       companyType: user.company?.type ?? null,

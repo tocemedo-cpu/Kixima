@@ -5,6 +5,8 @@ const express = require('express');
 const { authenticate } = require('../middleware/auth');
 const { requireRole, requirePermission, requireSuperAdmin } = require('../middleware/rbac');
 const { FINANCEIRO, OPERACOES, AREAS_ADMIN } = require('../utils/adminAreas');
+const { validate } = require('../utils/validate');
+const { createAdminInviteSchema, acceptAdminInviteSchema } = require('../utils/schemas');
 const adminService = require('../services/adminService');
 const auditService = require('../services/auditService');
 const prontidaoService = require('../services/prontidaoService');
@@ -14,6 +16,35 @@ const mfaLembreteService = require('../services/mfaLembreteService');
 const backupVerificacao = require('../services/backupVerificacaoService');
 
 const router = express.Router();
+
+function publicBaseUrl(req) {
+  return `${req.protocol}://${req.get('host')}`;
+}
+
+// --- Convite de assessor: metade PÚBLICA ------------------------------------
+// Quem abre o link ainda não tem sessão nenhuma — por isso estas duas rotas
+// vivem ANTES do authenticate/requireRole abaixo, tal como o convite de
+// funcionário em companyRoutes.js. `/invite/:token` (singular) para o público;
+// `/invites` (plural) para a gestão, mais abaixo, essa sim autenticada.
+router.get('/invite/:token', async (req, res) => {
+  res.json(await adminService.resolveAdminInvite(req.params.token));
+});
+
+router.post('/invite/:token/accept', validate(acceptAdminInviteSchema), async (req, res) => {
+  const user = await adminService.acceptAdminInvite(req.params.token, req.body);
+  // Quem aceita ainda não tem sessão — o ator é anónimo, mas a conta criada
+  // fica identificada (mesmo padrão de CONVITE_ACEITE em companyController).
+  await auditService.recordSafe({
+    actor: { ...auditService.anonimoFrom(req), actorId: user.id, actorName: user.name },
+    action: 'CONVITE_ADMIN_ACEITO',
+    entityType: 'User',
+    entityId: user.id,
+    entityRef: user.email,
+    detail: { areas: user.adminAreas, ...auditService.contextoFrom(req) },
+  });
+  res.status(201).json(user);
+});
+
 router.use(authenticate);
 router.use(requireRole('ADMIN_SISTEMA'));
 
@@ -55,6 +86,49 @@ router.patch('/users/:id/areas', requireSuperAdmin(), async (req, res) => {
     detail: { areas: user.adminAreas },
   });
   res.json(user);
+});
+
+// --- Convite de assessor: metade PROTEGIDA ----------------------------------
+// Convidar, reenviar e cancelar são a mesma "gestão de quem tem acesso" do
+// bloco acima — reservado ao Super Admin, pela mesma razão: um assessor de
+// Suporte não pode convidar outro assessor com áreas maiores que as dele.
+router.get('/invites', requireSuperAdmin(), async (req, res) => res.json(await adminService.listAdminInvites()));
+
+router.post('/invites', requireSuperAdmin(), validate(createAdminInviteSchema), async (req, res) => {
+  const invite = await adminService.createAdminInvite(req.body, req.user.id, publicBaseUrl(req));
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'CONVITE_ADMIN_CRIADO',
+    entityType: 'EmployeeInvite',
+    entityId: invite.id,
+    entityRef: invite.email,
+    detail: { areas: invite.adminAreas },
+  });
+  res.status(201).json(invite);
+});
+
+router.post('/invites/:id/resend', requireSuperAdmin(), async (req, res) => {
+  const invite = await adminService.resendAdminInvite(req.params.id, publicBaseUrl(req));
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'CONVITE_ADMIN_REENVIADO',
+    entityType: 'EmployeeInvite',
+    entityId: invite.id,
+    entityRef: invite.email,
+  });
+  res.json(invite);
+});
+
+router.post('/invites/:id/cancel', requireSuperAdmin(), async (req, res) => {
+  const invite = await adminService.cancelAdminInvite(req.params.id);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'CONVITE_ADMIN_CANCELADO',
+    entityType: 'EmployeeInvite',
+    entityId: invite.id,
+    entityRef: invite.email,
+  });
+  res.json(invite);
 });
 
 router.get('/activities', requirePermission(OPERACOES), async (req, res) => res.json(await adminService.systemActivities()));

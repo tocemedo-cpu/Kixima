@@ -3,6 +3,7 @@
 
 const { z } = require('zod');
 const passwordPolicy = require('./passwordPolicy');
+const { AREAS_ADMIN } = require('./adminAreas');
 
 // Campo de senha validado pela política única (comprimento, senhas proibidas,
 // sequências e email dentro da senha). `role` fixa o mínimo: os perfis que
@@ -119,11 +120,16 @@ const decideCompanySchema = z.object({
   rejectionReason: z.string().optional(),
 });
 
+// ADMIN_SISTEMA fica DE FORA deste enum de propósito. Este endpoint (criação
+// direta de utilizador) ficava aberto a criar um Super Admin instantâneo —
+// ativo, sem convite, sem atribuição de áreas, sem passar por
+// requireSuperAdmin() — bastava a `cadastro` bastar-lhe. Um assessor tem UM
+// caminho só, a partir de agora: o convite em adminService.createAdminInvite.
 const createUserSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: senha(),
-  role: z.enum(['COMPRADOR', 'COMPANY_ADMIN', 'FORNECEDOR', 'FINANCEIRO', 'ADMIN_SISTEMA']),
+  role: z.enum(['COMPRADOR', 'COMPANY_ADMIN', 'FORNECEDOR', 'FINANCEIRO']),
   companyId: z.string().uuid().nullable().optional(),
   approvalCap: z.number().positive().optional(),
 }).superRefine((d, ctx) => {
@@ -148,6 +154,23 @@ const acceptInviteSchema = z.object({
   email: z.string().email().optional(),
   password: senha(),
   // Aceite individual dos Termos/Privacidade ao criar a conta por convite.
+  termsAccepted: z.literal(true, { errorMap: () => ({ message: 'É necessário aceitar os Termos de Uso e a Política de Privacidade.' }) }),
+});
+
+// Convite de assessor (ADMIN_SISTEMA), emitido só pelo Super Admin
+// (requireSuperAdmin na rota). Pelo menos uma área: um convite vazio
+// promoveria a Super Admin sem ninguém ter escolhido isso no ecrã de áreas.
+const createAdminInviteSchema = z.object({
+  name: z.string().min(2, 'Indique o nome do assessor.'),
+  email: z.string().email('Indique um email válido.'),
+  adminAreas: z.array(z.enum(AREAS_ADMIN)).min(1, 'Selecione pelo menos uma área administrativa.'),
+});
+
+// Aceitação do convite de assessor: só a senha. NADA de `adminAreas` aqui —
+// de propósito. As áreas vêm sempre da linha do convite; um campo neste
+// schema seria um convite a ser ignorado ou, pior, lido por engano algures.
+const acceptAdminInviteSchema = z.object({
+  password: senha('ADMIN_SISTEMA'),
   termsAccepted: z.literal(true, { errorMap: () => ({ message: 'É necessário aceitar os Termos de Uso e a Política de Privacidade.' }) }),
 });
 
@@ -375,6 +398,8 @@ module.exports = {
   createUserSchema,
   createInviteSchema,
   acceptInviteSchema,
+  createAdminInviteSchema,
+  acceptAdminInviteSchema,
   createProductSchema,
   updateProductSchema,
   stockUpdateSchema,

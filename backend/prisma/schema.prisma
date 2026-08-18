@@ -289,11 +289,17 @@ enum InviteStatus {
 
 model EmployeeInvite {
   id          String       @id @default(uuid())
-  companyId   String       @map("company_id")
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // Opcional: um convite de ADMIN_SISTEMA (assessor) não pertence a nenhuma
+  // empresa — mesma razão de User.companyId ser opcional para esse papel.
+  companyId   String?      @map("company_id")
+  company     Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name        String
   email       String
   role        PersonaRole
+  // Só usado quando role = ADMIN_SISTEMA. Vazio (a omissão) convidaria um
+  // Super Admin sem restrição — a validação do pedido de convite exige pelo
+  // menos uma área, para essa promoção nunca acontecer por um convite normal.
+  adminAreas  String[]     @default([]) @map("admin_areas")
   token       String       @unique
   status      InviteStatus @default(PENDENTE)
   expiresAt   DateTime     @map("expires_at")

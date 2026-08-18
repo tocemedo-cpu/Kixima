@@ -20,7 +20,7 @@ function initials(n = '') { return n.trim().split(/\s+/).slice(0, 2).map((w) => 
  * para lá do ecrã (foi medido: com os seis nomes por extenso, a tabela
  * ultrapassava 1280px e cortava as ações à direita). Aqui só se diz QUANTAS.
  */
-function ResumoDeAreas({ user }) {
+export function ResumoDeAreas({ user }) {
   const { t } = useI18n();
   const areas = user.adminAreas || [];
   if (areas.length === 0) return <Pill tone="neutral">{t('Super Admin')}</Pill>;
@@ -36,7 +36,7 @@ function ResumoDeAreas({ user }) {
  * linha PRÓPRIA, a toda a largura da tabela — ver a nota em ResumoDeAreas
  * sobre porque não cabe dentro da coluna.
  */
-function AreasEditor({ user, onToggle, busy, podeEditar }) {
+export function AreasEditor({ user, onToggle, busy, podeEditar }) {
   const { t } = useI18n();
   const semAreas = !user.adminAreas || user.adminAreas.length === 0;
   return (

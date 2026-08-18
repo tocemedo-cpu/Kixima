@@ -14,6 +14,7 @@ import LoginPage from './pages/shared/LoginPage';
 
 const Register = lazy(() => import('./pages/shared/Register'));
 const AcceptInvite = lazy(() => import('./pages/shared/AcceptInvite'));
+const AcceptAdminInvite = lazy(() => import('./pages/shared/AcceptAdminInvite'));
 const PasswordReset = lazy(() => import('./pages/shared/PasswordReset'));
 const Legal = lazy(() => import('./pages/shared/Legal'));
 const SupplierDevelopment = lazy(() => import('./pages/shared/SupplierDevelopment'));
@@ -82,6 +83,7 @@ const PaymentHistory = lazy(() => import('./pages/financeiro/PaymentHistory'));
 
 const AdminHome = lazy(() => import('./pages/adminSistema/Home'));
 const AdminPermissions = lazy(() => import('./pages/adminSistema/Permissions'));
+const Administradores = lazy(() => import('./pages/adminSistema/Administradores'));
 const SystemActivities = lazy(() => import('./pages/adminSistema/SystemActivities'));
 const DueDiligence = lazy(() => import('./pages/adminSistema/DueDiligence'));
 const PolicyManagement = lazy(() => import('./pages/adminSistema/PolicyManagement'));
@@ -123,6 +125,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<Register />} />
       <Route path="/convite/:token" element={<AcceptInvite />} />
+      <Route path="/convite-admin/:token" element={<AcceptAdminInvite />} />
       <Route path="/recuperar" element={<PasswordReset />} />
       <Route path="/recuperar/:token" element={<PasswordReset />} />
       <Route path="/supplier-development" element={<SupplierDevelopment initialTrack="BUROCRACIA" />} />
@@ -243,6 +246,7 @@ export default function App() {
             <Route path="/sistema/contratos" element={<AdminContracts />} />
             <Route path="/sistema/empresas" element={<Companies />} />
             <Route path="/sistema/permissoes" element={<AdminPermissions />} />
+            <Route path="/sistema/administradores" element={<Administradores />} />
             <Route path="/sistema/atividades" element={<SystemActivities />} />
             <Route path="/sistema/taxas" element={<PlatformFees />} />
             <Route path="/sistema/auditoria" element={<AuditTrail />} />

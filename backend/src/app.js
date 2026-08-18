@@ -154,6 +154,7 @@ for (const caminho of ['/api/auth/login', '/api/auth/2fa/verify', '/api/auth/for
 }
 app.use('/api/companies/register', sensitiveLimiter);
 app.use('/api/companies/invite', sensitiveLimiter);
+app.use('/api/admin/invite', sensitiveLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/companies', companyRoutes);
