@@ -9,7 +9,6 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const sessao = (nome) => `e2e/.sessoes/${nome}.json`;
-const PRODUTO_KIANDA = 'fef4c884-aea0-42e7-abe6-6068545004bc'; // fornecedor@kianda.co.ao
 
 // Ligação da mesma base que os servidores de e2e usam — sem credencial
 // nenhuma escrita à mão aqui. Em CI vem diretamente do ambiente (o workflow
@@ -33,6 +32,17 @@ const HASH_KIXIMA123 = '$2a$10$uQvbVfqwhCCoakNvvoPrCumlP8p93Jjb3ipgB7vkS2nKsjMdN
 
 function psql(sql) {
   execFileSync('psql', [databaseUrl(), '-v', 'ON_ERROR_STOP=1', '-c', sql], { stdio: 'pipe' });
+}
+
+// Um valor só (id, por exemplo) — nunca escrito à mão: os ids são
+// uuid() gerados pelo seed, diferentes em cada ambiente (local vs. CI, que
+// semeia a base do zero em cada corrida). Um id fixo aqui já passou a
+// apontar para um produto que só existia na base local — em CI a ficha do
+// produto nunca carregava, "Falar com o fornecedor" nunca aparecia, e o
+// teste ficava à espera até esgotar o tempo.
+function psqlValue(sql) {
+  return execFileSync('psql', [databaseUrl(), '-v', 'ON_ERROR_STOP=1', '-t', '-A', '-c', sql], { stdio: 'pipe' })
+    .toString().trim();
 }
 
 test.describe('Chat de Suporte', () => {
@@ -96,6 +106,7 @@ test.describe.serial('Chat Comercial', () => {
   const perguntaInicial = `Bom dia, qual o prazo de entrega deste produto? (e2e ${nonce})`;
   const respostaFornecedor = `Bom dia! O prazo é de 10 dias úteis. (e2e ${nonce})`;
   let urlConversa;
+  let produtoKianda;
 
   test.beforeAll(() => {
     psql(`INSERT INTO companies (id, name, tax_id, type, status, contact_email, approved_at, plan, search_rank, created_at, updated_at)
@@ -104,6 +115,12 @@ test.describe.serial('Chat Comercial', () => {
     psql(`INSERT INTO users (id, name, email, password_hash, role, company_id, active, created_at, updated_at)
           VALUES ('${USER_C_ID}', 'Utilizador Empresa C (E2E)', '${EMAIL_C}', '${HASH_KIXIMA123}', 'COMPRADOR', '${EMPRESA_C_ID}', true, now(), now())
           ON CONFLICT (id) DO NOTHING;`);
+    // AO-FOR-0001 (Fornecedora Industrial Kianda) é fixo no seed; o id do
+    // produto NÃO é — vai um uuid() diferente a cada seed. Procura-se sempre.
+    produtoKianda = psqlValue(
+      "SELECT p.id FROM products p JOIN companies c ON c.id = p.supplier_id WHERE c.tax_id = 'AO-FOR-0001' LIMIT 1;",
+    );
+    if (!produtoKianda) throw new Error('Nenhum produto encontrado para a Fornecedora Kianda (AO-FOR-0001) — o seed correu?');
   });
 
   test.afterAll(() => {
@@ -115,7 +132,7 @@ test.describe.serial('Chat Comercial', () => {
     const ctx = await browser.newContext({ storageState: sessao('comprador') });
     try {
       const page = await ctx.newPage();
-      await page.goto(`/comprador/catalogo/${PRODUTO_KIANDA}`);
+      await page.goto(`/comprador/catalogo/${produtoKianda}`);
       await page.click('text=Falar com o fornecedor');
       await page.waitForURL(/\/mensagens\/chat-comercial\?c=/, { timeout: 10000 });
       urlConversa = page.url();
