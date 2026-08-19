@@ -1,0 +1,8 @@
+{
+  "appId": "net.kixima.app",
+  "appName": "Kixima",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

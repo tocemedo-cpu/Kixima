@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kixima</string>
+    <string name="title_activity_main">Kixima</string>
+    <string name="package_name">net.kixima.app</string>
+    <string name="custom_url_scheme">net.kixima.app</string>
+</resources>
