@@ -1,6 +1,7 @@
 // src/i18n/content4.js
 // Dicionário (lote B da auditoria i18n): traduções EN/FR das páginas varridas.
 export const EN5 = {
+  "A API respondeu sem dados válidos — verifique a ligação.": "The API responded without valid data — please check your connection.",
   "Ainda sem eventos registados.": "No events recorded yet.",
   "Aprovada pelo Company Admin": "Approved by the Company Admin",
   "Baixar PDF": "Download PDF",
@@ -378,6 +379,7 @@ export const EN5 = {
 };
 
 export const FR5 = {
+  "A API respondeu sem dados válidos — verifique a ligação.": "L'API a répondu sans données valides — veuillez vérifier votre connexion.",
   "Ainda sem eventos registados.": "Aucun événement enregistré pour l'instant.",
   "Aprovada pelo Company Admin": "Approuvée par le Company Admin",
   "Baixar PDF": "Télécharger le PDF",
