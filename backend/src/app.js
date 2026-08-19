@@ -72,7 +72,17 @@ app.use(helmet({
 // CORS: em produção o SPA é servido na mesma origem, por isso restringimos a
 // uma allow-list (APP_URL + CORS_ORIGINS). Em desenvolvimento permitimos tudo
 // para o servidor Vite (noutra porta) poder chamar a API.
-const corsAllowList = [config.appUrl, ...String(process.env.CORS_ORIGINS || '').split(',')]
+//
+// A app Android/iOS empacotada com o Capacitor é uma exceção: o WebView corre
+// com androidScheme 'https' (ver frontend/capacitor.config.json), por isso
+// TODO pedido sai com Origin: https://localhost — não é "sem Origin" como o
+// comentário abaixo assumia para "apps móveis". Sem isto na lista, o browser
+// interno bloqueava a resposta antes de chegar a qualquer JavaScript da app,
+// e aparecia como "Failed to fetch" sem pista nenhuma da causa. É um par de
+// origens FIXAS e conhecidas (o esquema do Capacitor, não um domínio de
+// terceiros) — não abre a API a origens arbitrárias.
+const ORIGENS_CAPACITOR = ['https://localhost', 'capacitor://localhost'];
+const corsAllowList = [config.appUrl, ...ORIGENS_CAPACITOR, ...String(process.env.CORS_ORIGINS || '').split(',')]
   .map((s) => (s || '').trim())
   .filter(Boolean);
 app.use(cors({
