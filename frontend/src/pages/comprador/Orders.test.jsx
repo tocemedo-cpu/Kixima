@@ -3,7 +3,7 @@
 // da PO e visualizar o PDF diretamente, sem passar pelo detalhe.
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { I18nProvider } from '../../i18n';
 
 const apiGet = vi.fn();
@@ -27,7 +27,13 @@ const RESPONSE = {
 function montar() {
   return render(
     <MemoryRouter>
-      <I18nProvider><Orders /></I18nProvider>
+      <I18nProvider>
+        <Routes>
+          <Route path="/" element={<Orders />} />
+          {/* Só para confirmar que "Visualizar PDF" navega DENTRO da SPA. */}
+          <Route path="/documento/po/:id" element={<div>DOC-PO</div>} />
+        </Routes>
+      </I18nProvider>
     </MemoryRouter>,
   );
 }
@@ -44,11 +50,12 @@ test('cada linha tem "Ver detalhes" e "Visualizar PDF"', async () => {
   expect(screen.getByTitle('Visualizar PDF')).toBeInTheDocument();
 });
 
-test('"Visualizar PDF" abre o documento numa nova aba, sem navegar para o detalhe', async () => {
+test('"Visualizar PDF" navega dentro da própria SPA, sem abrir aba externa', async () => {
   const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {});
   montar();
   await screen.findByText('PO-2026-000001');
   fireEvent.click(screen.getByTitle('Visualizar PDF'));
-  expect(openSpy).toHaveBeenCalledWith('/documento/po/po1', '_blank');
+  expect(await screen.findByText('DOC-PO')).toBeInTheDocument();
+  expect(openSpy).not.toHaveBeenCalled();
   openSpy.mockRestore();
 });

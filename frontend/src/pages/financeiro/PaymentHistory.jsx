@@ -2,6 +2,7 @@
 // Pagamentos — todas as faturas da empresa (pagas, pendentes, vencidas) com
 // KPIs. Ligado a /api/financeiro/payments.
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
@@ -15,6 +16,7 @@ const TABS = [
 
 export default function PaymentHistory() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [tab, setTab] = useState('');
   const [q, setQ] = useState('');
   const [data, setData] = useState(null);
@@ -62,8 +64,8 @@ export default function PaymentHistory() {
                       <td className="r" style={{ whiteSpace: 'nowrap' }}>
                         {i.poId ? (
                           <>
-                            <button className="btn btn-ghost btn-sm" title={t('Ver fatura')} onClick={() => window.open(`/documento/fatura/${i.poId}`, '_blank')}><Icon name="report" size={14} /> {t('Fatura')}</button>
-                            <button className="btn btn-ghost btn-sm" style={{ marginLeft: 6 }} title={t('Ver ordem de compra')} onClick={() => window.open(`/documento/po/${i.poId}`, '_blank')}><Icon name="report" size={14} /> {t('PO')}</button>
+                            <button className="btn btn-ghost btn-sm" title={t('Ver fatura')} onClick={() => navigate(`/documento/fatura/${i.poId}`)}><Icon name="report" size={14} /> {t('Fatura')}</button>
+                            <button className="btn btn-ghost btn-sm" style={{ marginLeft: 6 }} title={t('Ver ordem de compra')} onClick={() => navigate(`/documento/po/${i.poId}`)}><Icon name="report" size={14} /> {t('PO')}</button>
                           </>
                         ) : <span className="bz-muted">—</span>}
                       </td>

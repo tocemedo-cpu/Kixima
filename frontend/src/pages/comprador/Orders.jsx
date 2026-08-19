@@ -78,7 +78,7 @@ export default function Orders() {
                     <td>
                       <div className="bz-actions">
                         <button className="bz-iconbtn" title={t('Ver detalhes')} onClick={() => nav(`/comprador/ordens/${o.id}`)}><Icon name="search" size={14} /></button>
-                        <button className="bz-iconbtn" title={t('Visualizar PDF')} onClick={() => window.open(`/documento/po/${o.id}`, '_blank')}><Icon name="invoice" size={14} /></button>
+                        <button className="bz-iconbtn" title={t('Visualizar PDF')} onClick={() => nav(`/documento/po/${o.id}`)}><Icon name="invoice" size={14} /></button>
                       </div>
                     </td>
                   </tr>

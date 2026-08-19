@@ -4,7 +4,7 @@
 // fluxo completo de PO.
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { I18nProvider } from '../../i18n';
 
 const apiGet = vi.fn();
@@ -18,6 +18,11 @@ vi.mock('../../auth/AuthContext', () => ({ useAuth: () => ({ user: mockUser }) }
 
 // eslint-disable-next-line import/first
 import OrderDetail from './OrderDetail';
+
+function RotaDestino({ etiqueta }) {
+  const location = useLocation();
+  return <div>{etiqueta} {location.search}</div>;
+}
 
 const PO_APROVADA = {
   id: 'po1', reference: 'PO-2026-000001', status: 'APROVADA', isCallOff: false,
@@ -34,7 +39,14 @@ function montar(id = 'po1') {
   return render(
     <MemoryRouter initialEntries={[`/ordens/${id}`]}>
       <I18nProvider>
-        <Routes><Route path="/ordens/:id" element={<OrderDetail />} /></Routes>
+        <Routes>
+          <Route path="/ordens/:id" element={<OrderDetail />} />
+          {/* Rotas de destino do PDF: só para confirmar que a navegação fica
+              DENTRO da SPA (não abre aba/janela externa) — não é preciso
+              montar o PrintableDocument a sério aqui. */}
+          <Route path="/documento/po/:id" element={<RotaDestino etiqueta="DOC-PO" />} />
+          <Route path="/documento/fatura/:id" element={<RotaDestino etiqueta="DOC-FATURA" />} />
+        </Routes>
       </I18nProvider>
     </MemoryRouter>,
   );
@@ -101,15 +113,19 @@ describe('Linha do tempo', () => {
 });
 
 describe('PDF — Visualizar vs Baixar', () => {
-  test('"Visualizar PDF" e "Baixar PDF" abrem o documento com/sem o parâmetro de download automático', async () => {
+  test('"Visualizar PDF" e "Baixar PDF" navegam dentro da própria SPA, sem abrir aba/janela externa', async () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {});
     montar();
     fireEvent.click(await screen.findByRole('button', { name: 'Visualizar PDF (PO)' }));
-    expect(openSpy).toHaveBeenLastCalledWith('/documento/po/po1', '_blank');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF (PO)' }));
-    expect(openSpy).toHaveBeenLastCalledWith('/documento/po/po1?baixar=1', '_blank');
+    expect(await screen.findByText('DOC-PO')).toBeInTheDocument();
+    expect(openSpy).not.toHaveBeenCalled();
 
     openSpy.mockRestore();
+  });
+
+  test('"Baixar PDF" navega para a mesma rota com ?baixar=1', async () => {
+    montar();
+    fireEvent.click(await screen.findByRole('button', { name: 'Baixar PDF (PO)' }));
+    expect(await screen.findByText('DOC-PO ?baixar=1')).toBeInTheDocument();
   });
 });

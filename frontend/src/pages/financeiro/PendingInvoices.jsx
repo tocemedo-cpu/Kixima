@@ -2,6 +2,7 @@
 // Faturas Pendentes — o Financeiro analisa e paga as faturas recebidas dentro
 // do SLA. Ligado a /api/financeiro/invoices; pagamento via /api/payments.
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Field } from '../../components/Common';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, KpiRow, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
@@ -11,6 +12,7 @@ import { useI18n } from '../../i18n';
 
 export default function PendingInvoices() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [q, setQ] = useState('');
   const [error, setError] = useState('');
@@ -78,7 +80,7 @@ export default function PendingInvoices() {
                     <td><Pill tone={overdue ? 'danger' : 'pending'}>{overdue ? 'Vencida' : 'Pendente'}</Pill></td>
                     <td className="r" style={{ whiteSpace: 'nowrap' }}>
                       {i.poId ? (
-                        <button className="btn btn-ghost btn-sm" title={t('Ver fatura')} onClick={() => window.open(`/documento/fatura/${i.poId}`, '_blank')}>
+                        <button className="btn btn-ghost btn-sm" title={t('Ver fatura')} onClick={() => navigate(`/documento/fatura/${i.poId}`)}>
                           <Icon name="report" size={14} /> {t('Ver')}
                         </button>
                       ) : null}

@@ -96,18 +96,18 @@ export default function OrderDetail() {
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/po/${po.id}`, '_blank')}>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/documento/po/${po.id}`)}>
           {t('Visualizar PDF (PO)')}
         </button>
-        <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/po/${po.id}?baixar=1`, '_blank')}>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/documento/po/${po.id}?baixar=1`)}>
           {t('Baixar PDF (PO)')}
         </button>
         {po.invoice ? (
           <>
-            <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/fatura/${po.id}`, '_blank')}>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/documento/fatura/${po.id}`)}>
               {t('Visualizar PDF (Fatura)')}
             </button>
-            <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/documento/fatura/${po.id}?baixar=1`, '_blank')}>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/documento/fatura/${po.id}?baixar=1`)}>
               {t('Baixar PDF (Fatura)')}
             </button>
           </>
