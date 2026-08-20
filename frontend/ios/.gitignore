@@ -11,3 +11,16 @@ capacitor-cordova-ios-plugins
 # Generated Config files
 App/App/capacitor.config.json
 App/App/config.xml
+
+# Assinatura do App Store: só existem no runner do GitHub Actions, decifrados
+# a partir de Secrets e apagados no fim do workflow — nunca devem chegar a
+# este repositório (ver .github/workflows/ios-release.yml).
+App/certificate.p12
+App/profile.mobileprovision
+
+# Fastlane
+App/fastlane/report.xml
+App/fastlane/Preview.html
+App/fastlane/screenshots
+App/fastlane/test_output
+App/vendor

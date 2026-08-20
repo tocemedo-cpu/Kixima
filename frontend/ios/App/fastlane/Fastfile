@@ -1,0 +1,62 @@
+default_platform(:ios)
+
+# Só isto: recebe o certificado de distribuição + perfil de aprovisionamento
+# já decifrados pelo workflow (ver .github/workflows/ios-release.yml), assina
+# o build e envia para o TestFlight. Nenhuma credencial de Apple ID entra
+# aqui — a autenticação com o App Store Connect é só pela API Key.
+platform :ios do
+  desc "Build assinado do projeto Capacitor e envio para o TestFlight"
+  lane :release do
+    keychain_name = "kixima_ci_keychain"
+
+    create_keychain(
+      name: keychain_name,
+      password: ENV.fetch("KEYCHAIN_PASSWORD"),
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600
+    )
+
+    import_certificate(
+      certificate_path: "certificate.p12",
+      certificate_password: ENV.fetch("IOS_DIST_CERTIFICATE_PASSWORD"),
+      keychain_name: keychain_name,
+      keychain_password: ENV.fetch("KEYCHAIN_PASSWORD")
+    )
+
+    install_provisioning_profile(path: "profile.mobileprovision")
+
+    # O App Store Connect exige um número de build único a cada envio — o
+    # número de execução do próprio workflow cresce sempre, sem precisar de
+    # guardar estado nenhum no repositório.
+    increment_build_number(
+      xcodeproj: "App.xcodeproj",
+      build_number: ENV.fetch("FASTLANE_BUILD_NUMBER")
+    )
+
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_API_ISSUER_ID"),
+      key_content: ENV.fetch("APP_STORE_CONNECT_API_KEY_CONTENT"),
+      is_key_content_base64: true,
+      in_house: false
+    )
+
+    build_app(
+      project: "App.xcodeproj",
+      scheme: "App",
+      export_method: "app-store",
+      export_options: {
+        teamID: ENV.fetch("APPLE_TEAM_ID"),
+        provisioningProfiles: {
+          "net.kixima.app" => ENV.fetch("IOS_PROVISIONING_PROFILE_NAME")
+        }
+      }
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true
+    )
+  end
+end

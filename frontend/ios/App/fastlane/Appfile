@@ -1,0 +1,6 @@
+# O login por Apple ID/palavra-passe nunca é usado aqui — a autenticação com o
+# App Store Connect é feita pela API Key (ver Fastfile), que não pede 2FA
+# interativo e não guarda a palavra-passe de ninguém. team_id ainda é preciso
+# para a assinatura do build em si (export_options no Fastfile).
+app_identifier("net.kixima.app")
+team_id(ENV["APPLE_TEAM_ID"])

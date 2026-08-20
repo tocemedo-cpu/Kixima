@@ -1,0 +1,69 @@
+# iOS Release (TestFlight) — build ASSINADO, enviado a sério para o App
+# Store Connect. Diferente do ios-build.yml (que só valida que o projeto
+# compila, sem assinatura, em cada push): este workflow só corre quando
+# pedido explicitamente (workflow_dispatch), porque cada corrida cria um
+# build novo no TestFlight.
+#
+# Nenhum segredo entra no código. Tudo o que a assinatura precisa (o
+# certificado de distribuição, o perfil de aprovisionamento, a chave da API
+# do App Store Connect) vive em GitHub Secrets e é decifrado só em memória do
+# runner, apagado no fim — ver o passo final "Limpar ficheiros sensíveis".
+name: iOS Release (TestFlight)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  release:
+    name: Build assinado + envio para o TestFlight
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: React build
+        working-directory: frontend
+        run: npm ci && npm run build
+
+      - name: Capacitor sync (ios)
+        working-directory: frontend
+        run: npx cap sync ios
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: frontend/ios/App
+
+      - name: Decifrar certificado e perfil de aprovisionamento
+        working-directory: frontend/ios/App
+        env:
+          IOS_DIST_CERTIFICATE_P12: ${{ secrets.IOS_DIST_CERTIFICATE_P12 }}
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          echo "$IOS_DIST_CERTIFICATE_P12" | base64 --decode > certificate.p12
+          echo "$IOS_PROVISIONING_PROFILE" | base64 --decode > profile.mobileprovision
+
+      - name: Fastlane — build assinado + upload para o TestFlight
+        working-directory: frontend/ios/App
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+          IOS_DIST_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DIST_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          FASTLANE_BUILD_NUMBER: ${{ github.run_number }}
+        run: bundle exec fastlane release
+
+      - name: Limpar ficheiros sensíveis
+        if: always()
+        working-directory: frontend/ios/App
+        run: rm -f certificate.p12 profile.mobileprovision
