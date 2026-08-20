@@ -1,5 +1,12 @@
 apply plugin: 'com.android.application'
 
+// Assinatura de release: só existe fora deste ficheiro (variáveis de
+// ambiente do workflow android-release.yml, ver .github/workflows/), nunca
+// aqui nem num keystore no repositório. Sem essas variáveis (build local,
+// android-build.yml de validação) o buildType release fica exatamente como
+// estava antes — sem signingConfig, tal como sempre foi.
+def releaseStoreFile = System.getenv("KIXIMA_RELEASE_STORE_FILE")
+
 android {
     namespace = "net.kixima.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +14,13 @@ android {
         applicationId "net.kixima.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // A Play Store exige um versionCode sempre crescente a cada envio —
+        // o número de execução do próprio workflow (ver android-release.yml)
+        // serve esse propósito sem guardar estado nenhum aqui. Sem essa
+        // variável (build local, android-build.yml de validação) mantém-se
+        // 1/"1.0", exatamente como antes desta alteração.
+        versionCode (System.getenv("KIXIMA_VERSION_CODE") ?: "1").toInteger()
+        versionName System.getenv("KIXIMA_VERSION_NAME") ?: "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +28,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (releaseStoreFile) {
+                storeFile file(releaseStoreFile)
+                storePassword System.getenv("KIXIMA_RELEASE_STORE_PASSWORD")
+                keyAlias System.getenv("KIXIMA_RELEASE_KEY_ALIAS")
+                keyPassword System.getenv("KIXIMA_RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (releaseStoreFile) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

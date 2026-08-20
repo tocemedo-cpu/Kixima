@@ -1,0 +1,80 @@
+# Android Release (Play Store) — gera o Android App Bundle (.aab) ASSINADO
+# que a Play Store exige para submissão. Diferente do android-build.yml (que
+# só valida, sem assinar, em cada push): este só corre quando pedido
+# explicitamente (workflow_dispatch), porque cada corrida assina um artefacto
+# a sério com a chave de upload.
+#
+# Nenhum segredo entra no código. O keystore vive em GitHub Secrets,
+# codificado em base64, decifrado só em memória do runner e apagado no fim
+# (ver o passo final "Limpar ficheiros sensíveis"). O .aab resultante fica
+# disponível como artefacto desta execução — o envio à Play Store em si
+# (Play Console ou Play Developer API) é um passo manual à parte.
+name: Android Release (Play Store)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Nome da versão (ex.: 1.1) — o que aparece na Play Store'
+        required: false
+        default: '1.0'
+
+jobs:
+  release:
+    name: App Bundle assinado
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - run: npm ci
+
+      - name: React build
+        run: npm run build
+
+      - name: Capacitor sync (android)
+        run: npx cap sync android
+
+      - name: Decifrar o keystore de upload
+        working-directory: frontend/android
+        env:
+          KIXIMA_UPLOAD_KEYSTORE_B64: ${{ secrets.KIXIMA_UPLOAD_KEYSTORE_B64 }}
+        run: echo "$KIXIMA_UPLOAD_KEYSTORE_B64" | base64 --decode > kixima-upload.jks
+
+      - name: Gradle — App Bundle assinado (release)
+        working-directory: frontend/android
+        env:
+          KIXIMA_RELEASE_STORE_FILE: kixima-upload.jks
+          KIXIMA_RELEASE_STORE_PASSWORD: ${{ secrets.KIXIMA_RELEASE_STORE_PASSWORD }}
+          KIXIMA_RELEASE_KEY_ALIAS: ${{ secrets.KIXIMA_RELEASE_KEY_ALIAS }}
+          KIXIMA_RELEASE_KEY_PASSWORD: ${{ secrets.KIXIMA_RELEASE_KEY_PASSWORD }}
+          KIXIMA_VERSION_CODE: ${{ github.run_number }}
+          KIXIMA_VERSION_NAME: ${{ inputs.version_name }}
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: Guardar o .aab como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: kixima-release-${{ github.run_number }}
+          path: frontend/android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Limpar ficheiros sensíveis
+        if: always()
+        working-directory: frontend/android
+        run: rm -f kixima-upload.jks
