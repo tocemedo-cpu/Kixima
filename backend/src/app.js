@@ -70,31 +70,13 @@ app.use(helmet({
 }));
 
 // CORS: em produção o SPA é servido na mesma origem, por isso restringimos a
-// uma allow-list (APP_URL + CORS_ORIGINS). Em desenvolvimento permitimos tudo
-// para o servidor Vite (noutra porta) poder chamar a API.
-//
-// A app Android/iOS empacotada com o Capacitor é uma exceção: o WebView corre
-// com androidScheme 'https' (ver frontend/capacitor.config.json), por isso
-// TODO pedido sai com Origin: https://localhost — não é "sem Origin" como o
-// comentário abaixo assumia para "apps móveis". Sem isto na lista, o browser
-// interno bloqueava a resposta antes de chegar a qualquer JavaScript da app,
-// e aparecia como "Failed to fetch" sem pista nenhuma da causa. É um par de
-// origens FIXAS e conhecidas (o esquema do Capacitor, não um domínio de
-// terceiros) — não abre a API a origens arbitrárias.
-const ORIGENS_CAPACITOR = ['https://localhost', 'capacitor://localhost'];
-const corsAllowList = [config.appUrl, ...ORIGENS_CAPACITOR, ...String(process.env.CORS_ORIGINS || '').split(',')]
-  .map((s) => (s || '').trim())
-  .filter(Boolean);
+// uma allow-list (APP_URL + CORS_ORIGINS + as origens fixas do Capacitor —
+// ver config/cors.js, partilhado com o Socket.IO em realtimeService.js).
+// Em desenvolvimento permitimos tudo para o servidor Vite (noutra porta)
+// poder chamar a API.
+const corsConfig = require('./config/cors');
 app.use(cors({
-  origin(origin, cb) {
-    if (!origin) return cb(null, true);            // same-origin, curl, apps móveis
-    if (config.isDevelopment || config.isTest) return cb(null, true);
-    if (corsAllowList.includes(origin)) return cb(null, true);
-    // Origem não autorizada: não erra (não quebra pedidos same-origin que
-    // enviam Origin em POST); apenas não devolve o cabeçalho ACAO, pelo que o
-    // browser bloqueia a resposta cross-origin.
-    return cb(null, false);
-  },
+  origin: corsConfig.origin,
   // A sessão viaja num cookie httpOnly, e um cookie só atravessa origens
   // diferentes com isto ligado. Em produção o SPA é servido na mesma origem e
   // nem seria preciso; em desenvolvimento o Vite está noutra porta, e sem isto

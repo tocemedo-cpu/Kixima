@@ -11,6 +11,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../auth/AuthContext';
+import { API_BASE_URL, bearerNativoAtual } from '../api/client';
 
 const RealtimeContext = createContext(null);
 
@@ -29,9 +30,18 @@ export function RealtimeProvider({ children }) {
       return undefined;
     }
 
-    // withCredentials envia o MESMO cookie httpOnly de sessão que a API usa —
-    // não há token nenhum para gerir aqui do lado do browser.
-    const s = io('/', { withCredentials: true, transports: ['websocket', 'polling'] });
+    // withCredentials envia o MESMO cookie httpOnly de sessão que a API usa.
+    // Dentro do Capacitor isso tem duas questões próprias da API REST (ver
+    // api/client.js): '/' resolve-se contra a origem falsa do WebView, não
+    // contra kixima.net — por isso a MESMA base (API_BASE_URL); e o cookie
+    // cross-origin pode não sobreviver — por isso o MESMO Bearer em memória,
+    // aqui passado no handshake (auth.token), que é onde o backend também o
+    // procura (ver backend/src/services/realtimeService.js).
+    const s = io(API_BASE_URL || '/', {
+      withCredentials: true,
+      transports: ['websocket', 'polling'],
+      auth: bearerNativoAtual() ? { token: bearerNativoAtual() } : undefined,
+    });
     socketRef.current = s;
     setSocket(s);
     s.on('connect', () => setConnected(true));

@@ -1,0 +1,65 @@
+# iOS Build — valida que o projeto Capacitor compila para iOS.
+#
+# Só isto: um build de simulador SEM assinatura (CODE_SIGNING_ALLOWED=NO).
+# Emitir um IPA distribuível exige um certificado + perfil de aprovisionamento
+# de uma conta Apple Developer, que não existe nesta configuração — nunca se
+# colocam segredos no código, e sem eles não há como assinar. Este workflow
+# garante só que React build -> Capacitor sync -> projeto Xcode continuam
+# coerentes a cada alteração; a assinatura/distribuição fica para quando essa
+# conta existir.
+name: iOS Build
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'frontend/ios/**'
+      - 'frontend/capacitor.config.json'
+      - 'frontend/src/**'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'frontend/vite.config.js'
+      - '.github/workflows/ios-build.yml'
+  pull_request:
+    paths:
+      - 'frontend/ios/**'
+      - 'frontend/capacitor.config.json'
+      - 'frontend/src/**'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+  workflow_dispatch: {}
+
+jobs:
+  ios-build:
+    name: iOS — build de simulador sem assinatura
+    runs-on: macos-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: React build
+        run: npm run build
+
+      - name: Capacitor sync (ios)
+        run: npx cap sync ios
+
+      - name: Xcode build (simulador, sem assinatura)
+        working-directory: frontend/ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App \
+            -sdk iphonesimulator -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build

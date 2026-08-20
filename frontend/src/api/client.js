@@ -42,7 +42,11 @@ const COM_SESSAO = { credentials: 'include' };
 // pacote não esteja instalado neste momento. Em qualquer página Web normal
 // (dev ou produção) `window.Capacitor` simplesmente não existe, e o resultado
 // é sempre '' — comportamento em tudo igual ao de antes desta alteração.
-function ehAppNativa() {
+//
+// Exportada: o Socket.IO (realtime/RealtimeContext.jsx) precisa exatamente
+// da mesma deteção — o chat em tempo real tem a mesma questão de origem que
+// a API REST, só que por um transporte diferente.
+export function ehAppNativa() {
   return typeof window !== 'undefined'
     && !!window.Capacitor
     && typeof window.Capacitor.isNativePlatform === 'function'
@@ -53,8 +57,9 @@ function ehAppNativa() {
 // começam por '/api/...'; juntar aqui outro '/api' duplicava-o
 // (kixima.net/api/api/auth/login). Configurável por VITE_API_BASE_URL para
 // apontar uma build nativa a outro anfitrião (ex.: o Render direto) sem
-// mexer no código.
-const API_BASE_URL = ehAppNativa() ? (import.meta.env.VITE_API_BASE_URL || 'https://kixima.net') : '';
+// mexer no código. Também exportada, pelo mesmo motivo acima — o Socket.IO
+// liga-se a esta MESMA origem, não a '/'.
+export const API_BASE_URL = ehAppNativa() ? (import.meta.env.VITE_API_BASE_URL || 'https://kixima.net') : '';
 
 // --- Sessão nativa: Bearer em memória, nunca em localStorage ---------------
 //
@@ -78,6 +83,12 @@ let bearerNativo = null;
 
 export function definirBearerNativo(token) {
   if (ehAppNativa()) bearerNativo = token || null;
+}
+
+// Leitura, para o Socket.IO — que se autentica pelo handshake (auth.token),
+// não por cabeçalho, mas precisa do MESMO valor guardado acima.
+export function bearerNativoAtual() {
+  return bearerNativo;
 }
 
 function headersComSessao(extra) {

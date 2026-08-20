@@ -33,6 +33,7 @@ const config = require('../config/env');
 const prisma = require('../config/database');
 const logger = require('../config/logger');
 const sessionCookie = require('../utils/sessionCookie');
+const corsConfig = require('../config/cors');
 
 let io = null;
 
@@ -110,15 +111,12 @@ function registarSalaDinamica(socket, { evento, prefixo, autorizar }) {
 }
 
 function init(server) {
+  // Mesma allow-list do Express (config/cors.js) — as duas tinham cada uma a
+  // sua cópia, e foi assim que a origem do Capacitor ficou autorizada no
+  // REST mas esquecida aqui: o login funcionava, o chat ficava mudo.
   io = new Server(server, {
     cors: {
-      origin(origin, cb) {
-        if (!origin) return cb(null, true);
-        if (config.isDevelopment || config.isTest) return cb(null, true);
-        const allowList = [config.appUrl, ...String(process.env.CORS_ORIGINS || '').split(',')]
-          .map((s) => (s || '').trim()).filter(Boolean);
-        return cb(null, allowList.includes(origin));
-      },
+      origin: corsConfig.origin,
       credentials: true,
     },
   });
