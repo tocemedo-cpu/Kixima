@@ -6,6 +6,12 @@ apply plugin: 'com.android.application'
 // android-build.yml de validação) o buildType release fica exatamente como
 // estava antes — sem signingConfig, tal como sempre foi.
 def releaseStoreFile = System.getenv("KIXIMA_RELEASE_STORE_FILE")
+// Calculados ANTES do bloco android {} de propósito: `versionCode (expr).toInteger()`
+// dentro do defaultConfig analisa-se em Groovy como `versionCode(expr).toInteger()` —
+// chama primeiro o setter (que devolve null) e só depois tenta `.toInteger()` nesse
+// null. Foi exatamente isto que partiu o build de debug no CI ("Value is null").
+def releaseVersionCode = (System.getenv("KIXIMA_VERSION_CODE") ?: "1").toInteger()
+def releaseVersionName = System.getenv("KIXIMA_VERSION_NAME") ?: "1.0"
 
 android {
     namespace = "net.kixima.app"
@@ -19,8 +25,8 @@ android {
         // serve esse propósito sem guardar estado nenhum aqui. Sem essa
         // variável (build local, android-build.yml de validação) mantém-se
         // 1/"1.0", exatamente como antes desta alteração.
-        versionCode (System.getenv("KIXIMA_VERSION_CODE") ?: "1").toInteger()
-        versionName System.getenv("KIXIMA_VERSION_NAME") ?: "1.0"
+        versionCode releaseVersionCode
+        versionName releaseVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
