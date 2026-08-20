@@ -59,7 +59,17 @@ export function ehAppNativa() {
 // apontar uma build nativa a outro anfitrião (ex.: o Render direto) sem
 // mexer no código. Também exportada, pelo mesmo motivo acima — o Socket.IO
 // liga-se a esta MESMA origem, não a '/'.
-export const API_BASE_URL = ehAppNativa() ? (import.meta.env.VITE_API_BASE_URL || 'https://kixima.net') : '';
+//
+// FUNÇÃO, não uma constante calculada uma vez: window.Capacitor é injetado
+// pelo runtime nativo de forma assíncrona, e este módulo pode carregar (e
+// correr este cálculo) antes disso acontecer — uma corrida de arranque, não
+// hipotética: dava exatamente "Failed to fetch" (a app decidia, nesse
+// instante, que não era nativa, ficava com a base '', e o pedido resolvia-se
+// contra https://localhost — onde não há nada à escuta). Calculando a cada
+// pedido, já não importa a ordem de carregamento.
+export function apiBaseUrl() {
+  return ehAppNativa() ? (import.meta.env.VITE_API_BASE_URL || 'https://kixima.net') : '';
+}
 
 // --- Sessão nativa: Bearer em memória, nunca em localStorage ---------------
 //
@@ -112,7 +122,7 @@ export function marcarSessao(ativa) {
 }
 
 async function request(path, { method = 'GET', body, params } = {}) {
-  const url = new URL(path, API_BASE_URL || window.location.origin);
+  const url = new URL(path, apiBaseUrl() || window.location.origin);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, value);
@@ -121,7 +131,7 @@ async function request(path, { method = 'GET', body, params } = {}) {
 
   // A URL completa (não só pathname+search): contra a própria origem isto
   // resolve-se em tudo igual a um caminho relativo, e é o que torna a base
-  // absoluta acima (API_BASE_URL) capaz de sair da origem falsa do Capacitor.
+  // absoluta acima (apiBaseUrl()) capaz de sair da origem falsa do Capacitor.
   const res = await fetch(url.toString(), {
     method,
     headers: headersComSessao({ 'Content-Type': 'application/json' }),
@@ -163,7 +173,7 @@ async function request(path, { method = 'GET', body, params } = {}) {
 async function uploadFile(path, file, field = 'image') {
   const formData = new FormData();
   formData.append(field, file);
-  const url = new URL(path, API_BASE_URL || window.location.origin);
+  const url = new URL(path, apiBaseUrl() || window.location.origin);
   const res = await fetch(url.toString(), { method: 'POST', body: formData, headers: headersComSessao(), ...COM_SESSAO });
   const data = res.headers.get('content-type')?.includes('application/json')
     ? await res.json().catch(() => null)
@@ -187,7 +197,7 @@ async function uploadFile(path, file, field = 'image') {
 
 // POST de um FormData já montado (multipart) — ex.: cadastro com documentos.
 async function postForm(path, formData) {
-  const url = new URL(path, API_BASE_URL || window.location.origin);
+  const url = new URL(path, apiBaseUrl() || window.location.origin);
   const res = await fetch(url.toString(), { method: 'POST', body: formData, headers: headersComSessao(), ...COM_SESSAO });
   const data = res.headers.get('content-type')?.includes('application/json')
     ? await res.json().catch(() => null)

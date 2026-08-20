@@ -1,8 +1,11 @@
 // src/api/client.test.js
-// A base da URL da API decide-se UMA VEZ, à carga do módulo (window.Capacitor
-// já tem de estar definido nessa altura) — por isso cada cenário (Web vs.
-// Capacitor nativo) importa o módulo de fresco, depois de preparar
-// window.Capacitor, em vez de reconfigurar um módulo já carregado.
+// A base da URL da API é recalculada a CADA pedido (apiBaseUrl()), não uma
+// vez só à carga do módulo — window.Capacitor é injetado pelo runtime nativo
+// de forma assíncrona, e um cálculo único corria o risco de acontecer antes
+// disso, decidindo (incorretamente, e para sempre) que a app não era nativa.
+// Por isso cada cenário (Web vs. Capacitor nativo) importa o módulo de fresco
+// — para simular window.Capacitor já definido OU só a aparecer depois — em
+// vez de reconfigurar um módulo já carregado.
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 async function carregarClienteComo({ nativo }) {
@@ -96,6 +99,22 @@ describe('Capacitor nativo (Android/iOS)', () => {
     await api.get('/api/auth/me');
 
     expect(fetchMock.mock.calls[0][1].headers.Authorization).toBeUndefined();
+  });
+
+  // Regressão: window.Capacitor só fica pronto DEPOIS deste módulo já ter
+  // carregado — não é hipotético, foi exatamente a causa de um "Failed to
+  // fetch" real (a app decidia, uma vez e para sempre, que não era nativa).
+  test('window.Capacitor a aparecer só DEPOIS do módulo carregado — o pedido ainda vai para kixima.net', async () => {
+    delete window.Capacitor; // ainda não existe quando o módulo carrega
+    const { api } = await carregarClienteComo({ nativo: false });
+
+    // Só agora, depois do import, é que o runtime nativo "chega".
+    window.Capacitor = { isNativePlatform: () => true };
+
+    const fetchMock = mockFetchOk({ ok: true });
+    await api.get('/api/auth/login');
+
+    expect(fetchMock.mock.calls[0][0]).toBe('https://kixima.net/api/auth/login');
   });
 });
 
