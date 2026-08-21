@@ -78,6 +78,14 @@ const reenviarCodigoSchema = z.object({
   challenge: z.string().min(10),
 });
 
+// Admin do Sistema: série de faturação certificada da empresa (fornecedora),
+// declarada apenas depois de a AGT a ter formalmente atribuído. `null`/vazio
+// desliga-a de volta — a empresa passa a emitir sem série nem hash,
+// exatamente como antes de a ter.
+const serieFiscalSchema = z.object({
+  serieFiscal: z.string().trim().max(20).regex(/^[A-Za-z0-9-]*$/, 'Use só letras, números e hífen.').nullable(),
+});
+
 // Admin do Sistema: dimensão, plano e preço por utilizador de uma empresa.
 const companyPlanSchema = z.object({
   size: z.enum(['MICRO', 'PEQUENA', 'MEDIA', 'GRANDE']).optional(),
@@ -398,6 +406,7 @@ module.exports = {
   registerCompanySchema,
   decideCompanySchema,
   companyPlanSchema,
+  serieFiscalSchema,
   supplierDevSchema,
   supplierDevUpdateSchema,
   erpConfigSchema,

@@ -131,3 +131,44 @@ describe('Emissão de nota de crédito', () => {
     expect(comoComprador.body).toHaveLength(1);
   });
 });
+
+describe('Série fiscal por empresa (Admin do Sistema)', () => {
+  test('só o Admin do Sistema a pode declarar', async () => {
+    const semAcesso = await auth(tokens.fornecedor)
+      .put(`/api/companies/${product.supplierId}/serie-fiscal`)
+      .send({ serieFiscal: 'X' });
+    expect(semAcesso.status).toBe(403);
+  });
+
+  test('depois de declarada, a PRÓXIMA fatura deste fornecedor sai com numeração e hash certificados', async () => {
+    const empresa = await prisma.company.findUnique({ where: { id: product.supplierId } });
+    const original = empresa.serieFiscal;
+
+    const declarada = await auth(tokens.adminSistema)
+      .put(`/api/companies/${product.supplierId}/serie-fiscal`)
+      .send({ serieFiscal: 'TESTEHTTP' });
+    expect(declarada.status).toBe(200);
+    expect(declarada.body.serieFiscal).toBe('TESTEHTTP');
+
+    try {
+      const { invoice } = await novaFatura();
+      expect(invoice.serie).toBe('TESTEHTTP');
+      expect(invoice.numeroNaSerie).toEqual(expect.any(Number));
+      expect(invoice.hashDocumento).toEqual(expect.any(String));
+
+      // A nota de crédito desta fatura usa a MESMA série, com o sufixo "-NC"
+      // — nunca a mesma série da fatura, mas sempre a do mesmo fornecedor.
+      const nota = await auth(tokens.fornecedor)
+        .post(`/api/payments/invoices/${invoice.id}/notas-credito`)
+        .send({ motivo: 'Correção', amount: 1 });
+      expect(nota.body.serie).toBe('TESTEHTTP-NC');
+    } finally {
+      await auth(tokens.adminSistema)
+        .put(`/api/companies/${product.supplierId}/serie-fiscal`)
+        .send({ serieFiscal: original });
+      await prisma.creditNote.deleteMany({ where: { serie: 'TESTEHTTP-NC' } });
+      await prisma.invoice.deleteMany({ where: { serie: 'TESTEHTTP' } });
+      await prisma.$executeRaw`DELETE FROM "series_faturacao" WHERE "codigo" IN ('TESTEHTTP', 'TESTEHTTP-NC')`;
+    }
+  });
+});

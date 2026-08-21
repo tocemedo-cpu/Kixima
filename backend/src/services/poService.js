@@ -256,6 +256,12 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
   const paymentDueAt = new Date(acceptedAt);
   paymentDueAt.setDate(paymentDueAt.getDate() + config.business.paymentSlaDays);
 
+  // A série certificada é do FORNECEDOR (emitente fiscal desta fatura), nunca
+  // uma série global da KIXIMA — ver faturacaoService.js.
+  const supplierCompany = await prisma.company.findUnique({
+    where: { id: po.supplierCompanyId }, select: { serieFiscal: true },
+  });
+
   const [updated, invoice] = await prisma.$transaction(async (tx) => {
     const updatedPo = await tx.purchaseOrder.update({
       where: { id },
@@ -273,6 +279,7 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
     // uma numeração certificada e um contador qualquer.
     const certificacao = await faturacaoService.atribuir(tx, {
       emitidaEm: new Date(), total: iva.gross,
+      codigo: faturacaoService.serieFiscalDoFornecedor(supplierCompany),
     });
 
     const createdInvoice = await tx.invoice.create({

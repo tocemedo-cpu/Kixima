@@ -2,7 +2,7 @@ const express = require('express');
 const companyController = require('../controllers/companyController');
 const { authenticate } = require('../middleware/auth');
 const { requireRole, requirePermission } = require('../middleware/rbac');
-const { CADASTRO, FINANCEIRO } = require('../utils/adminAreas');
+const { CADASTRO, FINANCEIRO, FATURACAO } = require('../utils/adminAreas');
 const { validate } = require('../utils/validate');
 const { uploadDocuments } = require('../config/upload');
 const {
@@ -15,6 +15,7 @@ const {
   erpConfigSchema,
   bankDetailsSchema,
   companyPlanSchema,
+  serieFiscalSchema,
 } = require('../utils/schemas');
 
 const router = express.Router();
@@ -63,6 +64,11 @@ router.get('/:id/erp-config/audits', requireRole('ADMIN_SISTEMA'), requirePermis
 // Plano e dimensão — o Admin do Sistema define; a empresa consulta a sua
 // subscrição (plano, utilizadores e custo mensal de acesso).
 router.put('/:id/plan', requireRole('ADMIN_SISTEMA'), requirePermission(CADASTRO), validate(companyPlanSchema), companyController.setPlan);
+
+// Série de faturação certificada — só o Admin do Sistema, e só depois de a
+// AGT a ter formalmente atribuído a esta empresa (ver saftService.js /
+// faturacaoService.js: cada fornecedor é o emitente fiscal das suas faturas).
+router.put('/:id/serie-fiscal', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), validate(serieFiscalSchema), companyController.setSerieFiscal);
 router.get('/:id/subscription', requireRole('COMPANY_ADMIN', 'FORNECEDOR', 'FINANCEIRO', 'ADMIN_SISTEMA'), requirePermission(FINANCEIRO), companyController.getSubscription);
 
 // Extrato da Taxa KIXIMA da empresa — a própria empresa (fornecedor) vê o que

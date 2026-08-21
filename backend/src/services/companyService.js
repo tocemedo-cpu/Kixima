@@ -242,6 +242,21 @@ async function updateBankDetails(companyId, { bankName, iban, swift }) {
   });
 }
 
+// Série de faturação certificada da empresa (fornecedora) — só o Admin do
+// Sistema a declara, e só depois de a AGT a ter formalmente atribuído (não é
+// autoatendimento: um fornecedor não pode inventar a sua própria série).
+// `null`/vazio desliga-a de volta, exatamente como uma que nunca foi
+// declarada — as faturas seguintes saem sem série nem hash.
+async function setSerieFiscal(companyId, serieFiscal) {
+  const company = await prisma.company.findUnique({ where: { id: companyId }, select: { id: true, name: true, serieFiscal: true } });
+  if (!company) throw new NotFoundError('Empresa');
+  return prisma.company.update({
+    where: { id: companyId },
+    data: { serieFiscal: serieFiscal?.trim() || null },
+    select: { id: true, name: true, serieFiscal: true },
+  });
+}
+
 // Dimensão e plano da empresa — o Admin do Sistema confirma/corrige o que foi
 // declarado no cadastro. Rejeita descer o plano abaixo do exigido pela dimensão
 // (uma GRANDE empresa não pode ficar no BASICO).
@@ -598,6 +613,7 @@ module.exports = {
   setBudgetLimit,
   getBankDetails,
   updateBankDetails,
+  setSerieFiscal,
   updatePlan,
   subscriptionFor,
   subscriptionsFor,

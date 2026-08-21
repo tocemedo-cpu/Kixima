@@ -92,6 +92,21 @@ async function setBankDetails(req, res) {
   res.json(result);
 }
 
+// Série de faturação certificada da empresa (Admin do Sistema) — só depois
+// de a AGT a ter formalmente atribuído a esta empresa fornecedora.
+async function setSerieFiscal(req, res) {
+  const result = await companyService.setSerieFiscal(req.params.id, req.body.serieFiscal);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'SERIE_FISCAL_ALTERADA',
+    entityType: 'Company',
+    entityId: result.id,
+    entityRef: result.name,
+    detail: { serieFiscal: result.serieFiscal },
+  });
+  res.json(result);
+}
+
 // Plano/dimensão da empresa (Admin do Sistema) e resumo de subscrição.
 async function setPlan(req, res) {
   const result = await companyService.updatePlan(req.params.id, req.body);
@@ -249,6 +264,7 @@ module.exports = {
   getBankDetails,
   platformFeeStatement,
   setPlan,
+  setSerieFiscal,
   getSubscription,
   setBankDetails,
   createUser,

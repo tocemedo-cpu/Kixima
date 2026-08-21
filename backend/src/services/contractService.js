@@ -154,6 +154,12 @@ async function consolidateContractBilling(contractId) {
 
   const reference = await nextReference('FAT', 'invoice');
 
+  // A série certificada é do FORNECEDOR (emitente fiscal desta fatura), nunca
+  // uma série global da KIXIMA — ver faturacaoService.js.
+  const supplierCompany = await prisma.company.findUnique({
+    where: { id: contract.supplierCompanyId }, select: { serieFiscal: true },
+  });
+
   // A fatura e a atualização das call-offs passam a viver na MESMA transação.
   //
   // Antes eram duas escritas soltas, e isso já era frágil: uma falha entre as
@@ -163,6 +169,7 @@ async function consolidateContractBilling(contractId) {
   const invoice = await prisma.$transaction(async (tx) => {
     const certificacao = await faturacaoService.atribuir(tx, {
       emitidaEm: new Date(), total: iva.gross,
+      codigo: faturacaoService.serieFiscalDoFornecedor(supplierCompany),
     });
 
     const criada = await tx.invoice.create({

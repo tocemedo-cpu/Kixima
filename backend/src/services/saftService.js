@@ -58,8 +58,22 @@ function validarPeriodo({ de, ate }) {
   return { ini, fim };
 }
 
-async function gerar({ de, ate }) {
+async function gerar({ de, ate, supplierCompanyId }) {
   const { ini, fim } = validarPeriodo({ de, ate });
+
+  // O SAF-T é SEMPRE de UMA empresa fornecedora — é ela o emitente fiscal
+  // destes documentos (a KIXIMA nunca compra para revender, só garante o
+  // pagamento). Um ficheiro que misturasse faturas de fornecedores diferentes
+  // sob um único CompanyID declararia como emitidas por uma empresa faturas
+  // que são, na realidade, de outra.
+  if (!supplierCompanyId) {
+    throw new Error('Indique a empresa fornecedora (supplierCompanyId) — o SAF-T é sempre de uma só empresa.');
+  }
+  const fornecedor = await prisma.company.findUnique({
+    where: { id: supplierCompanyId },
+    select: { id: true, name: true, taxId: true, serieFiscal: true },
+  });
+  if (!fornecedor) throw new Error('Empresa fornecedora não encontrada.');
 
   const incluirCliente = {
     select: {
@@ -73,9 +87,14 @@ async function gerar({ de, ate }) {
       clientCompany: { select: { id: true, name: true, taxId: true, address: true, city: true, country: true } },
     },
   };
+  // Isola as faturas/notas desta empresa fornecedora, quer venham de uma PO
+  // direta quer de um contrato-quadro.
+  const doFornecedor = {
+    OR: [{ purchaseOrder: { supplierCompanyId } }, { contract: { supplierCompanyId } }],
+  };
 
   const faturas = await prisma.invoice.findMany({
-    where: { issuedAt: { gte: ini, lte: fim } },
+    where: { issuedAt: { gte: ini, lte: fim }, ...doFornecedor },
     orderBy: [{ serie: 'asc' }, { numeroNaSerie: 'asc' }, { issuedAt: 'asc' }],
     include: { purchaseOrder: incluirCliente, contract: incluirClienteContrato },
     take: 100000,
@@ -87,7 +106,7 @@ async function gerar({ de, ate }) {
   // reportado (não uma propriedade da fatura original), por isso entram por
   // data de EMISSÃO da nota, não da fatura que corrigem.
   const notasDoPeriodo = await prisma.creditNote.findMany({
-    where: { issuedAt: { gte: ini, lte: fim } },
+    where: { issuedAt: { gte: ini, lte: fim }, invoice: doFornecedor },
     orderBy: [{ serie: 'asc' }, { numeroNaSerie: 'asc' }, { issuedAt: 'asc' }],
     include: {
       invoice: {
@@ -140,16 +159,24 @@ async function gerar({ de, ate }) {
   // --- Cabeçalho ------------------------------------------------------------
   linhas.push('  <Header>');
   linhas.push(`    ${el('AuditFileVersion', '1.01_01')}`);
-  linhas.push(`    ${el('CompanyID', config.faturacao?.nif || 'POR-CONFIGURAR')}`);
-  linhas.push(`    ${el('TaxRegistrationNumber', config.faturacao?.nif || 'POR-CONFIGURAR')}`);
+  // CompanyID/TaxRegistrationNumber/CompanyName são do FORNECEDOR — é ele o
+  // emitente fiscal destes documentos, nunca a KIXIMA (ver nota no topo do
+  // ficheiro e a chamada obrigatória de supplierCompanyId).
+  linhas.push(`    ${el('CompanyID', fornecedor.taxId || 'POR-CONFIGURAR')}`);
+  linhas.push(`    ${el('TaxRegistrationNumber', fornecedor.taxId || 'POR-CONFIGURAR')}`);
   linhas.push(`    ${el('TaxAccountingBasis', 'F')}`);
-  linhas.push(`    ${el('CompanyName', config.faturacao?.nome || 'KIXIMA')}`);
+  linhas.push(`    ${el('CompanyName', fornecedor.name)}`);
   linhas.push(`    ${el('FiscalYear', String(ini.getFullYear()))}`);
   linhas.push(`    ${el('StartDate', data(ini))}`);
   linhas.push(`    ${el('EndDate', data(fim))}`);
   linhas.push(`    ${el('CurrencyCode', 'AOA')}`);
   linhas.push(`    ${el('DateCreated', data(new Date()))}`);
   linhas.push(`    ${el('TaxEntity', 'Global')}`);
+  // ProductCompanyTaxID/SoftwareCertificateNumber/ProductID são da KIXIMA —
+  // aqui sim, corretamente: identificam o FABRICANTE do software certificado
+  // (a KIXIMA), não o contribuinte do documento (o fornecedor, acima). É a
+  // mesma distinção que o SAF-T português já faz entre a empresa que reporta
+  // e o produtor do software que gerou o ficheiro.
   linhas.push(`    ${el('ProductCompanyTaxID', config.faturacao?.nif || 'POR-CONFIGURAR')}`);
   // POR CONFIGURAR: o número do certificado é atribuído pela AGT ao programa.
   // Fica vazio até existir, e não com um valor inventado — um certificado falso
@@ -277,6 +304,7 @@ async function gerar({ de, ate }) {
   return {
     xml: linhas.filter((l) => l.trim() !== '').join('\n'),
     resumo: {
+      fornecedor: { id: fornecedor.id, nome: fornecedor.name },
       periodo: { de: data(ini), ate: data(fim) },
       documentos: faturas.length,
       clientes: clientes.size,
@@ -284,9 +312,11 @@ async function gerar({ de, ate }) {
       totalImposto: Number(totalImposto.toFixed(2)),
       totalDocumentos: Number(totalDocumentos.toFixed(2)),
       // Dito alto, e não descoberto na entrega: os documentos sem série são os
-      // anteriores à faturação certificada.
+      // anteriores a esta empresa ter a sua série certificada declarada.
       semSerieCertificada: faturas.filter((f) => !f.serie).length,
       porConfigurar: [
+        fornecedor.taxId ? null : 'NIF do fornecedor (Company.taxId)',
+        fornecedor.serieFiscal ? null : 'Série certificada do fornecedor (Company.serieFiscal)',
         config.faturacao?.nif ? null : 'KIXIMA_NIF',
         config.faturacao?.certificadoAgt ? null : 'KIXIMA_CERTIFICADO_AGT',
       ].filter(Boolean),

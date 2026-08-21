@@ -546,34 +546,34 @@ function verCobrancas() {
  * ausência só se nota numa inspeção ou quando o volume cresce. Por isso
  * aparecem aqui: para serem uma decisão tomada e não uma omissão descoberta.
  */
-function verFaturacao() {
+async function verFaturacao() {
   const checks = [];
   const f = config.faturacao;
 
-  if (!f.serie) {
-    checks.push({ id: 'agt-serie', titulo: 'Série de faturação (KIXIMA_SERIE_FATURACAO)', estado: AVISO,
-      detalhe: 'Não está definida — as faturas saem sem numeração certificada.',
-      acao: 'Defina-a SÓ depois de a série estar declarada à AGT. Ligá-la antes disso emite documentos numa série que não existe, e a numeração não se corrige para trás.' });
-  } else {
-    checks.push({ id: 'agt-serie', titulo: 'Série de faturação', estado: OK, detalhe: f.serie,
-      acao: 'Confirme em Faturação → Integridade que a cadeia não tem buracos.' });
-  }
+  // A série é POR EMPRESA FORNECEDORA, não uma variável de ambiente global —
+  // cada fornecedor é o emitente fiscal das suas próprias faturas (ver
+  // faturacaoService.js). Por isso a Prontidão conta quantas já a têm
+  // declarada, em vez de perguntar por uma única série que já não existe.
+  const [comSerie, totalFornecedores] = await Promise.all([
+    prisma.company.count({ where: { type: 'FORNECEDOR', serieFiscal: { not: null } } }),
+    prisma.company.count({ where: { type: 'FORNECEDOR' } }),
+  ]);
 
-  // Só relevante depois de a série de faturas estar ativa — sem ela não há
-  // faturas certificadas para corrigir, por isso não há o que avisar aqui.
-  if (f.serie) {
-    checks.push(f.serieNotaCredito
-      ? { id: 'agt-serie-nc', titulo: 'Série de notas de crédito', estado: OK, detalhe: f.serieNotaCredito }
-      : { id: 'agt-serie-nc', titulo: 'Série de notas de crédito (KIXIMA_SERIE_NOTA_CREDITO)', estado: AVISO,
-        detalhe: 'Não está definida — as notas de crédito saem sem numeração certificada.',
-        acao: 'Defina-a SÓ depois de a série estar declarada à AGT, tal como a série de faturas — são cadeias independentes.' });
+  if (comSerie === 0) {
+    checks.push({ id: 'agt-serie', titulo: 'Série de faturação certificada (por fornecedor)', estado: AVISO,
+      detalhe: `Nenhuma das ${totalFornecedores} empresas fornecedoras tem série declarada — todas emitem sem numeração certificada.`,
+      acao: 'Declare a série de cada fornecedor em Empresas → [fornecedor] → Série fiscal, SÓ depois de a AGT lha atribuir. Ligá-la antes disso emitiria documentos numa série que não existe, e a numeração não se corrige para trás.' });
+  } else {
+    checks.push({ id: 'agt-serie', titulo: 'Série de faturação certificada (por fornecedor)', estado: OK,
+      detalhe: `${comSerie} de ${totalFornecedores} empresas fornecedoras com série declarada.`,
+      acao: 'Confirme em Faturação → Integridade que nenhuma dessas cadeias tem buracos.' });
   }
 
   checks.push(f.nif
-    ? { id: 'agt-nif', titulo: 'NIF da KIXIMA (KIXIMA_NIF)', estado: OK, detalhe: f.nif }
-    : { id: 'agt-nif', titulo: 'NIF da KIXIMA (KIXIMA_NIF)', estado: AVISO,
+    ? { id: 'agt-nif', titulo: 'NIF da KIXIMA como fabricante do software (KIXIMA_NIF)', estado: OK, detalhe: f.nif }
+    : { id: 'agt-nif', titulo: 'NIF da KIXIMA como fabricante do software (KIXIMA_NIF)', estado: AVISO,
       detalhe: 'Não está definido.',
-      acao: 'O SAF-T sai com o campo por preencher. É preferível a um número inventado, mas a AGT recusa o ficheiro assim.' });
+      acao: 'O SAF-T sai com o campo ProductCompanyTaxID por preencher. É preferível a um número inventado, mas a AGT recusa o ficheiro assim.' });
 
   checks.push(f.certificadoAgt
     ? { id: 'agt-certificado', titulo: 'Certificado do programa (AGT)', estado: OK, detalhe: f.certificadoAgt }
@@ -611,8 +611,8 @@ function verCanaisDePagamento() {
 }
 
 async function verificar() {
-  const [copias, mfa, baseDeDados, armazenamento, contas] = await Promise.all([
-    verCopias(), verMfa(), verBaseDeDados(), verArmazenamento(), verContasBloqueadas(),
+  const [copias, mfa, baseDeDados, armazenamento, contas, faturacao] = await Promise.all([
+    verCopias(), verMfa(), verBaseDeDados(), verArmazenamento(), verContasBloqueadas(), verFaturacao(),
   ]);
   const grupos = [
     { grupo: 'Base de dados', checks: baseDeDados },
@@ -623,7 +623,7 @@ async function verificar() {
     { grupo: 'Segredos', checks: verSegredos() },
     { grupo: 'Contas sob ataque', checks: contas },
     { grupo: 'Cobranças de subscrição', checks: verCobrancas() },
-    { grupo: 'Faturação certificada (AGT)', checks: verFaturacao() },
+    { grupo: 'Faturação certificada (AGT)', checks: faturacao },
     { grupo: 'Canais de pagamento', checks: verCanaisDePagamento() },
   ];
 

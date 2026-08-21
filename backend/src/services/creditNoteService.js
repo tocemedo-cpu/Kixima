@@ -95,11 +95,17 @@ async function emitir(invoiceId, { motivo, amount }, user, actor = null) {
 
   const reference = await nextReference('NC', 'creditNote', 'reference');
 
+  // A série da nota de crédito é a do MESMO fornecedor da fatura original
+  // (sufixo "-NC" — ver faturacaoService.js), nunca uma série global.
+  const supplierCompany = supplierCompanyId
+    ? await prisma.company.findUnique({ where: { id: supplierCompanyId }, select: { serieFiscal: true } })
+    : null;
+
   const nota = await prisma.$transaction(async (tx) => {
     const certificacao = await faturacaoService.atribuir(tx, {
       emitidaEm: new Date(),
       total: valor,
-      codigo: faturacaoService.serieNotaCreditoAtual(),
+      codigo: faturacaoService.serieNotaCreditoDoFornecedor(supplierCompany),
     });
 
     const criada = await tx.creditNote.create({

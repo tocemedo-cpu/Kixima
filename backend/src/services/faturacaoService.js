@@ -8,33 +8,30 @@
 // PRIMEIRA fatura emitida, porque não se corrige para trás: a numeração
 // sequencial sem buracos e a cadeia que permite provar que nada foi alterado.
 //
-// Fica inerte até `KIXIMA_SERIE_FATURACAO` estar definida. Sem essa variável, as
-// faturas continuam a ser emitidas exatamente como hoje, sem série e sem hash —
-// e distinguem-se por `serie IS NULL`. É deliberado: ligar isto a meio, sem a
-// série declarada, produziria documentos numerados numa série que não existe.
+// A SÉRIE É POR FORNECEDOR, NÃO GLOBAL. Cada empresa fornecedora é o emitente
+// fiscal das suas próprias faturas — a KIXIMA nunca compra para revender, só
+// garante o pagamento (ver termos da PO/fatura). Partilhar uma série entre
+// fornecedores diferentes intercalaria a numeração de empresas distintas, o
+// que não corresponde a nenhum documento fiscal real de nenhuma delas. Por
+// isso a série vive em `Company.serieFiscal`, não numa variável de ambiente
+// global: fica inerte por empresa até essa empresa ter a sua série declarada
+// à AGT — desligado por omissão, exatamente como antes, só que ao nível certo.
 
 const crypto = require('crypto');
 const prisma = require('../config/database');
-const config = require('../config/env');
 
-// Lida a CADA chamada, e não capturada no arranque do módulo: assim a série
-// pode ser ligada e desligada em testes sem recarregar o processo, e o valor é
-// sempre o que a configuração diz agora.
-function serieAtual() {
-  return config.faturacao.serie || null;
-}
-
-function ativa() {
-  return Boolean(serieAtual());
+function serieFiscalDoFornecedor(supplierCompany) {
+  return supplierCompany?.serieFiscal || null;
 }
 
 // A série da nota de crédito é INDEPENDENTE da série da fatura — cada tipo de
-// documento tem a sua própria cadeia. Mesma regra de desligado por omissão:
-// sem KIXIMA_SERIE_NOTA_CREDITO definida, `atribuir(tx, { codigo: null })`
-// devolve {} e a nota de crédito sai sem série nem hash, exatamente como a
-// fatura sai hoje sem a sua.
-function serieNotaCreditoAtual() {
-  return config.faturacao.serieNotaCredito || null;
+// documento tem a sua própria cadeia, mas ambas pertencem ao MESMO fornecedor.
+// Sufixo "-NC" da série de faturas dessa empresa: sem duplicar a coluna,
+// garante que nunca é a mesma série (e continua desligada por omissão,
+// porque sem serieFiscal não há "-NC" nenhum a computar).
+function serieNotaCreditoDoFornecedor(supplierCompany) {
+  const base = serieFiscalDoFornecedor(supplierCompany);
+  return base ? `${base}-NC` : null;
 }
 
 /**
@@ -76,15 +73,17 @@ function calcularHash(dados) {
  * uma série são, por definição, uma fila. Um contador que não serializa é mais
  * rápido e produz exatamente a avaria que aqui não pode acontecer.
  *
- * `codigo`: a fatura usa a série de faturação (serieAtual(), por omissão); a
- * nota de crédito passa a SUA PRÓPRIA série (KIXIMA_SERIE_NOTA_CREDITO) —
- * são cadeias de integridade distintas, e misturá-las na mesma série faria
- * o hash de uma fatura agarrar-se ao de uma nota de crédito (ou vice-versa),
- * o que não corresponde a nenhum documento real. O mecanismo de baixo
- * (bloqueio + série+ano) é o MESMO para os dois — só o código da série muda.
+ * `codigo`: sempre explícito, resolvido por quem chama a partir do
+ * fornecedor do documento — `serieFiscalDoFornecedor(supplierCompany)` para
+ * a fatura, `serieNotaCreditoDoFornecedor(supplierCompany)` para a nota de
+ * crédito. São cadeias de integridade distintas (fatura vs. nota de crédito)
+ * e isoladas por empresa (fornecedor A vs. fornecedor B); misturá-las faria o
+ * hash de um documento agarrar-se ao de outro que não é o seu antecessor
+ * real. O mecanismo de baixo (bloqueio + série+ano) é o MESMO para todos —
+ * só o código da série muda.
  */
 async function atribuir(tx, { emitidaEm, total, codigo } = {}) {
-  const SERIE = codigo || serieAtual();
+  const SERIE = codigo || null;
   if (!SERIE) return {};
 
   const ano = new Date(emitidaEm).getFullYear();
@@ -136,9 +135,8 @@ async function atribuir(tx, { emitidaEm, total, codigo } = {}) {
  * integridade que pára no primeiro erro obriga a corrê-lo N vezes para ver N
  * problemas.
  */
-async function verificarCadeia(codigo = null, ano = new Date().getFullYear()) {
-  codigo = codigo || serieAtual();
-  if (!codigo) return { serie: null, verificada: false, motivo: 'Faturação certificada desativada.' };
+async function verificarCadeia(codigo, ano = new Date().getFullYear()) {
+  if (!codigo) return { serie: null, verificada: false, motivo: 'Indique a série a verificar (é por fornecedor, já não há uma série global única).' };
 
   const faturas = await prisma.invoice.findMany({
     where: { serie: codigo, numeroNaSerie: { not: null } },
@@ -200,5 +198,5 @@ async function verificarCadeia(codigo = null, ano = new Date().getFullYear()) {
 }
 
 module.exports = {
-  ativa, atribuir, verificarCadeia, calcularHash, textoParaAssinar, serieAtual, serieNotaCreditoAtual,
+  atribuir, verificarCadeia, calcularHash, textoParaAssinar, serieFiscalDoFornecedor, serieNotaCreditoDoFornecedor,
 };

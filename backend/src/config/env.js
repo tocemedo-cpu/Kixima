@@ -161,22 +161,20 @@ const config = {
     tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0,
   },
 
-  // Faturação certificada (AGT). Tudo INATIVO por omissão.
+  // Faturação certificada (AGT).
   //
-  // Sem `serie` definida, as faturas são emitidas como sempre foram — sem
-  // número de série e sem hash — e distinguem-se por `serie IS NULL`. É
-  // deliberado: ligar a numeração certificada antes de a série estar declarada
-  // à AGT produziria documentos numerados numa série que não existe, e a
-  // numeração não se corrige para trás.
+  // A série de faturação é POR EMPRESA FORNECEDORA (Company.serieFiscal), não
+  // uma variável de ambiente global — cada fornecedor é o emitente fiscal das
+  // suas próprias faturas (a KIXIMA nunca compra para revender, só garante o
+  // pagamento). Sem essa série declarada na empresa, as faturas continuam a
+  // ser emitidas como sempre foram — sem número nem hash — e distinguem-se por
+  // `serie IS NULL`. Ver faturacaoService.serieFiscalDoFornecedor().
+  //
+  // O que fica aqui é só o que É da KIXIMA: a identidade de FABRICANTE do
+  // software certificado (ProductCompanyTaxID/SoftwareCertificateNumber no
+  // SAF-T) — distinta do CompanyID de cada documento, que é do fornecedor.
   faturacao: {
-    serie: process.env.KIXIMA_SERIE_FATURACAO || '',
-    // Série própria da nota de crédito — nunca a mesma da fatura: são cadeias
-    // de integridade distintas, cada uma com o seu próprio elo. Mesma regra de
-    // desligado por omissão: sem isto, a emissão de nota de crédito continua a
-    // funcionar, só sem série nem hash (serie IS NULL, como a fatura sem a sua).
-    serieNotaCredito: process.env.KIXIMA_SERIE_NOTA_CREDITO || '',
     nif: process.env.KIXIMA_NIF || '',
-    nome: process.env.KIXIMA_NOME_FISCAL || 'KIXIMA',
     // Atribuído pela AGT ao programa, no fim do processo de certificação.
     certificadoAgt: process.env.KIXIMA_CERTIFICADO_AGT || '',
   },
