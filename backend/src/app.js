@@ -95,6 +95,24 @@ app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 // diretamente pelo URL público do bucket).
 const { uploadsDir } = require('./services/storageService');
 app.use('/api/uploads', express.static(uploadsDir));
+// Um pedido a /api/uploads/<nome> que chega aqui é um ficheiro que o
+// express.static não encontrou — a ROTA existe, só o FICHEIRO não. Sem isto,
+// caía no notFoundHandler genérico lá em baixo e respondia "ROUTE_NOT_FOUND:
+// Rota GET /api/uploads/... não existe", que parece um erro de programação a
+// quem só está a tentar ver um documento. A causa mais comum é esta: em modo
+// 'local' (ver storageService.js) o ficheiro vive no disco do contentor, que
+// o Render apaga a cada reinício/deploy — o registo na base sobrevive, o
+// ficheiro não. A solução real é configurar STORAGE_PROVIDER=s3 (e as
+// credenciais) no Render; ver Admin do Sistema → Configurações e Suporte →
+// Prontidão para produção para confirmar o estado atual.
+app.use('/api/uploads', (req, res) => {
+  res.status(404).json({
+    error: {
+      code: 'FILE_NOT_FOUND',
+      message: 'Este ficheiro já não está disponível. Peça para o documento ser enviado novamente.',
+    },
+  });
+});
 if (!config.isTest) {
   app.use(morgan(config.isDevelopment ? 'dev' : 'combined'));
 }
