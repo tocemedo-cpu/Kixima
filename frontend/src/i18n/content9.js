@@ -16,6 +16,15 @@ export const EN10 = {
   // --- Vocabulário base -------------------------------------------------------
   'Subscrição': 'Subscription',
   'Subscrições vencidas': 'Overdue subscriptions',
+  'Em período de tolerância': 'In grace period',
+  'Restritas': 'Restricted',
+  'Restritas (recursos premium bloqueados)': 'Restricted (premium features blocked)',
+  'Já venceram, mas ainda dentro do período de tolerância — acesso total mantido, nada bloqueado. Contacte-as para regularizar ou emita uma nova cobrança.':
+    'Already overdue, but still within the grace period — full access kept, nothing blocked. Contact them to settle it or issue a new charge.',
+  'Nenhuma empresa em período de tolerância neste momento.': 'No company is in a grace period right now.',
+  'Passaram o período de tolerância: recursos premium (novos utilizadores, kits, API, ERP, contratos-quadro) já bloqueados. Os dados e o histórico continuam intactos.':
+    'Past the grace period: premium features (new users, kits, API, ERP, framework contracts) are already blocked. Data and history remain intact.',
+  'Nenhuma empresa restrita neste momento.': 'No company is restricted right now.',
   'Cobranças': 'Charges',
   'Cobranças de subscrição': 'Subscription charges',
   'Histórico de cobranças': 'Charge history',
@@ -77,10 +86,14 @@ export const EN10 = {
     'Proof submitted on {data}. The plan becomes active as soon as KIXIMA confirms the funds have arrived.',
   'Comprovativo recebido. A KIXIMA confirma a entrada do valor e o plano fica ativo.':
     'Proof received. KIXIMA will confirm the funds have arrived and the plan will become active.',
-  'A subscrição venceu em {data}. O acesso mantém-se — a KIXIMA vai contactá-lo para regularizar.':
-    'The subscription expired on {data}. Access continues — KIXIMA will contact you to settle it.',
-  'Faltam {n} dias para a subscrição terminar. Renove para não interromper o serviço.':
-    'The subscription ends in {n} days. Renew to avoid an interruption in service.',
+  'A subscrição da sua empresa vence em {n} dias. Renove para continuar a utilizar todos os recursos do plano {plano}.':
+    'Your company subscription expires in {n} days. Renew to keep using all of the {plano} plan\'s features.',
+  'A subscrição da sua empresa expirou. Os seus dados continuam seguros. Envie o comprovativo de pagamento para renovar o acesso aos recursos pagos.':
+    'Your company subscription has expired. Your data remains safe. Send the payment proof to restore access to paid features.',
+  'A subscrição da sua empresa está vencida. Os seus dados continuam seguros, mas alguns recursos pagos (novos utilizadores, integrações, funcionalidades premium) estão bloqueados até regularizar.':
+    'Your company subscription is overdue. Your data remains safe, but some paid features (new users, integrations, premium capabilities) are blocked until it\'s settled.',
+  'Renovar plano': 'Renew plan',
+  'Renovar agora': 'Renew now',
   'Descer para o plano {plano} faz perder:': 'Moving down to plan {plano} means losing:',
   'Ao descer perde: {lista}.': 'Moving down loses: {lista}.',
   'Conclua ou cancele a cobrança em aberto para pedir outro plano.':
@@ -254,6 +267,15 @@ export const EN10 = {
 export const FR10 = {
   'Subscrição': 'Abonnement',
   'Subscrições vencidas': 'Abonnements échus',
+  'Em período de tolerância': 'En période de tolérance',
+  'Restritas': 'Restreintes',
+  'Restritas (recursos premium bloqueados)': 'Restreintes (fonctionnalités premium bloquées)',
+  'Já venceram, mas ainda dentro do período de tolerância — acesso total mantido, nada bloqueado. Contacte-as para regularizar ou emita uma nova cobrança.':
+    'Déjà échus, mais encore dans la période de tolérance — accès complet maintenu, rien n’est bloqué. Contactez-les pour régulariser ou émettez une nouvelle facturation.',
+  'Nenhuma empresa em período de tolerância neste momento.': 'Aucune entreprise en période de tolérance pour le moment.',
+  'Passaram o período de tolerância: recursos premium (novos utilizadores, kits, API, ERP, contratos-quadro) já bloqueados. Os dados e o histórico continuam intactos.':
+    'Ont dépassé la période de tolérance : les fonctionnalités premium (nouveaux utilisateurs, kits, API, ERP, contrats-cadres) sont déjà bloquées. Les données et l’historique restent intacts.',
+  'Nenhuma empresa restrita neste momento.': 'Aucune entreprise restreinte pour le moment.',
   'Cobranças': 'Facturations',
   'Cobranças de subscrição': 'Facturations d’abonnement',
   'Histórico de cobranças': 'Historique des facturations',
@@ -312,10 +334,14 @@ export const FR10 = {
     'Justificatif envoyé le {data}. Le forfait sera actif dès que KIXIMA aura confirmé la réception des fonds.',
   'Comprovativo recebido. A KIXIMA confirma a entrada do valor e o plano fica ativo.':
     'Justificatif reçu. KIXIMA confirmera la réception des fonds et le forfait deviendra actif.',
-  'A subscrição venceu em {data}. O acesso mantém-se — a KIXIMA vai contactá-lo para regularizar.':
-    'L’abonnement a expiré le {data}. L’accès est maintenu — KIXIMA vous contactera pour régulariser.',
-  'Faltam {n} dias para a subscrição terminar. Renove para não interromper o serviço.':
-    'L’abonnement se termine dans {n} jours. Renouvelez pour éviter une interruption de service.',
+  'A subscrição da sua empresa vence em {n} dias. Renove para continuar a utilizar todos os recursos do plano {plano}.':
+    'L’abonnement de votre entreprise expire dans {n} jours. Renouvelez pour continuer à profiter de toutes les fonctionnalités du forfait {plano}.',
+  'A subscrição da sua empresa expirou. Os seus dados continuam seguros. Envie o comprovativo de pagamento para renovar o acesso aos recursos pagos.':
+    'L’abonnement de votre entreprise a expiré. Vos données restent en sécurité. Envoyez le justificatif de paiement pour retrouver l’accès aux fonctionnalités payantes.',
+  'A subscrição da sua empresa está vencida. Os seus dados continuam seguros, mas alguns recursos pagos (novos utilizadores, integrações, funcionalidades premium) estão bloqueados até regularizar.':
+    'L’abonnement de votre entreprise est en retard. Vos données restent en sécurité, mais certaines fonctionnalités payantes (nouveaux utilisateurs, intégrations, fonctionnalités premium) sont bloquées jusqu’à régularisation.',
+  'Renovar plano': 'Renouveler le forfait',
+  'Renovar agora': 'Renouveler maintenant',
   'Descer para o plano {plano} faz perder:': 'Passer au forfait {plano} fait perdre :',
   'Ao descer perde: {lista}.': 'En descendant, vous perdez : {lista}.',
   'Conclua ou cancele a cobrança em aberto para pedir outro plano.':

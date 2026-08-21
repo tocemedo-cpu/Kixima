@@ -399,6 +399,32 @@ const events = {
           ? `O cadastro da empresa ${company.name} foi aprovado. Já pode transacionar na KIXIMA.`
           : `O cadastro da empresa ${company.name} foi rejeitado.`,
     }),
+
+  // Aviso escalonado de expiração da subscrição — ver
+  // subscriptionExpiryJob.js e planService.estadoSubscricao. A mensagem varia
+  // por patamar: informativo longe do prazo, cada vez mais direto perto dele,
+  // e explicitamente tranquilizador durante a tolerância — "os dados
+  // continuam seguros" é a garantia central desta política (secção 3 do
+  // pedido original: nunca perder dados por expiração).
+  subscricaoAExpirar: (company, tier) => {
+    const MENSAGENS = {
+      D30: 'A subscrição da sua empresa vence em 30 dias.',
+      D7: 'A subscrição da sua empresa vence em 7 dias. Renove para continuar a utilizar todos os recursos do plano.',
+      D3: 'A subscrição da sua empresa vence em 3 dias. Renove para não perder acesso aos recursos pagos.',
+      D1: 'A subscrição da sua empresa vence amanhã. Renove hoje para não interromper o serviço.',
+      D0: 'A subscrição da sua empresa vence hoje. Envie o comprovativo de pagamento para não interromper o serviço.',
+      GRACE_INICIO: 'A subscrição da sua empresa expirou. Os seus dados continuam seguros — envie o comprovativo de pagamento para renovar o acesso aos recursos pagos.',
+      GRACE_META: 'A subscrição da sua empresa continua por regularizar. Os seus dados continuam seguros, mas os recursos pagos ficam indisponíveis em breve sem renovação.',
+    };
+    return notifyUsersByRole({
+      companyId: company.id,
+      roles: ['COMPANY_ADMIN', 'FINANCEIRO'],
+      type: 'SUBSCRICAO_A_EXPIRAR',
+      title: 'Subscrição a vencer',
+      message: MENSAGENS[tier] || MENSAGENS.D30,
+      channel: 'IN_APP_EMAIL',
+    });
+  },
 };
 
 module.exports = {

@@ -8,6 +8,11 @@ const { auth, request, app, prisma, login } = require('./helpers');
 const planService = require('../src/services/planService');
 const assinaturaService = require('../src/services/assinaturaService');
 
+const DIA_MS = 24 * 60 * 60 * 1000;
+function hoje(deslocamentoDias) {
+  return new Date(Date.now() + deslocamentoDias * DIA_MS);
+}
+
 const COMPROVATIVO = Buffer.from('%PDF-1.4 transferencia BAI subscricao');
 
 let adminEmpresaToken;
@@ -446,5 +451,223 @@ describe('Subscrição — renovar acima do limite', () => {
     const base = res.body.opcoes.find((o) => o.plano === 'BASE');
     expect(base.direcao).toBe('DESCER');
     expect(base.impedimento?.codigo).toBe('LUGARES_INSUFICIENTES');
+  });
+});
+
+// --- Segunda fase: expiração, período de tolerância, avisos escalonados ----
+//
+// O que a auditoria encontrou: planoValidoAte não tinha NENHUM efeito prático
+// em lado nenhum além de um texto na própria página. Estes testes protegem a
+// política nova — RESTRITA bloqueia só recursos premium/lugares, nunca dados;
+// GRACE não bloqueia nada; os avisos escalonam sem repetir.
+describe('Subscrição — patamar de urgência (estadoSubscricao)', () => {
+  test('sem planoValidoAte: ATIVA (nunca cobrada, ou posta num plano à mão)', () => {
+    expect(planService.estadoSubscricao({ planoValidoAte: null })).toBe('ATIVA');
+  });
+
+  test('longe do prazo: ATIVA', () => {
+    expect(planService.estadoSubscricao({ planoValidoAte: hoje(40) }, new Date())).toBe('ATIVA');
+  });
+
+  test('dentro do limiar de aviso mas ainda paga: A_EXPIRAR', () => {
+    expect(planService.estadoSubscricao({ planoValidoAte: hoje(15) }, new Date())).toBe('A_EXPIRAR');
+  });
+
+  test('vencida mas dentro da tolerância: GRACE', () => {
+    expect(planService.estadoSubscricao({ planoValidoAte: hoje(-3) }, new Date())).toBe('GRACE');
+  });
+
+  test('fronteira exata do período de tolerância ainda é GRACE', () => {
+    const v = hoje(-planService.GRACE_PERIOD_DAYS);
+    expect(planService.estadoSubscricao({ planoValidoAte: v }, new Date())).toBe('GRACE');
+  });
+
+  test('um dia além da tolerância: RESTRITA', () => {
+    const v = hoje(-(planService.GRACE_PERIOD_DAYS + 1));
+    expect(planService.estadoSubscricao({ planoValidoAte: v }, new Date())).toBe('RESTRITA');
+  });
+});
+
+describe('Subscrição — RESTRITA bloqueia recursos premium e lugares (nunca dados)', () => {
+  afterEach(async () => {
+    // O plano BASE/PRO e planoValidoAte já são repostos pelo beforeEach global
+    // (linha ~36); só o campo novo desta fase precisa de reposição própria.
+    await prisma.company.update({ where: { id: companyId }, data: { ultimoAvisoSubscricaoTier: null } });
+  });
+
+  test('convidar mais gente é recusado com PLANO_INSUFICIENTE quando RESTRITA — mesmo com lugares de sobra', async () => {
+    await prisma.company.update({
+      where: { id: companyId },
+      // PRO tem lugares ilimitados — se isto bloquear, é mesmo a expiração, não os lugares.
+      data: { plan: 'PRO', searchRank: planService.rankDoPlano('PRO'), planoValidoAte: hoje(-(planService.GRACE_PERIOD_DAYS + 1)) },
+    });
+    const res = await auth(adminEmpresaToken)
+      .post('/api/companies/invites')
+      .send({ role: 'COMPRADOR', name: 'Convite bloqueado', email: 'bloqueado@petroangola.co.ao' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('PLANO_INSUFICIENTE');
+  });
+
+  test('ainda em período de tolerância, convidar continua a funcionar', async () => {
+    await prisma.company.update({
+      where: { id: companyId },
+      data: { plan: 'PRO', searchRank: planService.rankDoPlano('PRO'), planoValidoAte: hoje(-2) },
+    });
+    const res = await auth(adminEmpresaToken)
+      .post('/api/companies/invites')
+      .send({ role: 'COMPRADOR', name: 'Convite em grace', email: 'grace@petroangola.co.ao' });
+
+    expect(res.status).toBe(201);
+  });
+
+  test('uma funcionalidade premium (API de catálogo) fica bloqueada quando RESTRITA — mesmo com o plano PRO', async () => {
+    const forn = await prisma.user.findUnique({ where: { email: 'fornecedor@kianda.co.ao' } });
+    const original = await prisma.company.findUnique({ where: { id: forn.companyId } });
+    await prisma.company.update({
+      where: { id: forn.companyId },
+      data: { plan: 'PRO', searchRank: planService.rankDoPlano('PRO'), planoValidoAte: hoje(-(planService.GRACE_PERIOD_DAYS + 1)) },
+    });
+    try {
+      const tokenForn = await login('fornecedor@kianda.co.ao');
+      const res = await auth(tokenForn).post('/api/catalog/api-keys').send({ nome: 'teste-restrita' });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('PLANO_INSUFICIENTE');
+      expect(res.body.error.message).toMatch(/vencida/);
+    } finally {
+      await prisma.company.update({
+        where: { id: forn.companyId },
+        data: { plan: original.plan, searchRank: original.searchRank, planoValidoAte: original.planoValidoAte, ultimoAvisoSubscricaoTier: null },
+      });
+    }
+  });
+
+  test('a mesma funcionalidade funciona normalmente em GRACE (só RESTRITA bloqueia)', async () => {
+    const forn = await prisma.user.findUnique({ where: { email: 'fornecedor@kianda.co.ao' } });
+    const original = await prisma.company.findUnique({ where: { id: forn.companyId } });
+    await prisma.company.update({
+      where: { id: forn.companyId },
+      data: { plan: 'PRO', searchRank: planService.rankDoPlano('PRO'), planoValidoAte: hoje(-1) },
+    });
+    try {
+      const tokenForn = await login('fornecedor@kianda.co.ao');
+      const res = await auth(tokenForn).post('/api/catalog/api-keys').send({ nome: 'teste-grace' });
+      expect(res.status).toBe(201);
+    } finally {
+      await prisma.apiKey.deleteMany({ where: { companyId: forn.companyId, nome: 'teste-grace' } });
+      await prisma.company.update({
+        where: { id: forn.companyId },
+        data: { plan: original.plan, searchRank: original.searchRank, planoValidoAte: original.planoValidoAte, ultimoAvisoSubscricaoTier: null },
+      });
+    }
+  });
+});
+
+describe('Subscrição — avisos escalonados de expiração', () => {
+  let adminUserId;
+  let financeiroUserId;
+
+  beforeAll(async () => {
+    adminUserId = (await prisma.user.findUnique({ where: { email: 'admin@petroangola.co.ao' } })).id;
+    financeiroUserId = (await prisma.user.findUnique({ where: { email: 'financeiro@petroangola.co.ao' } })).id;
+  });
+
+  afterEach(async () => {
+    await prisma.notification.deleteMany({ where: { type: 'SUBSCRICAO_A_EXPIRAR', userId: { in: [adminUserId, financeiroUserId] } } });
+    await prisma.company.update({ where: { id: companyId }, data: { ultimoAvisoSubscricaoTier: null } });
+  });
+
+  test('a 15 dias do fim, avisa no patamar D30 (o único já ultrapassado) e regista o patamar', async () => {
+    await prisma.company.update({ where: { id: companyId }, data: { planoValidoAte: hoje(15) } });
+    const enviados = await assinaturaService.enviarAvisosDeExpiracao();
+    expect(enviados).toBeGreaterThanOrEqual(1);
+
+    const notif = await prisma.notification.findFirst({ where: { type: 'SUBSCRICAO_A_EXPIRAR', userId: adminUserId } });
+    expect(notif).toBeTruthy();
+    const empresa = await prisma.company.findUnique({ where: { id: companyId } });
+    expect(empresa.ultimoAvisoSubscricaoTier).toBe('D30');
+  });
+
+  test('correr outra vez no mesmo dia não repete o aviso (sem spam)', async () => {
+    await prisma.company.update({ where: { id: companyId }, data: { planoValidoAte: hoje(15) } });
+    await assinaturaService.enviarAvisosDeExpiracao();
+    const antes = await prisma.notification.count({ where: { type: 'SUBSCRICAO_A_EXPIRAR', userId: adminUserId } });
+
+    await assinaturaService.enviarAvisosDeExpiracao();
+    const depois = await prisma.notification.count({ where: { type: 'SUBSCRICAO_A_EXPIRAR', userId: adminUserId } });
+    expect(depois).toBe(antes);
+  });
+
+  test('um cron atrasado avança direto para o patamar mais urgente já alcançado', async () => {
+    // Nunca avisado (tier null) e já a 1 dia do fim — salta D30/D7/D3 e avisa
+    // logo D1, em vez de os repetir todos de uma vez ou ficar preso no D30.
+    await prisma.company.update({ where: { id: companyId }, data: { planoValidoAte: hoje(1) } });
+    await assinaturaService.enviarAvisosDeExpiracao();
+    const empresa = await prisma.company.findUnique({ where: { id: companyId } });
+    expect(empresa.ultimoAvisoSubscricaoTier).toBe('D1');
+    expect(await prisma.notification.count({ where: { type: 'SUBSCRICAO_A_EXPIRAR', userId: adminUserId } })).toBe(1);
+  });
+
+  test('avança de patamar quando o tempo passa (D7 depois de já ter avisado D30)', async () => {
+    await prisma.company.update({ where: { id: companyId }, data: { planoValidoAte: hoje(15), ultimoAvisoSubscricaoTier: 'D30' } });
+    await assinaturaService.enviarAvisosDeExpiracao();
+    let empresa = await prisma.company.findUnique({ where: { id: companyId } });
+    // Ainda no mesmo patamar (15 dias > 7) — não avisa de novo.
+    expect(empresa.ultimoAvisoSubscricaoTier).toBe('D30');
+
+    await prisma.company.update({ where: { id: companyId }, data: { planoValidoAte: hoje(5) } });
+    await assinaturaService.enviarAvisosDeExpiracao();
+    empresa = await prisma.company.findUnique({ where: { id: companyId } });
+    expect(empresa.ultimoAvisoSubscricaoTier).toBe('D7');
+  });
+
+  test('empresa RESTRITA não recebe mais avisos — já está bloqueada nos pontos certos', async () => {
+    await prisma.company.update({
+      where: { id: companyId },
+      data: { planoValidoAte: hoje(-(planService.GRACE_PERIOD_DAYS + 3)), ultimoAvisoSubscricaoTier: 'GRACE_META' },
+    });
+    const enviados = await assinaturaService.enviarAvisosDeExpiracao();
+    const empresa = await prisma.company.findUnique({ where: { id: companyId } });
+    // O patamar não muda para esta empresa (pode mudar noutras candidatas).
+    expect(empresa.ultimoAvisoSubscricaoTier).toBe('GRACE_META');
+    expect(enviados).toBeGreaterThanOrEqual(0);
+    const notifDepois = await prisma.notification.count({ where: { type: 'SUBSCRICAO_A_EXPIRAR', userId: adminUserId } });
+    expect(notifDepois).toBe(0);
+  });
+
+  test('confirmar uma renovação reinicia o patamar — o próximo ciclo começa do zero', async () => {
+    await prisma.company.update({ where: { id: companyId }, data: { ultimoAvisoSubscricaoTier: 'GRACE_INICIO' } });
+    const cobranca = await pedirPro();
+    await request(app)
+      .post(`/api/assinatura/${cobranca.id}/comprovativo`)
+      .set('Authorization', `Bearer ${adminEmpresaToken}`)
+      .attach('comprovativo', COMPROVATIVO, 'transferencia.pdf');
+    await auth(adminSistemaToken).post(`/api/assinatura/${cobranca.id}/confirmar`).send({});
+
+    const empresa = await prisma.company.findUnique({ where: { id: companyId } });
+    expect(empresa.ultimoAvisoSubscricaoTier).toBeNull();
+  });
+});
+
+describe('Subscrição — fila separa período de tolerância de restritas', () => {
+  afterEach(async () => {
+    await prisma.company.update({ where: { id: companyId }, data: { ultimoAvisoSubscricaoTier: null } });
+  });
+
+  test('em GRACE aparece em emGrace, não em restritas', async () => {
+    await prisma.company.update({ where: { id: companyId }, data: { plan: 'PRO', planoValidoAte: hoje(-2) } });
+    const res = await auth(adminSistemaToken).get('/api/assinatura/fila');
+    expect(res.body.emGrace.some((c) => c.id === companyId)).toBe(true);
+    expect(res.body.restritas.some((c) => c.id === companyId)).toBe(false);
+  });
+
+  test('além da tolerância aparece em restritas, não em emGrace', async () => {
+    await prisma.company.update({
+      where: { id: companyId },
+      data: { plan: 'PRO', planoValidoAte: hoje(-(planService.GRACE_PERIOD_DAYS + 1)) },
+    });
+    const res = await auth(adminSistemaToken).get('/api/assinatura/fila');
+    expect(res.body.restritas.some((c) => c.id === companyId)).toBe(true);
+    expect(res.body.emGrace.some((c) => c.id === companyId)).toBe(false);
   });
 });

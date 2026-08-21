@@ -36,6 +36,20 @@ const EN = {
   'Entre na plataforma e vá a Configurações → Segurança. Demora menos de um minuto: enviamos-lhe um código por email e é só confirmá-lo.':
     'Sign in and go to Settings → Security. It takes less than a minute: we email you a code and you just confirm it.',
   'Apólice atualizada': 'Policy updated',
+  'Subscrição a vencer': 'Subscription expiring soon',
+  'A subscrição da sua empresa vence em 30 dias.': 'Your company subscription expires in 30 days.',
+  'A subscrição da sua empresa vence em 7 dias. Renove para continuar a utilizar todos os recursos do plano.':
+    'Your company subscription expires in 7 days. Renew to keep using all of your plan\'s features.',
+  'A subscrição da sua empresa vence em 3 dias. Renove para não perder acesso aos recursos pagos.':
+    'Your company subscription expires in 3 days. Renew to avoid losing access to paid features.',
+  'A subscrição da sua empresa vence amanhã. Renove hoje para não interromper o serviço.':
+    'Your company subscription expires tomorrow. Renew today to avoid a service interruption.',
+  'A subscrição da sua empresa vence hoje. Envie o comprovativo de pagamento para não interromper o serviço.':
+    'Your company subscription expires today. Send the payment proof to avoid a service interruption.',
+  'A subscrição da sua empresa expirou. Os seus dados continuam seguros — envie o comprovativo de pagamento para renovar o acesso aos recursos pagos.':
+    'Your company subscription has expired. Your data remains safe — send the payment proof to restore access to paid features.',
+  'A subscrição da sua empresa continua por regularizar. Os seus dados continuam seguros, mas os recursos pagos ficam indisponíveis em breve sem renovação.':
+    'Your company subscription is still unpaid. Your data remains safe, but paid features will become unavailable soon without renewal.',
 };
 
 const FR = {
@@ -64,6 +78,20 @@ const FR = {
   'Entre na plataforma e vá a Configurações → Segurança. Demora menos de um minuto: enviamos-lhe um código por email e é só confirmá-lo.':
     'Connectez-vous et allez dans Paramètres → Sécurité. Cela prend moins d’une minute : nous vous envoyons un code par e-mail, il suffit de le confirmer.',
   'Apólice atualizada': 'Police mise à jour',
+  'Subscrição a vencer': 'Abonnement bientôt expiré',
+  'A subscrição da sua empresa vence em 30 dias.': 'L’abonnement de votre entreprise expire dans 30 jours.',
+  'A subscrição da sua empresa vence em 7 dias. Renove para continuar a utilizar todos os recursos do plano.':
+    'L’abonnement de votre entreprise expire dans 7 jours. Renouvelez pour continuer à profiter de toutes les fonctionnalités de votre forfait.',
+  'A subscrição da sua empresa vence em 3 dias. Renove para não perder acesso aos recursos pagos.':
+    'L’abonnement de votre entreprise expire dans 3 jours. Renouvelez pour ne pas perdre l’accès aux fonctionnalités payantes.',
+  'A subscrição da sua empresa vence amanhã. Renove hoje para não interromper o serviço.':
+    'L’abonnement de votre entreprise expire demain. Renouvelez aujourd’hui pour éviter une interruption de service.',
+  'A subscrição da sua empresa vence hoje. Envie o comprovativo de pagamento para não interromper o serviço.':
+    'L’abonnement de votre entreprise expire aujourd’hui. Envoyez le justificatif de paiement pour éviter une interruption de service.',
+  'A subscrição da sua empresa expirou. Os seus dados continuam seguros — envie o comprovativo de pagamento para renovar o acesso aos recursos pagos.':
+    'L’abonnement de votre entreprise a expiré. Vos données restent en sécurité — envoyez le justificatif de paiement pour retrouver l’accès aux fonctionnalités payantes.',
+  'A subscrição da sua empresa continua por regularizar. Os seus dados continuam seguros, mas os recursos pagos ficam indisponíveis em breve sem renovação.':
+    'L’abonnement de votre entreprise reste à régulariser. Vos données restent en sécurité, mais les fonctionnalités payantes seront bientôt indisponibles sans renouvellement.',
 };
 
 const DICT = { en: EN, fr: FR };

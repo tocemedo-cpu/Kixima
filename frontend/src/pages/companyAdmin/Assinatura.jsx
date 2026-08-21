@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, Pill, EmptyRow } from '../../components/BuyerUI';
 import { ErrorBanner, SuccessBanner } from '../../components/Common';
+import SubscriptionBanner from '../../components/SubscriptionBanner';
 import { formatDate, formatUsd } from '../../domain';
 import { useI18n } from '../../i18n';
 import { useAuth } from '../../auth/AuthContext';
@@ -230,14 +231,10 @@ export default function Assinatura() {
           />
         </div>
 
-        {data.expirada ? (
-          <p className="error-text" style={{ marginTop: 12, marginBottom: 0 }}>
-            {t('A subscrição venceu em {data}. O acesso mantém-se — a KIXIMA vai contactá-lo para regularizar.', { data: formatDate(data.validoAte) })}
-          </p>
-        ) : data.diasAteExpirar !== null && data.diasAteExpirar <= 30 ? (
-          <p style={{ marginTop: 12, marginBottom: 0, fontSize: 14, color: 'var(--warn-700, #92400e)' }}>
-            {t('Faltam {n} dias para a subscrição terminar. Renove para não interromper o serviço.', { n: data.diasAteExpirar })}
-          </p>
+        {data.estadoSubscricao !== 'ATIVA' ? (
+          <div style={{ marginTop: 12 }}>
+            <SubscriptionBanner data={data} mostrarBotao={false} />
+          </div>
         ) : null}
       </div>
 

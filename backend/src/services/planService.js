@@ -19,6 +19,48 @@ const { PlanRequiredError } = require('../utils/errors');
 
 const SEAT_PRICE_CAP_USD = Number(process.env.KIXIMA_SEAT_PRICE_CAP_USD) || 100;
 
+// --- Estado da subscrição (expiração, tolerância) ---------------------------
+//
+// NUNCA PERSISTIDO. Calculado a cada leitura a partir de planoValidoAte —
+// exatamente como o campo `expirada` que assinaturaService.estado() já
+// devolvia. Um estado guardado (ex.: uma coluna "estado: RESTRITA" ou um
+// evento de cron que a define) pode ficar dessincronizado da data real; um
+// calculado nunca pode, porque não há nada para dessincronizar.
+//
+// GRACE_PERIOD_DAYS: quantos dias depois de vencer é que a empresa ainda
+// não sente NADA — nem um recurso premium bloqueado. Existe porque uma
+// transferência bancária demora dias a confirmar-se do lado da KIXIMA (ver
+// assinaturaService.js): sem tolerância nenhuma, uma empresa que já pagou
+// mas cujo comprovativo ainda não foi revisto ficava bloqueada por um atraso
+// administrativo que não é dela.
+const GRACE_PERIOD_DAYS = Number(process.env.KIXIMA_GRACE_PERIOD_DAYS) || 7;
+const DIA_MS = 24 * 60 * 60 * 1000;
+// Quantos dias antes de vencer é que a subscrição passa a "A_EXPIRAR" — só
+// muda o que se MOSTRA (avisos), nunca o que se permite.
+const LIMIAR_A_EXPIRAR_DIAS = 30;
+
+/**
+ * Patamar de urgência da subscrição desta empresa, agora.
+ *
+ *   ATIVA      — paga, ou nunca cobrada (planoValidoAte null: a empresa de
+ *                arranque no BASE, ou posta num plano à mão pela KIXIMA).
+ *   A_EXPIRAR  — paga, mas termina dentro de LIMIAR_A_EXPIRAR_DIAS dias.
+ *   GRACE      — venceu, mas ainda dentro do período de tolerância.
+ *   RESTRITA   — venceu há mais do que GRACE_PERIOD_DAYS.
+ *
+ * `agora` é parâmetro (não Date.now() direto) só para os testes poderem fixar
+ * o tempo sem mexer no relógio do sistema.
+ */
+function estadoSubscricao(company, agora = new Date()) {
+  const validoAte = company?.planoValidoAte;
+  if (!validoAte) return 'ATIVA';
+  const diasAteVencer = Math.ceil((new Date(validoAte).getTime() - agora.getTime()) / DIA_MS);
+  if (diasAteVencer > LIMIAR_A_EXPIRAR_DIAS) return 'ATIVA';
+  if (diasAteVencer > 0) return 'A_EXPIRAR';
+  if (-diasAteVencer <= GRACE_PERIOD_DAYS) return 'GRACE';
+  return 'RESTRITA';
+}
+
 const SIZE_RULES = [
   { size: 'MICRO', maxEmployees: 9, maxRevenueUsd: 250_000 },
   { size: 'PEQUENA', maxEmployees: 99, maxRevenueUsd: 3_000_000 },
@@ -260,7 +302,22 @@ function planoQueInclui(feature) {
 
 // Guarda de funcionalidade: lança com mensagem explicativa se o plano da
 // empresa não a inclui, dizendo qual é o plano que a tem.
+//
+// Verifica TAMBÉM se a subscrição está RESTRITA (vencida há mais do que o
+// período de tolerância) — todas as chamadas a assertFeature em toda a
+// plataforma são exatamente "recursos premium"/"novas integrações" (kits, API
+// de catálogo, ERP, carregamento em massa, contratos-quadro, relatório de
+// conteúdo local): o conjunto que o modelo comercial diz para restringir
+// quando a empresa deixa de pagar. Nunca dados, nunca histórico, nunca PO,
+// nunca o catálogo já publicado — nada disso passa por aqui.
 function assertFeature(company, feature, label) {
+  if (estadoSubscricao(company) === 'RESTRITA') {
+    throw new PlanRequiredError(
+      `A subscrição da sua empresa está vencida há mais de ${GRACE_PERIOD_DAYS} dias. `
+      + `Regularize o pagamento para voltar a usar "${label}".`,
+      normalizarPlano(company?.plan),
+    );
+  }
   if (!hasFeature(company?.plan, feature)) {
     const necessario = planoQueInclui(feature) || 'PRO';
     throw new PlanRequiredError(
@@ -300,4 +357,5 @@ module.exports = {
   classify, requiredPlan, planAllowed, features, hasFeature, assertFeature,
   limite, assertLimite, normalizarPlano, planoQueInclui, rankDoPlano, monthlyAccessCost,
   PRECOS, MESES_DO_PERIODO, preco, tabela,
+  GRACE_PERIOD_DAYS, LIMIAR_A_EXPIRAR_DIAS, estadoSubscricao,
 };

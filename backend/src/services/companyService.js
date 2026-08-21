@@ -3,7 +3,7 @@
 
 const bcrypt = require('bcryptjs');
 const prisma = require('../config/database');
-const { NotFoundError, BusinessRuleError, ConflictError, ValidationError } = require('../utils/errors');
+const { NotFoundError, BusinessRuleError, ConflictError, ValidationError, PlanRequiredError } = require('../utils/errors');
 const passwordPolicy = require('../utils/passwordPolicy');
 const notificationService = require('./notificationService');
 const planService = require('./planService');
@@ -396,6 +396,18 @@ async function sendInviteEmail(invite, company, baseUrl = null) {
  * de uma vez para o limite não valer nada.
  */
 async function assertLugaresDisponiveis(company) {
+  // Aumentar utilizadores é "mais capacidade paga" — o outro caso, além dos
+  // recursos premium (ver planService.assertFeature), que o modelo comercial
+  // diz para restringir quando a subscrição está vencida há mais do que o
+  // período de tolerância. Utilizadores JÁ ativos nunca são afetados — só se
+  // bloqueia CONVIDAR MAIS gente.
+  if (planService.estadoSubscricao(company) === 'RESTRITA') {
+    throw new PlanRequiredError(
+      `A subscrição da sua empresa está vencida há mais de ${planService.GRACE_PERIOD_DAYS} dias. `
+      + 'Regularize o pagamento para poder convidar mais utilizadores.',
+      planService.normalizarPlano(company.plan),
+    );
+  }
   const [ativos, convitesAbertos] = await Promise.all([
     prisma.user.count({ where: { companyId: company.id, active: true } }),
     prisma.employeeInvite.count({

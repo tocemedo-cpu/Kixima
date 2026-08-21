@@ -98,7 +98,11 @@ export default function Cobrancas() {
       <KpiRow cards={[
         { label: 'Por confirmar', value: data.porConfirmar, icon: 'wallet', tone: 'info' },
         { label: 'Por pagar', value: data.porPagar, icon: 'invoice', tone: 'pending' },
-        { label: 'Subscrições vencidas', value: data.vencidas.length, icon: 'policy', tone: 'danger' },
+        // Em tolerância e Restritas são trabalhos com urgência diferente —
+        // somá-las esconderia quantas já estão com recursos premium
+        // bloqueados (Restritas) e quantas ainda têm dias de tolerância.
+        { label: 'Em período de tolerância', value: data.emGrace.length, icon: 'policy', tone: 'pending' },
+        { label: 'Restritas (recursos premium bloqueados)', value: data.restritas.length, icon: 'policy', tone: 'danger' },
       ]} />
 
       <h3 style={{ margin: '18px 0 10px' }}>{t('Por confirmar')}</h3>
@@ -182,9 +186,9 @@ export default function Cobrancas() {
         </div>
       </div>
 
-      <h3 style={{ margin: '22px 0 10px' }}>{t('Subscrições vencidas')}</h3>
+      <h3 style={{ margin: '22px 0 10px' }}>{t('Em período de tolerância')}</h3>
       <p className="helptext" style={{ marginTop: -4 }}>
-        {t('Estas empresas mantêm o acesso — a plataforma não corta o plano sozinha. Contacte-as para regularizar ou emita uma nova cobrança.')}
+        {t('Já venceram, mas ainda dentro do período de tolerância — acesso total mantido, nada bloqueado. Contacte-as para regularizar ou emita uma nova cobrança.')}
       </p>
       <div className="bz-card">
         <div className="bz-scroll-x">
@@ -198,14 +202,45 @@ export default function Cobrancas() {
             </tr>
           </thead>
           <tbody>
-            {data.vencidas.length === 0 ? (
-              <tr><td colSpan={4}><EmptyRow>{t('Nenhuma subscrição vencida. A plataforma não corta planos sozinha — as que passarem do prazo aparecem aqui para serem contactadas.')}</EmptyRow></td></tr>
-            ) : data.vencidas.map((c) => (
+            {data.emGrace.length === 0 ? (
+              <tr><td colSpan={4}><EmptyRow>{t('Nenhuma empresa em período de tolerância neste momento.')}</EmptyRow></td></tr>
+            ) : data.emGrace.map((c) => (
               <tr key={c.id}>
                 <td>{c.name}</td>
                 <td><Pill tone="info">{c.plan}</Pill></td>
                 <td>{formatDate(c.planoValidoAte)}</td>
-                <td><Pill tone={c.diasVencida > 30 ? 'danger' : 'pending'}>{String(c.diasVencida)}</Pill></td>
+                <td><Pill tone="pending">{String(c.diasVencida)}</Pill></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <h3 style={{ margin: '22px 0 10px' }}>{t('Restritas')}</h3>
+      <p className="helptext" style={{ marginTop: -4 }}>
+        {t('Passaram o período de tolerância: recursos premium (novos utilizadores, kits, API, ERP, contratos-quadro) já bloqueados. Os dados e o histórico continuam intactos.')}
+      </p>
+      <div className="bz-card">
+        <div className="bz-scroll-x">
+        <table className="bz-table">
+          <thead>
+            <tr>
+              <th>{t('Empresa')}</th>
+              <th>{t('Plano')}</th>
+              <th>{t('Válido até')}</th>
+              <th>{t('Dias em atraso')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.restritas.length === 0 ? (
+              <tr><td colSpan={4}><EmptyRow>{t('Nenhuma empresa restrita neste momento.')}</EmptyRow></td></tr>
+            ) : data.restritas.map((c) => (
+              <tr key={c.id}>
+                <td>{c.name}</td>
+                <td><Pill tone="info">{c.plan}</Pill></td>
+                <td>{formatDate(c.planoValidoAte)}</td>
+                <td><Pill tone="danger">{String(c.diasVencida)}</Pill></td>
               </tr>
             ))}
           </tbody>

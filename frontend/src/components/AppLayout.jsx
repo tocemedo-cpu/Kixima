@@ -8,6 +8,7 @@ import { ROLE_LABELS } from '../domain';
 import { SIDEBAR_MENUS, filtrarPorAreas } from '../data/sidebar';
 import { api } from '../api/client';
 import NotificationPanel from './NotificationPanel';
+import SubscriptionBanner from './SubscriptionBanner';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import { useCart } from '../pages/comprador/CartContext';
@@ -31,6 +32,7 @@ export default function AppLayout() {
   const [suporteNaoLidas, setSuporteNaoLidas] = useState(0);
   const [comercialNaoLidas, setComercialNaoLidas] = useState(0);
   const [alertasAbertos, setAlertasAbertos] = useState(0);
+  const [subscricao, setSubscricao] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +56,13 @@ export default function AppLayout() {
     let cancelled = false;
     api.get('/api/support/unread-count').then((d) => { if (!cancelled) setSuporteNaoLidas(d.count || 0); }).catch(() => {});
     api.get('/api/conversations/unread-count').then((d) => { if (!cancelled) setComercialNaoLidas(d.count || 0); }).catch(() => {});
+    // O aviso de subscrição a vencer tem de se ver em QUALQUER página, não só
+    // para quem visita /empresa/assinatura por iniciativa própria — é a
+    // mesma razão de existir do aviso de 2FA acima. Só para quem pode fazer
+    // alguma coisa com isto (a rota devolve 403 para o resto).
+    if (['COMPANY_ADMIN', 'FINANCEIRO'].includes(user.role)) {
+      api.get('/api/assinatura').then((d) => { if (!cancelled) setSubscricao(d); }).catch(() => {});
+    }
     // Só quem gere Suporte tem alertas para ver — a rota devolve 403 para o
     // resto, e o contador fica calado (0) sem mostrar erro nenhum.
     if (user.role === 'ADMIN_SISTEMA') {
@@ -140,6 +149,12 @@ export default function AppLayout() {
             aviso aparece enquanto não estiver ativa — depois do prazo, a conta
             fica limitada a esta configuração, por isso vale a pena não esperar. */}
         {user?.mfaPendente ? <AvisoMfa prazo={user.mfaPrazo} t={t} /> : null}
+
+        {/* Suprimido na própria página de Subscrição — lá o mesmo aviso já
+            aparece junto ao "Plano atual", com a escada de planos logo a
+            seguir; repeti-lo aqui seria a mesma frase duas vezes na mesma
+            página. */}
+        {location.pathname !== '/empresa/assinatura' ? <SubscriptionBanner data={subscricao} /> : null}
 
         <Outlet />
       </main>

@@ -177,7 +177,7 @@ async function setConfig(companyId, { erp, config = {} }, actor) {
 }
 
 async function testConnection(companyId, actor) {
-  const company = await prisma.company.findUnique({ where: { id: companyId }, select: { plan: true } });
+  const company = await prisma.company.findUnique({ where: { id: companyId }, select: { plan: true, planoValidoAte: true } });
   planService.assertFeature(company, 'erpIntegration', 'Integração com ERP');
   const cfg = await prisma.companyErpConfig.findUnique({ where: { companyId } });
   if (!cfg || !isRealErp(cfg.erp)) {

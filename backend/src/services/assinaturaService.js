@@ -220,6 +220,17 @@ async function estado(companyId) {
     // sem aviso a quem talvez já tenha transferido o dinheiro é pior do que
     // cobrar com atraso. Fica visível aqui e na lista do Admin do Sistema.
     expirada: Boolean(company.planoValidoAte && new Date(company.planoValidoAte) < new Date()),
+    // Patamar de urgência (ATIVA/A_EXPIRAR/GRACE/RESTRITA) — ver
+    // planService.estadoSubscricao. `expirada` acima fica tal como estava
+    // (quem já a lê continua a receber o mesmo valor); isto é o que precede
+    // os avisos escalonados e o banner do dashboard.
+    estadoSubscricao: planService.estadoSubscricao(company),
+    graceDiasRestantes: (() => {
+      if (!company.planoValidoAte) return null;
+      const dias = -diasAte(company.planoValidoAte);
+      const restantes = planService.GRACE_PERIOD_DAYS - dias;
+      return restantes > 0 ? restantes : 0;
+    })(),
     lugaresOcupados: ocupados,
     lugaresIncluidos: planService.limite(atual, 'lugaresIncluidos'),
     emAberto,
@@ -433,6 +444,12 @@ async function confirmar(cobrancaId, adminId, { notas } = {}, actor = null) {
         // recebia. É o mesmo cuidado de companyService.updatePlan.
         searchRank: planService.rankDoPlano(cobranca.planoNovo),
         planoValidoAte: validoAte,
+        // Novo ciclo de pagamento: os avisos de expiração já enviados eram
+        // sobre o prazo ANTERIOR. Sem isto, uma empresa que renovasse dias
+        // antes do fim do grace period continuava marcada em GRACE_META, e o
+        // próximo aviso (quando a nova data se aproximasse) seria descartado
+        // por "já avisado neste patamar ou mais urgente".
+        ultimoAvisoSubscricaoTier: null,
       },
     });
 
@@ -515,7 +532,7 @@ async function cancelar(cobrancaId, { motivo, companyId = null } = {}, actor = n
  * podia usar o Pro durante um ano sem pagar e o sistema nunca dizia nada.
  */
 async function fila() {
-  const [emAberto, vencidas] = await Promise.all([
+  const [emAberto, vencidasRaw] = await Promise.all([
     prisma.planoCobranca.findMany({
       where: { status: { in: EM_ABERTO } },
       include: { company: { select: { id: true, name: true, plan: true } } },
@@ -528,9 +545,20 @@ async function fila() {
     }),
   ]);
 
+  // GRACE (ainda dentro da tolerância) e RESTRITA (já além dela) são
+  // trabalhos com urgência diferente para o Admin do Sistema — separados aqui
+  // para o ecrã não misturar "ainda há tempo" com "já bloqueado".
+  const vencidas = vencidasRaw.map((c) => ({
+    ...c,
+    diasVencida: -diasAte(c.planoValidoAte),
+    estadoSubscricao: planService.estadoSubscricao(c),
+  }));
+
   return {
     emAberto,
-    vencidas: vencidas.map((c) => ({ ...c, diasVencida: -diasAte(c.planoValidoAte) })),
+    vencidas,
+    emGrace: vencidas.filter((c) => c.estadoSubscricao === 'GRACE'),
+    restritas: vencidas.filter((c) => c.estadoSubscricao === 'RESTRITA'),
     // Contas separadas: "3 por confirmar" e "3 por pagar" são trabalhos
     // diferentes, e somá-los esconderia qual deles está parado.
     porConfirmar: emAberto.filter((c) => c.status === 'COMPROVATIVO_ENVIADO').length,
@@ -538,8 +566,77 @@ async function fila() {
   };
 }
 
+// --- Avisos escalonados de expiração ----------------------------------------
+//
+// Patamares por urgência CRESCENTE. O patamar de uma empresa, num dado dia, é
+// o ÚLTIMO desta lista cujo limiar já foi ultrapassado — não "o dia exato X".
+// Isto importa para um cron que falhou uma corrida ou correu atrasado: no dia
+// seguinte avança direto para o patamar CERTO (e avisa uma vez, o mais
+// urgente que se aplica), em vez de ou saltar o aviso ou repetir os que já
+// passaram.
+const PATAMARES_AVISO = [
+  { tier: 'D30', limiarDias: 30 },
+  { tier: 'D7', limiarDias: 7 },
+  { tier: 'D3', limiarDias: 3 },
+  { tier: 'D1', limiarDias: 1 },
+  { tier: 'D0', limiarDias: 0 },
+  { tier: 'GRACE_INICIO', limiarDias: -1 },
+  // A meio do período de tolerância — arredondado para cima para nunca cair
+  // depois do fim do grace period (ex.: 7 dias de tolerância → aviso ao 4º).
+  { tier: 'GRACE_META', limiarDias: -Math.ceil(planService.GRACE_PERIOD_DAYS / 2) },
+];
+
+function patamarAtual(diasAteVencer) {
+  let atual = null;
+  for (const p of PATAMARES_AVISO) {
+    if (diasAteVencer <= p.limiarDias) atual = p.tier;
+  }
+  return atual;
+}
+
+/**
+ * Envia os avisos de expiração do dia — um por empresa, no máximo, e só
+ * quando o patamar SOBE (nunca repete o mesmo, nunca volta atrás). Corre uma
+ * vez por dia via subscriptionExpiryJob.js.
+ *
+ * Empresas já RESTRITAS não recebem mais avisos: passado o período de
+ * tolerância o acesso já está bloqueado nos pontos certos (ver
+ * planService.assertFeature) — mais um aviso periódico seria ruído sem ação
+ * nova possível, e "não criar spam" também vale para quem já sabe.
+ */
+async function enviarAvisosDeExpiracao() {
+  const candidatas = await prisma.company.findMany({
+    where: { planoValidoAte: { not: null } },
+    select: {
+      id: true, name: true, plan: true, planoValidoAte: true, ultimoAvisoSubscricaoTier: true,
+    },
+  });
+
+  const RANK = Object.fromEntries(PATAMARES_AVISO.map((p, i) => [p.tier, i]));
+  let enviados = 0;
+
+  for (const company of candidatas) {
+    if (planService.estadoSubscricao(company) === 'RESTRITA') continue; // eslint-disable-line no-continue
+
+    const tier = patamarAtual(diasAte(company.planoValidoAte));
+    if (!tier) continue; // eslint-disable-line no-continue — ainda longe (>30 dias), nada a avisar
+
+    const rankAnterior = RANK[company.ultimoAvisoSubscricaoTier] ?? -1;
+    if (RANK[tier] <= rankAnterior) continue; // eslint-disable-line no-continue — já avisado neste patamar ou mais urgente
+
+    // eslint-disable-next-line no-await-in-loop
+    await notificationService.events.subscricaoAExpirar(company, tier);
+    // eslint-disable-next-line no-await-in-loop
+    await prisma.company.update({ where: { id: company.id }, data: { ultimoAvisoSubscricaoTier: tier } });
+    enviados += 1;
+  }
+
+  return enviados;
+}
+
 module.exports = {
-  estado, pedir, submeterComprovativo, confirmar, cancelar, fila,
+  estado, pedir, submeterComprovativo, confirmar, cancelar, fila, enviarAvisosDeExpiracao,
   // Exportados para teste: são as duas contas que decidem dinheiro e acesso.
   novoValidoAte, lugaresOcupados, impedimento, impedimentoEmTexto, dadosBancarios, EM_ABERTO,
+  patamarAtual, PATAMARES_AVISO,
 };

@@ -195,6 +195,13 @@ model Company {
   // Preço por utilizador/mês (USD). Teto do plano BASICO: 100 USD.
   seatPriceUsd   Decimal         @default(100) @map("seat_price_usd") @db.Decimal(10, 2)
   planNotes      String?         @map("plan_notes")
+  // Último patamar de aviso de expiração já enviado (D30/D7/D3/D1/D0/
+  // GRACE_INICIO/GRACE_META) — ver subscriptionExpiryJob.js. Impede repetir o
+  // MESMO aviso todos os dias (isso seria spam); um cron atrasado ou que
+  // falhou um dia ainda assim avança para o patamar certo no dia seguinte,
+  // porque o que conta é o patamar alcançado, não um dia exato batido.
+  // Reposto a null em cada confirmação de subscrição (novo ciclo).
+  ultimoAvisoSubscricaoTier String? @map("ultimo_aviso_subscricao_tier")
 
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
@@ -1157,6 +1164,9 @@ enum NotificationType {
   CADASTRO_EMPRESA_REJEITADO
   SUBSCRICAO_COMPROVATIVO
   SUBSCRICAO_CONFIRMADA
+  // Aviso escalonado de expiração da subscrição (30/7/3/1/0 dias e durante o
+  // período de tolerância) — ver planService.js e subscriptionExpiryJob.js.
+  SUBSCRICAO_A_EXPIRAR
   // Chat de Suporte, Chat Comercial e Trust & Safety — três tipos distintos
   // de propósito: é o que permite ao frontend mostrar três contadores
   // separados (Suporte / Chat Comercial / Alertas de Segurança) sem misturar

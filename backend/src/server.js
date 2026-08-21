@@ -7,6 +7,7 @@ const config = require('./config/env');
 const logger = require('./config/logger');
 const prisma = require('./config/database');
 const { schedulePolicyExpiryJob } = require('./jobs/policyExpiryJob');
+const { scheduleSubscriptionExpiryJob } = require('./jobs/subscriptionExpiryJob');
 const { scheduleBackupJob } = require('./jobs/backupJob');
 const { scheduleMfaLembreteJob } = require('./jobs/mfaLembreteJob');
 const { scheduleRetencaoJob } = require('./jobs/retencaoJob');
@@ -53,6 +54,7 @@ const server = app.listen(config.port, () => {
     );
   }
   schedulePolicyExpiryJob();
+  scheduleSubscriptionExpiryJob();
   scheduleBackupJob();
   scheduleMfaLembreteJob();
   scheduleRetencaoJob();
