@@ -165,3 +165,76 @@ export function formatDateTime(value) {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   }).format(new Date(value));
 }
+
+// --- Notificações: para onde navegar ao clicar ------------------------------
+//
+// Clicar numa notificação tem de: identificar o TIPO, obter o RECURSO
+// relacionado (relatedEntityType/relatedEntityId, gravados no momento da
+// criação — ver backend/src/services/notificationService.js) e navegar para a
+// página CERTA. Essa terceira parte depende do PAPEL de quem clicou: uma
+// PurchaseOrder não tem uma única página — o Comprador vê-a em
+// /comprador/ordens/:id, o Company Admin em /empresa/aprovacoes/:id, o
+// Fornecedor em /fornecedor/ordens/:id, o Financeiro em
+// /financeiro/ordens/:id — todas o MESMO OrderDetail, sob rotas diferentes
+// por persona (RequireRole barra as outras com 403/redirect).
+//
+// Sem destino conhecido e seguro para o papel de quem clicou, devolve null:
+// quem chama só marca como lida, sem navegar — mais vale não fazer nada do
+// que mandar alguém para uma página que o RequireRole lhe vai recusar.
+export function resolverDestinoNotificacao(n, user) {
+  if (!n || !user) return null;
+  const tipo = n.relatedEntityType;
+  const id = n.relatedEntityId;
+  const role = user.role;
+
+  if (tipo === 'PurchaseOrder' && id) {
+    const porPapel = {
+      COMPRADOR: `/comprador/ordens/${id}`,
+      COMPANY_ADMIN: `/empresa/aprovacoes/${id}`,
+      FORNECEDOR: `/fornecedor/ordens/${id}`,
+      FINANCEIRO: `/financeiro/ordens/${id}`,
+    };
+    return porPapel[role] || null;
+  }
+  if (tipo === 'Invoice') {
+    // FATURA_GERADA só é enviada ao Financeiro da empresa COMPRADORA — não
+    // há caso de Fornecedor aqui (ver notificationService.js).
+    return role === 'FINANCEIRO' ? '/financeiro/faturas' : null;
+  }
+  if (tipo === 'Payment') {
+    // PAGAMENTO_PROCESSADO só é enviado a Fornecedor/Company Admin da
+    // empresa FORNECEDORA. O Company Admin não tem página própria de
+    // pagamentos recebidos — aterra na sua página inicial, não em nenhures.
+    if (role === 'FORNECEDOR') return '/fornecedor/pagamentos';
+    if (role === 'COMPANY_ADMIN') return '/empresa';
+    return null;
+  }
+  if (tipo === 'PlanoCobranca') {
+    return ['COMPANY_ADMIN', 'FINANCEIRO'].includes(role) ? '/empresa/assinatura' : null;
+  }
+  if (tipo === 'SupportTicket') {
+    return id ? `/suporte/chat?ticket=${id}` : '/suporte/chat';
+  }
+  if (tipo === 'Conversation') {
+    return id ? `/mensagens/chat-comercial?c=${id}` : '/mensagens/chat-comercial';
+  }
+  if (tipo === 'SupplierDevRequest') {
+    // Só o Admin do Sistema é notificado desta candidatura.
+    return role === 'ADMIN_SISTEMA' ? '/sistema/supplier-development' : null;
+  }
+
+  // Tipos sem recurso próprio associado (ver notificationService.js) —
+  // aterra na página onde esse assunto vive.
+  switch (n.type) {
+    case 'APOLICE_SUBMETIDA_APROVADA':
+    case 'APOLICE_A_EXPIRAR':
+      return ['COMPANY_ADMIN', 'FINANCEIRO'].includes(role) ? '/empresa/documentos' : null;
+    case 'CADASTRO_EMPRESA_APROVADO':
+    case 'CADASTRO_EMPRESA_REJEITADO':
+      return role === 'COMPANY_ADMIN' ? '/empresa/perfil' : null;
+    case 'ALERTA_SEGURANCA':
+      return role === 'ADMIN_SISTEMA' ? '/sistema/alertas-seguranca' : null;
+    default:
+      return null;
+  }
+}

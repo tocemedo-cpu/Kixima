@@ -1,12 +1,16 @@
 // src/pages/shared/Notifications.jsx
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
-import { formatDateTime } from '../../domain';
+import { formatDateTime, resolverDestinoNotificacao } from '../../domain';
+import { useAuth } from '../../auth/AuthContext';
 import { useI18n } from '../../i18n';
 
 export default function Notifications() {
   const { t } = useI18n();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState(null);
   const [error, setError] = useState('');
   const [total, setTotal] = useState(0);
@@ -19,13 +23,20 @@ export default function Notifications() {
 
   useEffect(load, []);
 
-  async function markRead(id) {
-    try {
-      await api.patch(`/api/notifications/${id}/read`);
-      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)));
-    } catch {
-      // silencioso
+  // Marca como lida (se ainda não estava) e navega para o recurso
+  // relacionado, quando há um destino conhecido e seguro para o papel de
+  // quem clicou — ver resolverDestinoNotificacao em domain.js.
+  async function abrir(n) {
+    if (!n.readAt) {
+      try {
+        await api.patch(`/api/notifications/${n.id}/read`);
+        setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, readAt: new Date().toISOString() } : x)));
+      } catch {
+        // silencioso
+      }
     }
+    const destino = resolverDestinoNotificacao(n, user);
+    if (destino) navigate(destino);
   }
 
   if (error) return <ErrorBanner message={error} />;
@@ -42,15 +53,17 @@ export default function Notifications() {
         </div>
       ) : (
         <div className="card">
-          {notifications.map((n, i) => (
+          {notifications.map((n, i) => {
+            const clicavel = !n.readAt || !!resolverDestinoNotificacao(n, user);
+            return (
             <div
               key={n.id}
-              onClick={() => !n.readAt && markRead(n.id)}
+              onClick={() => clicavel && abrir(n)}
               style={{
                 padding: '16px 20px',
                 borderBottom: i === notifications.length - 1 ? 'none' : '1px solid var(--paper-100)',
                 background: n.readAt ? '#fff' : 'var(--paper-050)',
-                cursor: n.readAt ? 'default' : 'pointer',
+                cursor: clicavel ? 'pointer' : 'default',
                 display: 'flex',
                 justifyContent: 'space-between',
                 gap: 16,
@@ -62,7 +75,8 @@ export default function Notifications() {
               </div>
               <div style={{ fontSize: 11.5, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{formatDateTime(n.createdAt)}</div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
