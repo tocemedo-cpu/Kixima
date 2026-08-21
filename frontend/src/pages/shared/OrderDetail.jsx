@@ -37,6 +37,9 @@ export default function OrderDetail() {
   const [resolveOutcome, setResolveOutcome] = useState(null); // 'ACEITE' | 'REPOSICAO'
   const [resolveNotes, setResolveNotes] = useState('');
   const [history, setHistory] = useState(null);
+  const [showCreditNote, setShowCreditNote] = useState(false);
+  const [cnMotivo, setCnMotivo] = useState('');
+  const [cnAmount, setCnAmount] = useState('');
 
   const load = useCallback(() => {
     api.get(`/api/purchase-orders/${id}`).then(setPo).catch((e) => setError(e.message));
@@ -64,6 +67,24 @@ export default function OrderDetail() {
     }
   }
 
+  async function submitCreditNote() {
+    setBusy(true);
+    setError('');
+    setSuccess('');
+    try {
+      await api.post(`/api/payments/invoices/${po.invoice.id}/notas-credito`, { motivo: cnMotivo.trim(), amount: Number(cnAmount) });
+      setSuccess(t('Ação registada com sucesso.'));
+      setShowCreditNote(false);
+      setCnMotivo('');
+      setCnAmount('');
+      load();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (error && !po) return <ErrorBanner message={error} />;
   if (!po) return <Loading />;
 
@@ -75,6 +96,10 @@ export default function OrderDetail() {
   const canMarkDelivered = user.role === 'FORNECEDOR' && po.status === 'EM_EXECUCAO' && po.dispatchedAt;
   const canReceive = user.role === 'COMPRADOR' && ['ENTREGUE', 'EM_EXECUCAO'].includes(po.status);
   const canResolveDivergence = ['COMPRADOR', 'COMPANY_ADMIN'].includes(user.role) && po.status === 'RECEBIDA_COM_DIVERGENCIA';
+  const canCreditNote = ['FORNECEDOR', 'ADMIN_SISTEMA'].includes(user.role) && !!po.invoice;
+  const totalCreditado = (po.invoice?.creditNotes || []).reduce((s, n) => s + Number(n.amount), 0);
+  const porCreditar = po.invoice ? Number(po.invoice.amount) - totalCreditado : 0;
+  const cnAmountValida = Number(cnAmount) > 0 && Number(cnAmount) <= porCreditar;
 
   return (
     <div>
@@ -167,6 +192,60 @@ export default function OrderDetail() {
           </div>
         </div>
       </div>
+
+      {po.invoice ? (
+        <div className="card card-pad" style={{ marginBottom: 16 }}>
+          <strong style={{ fontSize: 13.5 }}>{t('Notas de crédito')}</strong>
+          {(po.invoice.creditNotes || []).length ? (
+            <ul style={{ marginTop: 10, paddingLeft: 18 }}>
+              {po.invoice.creditNotes.map((n) => (
+                <li key={n.id} style={{ fontSize: 12.5, marginBottom: 4 }}>
+                  <span className="mono">{n.serie && n.numeroNaSerie ? `${n.serie}/${n.numeroNaSerie}` : n.reference}</span>
+                  {' — '}{formatMoney(n.amount, po.invoice.currency)} — {n.motivo} ({formatDate(n.issuedAt)})
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="helptext" style={{ marginTop: 8 }}>{t('Sem notas de crédito emitidas para esta fatura.')}</p>
+          )}
+
+          {canCreditNote && porCreditar > 0 && (
+            <div style={{ marginTop: 12 }}>
+              {!showCreditNote ? (
+                <button className="btn btn-ghost btn-sm" onClick={() => setShowCreditNote(true)}>
+                  {t('Emitir nota de crédito')}
+                </button>
+              ) : (
+                <div style={{ display: 'grid', gap: 10, maxWidth: 420 }}>
+                  <p className="helptext">
+                    {t('Corrige esta fatura sem a alterar — pode creditar até {valor}.', { valor: formatMoney(porCreditar, po.invoice.currency) })}
+                  </p>
+                  <Field label={t('Motivo')}>
+                    {(id) => (<>
+                      <textarea id={id} rows={2} value={cnMotivo} onChange={(e) => setCnMotivo(e.target.value)} placeholder={t('Ex.: devolução parcial, erro de quantidade…')} />
+                    </>)}
+                  </Field>
+                  <Field label={t('Valor a creditar')}>
+                    {(id) => (<>
+                      <input id={id} type="number" min="0.01" step="0.01" value={cnAmount} onChange={(e) => setCnAmount(e.target.value)} />
+                    </>)}
+                  </Field>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      className="btn btn-accent"
+                      disabled={busy || !cnMotivo.trim() || !cnAmountValida}
+                      onClick={submitCreditNote}
+                    >
+                      {t('Confirmar nota de crédito')}
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => setShowCreditNote(false)}>{t('Cancelar')}</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {(canApprove || canAcceptRefuse || canDispatch || canMarkDelivered || canReceive || canResolveDivergence) && (
         <div className="card card-pad" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

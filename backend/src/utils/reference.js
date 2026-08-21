@@ -24,6 +24,7 @@ const TABELA_DO_MODELO = {
   contract: { tabela: 'contracts', coluna: 'reference' },
   supplierDevRequest: { tabela: 'supplier_dev_requests', coluna: 'reference' },
   planoCobranca: { tabela: 'plano_cobrancas', coluna: 'referencia' },
+  creditNote: { tabela: 'credit_notes', coluna: 'reference' },
 };
 
 /**

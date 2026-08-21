@@ -1,7 +1,8 @@
 const express = require('express');
 const paymentController = require('../controllers/paymentController');
 const { authenticate } = require('../middleware/auth');
-const { requireRole } = require('../middleware/rbac');
+const { requireRole, requirePermission } = require('../middleware/rbac');
+const { FATURACAO } = require('../utils/adminAreas');
 const { uploadDocuments } = require('../config/upload');
 
 const router = express.Router();
@@ -14,6 +15,23 @@ router.patch(
   '/:paymentId/confirm-received',
   requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'FINANCEIRO'),
   paymentController.confirmReceived,
+);
+
+// Nota de crédito — o fornecedor desta fatura corrige-a, ou o Admin do
+// Sistema com a área FATURACAO (mesma permissão do resto da faturação
+// certificada, ver faturacaoRoutes.js). requirePermission não faz nada a
+// quem não é ADMIN_SISTEMA — a posse real é confirmada dentro do serviço.
+router.post(
+  '/invoices/:invoiceId/notas-credito',
+  requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'ADMIN_SISTEMA'),
+  requirePermission(FATURACAO),
+  paymentController.emitirNotaCredito,
+);
+router.get(
+  '/invoices/:invoiceId/notas-credito',
+  requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'FINANCEIRO', 'COMPRADOR', 'ADMIN_SISTEMA'),
+  requirePermission(FATURACAO),
+  paymentController.listarNotasCredito,
 );
 
 router.use(requireRole('FINANCEIRO', 'COMPANY_ADMIN'));

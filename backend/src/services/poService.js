@@ -118,7 +118,7 @@ async function getPurchaseOrder(id, user = null) {
     where: { id },
     include: {
       items: { include: { product: true } },
-      invoice: { include: { payment: true } },
+      invoice: { include: { payment: true, creditNotes: { orderBy: { issuedAt: 'asc' } } } },
       buyerCompany: COMPANY_FIELDS,
       supplierCompany: COMPANY_FIELDS,
       createdBy: { select: { name: true } },

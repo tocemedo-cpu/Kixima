@@ -61,32 +61,71 @@ function validarPeriodo({ de, ate }) {
 async function gerar({ de, ate }) {
   const { ini, fim } = validarPeriodo({ de, ate });
 
+  const incluirCliente = {
+    select: {
+      reference: true,
+      buyerCompany: { select: { id: true, name: true, taxId: true, address: true, city: true, country: true } },
+    },
+  };
+  const incluirClienteContrato = {
+    select: {
+      reference: true,
+      clientCompany: { select: { id: true, name: true, taxId: true, address: true, city: true, country: true } },
+    },
+  };
+
   const faturas = await prisma.invoice.findMany({
     where: { issuedAt: { gte: ini, lte: fim } },
     orderBy: [{ serie: 'asc' }, { numeroNaSerie: 'asc' }, { issuedAt: 'asc' }],
+    include: { purchaseOrder: incluirCliente, contract: incluirClienteContrato },
+    take: 100000,
+  });
+
+  const clienteDe = (f) => f.purchaseOrder?.buyerCompany || f.contract?.clientCompany || null;
+
+  // Notas de crédito EMITIDAS neste período — são o próprio documento fiscal
+  // reportado (não uma propriedade da fatura original), por isso entram por
+  // data de EMISSÃO da nota, não da fatura que corrigem.
+  const notasDoPeriodo = await prisma.creditNote.findMany({
+    where: { issuedAt: { gte: ini, lte: fim } },
+    orderBy: [{ serie: 'asc' }, { numeroNaSerie: 'asc' }, { issuedAt: 'asc' }],
     include: {
-      purchaseOrder: {
+      invoice: {
         select: {
-          reference: true,
-          buyerCompany: { select: { id: true, name: true, taxId: true, address: true, city: true, country: true } },
-        },
-      },
-      contract: {
-        select: {
-          reference: true,
-          clientCompany: { select: { id: true, name: true, taxId: true, address: true, city: true, country: true } },
+          reference: true, serie: true, numeroNaSerie: true,
+          purchaseOrder: incluirCliente, contract: incluirClienteContrato,
         },
       },
     },
     take: 100000,
   });
 
-  const clienteDe = (f) => f.purchaseOrder?.buyerCompany || f.contract?.clientCompany || null;
+  // Total creditado por fatura, para decidir se está efetivamente anulada —
+  // conta TODAS as notas de crédito de cada fatura, mesmo emitidas noutro
+  // período: uma fatura de janeiro totalmente creditada em março continua
+  // anulada quando se olha para ela em qualquer altura.
+  const faturaIds = faturas.map((f) => f.id);
+  const notasDasFaturasDoPeriodo = faturaIds.length
+    ? await prisma.creditNote.findMany({ where: { invoiceId: { in: faturaIds } }, select: { invoiceId: true, amount: true } })
+    : [];
+  const creditadoPorFatura = new Map();
+  for (const n of notasDasFaturasDoPeriodo) {
+    creditadoPorFatura.set(n.invoiceId, (creditadoPorFatura.get(n.invoiceId) || 0) + Number(n.amount));
+  }
+  const anulada = (f) => {
+    const creditado = creditadoPorFatura.get(f.id) || 0;
+    return creditado > 0 && creditado >= Number(f.amount);
+  };
 
-  // Tabela mestre de clientes: cada um UMA vez, mesmo com várias faturas.
+  // Tabela mestre de clientes: cada um UMA vez, mesmo com várias faturas ou
+  // notas de crédito.
   const clientes = new Map();
   for (const f of faturas) {
     const c = clienteDe(f);
+    if (c && !clientes.has(c.id)) clientes.set(c.id, c);
+  }
+  for (const n of notasDoPeriodo) {
+    const c = n.invoice && clienteDe(n.invoice);
     if (c && !clientes.has(c.id)) clientes.set(c.id, c);
   }
 
@@ -140,7 +179,14 @@ async function gerar({ de, ate }) {
   // --- Documentos comerciais ------------------------------------------------
   linhas.push('  <SourceDocuments>');
   linhas.push('    <SalesInvoices>');
-  linhas.push(`      ${el('NumberOfEntries', String(faturas.length))}`);
+  // Inclui as notas de crédito no MESMO bloco — é o modelo português em que
+  // isto se baseia: NC/ND partilham a tabela SalesInvoices com a fatura,
+  // distinguidas pelo InvoiceType, não uma tabela à parte.
+  linhas.push(`      ${el('NumberOfEntries', String(faturas.length + notasDoPeriodo.length))}`);
+  // NEEDS_AGT_CONFIRMATION: TotalDebit/TotalCredit aqui só somam faturas. Sem
+  // confirmar contra o esquema oficial se as notas de crédito entram nestes
+  // totais (e com que sinal), preferimos não adivinhar — ficam de fora até
+  // essa confirmação, em vez de um número que pareça certo e não seja.
   linhas.push(`      ${el('TotalDebit', dinheiro(0))}`);
   linhas.push(`      ${el('TotalCredit', dinheiro(totalTributavel))}`);
 
@@ -155,7 +201,10 @@ async function gerar({ de, ate }) {
     linhas.push('      <Invoice>');
     linhas.push(`        ${el('InvoiceNo', numero)}`);
     linhas.push('        <DocumentStatus>');
-    linhas.push(`          ${el('InvoiceStatus', f.status === 'ANULADA' ? 'A' : 'N')}`);
+    // Anulada se e só se totalmente creditada por nota(s) de crédito — nunca
+    // um campo de estado escrito à mão (era exatamente o bug daqui: comparava
+    // contra 'ANULADA', um valor que não existe no enum InvoiceStatus).
+    linhas.push(`          ${el('InvoiceStatus', anulada(f) ? 'A' : 'N')}`);
     linhas.push(`          ${el('InvoiceStatusDate', new Date(f.updatedAt || f.issuedAt).toISOString().slice(0, 19))}`);
     linhas.push(`          ${el('SourceID', 'KIXIMA')}`);
     linhas.push(`          ${el('SourceBilling', 'P')}`);
@@ -176,6 +225,47 @@ async function gerar({ de, ate }) {
     linhas.push(`          ${el('TaxPayable', dinheiro(f.taxAmount))}`);
     linhas.push(`          ${el('NetTotal', dinheiro(f.netAmount))}`);
     linhas.push(`          ${el('GrossTotal', dinheiro(f.amount))}`);
+    linhas.push('        </DocumentTotals>');
+    linhas.push('      </Invoice>');
+  }
+
+  for (const n of notasDoPeriodo) {
+    const c = n.invoice && clienteDe(n.invoice);
+    const numero = n.serie && n.numeroNaSerie ? `${n.serie}/${n.numeroNaSerie}` : n.reference;
+    const faturaOriginal = n.invoice?.serie && n.invoice?.numeroNaSerie
+      ? `${n.invoice.serie}/${n.invoice.numeroNaSerie}` : n.invoice?.reference;
+
+    linhas.push('      <Invoice>');
+    linhas.push(`        ${el('InvoiceNo', numero)}`);
+    linhas.push('        <DocumentStatus>');
+    linhas.push(`          ${el('InvoiceStatus', 'N')}`);
+    linhas.push(`          ${el('InvoiceStatusDate', new Date(n.createdAt || n.issuedAt).toISOString().slice(0, 19))}`);
+    linhas.push(`          ${el('SourceID', 'KIXIMA')}`);
+    linhas.push(`          ${el('SourceBilling', 'P')}`);
+    linhas.push('        </DocumentStatus>');
+    linhas.push(`        ${el('Hash', n.hashDocumento || '')}`);
+    linhas.push(`        ${el('HashControl', '1')}`);
+    linhas.push(`        ${el('InvoiceDate', data(n.issuedAt))}`);
+    linhas.push(`        ${el('InvoiceType', 'NC')}`);
+    linhas.push('        <SpecialRegimes>');
+    linhas.push(`          ${el('SelfBillingIndicator', '0')}`);
+    linhas.push(`          ${el('CashVATSchemeIndicator', '0')}`);
+    linhas.push(`          ${el('ThirdPartiesBillingIndicator', '0')}`);
+    linhas.push('        </SpecialRegimes>');
+    linhas.push(`        ${el('SourceID', 'KIXIMA')}`);
+    linhas.push(`        ${el('SystemEntryDate', new Date(n.createdAt).toISOString().slice(0, 19))}`);
+    linhas.push(`        ${el('CustomerID', c?.id || 'Desconhecido')}`);
+    // NEEDS_AGT_CONFIRMATION: a referência ao documento original segue aqui o
+    // elemento References do modelo português (Reference + Reason). Não
+    // confirmado contra o esquema/XSD oficial angolano.
+    linhas.push('        <References>');
+    linhas.push(`          ${el('Reference', faturaOriginal)}`);
+    linhas.push(`          ${el('Reason', n.motivo)}`);
+    linhas.push('        </References>');
+    linhas.push('        <DocumentTotals>');
+    linhas.push(`          ${el('TaxPayable', dinheiro(n.taxAmount))}`);
+    linhas.push(`          ${el('NetTotal', dinheiro(n.netAmount))}`);
+    linhas.push(`          ${el('GrossTotal', dinheiro(n.amount))}`);
     linhas.push('        </DocumentTotals>');
     linhas.push('      </Invoice>');
   }

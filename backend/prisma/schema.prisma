@@ -912,6 +912,7 @@ model Invoice {
 
   payment     Payment?
   platformFee PlatformFee?
+  creditNotes CreditNote[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -919,6 +920,48 @@ model Invoice {
   @@index([contractId])
   @@index([serie, numeroNaSerie])
   @@map("invoices")
+}
+
+// Nota de crédito — o mecanismo de CORREÇÃO fiscal (nunca um UPDATE na
+// fatura já emitida). Refere sempre a fatura original; o crédito nunca é
+// arbitrário — ver creditNoteService.emitir(), que valida o saldo por
+// creditar antes de aceitar o valor pedido.
+//
+// Série e cadeia de hash PRÓPRIAS (KIXIMA_SERIE_NOTA_CREDITO), nunca a mesma
+// da fatura: são documentos fiscais distintos, cada um com o seu elo. Usa o
+// MESMO mecanismo de atribuição transacional que a fatura (ver
+// faturacaoService.atribuir, agora com o parâmetro `codigo`) — não um
+// segundo sistema de numeração paralelo.
+model CreditNote {
+  id        String  @id @default(uuid())
+  reference String  @unique // ex: NC-2026-000001
+
+  invoiceId String  @map("invoice_id")
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+
+  // Motivo obrigatório — uma nota de crédito sem motivo é um crédito que
+  // ninguém consegue explicar depois.
+  motivo String
+
+  amount    Decimal  @db.Decimal(14, 2) // valor creditado, COM IVA (mesma base que Invoice.amount)
+  netAmount Decimal? @map("net_amount") @db.Decimal(14, 2)
+  taxAmount Decimal? @map("tax_amount") @db.Decimal(14, 2)
+  currency  String   @default("AOA")
+
+  // Cadeia de integridade própria — ver o comentário em Invoice.
+  serie         String?   @map("serie")
+  numeroNaSerie Int?      @map("numero_na_serie")
+  hashDocumento String?   @map("hash_documento")
+  hashAnterior  String?   @map("hash_anterior")
+  assinadaEm    DateTime? @map("assinada_em")
+
+  issuedAt    DateTime @default(now()) @map("issued_at")
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([invoiceId])
+  @@index([serie, numeroNaSerie])
+  @@map("credit_notes")
 }
 
 // Série de faturação declarada à AGT.
@@ -1180,6 +1223,8 @@ enum NotificationType {
   PO_ENTREGUE
   PO_RECEBIDA_CONFORME
   PO_CONCLUIDA
+  // Correção fiscal de uma fatura — ver creditNoteService.js.
+  NOTA_CREDITO_EMITIDA
 }
 
 model Notification {

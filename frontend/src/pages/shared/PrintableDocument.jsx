@@ -178,6 +178,13 @@ export default function PrintableDocument({ kind }) {
             <>
               <div className="pdoc-box"><div className="pdoc-lbl">{t('ORDEM DE COMPRA DE ORIGEM')}</div><strong>{po.reference}</strong></div>
               <div className="pdoc-box"><div className="pdoc-lbl">{t('PRAZO DE PAGAMENTO')}</div><div>{t('Vencimento em {data} (7 dias após aceitação da PO pelo fornecedor).', { data: d(invoice.dueAt) })}</div></div>
+              {invoice.serie && invoice.numeroNaSerie ? (
+                <div className="pdoc-box pdoc-box-fiscal">
+                  <div className="pdoc-lbl">{t('DOCUMENTO FISCAL CERTIFICADO')}</div>
+                  <div>{t('Série {serie} · N.º {numero}', { serie: invoice.serie, numero: invoice.numeroNaSerie })}</div>
+                  {invoice.hashDocumento ? <div className="pdoc-hash">{t('Hash')}: {invoice.hashDocumento.slice(0, 16)}…</div> : null}
+                </div>
+              ) : null}
             </>
           ) : (
             <>
@@ -230,6 +237,21 @@ export default function PrintableDocument({ kind }) {
               <section className="pdoc-confirm">
                 <div className="pdoc-lbl">{t('PAGAMENTO CONFIRMADO')}</div>
                 <div>{t('Pagamento processado em {data} — referência {ref}. Protegido pela garantia de pagamento KIXIMA, com fundos do cliente.', { data: dt(invoice.payment.processedAt), ref: invoice.payment.reference })}</div>
+              </section>
+            ) : null}
+            {invoice.creditNotes?.length ? (
+              <section className="pdoc-legal">
+                <div className="pdoc-lbl">{t('NOTAS DE CRÉDITO')}</div>
+                {invoice.creditNotes.map((n) => (
+                  <div key={n.id}>
+                    {t('{ref} — emitida em {data}: {motivo} ({valor})', {
+                      ref: n.serie && n.numeroNaSerie ? `${n.serie}/${n.numeroNaSerie}` : n.reference,
+                      data: d(n.issuedAt),
+                      motivo: n.motivo,
+                      valor: money(n.amount, invoice.currency),
+                    })}
+                  </div>
+                ))}
               </section>
             ) : null}
             <section className="pdoc-terms">

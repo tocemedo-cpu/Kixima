@@ -19,24 +19,55 @@ const faturacao = require('../src/services/faturacaoService');
 const saft = require('../src/services/saftService');
 
 const SERIE = 'TESTE';
+const SERIE_NC = 'TESTENC';
 let serieOriginal;
+let serieNcOriginal;
 
 beforeAll(() => {
   serieOriginal = config.faturacao.serie;
+  serieNcOriginal = config.faturacao.serieNotaCredito;
   config.faturacao.serie = SERIE;
+  config.faturacao.serieNotaCredito = SERIE_NC;
 });
 
 afterAll(async () => {
   config.faturacao.serie = serieOriginal;
+  config.faturacao.serieNotaCredito = serieNcOriginal;
+  await prisma.creditNote.deleteMany({ where: { serie: SERIE_NC } });
   await prisma.invoice.deleteMany({ where: { serie: SERIE } });
-  await prisma.$executeRaw`DELETE FROM "series_faturacao" WHERE "codigo" = ${SERIE}`;
+  await prisma.$executeRaw`DELETE FROM "series_faturacao" WHERE "codigo" IN (${SERIE}, ${SERIE_NC})`;
   await prisma.$disconnect();
 });
 
 beforeEach(async () => {
+  await prisma.creditNote.deleteMany({ where: { serie: SERIE_NC } });
   await prisma.invoice.deleteMany({ where: { serie: SERIE } });
-  await prisma.$executeRaw`DELETE FROM "series_faturacao" WHERE "codigo" = ${SERIE}`;
+  await prisma.$executeRaw`DELETE FROM "series_faturacao" WHERE "codigo" IN (${SERIE}, ${SERIE_NC})`;
 });
+
+// Nota de crédito mínima, com a série própria (nunca a da fatura), na mesma
+// transação — mesmo padrão de `emitir()`, sem passar pelo creditNoteService
+// (RBAC e regras de negócio já são cobertas em credit-note.test.js; aqui
+// interessa só a numeração e a integração com o SAF-T).
+async function emitirNotaCredito(invoiceId, valor, motivo = 'Correção de teste') {
+  return prisma.$transaction(async (tx) => {
+    const certificacao = await faturacao.atribuir(tx, {
+      emitidaEm: new Date(), total: valor, codigo: faturacao.serieNotaCreditoAtual(),
+    });
+    return tx.creditNote.create({
+      data: {
+        ...certificacao,
+        reference: `NC-TESTE-${certificacao.numeroNaSerie}-${Math.random().toString(36).slice(2, 8)}`,
+        invoiceId,
+        motivo,
+        amount: valor,
+        netAmount: valor,
+        taxAmount: 0,
+        currency: 'AOA',
+      },
+    });
+  });
+}
 
 // Cria uma fatura mínima com numeração certificada, na mesma transação.
 async function emitir(total = 1000, { rebentar = false } = {}) {
@@ -175,6 +206,37 @@ describe('Desligada, nada muda', () => {
   });
 });
 
+describe('Notas de crédito', () => {
+  test('tem série e numeração PRÓPRIAS, independentes da fatura', async () => {
+    const fatura = await emitir(1000);
+    const nc1 = await emitirNotaCredito(fatura.id, 300);
+    const nc2 = await emitirNotaCredito(fatura.id, 200);
+
+    expect(nc1.serie).toBe(SERIE_NC);
+    expect(nc1.serie).not.toBe(fatura.serie);
+    expect([nc1.numeroNaSerie, nc2.numeroNaSerie]).toEqual([1, 2]);
+    // Cadeia de hash própria: a primeira nota de crédito não se agarra a
+    // nenhuma fatura — começa a sua própria cadeia.
+    expect(nc1.hashAnterior).toBeNull();
+    expect(nc2.hashAnterior).toBe(nc1.hashDocumento);
+  });
+
+  test('a base recusa duas notas de crédito com o mesmo número na série', async () => {
+    const fatura = await emitir(1000);
+    const primeira = await emitirNotaCredito(fatura.id, 100);
+    await expect(prisma.creditNote.create({
+      data: {
+        serie: SERIE_NC,
+        numeroNaSerie: primeira.numeroNaSerie,
+        reference: 'NC-DUPLICADA',
+        invoiceId: fatura.id,
+        motivo: 'x',
+        amount: 1,
+      },
+    })).rejects.toThrow();
+  });
+});
+
 describe('SAF-T (AO)', () => {
   test('exige um período, e recusa datas invertidas', async () => {
     await expect(saft.gerar({ de: 'ontem', ate: 'hoje' })).rejects.toThrow(/AAAA-MM-DD/);
@@ -221,5 +283,45 @@ describe('SAF-T (AO)', () => {
     // campo por preencher: o primeiro é uma declaração falsa.
     expect(resumo.porConfigurar).toContain('KIXIMA_CERTIFICADO_AGT');
     expect(typeof resumo.semSerieCertificada).toBe('number');
+  });
+
+  test('uma nota de crédito emitida no período entra como InvoiceType=NC, referenciando a fatura original', async () => {
+    const fatura = await emitir(1000);
+    const nota = await emitirNotaCredito(fatura.id, 300, 'Devolução parcial');
+
+    const { xml } = await saft.gerar({ de: '2020-01-01', ate: '2035-12-31' });
+    expect((xml.match(/InvoiceType>NC</g) || []).length).toBeGreaterThanOrEqual(1);
+    expect(xml).toContain(`${nota.serie}/${nota.numeroNaSerie}`);
+    expect(xml).toContain('Devolução parcial');
+    // A referência aponta para a fatura original, nunca um valor arbitrário.
+    expect(xml).toContain(`<Reference>${fatura.serie}/${fatura.numeroNaSerie}</Reference>`);
+  });
+
+  test('o status da fatura é A (anulada) só quando totalmente creditada — nunca a string morta "ANULADA"', async () => {
+    const parcial = await emitir(1000);
+    await emitirNotaCredito(parcial.id, 400);
+    const total = await emitir(2000);
+    await emitirNotaCredito(total.id, 2000);
+
+    const { xml } = await saft.gerar({ de: '2020-01-01', ate: '2035-12-31' });
+    // Isola o bloco <Invoice> de cada fatura pelo seu InvoiceNo para verificar
+    // o InvoiceStatus correspondente sem depender da ordem no XML.
+    const statusDe = (numero) => {
+      const inicio = xml.indexOf(`<InvoiceNo>${numero}</InvoiceNo>`);
+      const bloco = xml.slice(inicio, xml.indexOf('</Invoice>', inicio));
+      return bloco.match(/<InvoiceStatus>(.)<\/InvoiceStatus>/)[1];
+    };
+    expect(statusDe(`${parcial.serie}/${parcial.numeroNaSerie}`)).toBe('N');
+    expect(statusDe(`${total.serie}/${total.numeroNaSerie}`)).toBe('A');
+  });
+
+  test('NumberOfEntries conta faturas E notas de crédito do período', async () => {
+    const fatura = await emitir(1000);
+    await emitirNotaCredito(fatura.id, 100);
+    await emitirNotaCredito(fatura.id, 100);
+
+    const { xml } = await saft.gerar({ de: '2020-01-01', ate: '2035-12-31' });
+    const n = Number(xml.match(/<NumberOfEntries>(\d+)<\/NumberOfEntries>/)[1]);
+    expect(n).toBeGreaterThanOrEqual(3); // 1 fatura + 2 notas de crédito
   });
 });

@@ -2616,6 +2616,8 @@ tbody tr:hover {
 .pdoc-box { background: var(--paper-050); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; font-size: var(--fs-sm); }
 .pdoc-box strong { font-size: var(--fs-lg); }
 .pdoc-box-accent { background: #f3faf4; border-color: #cfe8d4; color: #1c6b2e; }
+.pdoc-box-fiscal { grid-column: 1 / -1; }
+.pdoc-hash { font-family: monospace; font-size: var(--fs-2xs); color: #666; margin-top: 2px; }
 
 .pdoc-table { width: 100%; border-collapse: collapse; font-size: var(--fs-md); margin-bottom: 14px; }
 .pdoc-table th { text-align: left; font-size: var(--fs-3xs); text-transform: uppercase; letter-spacing: 0.05em; color: #fff; background: #111; padding: 9px 10px; }

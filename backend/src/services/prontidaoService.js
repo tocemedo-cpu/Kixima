@@ -559,6 +559,16 @@ function verFaturacao() {
       acao: 'Confirme em Faturação → Integridade que a cadeia não tem buracos.' });
   }
 
+  // Só relevante depois de a série de faturas estar ativa — sem ela não há
+  // faturas certificadas para corrigir, por isso não há o que avisar aqui.
+  if (f.serie) {
+    checks.push(f.serieNotaCredito
+      ? { id: 'agt-serie-nc', titulo: 'Série de notas de crédito', estado: OK, detalhe: f.serieNotaCredito }
+      : { id: 'agt-serie-nc', titulo: 'Série de notas de crédito (KIXIMA_SERIE_NOTA_CREDITO)', estado: AVISO,
+        detalhe: 'Não está definida — as notas de crédito saem sem numeração certificada.',
+        acao: 'Defina-a SÓ depois de a série estar declarada à AGT, tal como a série de faturas — são cadeias independentes.' });
+  }
+
   checks.push(f.nif
     ? { id: 'agt-nif', titulo: 'NIF da KIXIMA (KIXIMA_NIF)', estado: OK, detalhe: f.nif }
     : { id: 'agt-nif', titulo: 'NIF da KIXIMA (KIXIMA_NIF)', estado: AVISO,

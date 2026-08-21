@@ -170,6 +170,11 @@ const config = {
   // numeração não se corrige para trás.
   faturacao: {
     serie: process.env.KIXIMA_SERIE_FATURACAO || '',
+    // Série própria da nota de crédito — nunca a mesma da fatura: são cadeias
+    // de integridade distintas, cada uma com o seu próprio elo. Mesma regra de
+    // desligado por omissão: sem isto, a emissão de nota de crédito continua a
+    // funcionar, só sem série nem hash (serie IS NULL, como a fatura sem a sua).
+    serieNotaCredito: process.env.KIXIMA_SERIE_NOTA_CREDITO || '',
     nif: process.env.KIXIMA_NIF || '',
     nome: process.env.KIXIMA_NOME_FISCAL || 'KIXIMA',
     // Atribuído pela AGT ao programa, no fim do processo de certificação.

@@ -28,6 +28,15 @@ function ativa() {
   return Boolean(serieAtual());
 }
 
+// A série da nota de crédito é INDEPENDENTE da série da fatura — cada tipo de
+// documento tem a sua própria cadeia. Mesma regra de desligado por omissão:
+// sem KIXIMA_SERIE_NOTA_CREDITO definida, `atribuir(tx, { codigo: null })`
+// devolve {} e a nota de crédito sai sem série nem hash, exatamente como a
+// fatura sai hoje sem a sua.
+function serieNotaCreditoAtual() {
+  return config.faturacao.serieNotaCredito || null;
+}
+
 /**
  * A cadeia de integridade.
  *
@@ -53,7 +62,8 @@ function calcularHash(dados) {
 }
 
 /**
- * Atribui série, número e hash a uma fatura, DENTRO da transação que a cria.
+ * Atribui série, número e hash a um documento fiscal, DENTRO da transação
+ * que o cria.
  *
  * O `tx` não é opcional e não é um detalhe de implementação: é o mecanismo
  * inteiro. O `SELECT ... FOR UPDATE` bloqueia a linha da série até ao fim da
@@ -62,12 +72,19 @@ function calcularHash(dados) {
  * incremento desaparece com ela — o número volta a estar livre e não fica
  * buraco nenhum.
  *
- * É mais lento do que um contador independente, de propósito: as faturas de uma
- * série são, por definição, uma fila. Um contador que não serializa é mais
+ * É mais lento do que um contador independente, de propósito: os documentos de
+ * uma série são, por definição, uma fila. Um contador que não serializa é mais
  * rápido e produz exatamente a avaria que aqui não pode acontecer.
+ *
+ * `codigo`: a fatura usa a série de faturação (serieAtual(), por omissão); a
+ * nota de crédito passa a SUA PRÓPRIA série (KIXIMA_SERIE_NOTA_CREDITO) —
+ * são cadeias de integridade distintas, e misturá-las na mesma série faria
+ * o hash de uma fatura agarrar-se ao de uma nota de crédito (ou vice-versa),
+ * o que não corresponde a nenhum documento real. O mecanismo de baixo
+ * (bloqueio + série+ano) é o MESMO para os dois — só o código da série muda.
  */
-async function atribuir(tx, { emitidaEm, total }) {
-  const SERIE = serieAtual();
+async function atribuir(tx, { emitidaEm, total, codigo } = {}) {
+  const SERIE = codigo || serieAtual();
   if (!SERIE) return {};
 
   const ano = new Date(emitidaEm).getFullYear();
@@ -182,4 +199,6 @@ async function verificarCadeia(codigo = null, ano = new Date().getFullYear()) {
   };
 }
 
-module.exports = { ativa, atribuir, verificarCadeia, calcularHash, textoParaAssinar, serieAtual };
+module.exports = {
+  ativa, atribuir, verificarCadeia, calcularHash, textoParaAssinar, serieAtual, serieNotaCreditoAtual,
+};
