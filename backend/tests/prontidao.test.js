@@ -10,7 +10,7 @@
 // E há uma regra que não se negoceia: nunca devolver o valor de um segredo.
 const request = require('supertest');
 const app = require('../src/app');
-const { loginAll, auth } = require('./helpers');
+const { loginAll, auth, USERS, prisma } = require('./helpers');
 const prontidao = require('../src/services/prontidaoService');
 const backupJob = require('../src/jobs/backupJob');
 const config = require('../src/config/env');
@@ -80,6 +80,37 @@ describe('Prontidão para produção', () => {
     // Sem S3, sem email a sério e sem cópias — tem de dar por isso.
     const ids = r.grupos.flatMap((g) => g.checks).filter((c) => c.estado === 'falha').map((c) => c.id);
     expect(ids).toEqual(expect.arrayContaining(['storage', 'email', 'backup-cron', 'backup-bucket']));
+  });
+
+  // O S3 ficar ativo AGORA não apaga o que ficou para trás: um documento
+  // carregado ANTES da migração guardou o seu URL local (/api/uploads/...) na
+  // base para sempre — e o disco onde estava já foi apagado num deploy
+  // seguinte. Sem este teste, o painel voltava a mostrar tudo "ok" assim que
+  // o S3 fosse ligado, escondendo exatamente estes órfãos.
+  test('S3 ativo mas com documentos órfãos de antes da migração: aviso, não ok', async () => {
+    const anterior = { ...config.storage };
+    const fornecedor = await prisma.user.findFirst({
+      where: { email: USERS.fornecedor }, select: { companyId: true },
+    });
+    const doc = await prisma.companyDocument.create({
+      data: {
+        companyId: fornecedor.companyId,
+        type: 'CERTIDAO_COMERCIAL',
+        fileUrl: '/api/uploads/121212-CERTIDAOCOMERCIAL-1784824319068.jpeg',
+        originalName: 'certidao.jpeg',
+      },
+    });
+    try {
+      Object.assign(config.storage, { provider: 's3', bucket: 'product-images', missing: [] });
+      const r = await prontidao.verificar();
+      const storage = r.grupos.flatMap((g) => g.checks).find((c) => c.id === 'storage');
+      expect(storage.estado).toBe('aviso');
+      expect(storage.detalhe).toMatch(/documento\(s\) de credenciamento/);
+      expect(storage.acao).toMatch(/enviar de novo/);
+    } finally {
+      await prisma.companyDocument.delete({ where: { id: doc.id } });
+      Object.assign(config.storage, anterior);
+    }
   });
 });
 

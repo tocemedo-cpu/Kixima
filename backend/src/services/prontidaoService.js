@@ -206,6 +206,24 @@ async function verArmazenamento() {
         + 'Uma variável criada mas deixada EM BRANCO conta como ausente. Reinicie o serviço depois de guardar — '
         + 'enquanto faltarem, os ficheiros vão para o disco do contentor e desaparecem no reinício seguinte.' }];
   }
+  // O S3 estar ativo AGORA não apaga o que ficou para trás: qualquer ficheiro
+  // carregado ANTES de o provider mudar para 's3' guardou o seu URL local na
+  // base (/api/uploads/...) e nunca mais é reescrito — o registo sobrevive
+  // para sempre a apontar para o disco do contentor, que entretanto já foi
+  // apagado num deploy ou reinício desde então. Sem este segundo olhar, o
+  // painel passava a mostrar tudo OK assim que o S3 fosse ligado, e esses
+  // órfãos só apareciam quando alguém clicava num link partido — foi
+  // exatamente isso que aconteceu com uma certidão comercial carregada antes
+  // desta migração.
+  const risco = await ficheirosEmRisco();
+  if (risco && risco.total > 0) {
+    return [{ id: 'storage', titulo: 'Armazenamento de ficheiros', estado: AVISO,
+      detalhe: `S3 ativo no bucket "${config.storage.bucket}", mas há ficheiros carregados ANTES desta configuração `
+        + `que ainda apontam para o disco do contentor (já apagado).${descreverRisco(risco)}`,
+      acao: 'Estes ficheiros não têm forma de recuperação — o disco onde estavam já não existe. Peça a quem os '
+        + 'carregou (comprovativo, documento de credenciamento, apólice, ficha técnica) para os enviar de novo; a '
+        + 'partir daí ficam no S3 e sobrevivem a qualquer deploy.' }];
+  }
   return [{ id: 'storage', titulo: 'Armazenamento de ficheiros', estado: OK,
     detalhe: `S3 ativo no bucket "${config.storage.bucket}".` }];
 }
