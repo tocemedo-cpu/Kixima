@@ -30,8 +30,8 @@ import { useI18n } from '../../i18n';
 import { api } from '../../api/client';
 import { Arrow, CorporateHeader, CorporateFooter, useCorporateActive } from './CorporateChrome';
 import './corporate.css';
-import kiximaMark from './assets/kixima-mark.png';
-import kiximaMarkReversed from './assets/kixima-mark-reversed.png';
+import kiximaMark from '../../assets/brand/kixima-mark.png';
+import kiximaMarkReversed from '../../assets/brand/kixima-mark-reversed.png';
 
 // Um dos 3 números da faixa de estatísticas — "—" enquanto não há dados
 // reais ainda (nunca um número inventado a aparecer primeiro e ser

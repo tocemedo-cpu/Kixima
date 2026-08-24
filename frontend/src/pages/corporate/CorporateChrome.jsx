@@ -12,8 +12,8 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n, LANGS } from '../../i18n';
-import kiximaMark from './assets/kixima-mark.png';
-import kiximaMarkReversed from './assets/kixima-mark-reversed.png';
+import kiximaMark from '../../assets/brand/kixima-mark.png';
+import kiximaMarkReversed from '../../assets/brand/kixima-mark-reversed.png';
 
 // Scroll suave enquanto qualquer página do site corporativo está montada —
 // não altera o comportamento de scroll do resto da app (ver corporate.css).

@@ -237,27 +237,11 @@ textarea {
   gap: 10px;
 }
 
-.brand-flame,
 .brand-mark {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-
-.brand-flame svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  filter: drop-shadow(0 1px 1px rgba(225, 29, 42, 0.25));
-}
-
-.flame-outer {
-  fill: var(--brand-600);
-}
-
-.flame-inner {
-  fill: var(--amber-500);
 }
 
 .brand-word {

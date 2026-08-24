@@ -1,10 +1,11 @@
 // src/components/AuthHero.jsx
 // Painel lateral (hero) partilhado pelas telas de Login e Cadastro.
-// A imagem de fundo e o logótipo são carregados de ficheiros LOCAIS em
-// public/images/ — para os trocar basta substituir esses ficheiros, sem alterar
-// código. Sem Base64, sem imagens remotas, sem placeholders.
-//   Fundo:    /images/login-background.jpg
-//   Logótipo: /images/kixima-logo.png
+// A imagem de fundo é carregada de um ficheiro LOCAL em public/images/ — para
+// a trocar basta substituir esse ficheiro, sem alterar código. Sem Base64,
+// sem imagens remotas, sem placeholders.
+//   Fundo:     /images/login-background.jpg
+//   Logótipo:  ver src/components/Logo.jsx (marca oficial da KIXIMA, a mesma
+//              do site corporativo — src/assets/brand/).
 import Logo from './Logo';
 import { Icon } from './icons';
 import { useI18n } from '../i18n';
