@@ -70,6 +70,34 @@ html.kixima-corp-active { scroll-behavior: smooth; }
 .kixima-corp .stat:last-child{border-right:0}
 .kixima-corp .stat strong{display:block;font-family:Sora,Inter,sans-serif;font-size:clamp(30px,4vw,44px);font-weight:850;color:#fff;letter-spacing:-.03em}
 .kixima-corp .stat span{display:block;margin-top:8px;color:#aeb2bc;font-size:12px;font-weight:650;text-transform:uppercase;letter-spacing:.06em}
+/* --- Páginas de conteúdo partilhadas (Notícias, Carreiras, FAQ, Recursos —
+   não existem no repositório de origem, criadas para que os itens de menu
+   que antes eram âncoras sem destino tenham uma página real). Reutilizam
+   as variáveis e a tipografia já definidas acima em vez de inventar um
+   estilo novo. */
+.kixima-corp .page-hero{max-width:var(--max);margin:auto;padding:78px 28px 20px}
+.kixima-corp .page-hero h1{margin:16px 0 0;font-family:Sora,Inter,sans-serif;font-size:clamp(36px,5vw,58px);font-weight:850;letter-spacing:-.04em;line-height:1.05}
+.kixima-corp .page-hero p{max-width:640px;margin:22px 0 0;color:var(--muted);font-size:16px;line-height:1.75}
+.kixima-corp .prose{max-width:720px;color:var(--muted);font-size:16px;line-height:1.8}
+.kixima-corp .prose p{margin:0 0 20px}
+.kixima-corp .prose strong{color:var(--ink)}
+.kixima-corp .faq-list{max-width:820px;display:grid;gap:2px;background:var(--line)}
+.kixima-corp .faq-list details{padding:22px 0;background:#fff}
+.kixima-corp .faq-list summary{display:flex;justify-content:space-between;align-items:center;gap:20px;cursor:pointer;font-family:Sora,Inter,sans-serif;font-size:17px;font-weight:700;color:var(--ink);list-style:none}
+.kixima-corp .faq-list summary::-webkit-details-marker{display:none}
+.kixima-corp .faq-list summary:after{content:"+";flex:0 0 auto;color:var(--red);font-size:22px;font-weight:400}
+.kixima-corp .faq-list details[open] summary:after{content:"–"}
+.kixima-corp .faq-list .faq-answer{max-width:640px;margin-top:14px;color:var(--muted);font-size:15px;line-height:1.7}
+.kixima-corp .faq-list .faq-answer a{color:var(--red);font-weight:650}
+.kixima-corp .guide-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;max-width:var(--max)}
+.kixima-corp .guide-card{padding:34px;border-radius:12px;background:var(--ivory);border:1px solid var(--sand)}
+.kixima-corp .guide-card span{display:inline-grid;place-content:center;width:34px;height:34px;margin-bottom:20px;border-radius:50%;background:var(--red);color:#fff;font-family:Sora,Inter,sans-serif;font-size:13px;font-weight:800}
+.kixima-corp .guide-card h3{margin:0 0 10px;font-family:Sora,Inter,sans-serif;font-size:19px;letter-spacing:-.02em}
+.kixima-corp .guide-card p{margin:0;color:var(--muted);font-size:14px;line-height:1.65}
+.kixima-corp .guide-card a{display:inline-flex;gap:8px;margin-top:16px;color:var(--red);font-size:13px;font-weight:850}
+.kixima-corp .cta-inline{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:8px}
+@media(max-width:800px){.kixima-corp .guide-grid{grid-template-columns:1fr}}
+
 /* O pill de idioma do rodapé ganhou comportamento real (ver LanguagePicker
    em CorporateHome.jsx) — só isto faltava para não parecer inerte. */
 .kixima-corp .language{cursor:pointer}

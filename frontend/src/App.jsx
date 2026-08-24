@@ -14,6 +14,10 @@ import { RealtimeProvider } from './realtime/RealtimeContext';
 import LoginPage from './pages/shared/LoginPage';
 
 const CorporateHome = lazy(() => import('./pages/corporate/CorporateHome'));
+const Noticias = lazy(() => import('./pages/corporate/Noticias'));
+const Carreiras = lazy(() => import('./pages/corporate/Carreiras'));
+const Faq = lazy(() => import('./pages/corporate/Faq'));
+const Recursos = lazy(() => import('./pages/corporate/Recursos'));
 const Register = lazy(() => import('./pages/shared/Register'));
 const AcceptInvite = lazy(() => import('./pages/shared/AcceptInvite'));
 const AcceptAdminInvite = lazy(() => import('./pages/shared/AcceptAdminInvite'));
@@ -146,6 +150,10 @@ export default function App() {
       <Route path="/planos" element={<Plans />} />
       <Route path="/termos" element={<Legal kind="termos" />} />
       <Route path="/privacidade" element={<Legal kind="privacidade" />} />
+      <Route path="/noticias" element={<Noticias />} />
+      <Route path="/carreiras" element={<Carreiras />} />
+      <Route path="/faq" element={<Faq />} />
+      <Route path="/recursos" element={<Recursos />} />
 
       <Route element={<RequireAuth />}>
         {/* Documentos imprimíveis (folha A4, sem a moldura da app) */}
