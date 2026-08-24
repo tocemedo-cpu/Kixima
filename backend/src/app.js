@@ -22,6 +22,7 @@ const { apiLimiter, authLimiter, sensitiveLimiter } = require('./middleware/rate
 const authRoutes = require('./routes/authRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const catalogRoutes = require('./routes/catalogRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 const poRoutes = require('./routes/poRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const policyRoutes = require('./routes/policyRoutes');
@@ -168,6 +169,7 @@ app.use('/api/companies/invite', sensitiveLimiter);
 app.use('/api/admin/invite', sensitiveLimiter);
 
 app.use('/api/auth', authRoutes);
+app.use('/api/public', publicRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/purchase-orders', poRoutes);
