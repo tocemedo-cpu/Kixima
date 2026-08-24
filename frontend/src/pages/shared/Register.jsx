@@ -3,7 +3,7 @@
 // do Company Admin (com senha, para entrar após a aprovação) e envia os
 // documentos de credenciamento exigidos por tipo de empresa (secção 4.1).
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import AuthHero from '../../components/AuthHero';
 import { Field } from '../../components/Common';
@@ -45,7 +45,16 @@ const REQUIRED_DOCS = {
 
 export default function Register() {
   const { t } = useI18n();
-  const [form, setForm] = useState(EMPTY_FORM);
+  // "Registar como comprador/fornecedor" da home corporativa chega aqui com
+  // ?tipo=CLIENTE|FORNECEDOR para pré-selecionar o tipo — /cadastro sem esse
+  // parâmetro continua a começar em CLIENTE, exactamente como sempre.
+  const [searchParams] = useSearchParams();
+  const tipoParam = searchParams.get('tipo');
+  const [form, setForm] = useState(() => (
+    tipoParam === 'CLIENTE' || tipoParam === 'FORNECEDOR'
+      ? { ...EMPTY_FORM, type: tipoParam }
+      : EMPTY_FORM
+  ));
   const [docs, setDocs] = useState({}); // { [type]: File }
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);

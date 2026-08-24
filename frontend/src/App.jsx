@@ -13,6 +13,7 @@ import { RealtimeProvider } from './realtime/RealtimeContext';
 // (code-splitting): cada rota é um chunk próprio, buscado só quando visitada.
 import LoginPage from './pages/shared/LoginPage';
 
+const CorporateHome = lazy(() => import('./pages/corporate/CorporateHome'));
 const Register = lazy(() => import('./pages/shared/Register'));
 const AcceptInvite = lazy(() => import('./pages/shared/AcceptInvite'));
 const AcceptAdminInvite = lazy(() => import('./pages/shared/AcceptAdminInvite'));
@@ -106,10 +107,16 @@ function PageLoading() {
   return <div style={{ minHeight: '50vh', display: 'grid', placeItems: 'center', color: 'var(--ink-400,#888)' }}>A carregar…</div>;
 }
 
+// Autenticado: continua a ir exactamente para o mesmo sítio de sempre — o
+// dashboard do seu papel. Sem sessão: em vez de saltar direto para /login,
+// mostra a home corporativa (ver pages/corporate/CorporateHome.jsx), cujo
+// próprio botão "Entrar" leva ao login real. Nenhum comportamento existente
+// para quem já está autenticado muda.
 function Landing() {
   const { user, loading } = useAuth();
   if (loading) return null;
-  return <Navigate to={user ? ROLE_HOME[user.role] : '/login'} replace />;
+  if (user) return <Navigate to={ROLE_HOME[user.role]} replace />;
+  return <CorporateHome />;
 }
 
 // A cesta vive acima do AppLayout para que a sidebar possa mostrar o contador
