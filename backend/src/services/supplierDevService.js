@@ -13,10 +13,11 @@
 // INTENÇÃO — a candidatura nasce com a taxa emitida (PENDENTE) e o Admin do
 // Sistema regista a receção. O restante do programa é orçamentado à parte.
 const prisma = require('../config/database');
-const { NotFoundError } = require('../utils/errors');
+const { NotFoundError, ValidationError, ConflictError, BusinessRuleError } = require('../utils/errors');
 const { nextReference } = require('../utils/reference');
 const notificationService = require('./notificationService');
 const planService = require('./planService');
+const companyService = require('./companyService');
 const logger = require('../config/logger');
 
 const PUBLIC_SELECT = {
@@ -138,6 +139,80 @@ async function update(id, { status, adminNotes, feeStatus, programFeeUsd }, user
   });
 }
 
+// Aprova uma candidatura SEM empresa associada: cria a Company (PENDENTE,
+// FORNECEDOR — o programa existe precisamente para credenciar fornecedores),
+// a apólice Fornecedor→KIXIMA (exigida para a due diligence poder aprovar
+// esta empresa depois, ver companyService.decideCompanyStatus) e convida o
+// contacto da candidatura a definir a senha do primeiro Company Admin — sem
+// isto a candidatura "concluía-se" sem ninguém conseguir alguma vez entrar.
+//
+// Uma candidatura que já tinha empresa (foi submetida por alguém já
+// autenticado) só fecha o estado: essa empresa e essa conta já existem.
+async function approve(id, { taxId, policy }, user, baseUrl = null) {
+  const request = await prisma.supplierDevRequest.findUnique({ where: { id } });
+  if (!request) throw new NotFoundError('Candidatura');
+  if (request.status === 'CONCLUIDA') throw new BusinessRuleError('Esta candidatura já foi concluída.');
+  if (request.status === 'REJEITADA') throw new BusinessRuleError('Esta candidatura foi rejeitada.');
+
+  if (request.companyId) {
+    return prisma.supplierDevRequest.update({
+      where: { id },
+      data: { status: 'CONCLUIDA', handledById: user?.id ?? request.handledById, handledAt: new Date() },
+    });
+  }
+
+  const finalTaxId = String(taxId || request.taxId || '').trim();
+  if (!finalTaxId) throw new ValidationError('Indique o NIF da empresa para criar a conta.');
+  if (await prisma.company.findUnique({ where: { taxId: finalTaxId } })) {
+    throw new ConflictError('Já existe uma empresa registada com este NIF.');
+  }
+  const contactEmail = request.contactEmail.trim().toLowerCase();
+  if (await prisma.user.findUnique({ where: { email: contactEmail } })) {
+    throw new ConflictError('Já existe uma conta com este email de contacto.');
+  }
+
+  const company = await prisma.$transaction(async (tx) => {
+    const c = await tx.company.create({
+      data: {
+        name: request.companyName,
+        taxId: finalTaxId,
+        type: 'FORNECEDOR',
+        status: 'PENDENTE',
+        contactEmail: request.contactEmail,
+        contactPhone: request.contactPhone,
+        province: request.province,
+        employees: request.employees,
+      },
+    });
+    await tx.supplierToKiximaPolicy.create({
+      data: {
+        companyId: c.id,
+        policyNumber: policy.policyNumber,
+        insurer: policy.insurer,
+        coverageAmount: policy.coverageAmount,
+        currency: policy.currency || 'AOA',
+        validFrom: policy.validFrom,
+        validUntil: policy.validUntil,
+        status: 'SUBMETIDA',
+      },
+    });
+    await tx.supplierDevRequest.update({
+      where: { id },
+      data: { status: 'CONCLUIDA', companyId: c.id, handledById: user?.id ?? null, handledAt: new Date() },
+    });
+    return c;
+  });
+
+  await companyService.createFoundingInvite(
+    company,
+    { name: request.contactName, email: contactEmail },
+    user?.id ?? null,
+    baseUrl
+  );
+
+  return prisma.supplierDevRequest.findUnique({ where: { id } });
+}
+
 // Consulta pública do estado por referência (a empresa acompanha sem conta).
 async function trackByReference(reference) {
   const request = await prisma.supplierDevRequest.findUnique({
@@ -148,4 +223,4 @@ async function trackByReference(reference) {
   return request;
 }
 
-module.exports = { create, list, update, trackByReference };
+module.exports = { create, list, update, approve, trackByReference };

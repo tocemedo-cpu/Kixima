@@ -401,6 +401,64 @@ async function sendInviteEmail(invite, company, baseUrl = null) {
   return link;
 }
 
+// Convite de FUNDAÇÃO: o único caso em que o convidado é o próprio primeiro
+// Company Admin — a empresa acaba de nascer (ver supplierDevService.approve)
+// e ainda não tem ninguém para o convidar de dentro da plataforma, ao
+// contrário do convite normal de funcionário (sempre enviado por um Company
+// Admin já existente). O texto reflete isso: quem convida é a KIXIMA, não
+// "a empresa".
+function buildFoundingInviteEmail({ name, companyName, link }) {
+  const subject = 'A sua empresa foi aprovada na KIXIMA — crie a sua conta';
+  const text = [
+    `Olá ${name},`, '',
+    `A candidatura de ${companyName} ao programa Supplier Development foi aprovada.`,
+    'Falta um passo para começar a usar a plataforma: defina a senha da sua conta de administrador.', '',
+    'Clique no link abaixo:', link, '',
+    `Este link é válido por ${INVITE_TTL_DAYS} dias.`, '',
+    'Equipe Kixima.',
+  ].join('\n');
+  const html = `
+    <div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;line-height:1.5">
+      <p>Olá <strong>${name}</strong>,</p>
+      <p>A candidatura de <strong>${companyName}</strong> ao programa Supplier Development foi aprovada.</p>
+      <p>Falta um passo para começar a usar a plataforma: defina a senha da sua conta de administrador.</p>
+      <p style="margin:22px 0">
+        <a href="${link}" style="background:#c1121f;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">Criar a minha conta</a>
+      </p>
+      <p style="font-size:13px;color:#666">Este link é válido por ${INVITE_TTL_DAYS} dias.</p>
+      <p>Equipe Kixima.</p>
+    </div>`;
+  return { subject, text, html };
+}
+
+async function sendFoundingInviteEmail(invite, company, baseUrl = null) {
+  const base = String(process.env.APP_URL || baseUrl || config.appUrl || '').replace(/\/$/, '');
+  const link = `${base}/convite/${invite.token}`;
+  const { subject, text, html } = buildFoundingInviteEmail({ name: invite.name, companyName: company.name, link });
+  await notificationService.sendEmail(invite.email, subject, text, { html });
+  return link;
+}
+
+// Cria o convite do PRIMEIRO Company Admin de uma empresa recém-criada (ver
+// supplierDevService.approve) — a única via em que o papel convidado é
+// COMPANY_ADMIN. Ao contrário de createInvite: não há INVITABLE_ROLES a
+// validar (é sempre COMPANY_ADMIN) nem lugares de plano a verificar (o
+// primeiro lugar de uma empresa nova nunca está esgotado).
+async function createFoundingInvite(company, { name, email }, createdById = null, baseUrl = null) {
+  const normEmail = String(email).trim().toLowerCase();
+  if (await prisma.user.findUnique({ where: { email: normEmail } })) {
+    throw new ConflictError('Já existe uma conta com este email.');
+  }
+  const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+  const created = await prisma.employeeInvite.create({
+    data: { companyId: company.id, name: String(name).trim(), email: normEmail, role: 'COMPANY_ADMIN', token: 'pending', status: 'PENDENTE', expiresAt, createdById },
+  });
+  const token = authService.signInvite({ companyId: company.id, role: 'COMPANY_ADMIN', inviteId: created.id });
+  const invite = await prisma.employeeInvite.update({ where: { id: created.id }, data: { token } });
+  await sendFoundingInviteEmail(invite, company, baseUrl);
+  return { ...pickInvite(invite), companyName: company.name };
+}
+
 // Cria um convite de funcionário: gera o link único, persiste o convite e
 // envia automaticamente o email ao funcionário — sem o admin copiar nada.
 /**
@@ -560,8 +618,14 @@ async function acceptInvite(token, { name, email, password }) {
   if (erroSenha) throw new ValidationError(erroSenha);
 
   const passwordHash = await bcrypt.hash(password, 12);
+  // Convites normais ficam inativos até o Company Admin aceitar — mas um
+  // convite de FUNDAÇÃO (ver createFoundingInvite) É o próprio primeiro
+  // Company Admin: não existe ninguém dentro da empresa para o ativar depois,
+  // por isso nasce ativo, tal como o admin criado no cadastro público normal
+  // (registerCompany).
+  const active = role === 'COMPANY_ADMIN';
   const user = await prisma.user.create({
-    data: { name: finalName, email: finalEmail, passwordHash, role, companyId, active: false, termsAcceptedAt: new Date() },
+    data: { name: finalName, email: finalEmail, passwordHash, role, companyId, active, termsAcceptedAt: new Date() },
     select: USER_SELECT,
   });
   if (invite) {
@@ -618,6 +682,7 @@ module.exports = {
   subscriptionFor,
   subscriptionsFor,
   createInvite,
+  createFoundingInvite,
   listInvites,
   resendInvite,
   cancelInvite,

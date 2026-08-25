@@ -8,7 +8,7 @@ const { authenticate, optionalAuthenticate } = require('../middleware/auth');
 const { requireRole, requirePermission } = require('../middleware/rbac');
 const { SUPORTE } = require('../utils/adminAreas');
 const { validate } = require('../utils/validate');
-const { supplierDevSchema, supplierDevUpdateSchema } = require('../utils/schemas');
+const { supplierDevSchema, supplierDevUpdateSchema, supplierDevApproveSchema } = require('../utils/schemas');
 const svc = require('../services/supplierDevService');
 
 const router = express.Router();
@@ -47,6 +47,12 @@ router.get('/requests', authenticate, requireRole('ADMIN_SISTEMA'), requirePermi
 
 router.patch('/requests/:id', authenticate, requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), validate(supplierDevUpdateSchema), async (req, res) => {
   res.json(await svc.update(req.params.id, req.body, req.user));
+});
+
+// Aprova a candidatura: cria a empresa + a apólice Fornecedor→KIXIMA e
+// convida o contacto a definir a senha (ver supplierDevService.approve).
+router.patch('/requests/:id/approve', authenticate, requireRole('ADMIN_SISTEMA'), requirePermission(SUPORTE), validate(supplierDevApproveSchema), async (req, res) => {
+  res.json(await svc.approve(req.params.id, req.body, req.user, `${req.protocol}://${req.get('host')}`));
 });
 
 module.exports = router;

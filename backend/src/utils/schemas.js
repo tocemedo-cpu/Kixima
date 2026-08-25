@@ -115,12 +115,31 @@ const supplierDevSchema = z.object({
   }),
 });
 const supplierDevUpdateSchema = z.object({
-  status: z.enum(['RECEBIDA', 'EM_ANALISE', 'EM_ACOMPANHAMENTO', 'CONCLUIDA', 'REJEITADA']).optional(),
+  // CONCLUIDA fica de fora daqui de propósito: concluir uma candidatura sem
+  // empresa associada exige criar a empresa + a apólice Fornecedor→KIXIMA (ver
+  // supplierDevApproveSchema) — não pode acontecer por um simples PATCH de
+  // estado, ou a candidatura "conclui-se" sem ninguém conseguir entrar.
+  status: z.enum(['RECEBIDA', 'EM_ANALISE', 'EM_ACOMPANHAMENTO', 'REJEITADA']).optional(),
   adminNotes: z.string().max(2000).optional(),
   // Receção da taxa de acesso cobrada na submissão.
   feeStatus: z.enum(['PENDENTE', 'COBRADO']).optional(),
   // Valor orçamentado do RESTANTE do programa (serviços prestados).
   programFeeUsd: z.coerce.number().nonnegative().optional(),
+});
+// Aprovação de uma candidatura SEM empresa associada: cria a Company (NIF
+// aqui, se a candidatura ainda não o tinha) + a apólice Fornecedor→KIXIMA
+// (exigida para aprovar qualquer fornecedor, ver companyService.decideCompanyStatus)
+// + convida o contacto a definir a senha do primeiro Company Admin.
+const supplierDevApproveSchema = z.object({
+  taxId: z.string().min(3).max(40).optional(),
+  policy: z.object({
+    policyNumber: z.string().min(2, 'Indique o número da apólice.'),
+    insurer: z.string().min(2, 'Indique a seguradora.'),
+    coverageAmount: z.coerce.number().positive('Indique o valor de cobertura.'),
+    currency: z.string().default('AOA'),
+    validFrom: z.coerce.date(),
+    validUntil: z.coerce.date(),
+  }),
 });
 
 const decideCompanySchema = z.object({
@@ -409,6 +428,7 @@ module.exports = {
   serieFiscalSchema,
   supplierDevSchema,
   supplierDevUpdateSchema,
+  supplierDevApproveSchema,
   erpConfigSchema,
   createUserSchema,
   createInviteSchema,

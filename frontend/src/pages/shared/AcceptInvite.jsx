@@ -20,6 +20,7 @@ function roleLabel(role, companyType) {
   if (role === 'FORNECEDOR') return 'Vendedor';
   if (role === 'COMPRADOR') return 'Comprador';
   if (role === 'FINANCEIRO') return 'Financeiro';
+  if (role === 'COMPANY_ADMIN') return 'Administrador da empresa';
   return role;
 }
 
@@ -60,14 +61,24 @@ export default function AcceptInvite() {
     }
   }
 
+  // Um convite de COMPANY_ADMIN só acontece quando a empresa acaba de nascer
+  // (candidatura aprovada de Supplier Development, ver companyService.
+  // createFoundingInvite) — não há "administrador da empresa" nenhum à espera
+  // de confirmar nada, por isso o texto é diferente do convite normal.
+  const isFounding = invite?.role === 'COMPANY_ADMIN';
+
   return (
     <div className="login-screen">
       <div className="login-hero">
         <Logo size={30} mark={72} subtitle light />
         <div>
-          <h1 className="login-hero-title">{t('Junte-se à equipa da sua empresa na KIXIMA.')}</h1>
+          <h1 className="login-hero-title">
+            {isFounding ? t('A sua empresa foi aprovada na KIXIMA.') : t('Junte-se à equipa da sua empresa na KIXIMA.')}
+          </h1>
           <p className="login-hero-body">
-            {t('Foi convidado para criar a sua conta. Preencha os seus dados; o administrador da empresa confirma o acesso e poderá entrar de seguida.')}
+            {isFounding
+              ? t('Falta um passo: defina a senha da sua conta de administrador para começar a usar a plataforma.')
+              : t('Foi convidado para criar a sua conta. Preencha os seus dados; o administrador da empresa confirma o acesso e poderá entrar de seguida.')}
           </p>
         </div>
         <div style={{ fontSize: 12, color: 'var(--navy-100)' }}>{t('Angola / África — setor Oil & Gas')}</div>
@@ -86,9 +97,15 @@ export default function AcceptInvite() {
           ) : done ? (
             <div>
               <h2>{t('Cadastro submetido')}</h2>
-              <p>
-                {t('A sua conta foi criada e está')} <strong>{t('pendente de aprovação')}</strong> {t('pelo administrador da empresa. Assim que for aceite, poderá entrar com o email e a senha que definiu.')}
-              </p>
+              {isFounding ? (
+                <p>
+                  {t('A sua conta foi criada. A sua empresa aguarda agora a aprovação final do Admin do Sistema (due diligence) — assim que for aprovada, poderá entrar com o email e a senha que definiu.')}
+                </p>
+              ) : (
+                <p>
+                  {t('A sua conta foi criada e está')} <strong>{t('pendente de aprovação')}</strong> {t('pelo administrador da empresa. Assim que for aceite, poderá entrar com o email e a senha que definiu.')}
+                </p>
+              )}
               <Link className="btn btn-ghost" to="/login" style={{ marginTop: 18, display: 'inline-flex' }}>
                 {t('Ir para o login')}
               </Link>

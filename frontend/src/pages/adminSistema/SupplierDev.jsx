@@ -38,6 +38,8 @@ export default function AdminSupplierDev() {
   const [open, setOpen] = useState(null);
   const [notes, setNotes] = useState('');
   const [programFee, setProgramFee] = useState('');
+  const EMPTY_APPROVE = { taxId: '', insurer: '', policyNumber: '', coverageAmount: '', currency: 'AOA', validFrom: '', validUntil: '' };
+  const [approveForm, setApproveForm] = useState(EMPTY_APPROVE);
   const [error, setError] = useState('');
   // Confirmação depois da API responder — nunca antes. Um "guardado"
   // mostrado antes do servidor confirmar é uma mentira com bom aspeto.
@@ -68,6 +70,32 @@ export default function AdminSupplierDev() {
   const markFeePaid = (id) => patchRequest(id, { feeStatus: 'COBRADO' }, false);
   // Orçamento do restante do programa (os serviços prestados).
   const saveProgramFee = (id) => patchRequest(id, { programFeeUsd: Number(programFee) }, false);
+  const updateApprove = (k, v) => setApproveForm((f) => ({ ...f, [k]: v }));
+
+  // Concluir uma candidatura SEM empresa associada cria a empresa + a apólice
+  // Fornecedor→KIXIMA e convida o contacto a definir a senha do primeiro
+  // Company Admin — sem isto a candidatura "concluía-se" sem ninguém
+  // conseguir alguma vez entrar (ver supplierDevService.approve).
+  async function approveRequest(id) {
+    setSaving(true); setError('');
+    try {
+      await api.patch(`/api/supplier-development/requests/${id}/approve`, {
+        taxId: approveForm.taxId || undefined,
+        policy: {
+          insurer: approveForm.insurer,
+          policyNumber: approveForm.policyNumber,
+          coverageAmount: Number(approveForm.coverageAmount),
+          currency: approveForm.currency,
+          validFrom: approveForm.validFrom,
+          validUntil: approveForm.validUntil,
+        },
+      });
+      setSucesso(t('Candidatura aprovada. A empresa foi criada e o contacto recebeu o convite para definir a senha.'));
+      setTimeout(() => setSucesso(''), 5000);
+      setOpen(null); setNotes(''); setProgramFee(''); setApproveForm(EMPTY_APPROVE);
+      load();
+    } catch (e) { setError(e.message); } finally { setSaving(false); }
+  }
 
   const k = data?.kpis;
   const items = data?.items || [];
@@ -124,7 +152,7 @@ export default function AdminSupplierDev() {
                   </td>
                   <td><Pill tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status] || r.status}</Pill></td>
                   <td>
-                    <button className="btn btn-ghost btn-sm" onClick={() => { setOpen(open === r.id ? null : r.id); setNotes(r.adminNotes || ''); setProgramFee(r.programFeeUsd ?? ''); }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setOpen(open === r.id ? null : r.id); setNotes(r.adminNotes || ''); setProgramFee(r.programFeeUsd ?? ''); setApproveForm({ ...EMPTY_APPROVE, taxId: r.taxId || '' }); }}>
                       {open === r.id ? t('Fechar') : t('Ver / Acompanhar')}
                     </button>
                   </td>
@@ -187,10 +215,78 @@ export default function AdminSupplierDev() {
                 <textarea id={id} rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </>)}
             </Field>
+
+            {!r.companyId && r.status !== 'CONCLUIDA' && r.status !== 'REJEITADA' ? (
+              <div className="bz-card" style={{ padding: 14, marginBottom: 12 }}>
+                <p className="bz-sub2" style={{ marginTop: 0 }}>
+                  <strong>{t('Concluir e criar a conta')}</strong>
+                </p>
+                <p className="bz-sub2">
+                  {t('Esta candidatura ainda não tem empresa na plataforma. Ao concluir, cria-se a empresa (Fornecedor), a apólice Fornecedor→KIXIMA e envia-se ao contacto um convite para definir a senha.')}
+                </p>
+                <Field label={t('NIF da empresa')} obrigatorio>
+                  {(id) => (<>
+                    <input id={id} required value={approveForm.taxId} onChange={(e) => updateApprove('taxId', e.target.value)} />
+                  </>)}
+                </Field>
+                <div className="grid-cols grid-2">
+                  <Field label={t('Seguradora')} obrigatorio>
+                    {(id) => (<>
+                      <input id={id} required value={approveForm.insurer} onChange={(e) => updateApprove('insurer', e.target.value)} />
+                    </>)}
+                  </Field>
+                  <Field label={t('Nº da apólice')} obrigatorio>
+                    {(id) => (<>
+                      <input id={id} required value={approveForm.policyNumber} onChange={(e) => updateApprove('policyNumber', e.target.value)} />
+                    </>)}
+                  </Field>
+                </div>
+                <div className="grid-cols grid-2">
+                  <Field label={t('Cobertura')} obrigatorio>
+                    {(id) => (<>
+                      <input id={id} type="number" min="0" step="any" required value={approveForm.coverageAmount} onChange={(e) => updateApprove('coverageAmount', e.target.value)} />
+                    </>)}
+                  </Field>
+                  <Field label={t('Moeda')}>
+                    {(id) => (<>
+                      <select id={id} value={approveForm.currency} onChange={(e) => updateApprove('currency', e.target.value)}>
+                        <option value="AOA">AOA</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                      </select>
+                    </>)}
+                  </Field>
+                </div>
+                <div className="grid-cols grid-2">
+                  <Field label={t('Válida de')} obrigatorio>
+                    {(id) => (<>
+                      <input id={id} type="date" required value={approveForm.validFrom} onChange={(e) => updateApprove('validFrom', e.target.value)} />
+                    </>)}
+                  </Field>
+                  <Field label={t('Válida até')} obrigatorio>
+                    {(id) => (<>
+                      <input id={id} type="date" required value={approveForm.validUntil} onChange={(e) => updateApprove('validUntil', e.target.value)} />
+                    </>)}
+                  </Field>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    className="btn btn-accent btn-sm"
+                    disabled={saving || !approveForm.taxId || !approveForm.insurer || !approveForm.policyNumber || !approveForm.coverageAmount || !approveForm.validFrom || !approveForm.validUntil}
+                    onClick={() => approveRequest(r.id)}
+                  >
+                    {t('Concluir e criar a conta')}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button className="btn btn-ghost btn-sm" disabled={saving} onClick={() => setRequestStatus(r.id, 'EM_ANALISE')}>{t('Marcar em análise')}</button>
               <Button variant="primary" size="sm"  disabled={saving} onClick={() => setRequestStatus(r.id, 'EM_ACOMPANHAMENTO')}>{t('Em acompanhamento')}</Button>
-              <button className="btn btn-accent btn-sm" disabled={saving} onClick={() => setRequestStatus(r.id, 'CONCLUIDA')}>{t('Concluir')}</button>
+              {r.companyId ? (
+                <button className="btn btn-accent btn-sm" disabled={saving} onClick={() => setRequestStatus(r.id, 'CONCLUIDA')}>{t('Concluir')}</button>
+              ) : null}
               <button className="btn btn-danger btn-sm" disabled={saving} onClick={() => setRequestStatus(r.id, 'REJEITADA')}>{t('Rejeitar')}</button>
             </div>
           </div>
