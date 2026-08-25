@@ -20,6 +20,7 @@
 
 const prisma = require('../config/database');
 const config = require('../config/env');
+const faturacaoService = require('./faturacaoService');
 
 // Escapar é obrigatório e não decorativo: o nome de uma empresa com "&" — e há
 // muitas — produz um XML inválido, que a AGT recusa sem dizer porquê.
@@ -96,7 +97,11 @@ async function gerar({ de, ate, supplierCompanyId }) {
   const faturas = await prisma.invoice.findMany({
     where: { issuedAt: { gte: ini, lte: fim }, ...doFornecedor },
     orderBy: [{ serie: 'asc' }, { numeroNaSerie: 'asc' }, { issuedAt: 'asc' }],
-    include: { purchaseOrder: incluirCliente, contract: incluirClienteContrato },
+    include: {
+      purchaseOrder: incluirCliente,
+      contract: incluirClienteContrato,
+      lines: { orderBy: { lineNumber: 'asc' } },
+    },
     take: 100000,
   });
 
@@ -111,7 +116,7 @@ async function gerar({ de, ate, supplierCompanyId }) {
     include: {
       invoice: {
         select: {
-          reference: true, serie: true, numeroNaSerie: true,
+          reference: true, serie: true, numeroNaSerie: true, issuedAt: true,
           purchaseOrder: incluirCliente, contract: incluirClienteContrato,
         },
       },
@@ -223,7 +228,9 @@ async function gerar({ de, ate, supplierCompanyId }) {
     // referência interna, que é o que existe — inventar um número de série para
     // trás seria fabricar histórico, e a cadeia de integridade serve
     // precisamente para o detetar.
-    const numero = f.serie && f.numeroNaSerie ? `${f.serie}/${f.numeroNaSerie}` : f.reference;
+    const numero = faturacaoService.numeroDocumentoAGT({
+      serie: f.serie, ano: f.issuedAt.getFullYear(), numeroNaSerie: f.numeroNaSerie,
+    }) || f.reference;
 
     linhas.push('      <Invoice>');
     linhas.push(`        ${el('InvoiceNo', numero)}`);
@@ -248,6 +255,22 @@ async function gerar({ de, ate, supplierCompanyId }) {
     linhas.push(`        ${el('SourceID', 'KIXIMA')}`);
     linhas.push(`        ${el('SystemEntryDate', new Date(f.createdAt).toISOString().slice(0, 19))}`);
     linhas.push(`        ${el('CustomerID', c?.id || 'Desconhecido')}`);
+    // Faturas emitidas antes de existir InvoiceLine (histórico) não têm linhas
+    // — sai só o cabeçalho do documento, tal como já saía antes desta alteração.
+    for (const li of f.lines) {
+      linhas.push('        <Line>');
+      linhas.push(`          ${el('LineNumber', String(li.lineNumber))}`);
+      linhas.push(`          ${el('ProductCode', li.productCode)}`);
+      linhas.push(`          ${el('ProductDescription', li.description)}`);
+      linhas.push(`          ${el('Quantity', String(li.quantity))}`);
+      linhas.push(`          ${el('UnitPrice', dinheiro(li.unitPrice))}`);
+      linhas.push(`          ${el('CreditAmount', dinheiro(li.netAmount))}`);
+      linhas.push('          <Tax>');
+      linhas.push(`            ${el('TaxCode', li.ivaTaxCode)}`);
+      linhas.push(`            ${el('TaxAmount', dinheiro(li.ivaAmount))}`);
+      linhas.push('          </Tax>');
+      linhas.push('        </Line>');
+    }
     linhas.push('        <DocumentTotals>');
     linhas.push(`          ${el('TaxPayable', dinheiro(f.taxAmount))}`);
     linhas.push(`          ${el('NetTotal', dinheiro(f.netAmount))}`);
@@ -258,9 +281,14 @@ async function gerar({ de, ate, supplierCompanyId }) {
 
   for (const n of notasDoPeriodo) {
     const c = n.invoice && clienteDe(n.invoice);
-    const numero = n.serie && n.numeroNaSerie ? `${n.serie}/${n.numeroNaSerie}` : n.reference;
-    const faturaOriginal = n.invoice?.serie && n.invoice?.numeroNaSerie
-      ? `${n.invoice.serie}/${n.invoice.numeroNaSerie}` : n.invoice?.reference;
+    const numero = faturacaoService.numeroDocumentoAGT({
+      serie: n.serie, ano: n.issuedAt.getFullYear(), numeroNaSerie: n.numeroNaSerie,
+    }) || n.reference;
+    const faturaOriginal = (n.invoice && faturacaoService.numeroDocumentoAGT({
+      serie: n.invoice.serie,
+      ano: n.invoice.issuedAt ? n.invoice.issuedAt.getFullYear() : n.issuedAt.getFullYear(),
+      numeroNaSerie: n.invoice.numeroNaSerie,
+    })) || n.invoice?.reference;
 
     linhas.push('      <Invoice>');
     linhas.push(`        ${el('InvoiceNo', numero)}`);

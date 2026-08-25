@@ -257,6 +257,23 @@ async function setSerieFiscal(companyId, serieFiscal) {
   });
 }
 
+// Data de adesão da empresa (fornecedora) à faturação eletrónica — só o
+// Admin do Sistema a declara, e só depois de a AGT a ter formalizado. A
+// partir desta data, faturacaoService.atribuir() recusa certificar
+// documentos (fatura, nota de crédito, recibo) datados antes dela. `null`
+// desliga a validação de volta, exatamente como uma empresa que nunca aderiu.
+async function setDataAdesaoFacturacaoElectronica(companyId, dataAdesao) {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId }, select: { id: true, name: true, dataAdesaoFacturacaoElectronica: true },
+  });
+  if (!company) throw new NotFoundError('Empresa');
+  return prisma.company.update({
+    where: { id: companyId },
+    data: { dataAdesaoFacturacaoElectronica: dataAdesao ? new Date(dataAdesao) : null },
+    select: { id: true, name: true, dataAdesaoFacturacaoElectronica: true },
+  });
+}
+
 // Dimensão e plano da empresa — o Admin do Sistema confirma/corrige o que foi
 // declarado no cadastro. Rejeita descer o plano abaixo do exigido pela dimensão
 // (uma GRANDE empresa não pode ficar no BASICO).
@@ -678,6 +695,7 @@ module.exports = {
   getBankDetails,
   updateBankDetails,
   setSerieFiscal,
+  setDataAdesaoFacturacaoElectronica,
   updatePlan,
   subscriptionFor,
   subscriptionsFor,

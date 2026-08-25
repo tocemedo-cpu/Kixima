@@ -53,6 +53,18 @@ describe('Fluxo principal da Purchase Order', () => {
     expect(invoice).toBeTruthy();
     expect(invoice.reference).toMatch(/^FAT-\d{4}-\d{6}$/);
 
+    // Documento fiscal AGT: uma InvoiceLine por PurchaseOrderItem, com o IVA já
+    // decomposto por linha, e a soma das linhas a bater com os totais agregados.
+    expect(invoice.lines).toHaveLength(full.body.items.length);
+    invoice.lines.forEach((li, i) => {
+      expect(li.lineNumber).toBe(i + 1);
+      expect(Number(li.netAmount)).toBeCloseTo(Number(full.body.items[i].lineTotal), 2);
+    });
+    const somaNet = invoice.lines.reduce((s, li) => s + Number(li.netAmount), 0);
+    const somaIva = invoice.lines.reduce((s, li) => s + Number(li.ivaAmount), 0);
+    expect(somaNet).toBeCloseTo(Number(invoice.netAmount), 2);
+    expect(somaIva).toBeCloseTo(Number(invoice.taxAmount), 2);
+
     // Prazo de pagamento = data de emissão + 7 dias (PAYMENT_SLA_DAYS)
     const issued = new Date(invoice.issuedAt);
     const due = new Date(invoice.dueAt);

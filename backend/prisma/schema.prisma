@@ -177,6 +177,12 @@ model Company {
   // global partilhada entre fornecedores diferentes.
   serieFiscal String? @map("serie_fiscal")
 
+  // Data de adesão à faturação eletrónica junto da AGT — nula até a empresa
+  // aderir. A partir dessa data, faturacaoService.atribuir() recusa numerar
+  // documentos com data de emissão anterior (mesma regra que a AGT aplica,
+  // erro E29 da especificação DS.120) — sem data definida, sem restrição.
+  dataAdesaoFacturacaoElectronica DateTime? @map("data_adesao_facturacao_electronica")
+
   // Aceite dos Termos de Uso e Política de Privacidade no cadastro (quem
   // regista aceita em nome da empresa; obrigatório no formulário).
   termsAcceptedAt DateTime? @map("terms_accepted_at")
@@ -922,6 +928,7 @@ model Invoice {
   payment     Payment?
   platformFee PlatformFee?
   creditNotes CreditNote[]
+  lines       InvoiceLine[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -929,6 +936,45 @@ model Invoice {
   @@index([contractId])
   @@index([serie, numeroNaSerie])
   @@map("invoices")
+}
+
+// Linha da fatura — cópia (não referência viva) dos PurchaseOrderItem no
+// momento em que a fatura é criada, com o imposto já decomposto por linha
+// (exigido pelo modelo de documento da AGT — ver FACTURA.png de referência:
+// colunas Tipo/Código/Descrição/Qt/Preço/Desconto/IEC/IVA/Iselo). Uma cópia
+// porque a fatura não pode mudar se a PO for editada ou o produto for
+// descontinuado depois de faturado.
+//
+// iecAmount/isAmount ficam sempre a 0 e ivaTaxCode fica sempre "NOR": nenhuma
+// transação real do KIXIMA hoje é isenta, de taxa reduzida, ou sujeita a
+// Imposto Especial de Consumo/Selo — os campos existem para nomear
+// corretamente o que já acontece (a AGT exige o código mesmo à taxa normal),
+// não para simular um cenário que não existe.
+model InvoiceLine {
+  id          String  @id @default(uuid())
+  invoiceId   String  @map("invoice_id")
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  lineNumber  Int     @map("line_number") // sequencial a partir de 1, sem buracos
+  productCode String  @map("product_code") // sku > unspscCode > id do produto
+  description String
+
+  quantity  Decimal @db.Decimal(14, 3)
+  unitPrice Decimal @map("unit_price") @db.Decimal(14, 2)
+  // Sempre 0 hoje — o KIXIMA não tem desconto em PO/fatura. O campo existe
+  // para o documento representar "sem desconto" explicitamente, em vez de
+  // omitir a coluna que a AGT espera ver.
+  discount  Decimal @default(0) @db.Decimal(14, 2)
+  netAmount Decimal @map("net_amount") @db.Decimal(14, 2) // lineTotal, sem imposto
+
+  ivaAmount  Decimal @default(0) @map("iva_amount") @db.Decimal(14, 2)
+  iecAmount  Decimal @default(0) @map("iec_amount") @db.Decimal(14, 2)
+  isAmount   Decimal @default(0) @map("is_amount") @db.Decimal(14, 2)
+  ivaTaxCode String  @default("NOR") @map("iva_tax_code")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([invoiceId, lineNumber])
+  @@map("invoice_lines")
 }
 
 // Nota de crédito — o mecanismo de CORREÇÃO fiscal (nunca um UPDATE na
@@ -1063,6 +1109,18 @@ model Payment {
 
   processedAt DateTime @default(now()) @map("processed_at")
 
+  // --- Faturação certificada (AGT) ------------------------------------------
+  // O pagamento É o documento "RC" (Recibo) da AGT — série e cadeia de
+  // integridade próprias, mesmo mecanismo que Invoice/CreditNote (ver
+  // faturacaoService.atribuir/serieReciboDoFornecedor). Nulos nos pagamentos
+  // anteriores a esta série existir, mesma regra que os outros dois.
+  serie         String?   @map("serie")
+  numeroNaSerie Int?      @map("numero_na_serie")
+  hashDocumento String?   @map("hash_documento")
+  hashAnterior  String?   @map("hash_anterior")
+  assinadaEm    DateTime? @map("assinada_em")
+
+  @@index([serie, numeroNaSerie])
   @@map("payments")
 }
 

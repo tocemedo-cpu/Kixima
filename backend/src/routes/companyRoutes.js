@@ -16,6 +16,7 @@ const {
   bankDetailsSchema,
   companyPlanSchema,
   serieFiscalSchema,
+  dataAdesaoSchema,
 } = require('../utils/schemas');
 
 const router = express.Router();
@@ -69,6 +70,10 @@ router.put('/:id/plan', requireRole('ADMIN_SISTEMA'), requirePermission(CADASTRO
 // AGT a ter formalmente atribuído a esta empresa (ver saftService.js /
 // faturacaoService.js: cada fornecedor é o emitente fiscal das suas faturas).
 router.put('/:id/serie-fiscal', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), validate(serieFiscalSchema), companyController.setSerieFiscal);
+
+// Data de adesão à faturação eletrónica — idem, define a partir de quando
+// faturacaoService.atribuir() passa a certificar documentos desta empresa.
+router.put('/:id/data-adesao', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), validate(dataAdesaoSchema), companyController.setDataAdesao);
 router.get('/:id/subscription', requireRole('COMPANY_ADMIN', 'FORNECEDOR', 'FINANCEIRO', 'ADMIN_SISTEMA'), requirePermission(FINANCEIRO), companyController.getSubscription);
 
 // Extrato da Taxa KIXIMA da empresa — a própria empresa (fornecedor) vê o que

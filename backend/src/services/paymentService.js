@@ -11,6 +11,7 @@ const eventBus = require('./eventBus');
 const platformFeeService = require('./platformFeeService');
 const storageService = require('./storageService');
 const auditService = require('./auditService');
+const faturacaoService = require('./faturacaoService');
 
 async function listPendingInvoices(buyerCompanyId) {
   return prisma.invoice.findMany({
@@ -71,9 +72,28 @@ async function processPayment(invoiceId, processedById, buyerCompanyId, proofFil
     folder: 'proofs',
   });
 
+  // O pagamento É o documento "RC" (Recibo) da AGT — série e cadeia de
+  // integridade próprias do MESMO fornecedor que emitiu a fatura (ver
+  // faturacaoService.serieReciboDoFornecedor).
+  const supplierCompanyId = invoice.purchaseOrder?.supplierCompanyId ?? invoice.contract?.supplierCompanyId;
+  const supplierCompany = supplierCompanyId
+    ? await prisma.company.findUnique({
+      where: { id: supplierCompanyId },
+      select: { serieFiscal: true, dataAdesaoFacturacaoElectronica: true },
+    })
+    : null;
+
   const [payment] = await prisma.$transaction(async (tx) => {
+    const certificacao = await faturacaoService.atribuir(tx, {
+      emitidaEm: new Date(),
+      total: invoice.amount,
+      codigo: faturacaoService.serieReciboDoFornecedor(supplierCompany),
+      dataAdesao: supplierCompany?.dataAdesaoFacturacaoElectronica,
+    });
+
     const createdPayment = await tx.payment.create({
       data: {
+        ...certificacao,
         invoiceId,
         amount: invoice.amount,
         currency: invoice.currency,

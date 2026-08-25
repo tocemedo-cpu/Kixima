@@ -19,6 +19,7 @@
 
 const crypto = require('crypto');
 const prisma = require('../config/database');
+const taxService = require('./taxService');
 
 function serieFiscalDoFornecedor(supplierCompany) {
   return supplierCompany?.serieFiscal || null;
@@ -32,6 +33,60 @@ function serieFiscalDoFornecedor(supplierCompany) {
 function serieNotaCreditoDoFornecedor(supplierCompany) {
   const base = serieFiscalDoFornecedor(supplierCompany);
   return base ? `${base}-NC` : null;
+}
+
+// O recibo é o documento "RC" da AGT (ver especificação DS.120) — série
+// própria, sufixo "-RC", mesma lógica que a nota de crédito.
+function serieReciboDoFornecedor(supplierCompany) {
+  const base = serieFiscalDoFornecedor(supplierCompany);
+  return base ? `${base}-RC` : null;
+}
+
+// Classificação fixa da única taxa de IVA que o KIXIMA aplica hoje (14%,
+// sempre) — a AGT exige que toda linha de IVA declare um destes códigos
+// (NOR/INT/RED/ISE/OUT), mesmo quando a taxa é a normal. Nomeia o que já
+// existe; não introduz nenhuma isenção ou taxa reduzida que não aconteça.
+const AGT_TAX_CODE_NORMAL = 'NOR';
+
+// Formato do número do documento fiscal, conforme o modelo impresso de
+// referência da AGT (FACTURA.png, Portal do Contribuinte): série + ano +
+// sequencial com 7 dígitos — ex. "000AB.2025/0000001". Sem série atribuída
+// (documento anterior à série certificada), devolve null.
+function numeroDocumentoAGT({ serie, ano, numeroNaSerie } = {}) {
+  if (!serie || !numeroNaSerie) return null;
+  return `${serie}.${ano}/${String(numeroNaSerie).padStart(7, '0')}`;
+}
+
+// Regra de arredondamento da AGT para o imposto de cada linha (secção 4.1.6
+// da DS.120): sempre POR EXCESSO ao cêntimo, nunca ao mais próximo. Função
+// pura — não está ligada ao cálculo de faturação em vigor (taxService.js
+// continua a arredondar ao mais próximo para o que já se cobra hoje); fica
+// pronta para quando a exportação/submissão real usar esta regra.
+function arredondarPorExcessoAoCentimo(valor) {
+  return Math.ceil((Number(valor) + Number.EPSILON) * 100) / 100;
+}
+
+// Constrói as linhas da fatura (documento AGT — ver FACTURA.png de
+// referência) a partir das linhas de uma PO ou de vários call-offs
+// consolidados. Partilhada por poService e contractService para não
+// duplicar a mesma decomposição de imposto por linha nos dois sítios.
+// `iecAmount`/`isAmount` ficam a 0 por omissão (schema): nenhuma linha real
+// do KIXIMA hoje é sujeita a esses impostos.
+function linhasFaturaAGT(items) {
+  return items.map((li, i) => {
+    const net = Number(li.lineTotal);
+    const iva = taxService.computeTax(net);
+    return {
+      lineNumber: i + 1,
+      productCode: li.product?.sku || li.product?.unspscCode || li.productId,
+      description: li.product?.name || 'Produto/serviço',
+      quantity: li.quantity,
+      unitPrice: li.unitPrice,
+      netAmount: net,
+      ivaAmount: iva.tax,
+      ivaTaxCode: AGT_TAX_CODE_NORMAL,
+    };
+  });
 }
 
 /**
@@ -81,10 +136,23 @@ function calcularHash(dados) {
  * hash de um documento agarrar-se ao de outro que não é o seu antecessor
  * real. O mecanismo de baixo (bloqueio + série+ano) é o MESMO para todos —
  * só o código da série muda.
+ *
+ * `dataAdesao`: a data de adesão da empresa à faturação eletrónica
+ * (`Company.dataAdesaoFacturacaoElectronica`), resolvida por quem chama a
+ * partir do mesmo fornecedor que já resolve `codigo`. Um documento datado
+ * antes da adesão é recusado — a mesma regra que a AGT aplica (erro E29 da
+ * especificação DS.120). Sem data definida, sem restrição nenhuma.
  */
-async function atribuir(tx, { emitidaEm, total, codigo } = {}) {
+async function atribuir(tx, { emitidaEm, total, codigo, dataAdesao } = {}) {
   const SERIE = codigo || null;
   if (!SERIE) return {};
+
+  if (dataAdesao && new Date(emitidaEm) < new Date(dataAdesao)) {
+    throw new Error(
+      `Data de emissão (${new Date(emitidaEm).toISOString().slice(0, 10)}) anterior à data de `
+      + `adesão da empresa à faturação eletrónica (${new Date(dataAdesao).toISOString().slice(0, 10)}).`
+    );
+  }
 
   const ano = new Date(emitidaEm).getFullYear();
 
@@ -198,5 +266,7 @@ async function verificarCadeia(codigo, ano = new Date().getFullYear()) {
 }
 
 module.exports = {
-  atribuir, verificarCadeia, calcularHash, textoParaAssinar, serieFiscalDoFornecedor, serieNotaCreditoDoFornecedor,
+  atribuir, verificarCadeia, calcularHash, textoParaAssinar,
+  serieFiscalDoFornecedor, serieNotaCreditoDoFornecedor, serieReciboDoFornecedor,
+  numeroDocumentoAGT, arredondarPorExcessoAoCentimo, AGT_TAX_CODE_NORMAL, linhasFaturaAGT,
 };

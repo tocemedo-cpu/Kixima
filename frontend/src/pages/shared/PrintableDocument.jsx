@@ -26,6 +26,15 @@ function dt(value) {
   return new Intl.DateTimeFormat(activeLocale(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
 }
 
+// Espelha faturacaoService.numeroDocumentoAGT() do backend: série + ano de
+// emissão + sequencial com 7 dígitos — o formato do documento oficial da AGT
+// (ex.: "000AB.2025/0000001"), sem letra de tipo de documento.
+function numeroDocumentoAGT(doc) {
+  if (!doc?.serie || !doc?.numeroNaSerie) return null;
+  const ano = new Date(doc.issuedAt).getFullYear();
+  return `${doc.serie}.${ano}/${String(doc.numeroNaSerie).padStart(7, '0')}`;
+}
+
 function Party({ label, c }) {
   return (
     <div className="pdoc-party">
@@ -110,6 +119,7 @@ export default function PrintableDocument({ kind }) {
   // "Estimado" só quando o valor não veio do servidor.
   const estimado = !isInvoice && po.taxAmount == null;
   const ref = isInvoice ? invoice.reference : po.reference;
+  const invoiceLines = isInvoice ? (invoice.lines || []) : [];
   const delivery = buyer.address || [buyer.city, buyer.province, buyer.country].filter(Boolean).join(', ') || 'A definir na receção';
 
   return (
@@ -181,7 +191,7 @@ export default function PrintableDocument({ kind }) {
               {invoice.serie && invoice.numeroNaSerie ? (
                 <div className="pdoc-box pdoc-box-fiscal">
                   <div className="pdoc-lbl">{t('DOCUMENTO FISCAL CERTIFICADO')}</div>
-                  <div>{t('Série {serie} · N.º {numero}', { serie: invoice.serie, numero: invoice.numeroNaSerie })}</div>
+                  <div>{t('N.º {numero}', { numero: numeroDocumentoAGT(invoice) })}</div>
                   {invoice.hashDocumento ? <div className="pdoc-hash">{t('Hash')}: {invoice.hashDocumento.slice(0, 16)}…</div> : null}
                 </div>
               ) : null}
@@ -194,13 +204,28 @@ export default function PrintableDocument({ kind }) {
           )}
         </section>
 
-        {/* Itens */}
+        {/* Itens — a fatura mostra o imposto por linha (documento fiscal certificado);
+            a PO mostra só os totais por linha, ainda sem imposto discriminado. */}
         <table className="pdoc-table">
           <thead>
-            <tr><th>{t('#')}</th><th>{t('DESCRIÇÃO')}</th><th>{t('CATEGORIA')}</th><th className="r">{t('QTD')}</th><th className="r">{t('PREÇO UNIT.')}</th><th className="r">{t('TOTAL')}</th></tr>
+            {isInvoice && invoiceLines.length ? (
+              <tr><th>{t('#')}</th><th>{t('DESCRIÇÃO')}</th><th className="r">{t('QTD')}</th><th className="r">{t('PREÇO UNIT.')}</th><th className="r">{t('TOTAL S/ IVA')}</th><th className="r">{t('IVA')}</th><th className="r">{t('TOTAL')}</th></tr>
+            ) : (
+              <tr><th>{t('#')}</th><th>{t('DESCRIÇÃO')}</th><th>{t('CATEGORIA')}</th><th className="r">{t('QTD')}</th><th className="r">{t('PREÇO UNIT.')}</th><th className="r">{t('TOTAL')}</th></tr>
+            )}
           </thead>
           <tbody>
-            {po.items.map((it, i) => (
+            {isInvoice && invoiceLines.length ? invoiceLines.map((li) => (
+              <tr key={li.id}>
+                <td>{li.lineNumber}</td>
+                <td>{li.description}</td>
+                <td className="r">{li.quantity}</td>
+                <td className="r">{money(li.unitPrice, cur)}</td>
+                <td className="r">{money(li.netAmount, cur)}</td>
+                <td className="r">{money(li.ivaAmount, cur)}</td>
+                <td className="r">{money(Number(li.netAmount) + Number(li.ivaAmount), cur)}</td>
+              </tr>
+            )) : po.items.map((it, i) => (
               <tr key={it.id}>
                 <td>{i + 1}</td>
                 <td>{it.product?.name || it.productId}</td>
@@ -245,7 +270,7 @@ export default function PrintableDocument({ kind }) {
                 {invoice.creditNotes.map((n) => (
                   <div key={n.id}>
                     {t('{ref} — emitida em {data}: {motivo} ({valor})', {
-                      ref: n.serie && n.numeroNaSerie ? `${n.serie}/${n.numeroNaSerie}` : n.reference,
+                      ref: numeroDocumentoAGT(n) || n.reference,
                       data: d(n.issuedAt),
                       motivo: n.motivo,
                       valor: money(n.amount, invoice.currency),

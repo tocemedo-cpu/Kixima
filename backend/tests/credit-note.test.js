@@ -172,3 +172,53 @@ describe('Série fiscal por empresa (Admin do Sistema)', () => {
     }
   });
 });
+
+describe('Data de adesão à faturação eletrónica (Admin do Sistema)', () => {
+  test('só o Admin do Sistema a pode declarar', async () => {
+    const semAcesso = await auth(tokens.fornecedor)
+      .put(`/api/companies/${product.supplierId}/data-adesao`)
+      .send({ dataAdesao: '2026-01-01' });
+    expect(semAcesso.status).toBe(403);
+  });
+
+  test('uma adesão no FUTURO bloqueia a certificação de faturas emitidas antes dela', async () => {
+    const empresa = await prisma.company.findUnique({ where: { id: product.supplierId } });
+    const originalAdesao = empresa.dataAdesaoFacturacaoElectronica;
+    const originalSerie = empresa.serieFiscal;
+
+    // A validação de adesão só corre dentro de atribuir() quando a empresa já
+    // tem série declarada (sem série, o documento sai "desligado" como sempre
+    // saiu — ver `faturacaoService.atribuir`) — por isso o teste declara as
+    // duas, tal como uma empresa real teria as duas ao aderir.
+    await auth(tokens.adminSistema)
+      .put(`/api/companies/${product.supplierId}/serie-fiscal`)
+      .send({ serieFiscal: 'TESTEADESAO' });
+
+    const emAnoQueVem = new Date();
+    emAnoQueVem.setFullYear(emAnoQueVem.getFullYear() + 1);
+    const declarada = await auth(tokens.adminSistema)
+      .put(`/api/companies/${product.supplierId}/data-adesao`)
+      .send({ dataAdesao: emAnoQueVem.toISOString() });
+    expect(declarada.status).toBe(200);
+
+    try {
+      // A PO é aceite AGORA — antes da data de adesão declarada — e é isso
+      // que faturacaoService.atribuir() recusa dentro da transação da fatura.
+      const created = await auth(tokens.comprador)
+        .post('/api/purchase-orders')
+        .send({ supplierCompanyId: product.supplierId, items: [{ productId: product.id, quantity: 1 }] });
+      const po = created.body;
+      await auth(tokens.companyAdmin).patch(`/api/purchase-orders/${po.id}/approve`);
+      const aceite = await auth(tokens.fornecedor).patch(`/api/purchase-orders/${po.id}/accept`);
+      expect(aceite.status).toBeGreaterThanOrEqual(400);
+    } finally {
+      await auth(tokens.adminSistema)
+        .put(`/api/companies/${product.supplierId}/data-adesao`)
+        .send({ dataAdesao: originalAdesao ? originalAdesao.toISOString() : null });
+      await auth(tokens.adminSistema)
+        .put(`/api/companies/${product.supplierId}/serie-fiscal`)
+        .send({ serieFiscal: originalSerie });
+      await prisma.$executeRaw`DELETE FROM "series_faturacao" WHERE "codigo" = 'TESTEADESAO'`;
+    }
+  });
+});

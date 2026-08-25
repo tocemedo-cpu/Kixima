@@ -107,6 +107,21 @@ async function setSerieFiscal(req, res) {
   res.json(result);
 }
 
+// Data de adesão à faturação eletrónica (Admin do Sistema) — só depois de a
+// AGT a ter formalizado para esta empresa fornecedora.
+async function setDataAdesao(req, res) {
+  const result = await companyService.setDataAdesaoFacturacaoElectronica(req.params.id, req.body.dataAdesao);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'DATA_ADESAO_FACTURACAO_ALTERADA',
+    entityType: 'Company',
+    entityId: result.id,
+    entityRef: result.name,
+    detail: { dataAdesaoFacturacaoElectronica: result.dataAdesaoFacturacaoElectronica },
+  });
+  res.json(result);
+}
+
 // Plano/dimensão da empresa (Admin do Sistema) e resumo de subscrição.
 async function setPlan(req, res) {
   const result = await companyService.updatePlan(req.params.id, req.body);
@@ -265,6 +280,7 @@ module.exports = {
   platformFeeStatement,
   setPlan,
   setSerieFiscal,
+  setDataAdesao,
   getSubscription,
   setBankDetails,
   createUser,

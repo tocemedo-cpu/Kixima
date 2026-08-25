@@ -138,7 +138,7 @@ async function consolidateContractBilling(contractId) {
       status: { in: ['ENTREGUE', 'RECEBIDA_CONFORME', 'EM_EXECUCAO', 'APROVADA'] },
       invoice: null,
     },
-    include: { items: { include: { product: { select: { kind: true } } } } },
+    include: { items: { include: { product: { select: { kind: true, sku: true, unspscCode: true, name: true } } } } },
   });
 
   if (pendingCallOffs.length === 0) {
@@ -157,7 +157,8 @@ async function consolidateContractBilling(contractId) {
   // A série certificada é do FORNECEDOR (emitente fiscal desta fatura), nunca
   // uma série global da KIXIMA — ver faturacaoService.js.
   const supplierCompany = await prisma.company.findUnique({
-    where: { id: contract.supplierCompanyId }, select: { serieFiscal: true },
+    where: { id: contract.supplierCompanyId },
+    select: { serieFiscal: true, dataAdesaoFacturacaoElectronica: true },
   });
 
   // A fatura e a atualização das call-offs passam a viver na MESMA transação.
@@ -170,6 +171,7 @@ async function consolidateContractBilling(contractId) {
     const certificacao = await faturacaoService.atribuir(tx, {
       emitidaEm: new Date(), total: iva.gross,
       codigo: faturacaoService.serieFiscalDoFornecedor(supplierCompany),
+      dataAdesao: supplierCompany.dataAdesaoFacturacaoElectronica,
     });
 
     const criada = await tx.invoice.create({
@@ -185,6 +187,8 @@ async function consolidateContractBilling(contractId) {
         currency: contract.currency,
         dueAt,
         status: 'PENDENTE',
+        // Linhas do documento fiscal, de todos os call-offs consolidados.
+        lines: { create: faturacaoService.linhasFaturaAGT(pendingCallOffs.flatMap((po) => po.items)) },
       },
     });
 

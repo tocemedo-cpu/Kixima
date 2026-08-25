@@ -118,7 +118,13 @@ async function getPurchaseOrder(id, user = null) {
     where: { id },
     include: {
       items: { include: { product: true } },
-      invoice: { include: { payment: true, creditNotes: { orderBy: { issuedAt: 'asc' } } } },
+      invoice: {
+        include: {
+          payment: true,
+          creditNotes: { orderBy: { issuedAt: 'asc' } },
+          lines: { orderBy: { lineNumber: 'asc' } },
+        },
+      },
       buyerCompany: COMPANY_FIELDS,
       supplierCompany: COMPANY_FIELDS,
       createdBy: { select: { name: true } },
@@ -259,7 +265,8 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
   // A série certificada é do FORNECEDOR (emitente fiscal desta fatura), nunca
   // uma série global da KIXIMA — ver faturacaoService.js.
   const supplierCompany = await prisma.company.findUnique({
-    where: { id: po.supplierCompanyId }, select: { serieFiscal: true },
+    where: { id: po.supplierCompanyId },
+    select: { serieFiscal: true, dataAdesaoFacturacaoElectronica: true },
   });
 
   const [updated, invoice] = await prisma.$transaction(async (tx) => {
@@ -280,6 +287,7 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
     const certificacao = await faturacaoService.atribuir(tx, {
       emitidaEm: new Date(), total: iva.gross,
       codigo: faturacaoService.serieFiscalDoFornecedor(supplierCompany),
+      dataAdesao: supplierCompany.dataAdesaoFacturacaoElectronica,
     });
 
     const createdInvoice = await tx.invoice.create({
@@ -294,6 +302,9 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
         currency: po.currency,
         dueAt: paymentDueAt,
         status: 'PENDENTE',
+        // Linhas do documento fiscal (ver FACTURA.png de referência) —
+        // cópia das PurchaseOrderItem, não uma ligação viva à PO.
+        lines: { create: faturacaoService.linhasFaturaAGT(po.items) },
       },
     });
 

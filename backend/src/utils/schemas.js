@@ -86,6 +86,12 @@ const serieFiscalSchema = z.object({
   serieFiscal: z.string().trim().max(20).regex(/^[A-Za-z0-9-]*$/, 'Use só letras, números e hífen.').nullable(),
 });
 
+// Admin do Sistema: data em que a empresa (fornecedora) aderiu formalmente à
+// faturação eletrónica da AGT. `null` desliga a validação de volta.
+const dataAdesaoSchema = z.object({
+  dataAdesao: z.coerce.date().nullable(),
+});
+
 // Admin do Sistema: dimensão, plano e preço por utilizador de uma empresa.
 const companyPlanSchema = z.object({
   size: z.enum(['MICRO', 'PEQUENA', 'MEDIA', 'GRANDE']).optional(),
@@ -426,6 +432,7 @@ module.exports = {
   decideCompanySchema,
   companyPlanSchema,
   serieFiscalSchema,
+  dataAdesaoSchema,
   supplierDevSchema,
   supplierDevUpdateSchema,
   supplierDevApproveSchema,

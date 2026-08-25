@@ -64,7 +64,7 @@ async function emitirNotaCredito(invoiceId, valor, motivo = 'Correção de teste
 // `purchaseOrderId` só é preciso quando o teste depende do SAF-T conseguir
 // atribuí-la a um fornecedor (o gerador filtra por essa relação — ver
 // saftService.js) — os testes de numeração/cadeia não precisam dela.
-async function emitir(total = 1000, { rebentar = false, codigo = SERIE, purchaseOrderId = null } = {}) {
+async function emitir(total = 1000, { rebentar = false, codigo = SERIE, purchaseOrderId = null, linhas = null } = {}) {
   return prisma.$transaction(async (tx) => {
     const certificacao = await faturacao.atribuir(tx, { emitidaEm: new Date(), total, codigo });
     const criada = await tx.invoice.create({
@@ -78,7 +78,9 @@ async function emitir(total = 1000, { rebentar = false, codigo = SERIE, purchase
         currency: 'AOA',
         dueAt: new Date(Date.now() + 7 * 86400000),
         status: 'PENDENTE',
+        ...(linhas ? { lines: { create: linhas } } : {}),
       },
+      include: { lines: true },
     });
     if (rebentar) throw new Error('falha depois de atribuir o número');
     return criada;
@@ -262,6 +264,129 @@ describe('Isolamento por fornecedor', () => {
   });
 });
 
+describe('numeroDocumentoAGT', () => {
+  test('formato exato do exemplo oficial (FACTURA.png): série + ano + sequencial com 7 dígitos, sem letra de tipo', () => {
+    expect(faturacao.numeroDocumentoAGT({ serie: '000AB', ano: 2025, numeroNaSerie: 1 })).toBe('000AB.2025/0000001');
+  });
+
+  test('sem série ou sem número atribuído, devolve null em vez de inventar', () => {
+    expect(faturacao.numeroDocumentoAGT({ serie: null, ano: 2025, numeroNaSerie: 1 })).toBeNull();
+    expect(faturacao.numeroDocumentoAGT({ serie: 'X', ano: 2025, numeroNaSerie: null })).toBeNull();
+    expect(faturacao.numeroDocumentoAGT()).toBeNull();
+  });
+});
+
+describe('arredondarPorExcessoAoCentimo', () => {
+  test('os três exemplos oficiais da especificação DS.120 (sempre por excesso, nunca ao mais próximo)', () => {
+    expect(faturacao.arredondarPorExcessoAoCentimo(23.144)).toBeCloseTo(23.15, 2);
+    expect(faturacao.arredondarPorExcessoAoCentimo(0.001844)).toBeCloseTo(0.01, 2);
+    expect(faturacao.arredondarPorExcessoAoCentimo(5.9999999)).toBeCloseTo(6.00, 2);
+  });
+});
+
+describe('linhasFaturaAGT', () => {
+  test('gera uma linha por item, com IVA por linha e o código de imposto normal', () => {
+    const items = [
+      { quantity: 2, unitPrice: 500, lineTotal: 1000, productId: 'p1', product: { sku: 'SKU-1', name: 'Produto 1' } },
+      { quantity: 1, unitPrice: 300, lineTotal: 300, productId: 'p2', product: { unspscCode: 'UNSPSC-2', name: 'Produto 2' } },
+    ];
+    const linhas = faturacao.linhasFaturaAGT(items);
+
+    expect(linhas).toHaveLength(2);
+    expect(linhas[0]).toMatchObject({
+      lineNumber: 1, productCode: 'SKU-1', description: 'Produto 1',
+      netAmount: 1000, ivaAmount: 140, ivaTaxCode: faturacao.AGT_TAX_CODE_NORMAL,
+    });
+    // sku tem prioridade sobre unspscCode — só cai para o código UNSPSC quando não há sku.
+    expect(linhas[1]).toMatchObject({ lineNumber: 2, productCode: 'UNSPSC-2', netAmount: 300, ivaAmount: 42 });
+  });
+
+  test('sem sku nem unspscCode, usa o id do produto — nunca um código vazio', () => {
+    const linhas = faturacao.linhasFaturaAGT([{ quantity: 1, unitPrice: 10, lineTotal: 10, productId: 'p-sem-sku', product: {} }]);
+    expect(linhas[0].productCode).toBe('p-sem-sku');
+  });
+});
+
+describe('Data de adesão à faturação eletrónica', () => {
+  const CODIGO = `${SERIE}-ADESAO`;
+
+  afterEach(async () => {
+    await prisma.invoice.deleteMany({ where: { serie: CODIGO } });
+    await prisma.$executeRaw`DELETE FROM "series_faturacao" WHERE "codigo" = ${CODIGO}`;
+  });
+
+  // atribuir() é o MESMO mecanismo para fatura, nota de crédito e recibo — só
+  // muda o `codigo` da série que quem chama resolve. Testar aqui cobre os três.
+  test('recusa atribuir número a um documento datado antes da adesão da empresa', async () => {
+    const dataAdesao = new Date('2026-01-01');
+    await expect(prisma.$transaction((tx) => faturacao.atribuir(tx, {
+      emitidaEm: new Date('2025-12-31'), total: 1000, codigo: CODIGO, dataAdesao,
+    }))).rejects.toThrow(/anterior à data de/);
+  });
+
+  test('aceita um documento emitido na própria data de adesão, ou depois', async () => {
+    const dataAdesao = new Date('2026-01-01');
+    const naData = await prisma.$transaction((tx) => faturacao.atribuir(tx, {
+      emitidaEm: new Date('2026-01-01'), total: 1000, codigo: CODIGO, dataAdesao,
+    }));
+    expect(naData.numeroNaSerie).toBe(1);
+
+    const depois = await prisma.$transaction((tx) => faturacao.atribuir(tx, {
+      emitidaEm: new Date('2026-06-01'), total: 1000, codigo: CODIGO, dataAdesao,
+    }));
+    expect(depois.numeroNaSerie).toBe(2);
+  });
+
+  test('sem data de adesão definida (null), não valida nada — o comportamento de sempre', async () => {
+    const cert = await prisma.$transaction((tx) => faturacao.atribuir(tx, {
+      emitidaEm: new Date('2000-01-01'), total: 1000, codigo: CODIGO, dataAdesao: null,
+    }));
+    expect(cert.numeroNaSerie).toBe(1);
+  });
+});
+
+describe('Recibo fiscal (documento RC)', () => {
+  test('serieReciboDoFornecedor deriva SEMPRE da empresa, sufixo "-RC", nunca uma variável global', () => {
+    expect(faturacao.serieReciboDoFornecedor({ serieFiscal: 'A' })).toBe('A-RC');
+    expect(faturacao.serieReciboDoFornecedor({ serieFiscal: null })).toBeNull();
+    expect(faturacao.serieReciboDoFornecedor(null)).toBeNull();
+  });
+
+  test('o Payment ganha série, numeração e cadeia de hash próprias, na série -RC do fornecedor', async () => {
+    const SERIE_RC = `${SERIE}-RC`;
+    try {
+      const fatura1 = await emitir(1000);
+      const fatura2 = await emitir(2000);
+
+      const cert1 = await prisma.$transaction((tx) => faturacao.atribuir(tx, { emitidaEm: new Date(), total: 1000, codigo: SERIE_RC }));
+      const rec1 = await prisma.payment.create({
+        data: {
+          ...cert1, invoiceId: fatura1.id, amount: 1000, currency: 'AOA',
+          reference: `PAY-TESTE-${Math.random().toString(36).slice(2, 8)}`, status: 'PROCESSADO',
+        },
+      });
+      const cert2 = await prisma.$transaction((tx) => faturacao.atribuir(tx, { emitidaEm: new Date(), total: 2000, codigo: SERIE_RC }));
+      const rec2 = await prisma.payment.create({
+        data: {
+          ...cert2, invoiceId: fatura2.id, amount: 2000, currency: 'AOA',
+          reference: `PAY-TESTE-${Math.random().toString(36).slice(2, 8)}`, status: 'PROCESSADO',
+        },
+      });
+
+      expect(rec1.serie).toBe(SERIE_RC);
+      expect(rec1.numeroNaSerie).toBe(1);
+      expect(rec1.hashAnterior).toBeNull();
+      expect(rec1.hashDocumento).toEqual(expect.any(String));
+      // Cadeia própria do recibo: agarra-se ao recibo anterior, nunca à fatura.
+      expect(rec2.numeroNaSerie).toBe(2);
+      expect(rec2.hashAnterior).toBe(rec1.hashDocumento);
+    } finally {
+      await prisma.payment.deleteMany({ where: { serie: SERIE_RC } });
+      await prisma.$executeRaw`DELETE FROM "series_faturacao" WHERE "codigo" = ${SERIE_RC}`;
+    }
+  });
+});
+
 describe('SAF-T (AO)', () => {
   // O SAF-T é sempre de UMA empresa fornecedora (ver saftService.js) — os
   // testes usam o fornecedor semeado (Kianda) com faturas ligadas a uma PO
@@ -352,7 +477,9 @@ describe('SAF-T (AO)', () => {
       const faturaOutro = await emitir(500, { purchaseOrderId: poOutro.id });
       await emitirDoFornecedor(1000);
 
-      const numeroOutro = `${faturaOutro.serie}/${faturaOutro.numeroNaSerie}`;
+      const numeroOutro = faturacao.numeroDocumentoAGT({
+        serie: faturaOutro.serie, ano: faturaOutro.issuedAt.getFullYear(), numeroNaSerie: faturaOutro.numeroNaSerie,
+      });
       const { xml } = await saft.gerar({ de: '2020-01-01', ate: '2035-12-31', supplierCompanyId: fornecedorId });
       expect(xml).not.toContain(numeroOutro);
 
@@ -384,6 +511,33 @@ describe('SAF-T (AO)', () => {
     }
   });
 
+  test('emite <Line> por fatura, com o código/descrição/imposto da InvoiceLine — e o InvoiceNo no formato oficial', async () => {
+    const fatura = await emitirDoFornecedor(1140, {
+      linhas: [{
+        lineNumber: 1, productCode: 'SKU-SAFT-1', description: 'Produto de teste SAF-T',
+        quantity: 2, unitPrice: 500, netAmount: 1000, ivaAmount: 140, ivaTaxCode: 'NOR',
+      }],
+    });
+
+    const { xml } = await saft.gerar({ de: '2020-01-01', ate: '2035-12-31', supplierCompanyId: fornecedorId });
+    expect(xml).toContain('<ProductCode>SKU-SAFT-1</ProductCode>');
+    expect(xml).toContain('<ProductDescription>Produto de teste SAF-T</ProductDescription>');
+    expect(xml).toContain('<Quantity>2</Quantity>');
+    expect(xml).toContain('<UnitPrice>500.00</UnitPrice>');
+    expect(xml).toContain('<TaxCode>NOR</TaxCode>');
+    expect(xml).toContain('<TaxAmount>140.00</TaxAmount>');
+    for (const tag of ['Line', 'Tax']) {
+      expect((xml.match(new RegExp(`<${tag}>`, 'g')) || []).length)
+        .toBe((xml.match(new RegExp(`</${tag}>`, 'g')) || []).length);
+    }
+
+    const numero = faturacao.numeroDocumentoAGT({
+      serie: fatura.serie, ano: fatura.issuedAt.getFullYear(), numeroNaSerie: fatura.numeroNaSerie,
+    });
+    expect(xml).toContain(`<InvoiceNo>${numero}</InvoiceNo>`);
+    expect(numero).toMatch(/^.+\.\d{4}\/\d{7}$/);
+  });
+
   test('diz o que ficou por configurar em vez de inventar', async () => {
     const { resumo } = await saft.gerar({ de: '2020-01-01', ate: '2035-12-31', supplierCompanyId: fornecedorId });
     // Um número de certificado inventado num ficheiro fiscal é pior do que um
@@ -398,10 +552,16 @@ describe('SAF-T (AO)', () => {
 
     const { xml } = await saft.gerar({ de: '2020-01-01', ate: '2035-12-31', supplierCompanyId: fornecedorId });
     expect((xml.match(/InvoiceType>NC</g) || []).length).toBeGreaterThanOrEqual(1);
-    expect(xml).toContain(`${nota.serie}/${nota.numeroNaSerie}`);
+    const numeroNota = faturacao.numeroDocumentoAGT({
+      serie: nota.serie, ano: nota.issuedAt.getFullYear(), numeroNaSerie: nota.numeroNaSerie,
+    });
+    expect(xml).toContain(numeroNota);
     expect(xml).toContain('Devolução parcial');
     // A referência aponta para a fatura original, nunca um valor arbitrário.
-    expect(xml).toContain(`<Reference>${fatura.serie}/${fatura.numeroNaSerie}</Reference>`);
+    const numeroFatura = faturacao.numeroDocumentoAGT({
+      serie: fatura.serie, ano: fatura.issuedAt.getFullYear(), numeroNaSerie: fatura.numeroNaSerie,
+    });
+    expect(xml).toContain(`<Reference>${numeroFatura}</Reference>`);
   });
 
   test('o status da fatura é A (anulada) só quando totalmente creditada — nunca a string morta "ANULADA"', async () => {
@@ -418,8 +578,12 @@ describe('SAF-T (AO)', () => {
       const bloco = xml.slice(inicio, xml.indexOf('</Invoice>', inicio));
       return bloco.match(/<InvoiceStatus>(.)<\/InvoiceStatus>/)[1];
     };
-    expect(statusDe(`${parcial.serie}/${parcial.numeroNaSerie}`)).toBe('N');
-    expect(statusDe(`${total.serie}/${total.numeroNaSerie}`)).toBe('A');
+    expect(statusDe(faturacao.numeroDocumentoAGT({
+      serie: parcial.serie, ano: parcial.issuedAt.getFullYear(), numeroNaSerie: parcial.numeroNaSerie,
+    }))).toBe('N');
+    expect(statusDe(faturacao.numeroDocumentoAGT({
+      serie: total.serie, ano: total.issuedAt.getFullYear(), numeroNaSerie: total.numeroNaSerie,
+    }))).toBe('A');
   });
 
   test('NumberOfEntries conta faturas E notas de crédito do período', async () => {

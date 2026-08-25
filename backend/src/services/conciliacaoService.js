@@ -18,6 +18,7 @@
 const prisma = require('../config/database');
 const { NotFoundError, BusinessRuleError } = require('../utils/errors');
 const auditService = require('./auditService');
+const faturacaoService = require('./faturacaoService');
 
 const ESTADOS = {
   POR_CONCILIAR: 'POR_CONCILIAR',
@@ -157,7 +158,11 @@ async function tentarConciliar(linha, actor = null) {
 
   const fatura = await prisma.invoice.findUnique({
     where: { referenciaPagamento: linha.referencia },
-    include: { payment: true },
+    include: {
+      payment: true,
+      purchaseOrder: { select: { supplierCompanyId: true } },
+      contract: { select: { supplierCompanyId: true } },
+    },
   });
 
   if (!fatura) {
@@ -186,10 +191,28 @@ async function tentarConciliar(linha, actor = null) {
       `Valor diferente: esperado ${esperado} ${fatura.currency}, recebido ${recebido}.`, fatura.id);
   }
 
+  // O pagamento É o documento "RC" (Recibo) da AGT — mesma série/cadeia do
+  // fornecedor da fatura, ver faturacaoService.serieReciboDoFornecedor.
+  const supplierCompanyId = fatura.purchaseOrder?.supplierCompanyId ?? fatura.contract?.supplierCompanyId;
+  const supplierCompany = supplierCompanyId
+    ? await prisma.company.findUnique({
+      where: { id: supplierCompanyId },
+      select: { serieFiscal: true, dataAdesaoFacturacaoElectronica: true },
+    })
+    : null;
+
   // Tudo bate: paga-se, e as duas escritas vivem na mesma transação.
   await prisma.$transaction(async (tx) => {
+    const certificacao = await faturacaoService.atribuir(tx, {
+      emitidaEm: linha.dataValor,
+      total: fatura.amount,
+      codigo: faturacaoService.serieReciboDoFornecedor(supplierCompany),
+      dataAdesao: supplierCompany?.dataAdesaoFacturacaoElectronica,
+    });
+
     await tx.payment.create({
       data: {
+        ...certificacao,
         invoiceId: fatura.id,
         amount: fatura.amount,
         currency: fatura.currency,
