@@ -859,6 +859,26 @@ tbody tr:hover {
   color: var(--ink-400);
 }
 
+/* Seletor de classificação por estrelas (Suporte → Feedback). */
+.feedback-star-picker {
+  display: flex;
+  gap: 4px;
+}
+
+.feedback-star-btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--line);
+  cursor: pointer;
+}
+
+.feedback-star-btn.on {
+  color: var(--ochre-500, #d99a05);
+}
+
 .error-text {
   font-size: var(--fs-base);
   color: var(--terracotta-600);

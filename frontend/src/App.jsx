@@ -29,6 +29,7 @@ const Notifications = lazy(() => import('./pages/shared/Notifications'));
 const Profile = lazy(() => import('./pages/shared/Profile'));
 const Help = lazy(() => import('./pages/shared/Help'));
 const SuporteChat = lazy(() => import('./pages/shared/SuporteChat'));
+const SuporteFeedback = lazy(() => import('./pages/shared/SuporteFeedback'));
 const ChatComercial = lazy(() => import('./pages/shared/ChatComercial'));
 const OrderDetail = lazy(() => import('./pages/shared/OrderDetail'));
 const ModulePlaceholder = lazy(() => import('./pages/shared/ModulePlaceholder'));
@@ -168,6 +169,7 @@ export default function App() {
           <Route path="/perfil" element={<Profile />} />
           <Route path="/ajuda" element={<Help />} />
           <Route path="/suporte/chat" element={<SuporteChat />} />
+          <Route path="/suporte/feedback" element={<SuporteFeedback />} />
           <Route path="/mensagens/chat-comercial" element={<ChatComercial />} />
           <Route path="/seguranca" element={<Security />} />
 

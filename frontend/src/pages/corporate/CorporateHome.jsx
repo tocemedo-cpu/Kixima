@@ -15,11 +15,14 @@
 //      maquete decorativa em "Demonstração" e um cartão placeholder "em
 //      breve" em "Avaliações". Aqui ficam, respectivamente, o vídeo real de
 //      ecrã da plataforma (gravação genuína, não uma montagem) e a parede
-//      de avaliações real com formulário público e moderação no Admin do
-//      Sistema (GET/POST /api/public/feedback) — construídas em versões
-//      anteriores desta página e mantidas propositadamente ao adoptar este
-//      novo visual, para não perder funcionalidade real por uma versão
-//      fabricada ("sem quebrar o que já funciona").
+//      de avaliações real, com moderação no Admin do Sistema (GET
+//      /api/public/feedback) — construída em versões anteriores desta
+//      página e mantida propositadamente ao adoptar este novo visual, para
+//      não perder funcionalidade real por uma versão fabricada ("sem
+//      quebrar o que já funciona"). A submissão em si já não vive aqui:
+//      passou a exigir sessão iniciada (ver src/pages/shared/
+//      SuporteFeedback.jsx, POST /api/feedback) para o selo "Verificado"
+//      significar alguma coisa.
 //   6. Uma faixa de estatísticas reais ("stats-strip", GET /api/public/stats)
 //      e o indicador "07 · Pagamento em 7 dias" (secção "metrics") usam o
 //      prazo real configurado no backend em vez de texto fixo — pedido
@@ -62,74 +65,42 @@ function Stat({ value, label }) {
   return <div className="stat"><strong>{value == null ? '—' : `${value}+`}</strong><span>{label}</span></div>;
 }
 
-const FEEDBACK_ROLES = ['Comprador', 'Fornecedor', 'Parceiro', 'Outro'];
-const FEEDBACK_EMPTY = { name: '', company: '', role: 'Comprador', rating: '5', message: '', consent: false, website: '' };
+// "Avaliações Verificadas" — só leitura: mostra o que já foi aprovado pelo
+// Admin do Sistema. Já não há formulário aqui — quem quiser avaliar tem de
+// estar autenticado (Suporte → Feedback, dentro da app), precisamente para
+// que o selo "Verificado" signifique alguma coisa: vem sempre de uma conta e
+// empresa reais da KIXIMA, nunca de um nome digitado à mão por um visitante
+// anónimo (ver src/pages/shared/SuporteFeedback.jsx e feedbackService.js).
+const FEEDBACK_DATE_LOCALE = { pt: 'pt-AO', en: 'en-GB', fr: 'fr-FR' };
 
-// "Avaliações" — a parede mostra o que já foi aprovado pelo Admin do Sistema;
-// o formulário submete para moderação (nunca aparece antes de aprovado). O
-// campo "website" é o honeypot: invisível para uma pessoa, devolvido como
-// sucesso mas nunca guardado se um robô o preencher.
 function FeedbackSection({ t }) {
+  const { lang } = useI18n();
   const [wall, setWall] = useState(null);
-  const [form, setForm] = useState(FEEDBACK_EMPTY);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
 
   useEffect(() => {
     api.get('/api/public/feedback').then(setWall).catch(() => {});
   }, []);
 
-  const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError('');
-    setSubmitting(true);
-    try {
-      await api.post('/api/public/feedback', { ...form, rating: Number(form.rating) });
-      setDone(true);
-      setForm(FEEDBACK_EMPTY);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return <section className="section feedback" id="avaliacoes"><div className="section-title"><p className="eyebrow"><i></i>{t('AVALIAÇÕES VERIFICADAS')}</p><h2>{t('Reputação construída')}<br /><em>{t('com transacções reais.')}</em></h2><p>{t('Compradores, fornecedores e parceiros avaliam a experiência na KIXIMA. Cada avaliação é revista antes de ser publicada e a média mostrada conta sempre todas as aprovadas.')}</p></div>
-    <div className="feedback-grid">
-      <div className="feedback-wall">
-        {wall && wall.total > 0
-          ? <p className="feedback-average"><strong>{wall.average.toFixed(1).replace('.', ',')}</strong> / 5 · {t('{total} avaliações aprovadas', { total: wall.total })}</p>
-          : null}
-        {wall && wall.feedback.length > 0
-          ? wall.feedback.map((f) => (
-            <article className="feedback-card" key={f.id}>
+  return <section className="section feedback" id="avaliacoes"><div className="section-title"><p className="eyebrow"><i></i>{t('AVALIAÇÕES VERIFICADAS')}</p><h2>{t('Reputação construída')}<br /><em>{t('com transacções reais.')}</em></h2><p>{t('Compradores e fornecedores autenticados avaliam a experiência na KIXIMA. Cada avaliação é revista antes de ser publicada e a média mostrada conta sempre todas as aprovadas.')}</p></div>
+    <div className="feedback-wall feedback-wall-full">
+      {wall && wall.total > 0
+        ? <p className="feedback-average"><strong>{wall.average.toFixed(1).replace('.', ',')}</strong> / 5 · {t('{total} avaliações aprovadas', { total: wall.total })}</p>
+        : null}
+      {wall && wall.feedback.length > 0
+        ? <div className="feedback-cards">{wall.feedback.map((f) => (
+          <article className="feedback-card" key={f.id}>
+            <div className="feedback-card-head">
               <div className="feedback-stars" aria-label={t('{rating} de 5', { rating: f.rating })} aria-hidden="true">{'★'.repeat(f.rating)}{'☆'.repeat(5 - f.rating)}</div>
-              <p>{f.message}</p>
-              <footer><strong>{f.name}</strong><span>{f.company} · {t(f.role)}</span></footer>
-            </article>
-          ))
-          : <p className="feedback-empty">{t('Ainda não há avaliações públicas. Seja o primeiro a partilhar a sua experiência.')}</p>}
-      </div>
-      <form className="feedback-form" onSubmit={handleSubmit}>
-        {done ? <p className="feedback-done">{t('Obrigado! A sua avaliação foi recebida e será publicada depois de revista.')}</p> : <>
-          <div className="feedback-row">
-            <label>{t('Nome')}<input required value={form.name} maxLength={80} onChange={(e) => update('name', e.target.value)} /></label>
-            <label>{t('Empresa')}<input required value={form.company} maxLength={120} onChange={(e) => update('company', e.target.value)} /></label>
-          </div>
-          <div className="feedback-row">
-            <label>{t('Perfil')}<select value={form.role} onChange={(e) => update('role', e.target.value)}>{FEEDBACK_ROLES.map((r) => <option key={r} value={r}>{t(r)}</option>)}</select></label>
-            <label>{t('Classificação')}<select value={form.rating} onChange={(e) => update('rating', e.target.value)}>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} / 5</option>)}</select></label>
-          </div>
-          <label>{t('A sua experiência')}<textarea required rows={4} maxLength={700} value={form.message} onChange={(e) => update('message', e.target.value)} /></label>
-          <input type="text" name="website" tabIndex={-1} autoComplete="off" className="feedback-honeypot" aria-hidden="true" value={form.website} onChange={(e) => update('website', e.target.value)} />
-          <label className="feedback-consent"><input type="checkbox" checked={form.consent} onChange={(e) => update('consent', e.target.checked)} /> {t('Autorizo a KIXIMA a analisar e, se aprovado, publicar este feedback.')}</label>
-          {error ? <p className="feedback-error">{error}</p> : null}
-          <button className="button button-dark" type="submit" disabled={submitting}>{submitting ? t('A enviar…') : t('Enviar avaliação')}</button>
-        </>}
-      </form>
+              {f.verified ? <span className="feedback-verified" title={t('Avaliação de uma conta e empresa reais da KIXIMA')}>✓ {t('Verificado')}</span> : null}
+            </div>
+            <p>{f.message}</p>
+            <footer>
+              <div><strong>{f.user.name}</strong><span>{f.company.name}</span></div>
+              <time dateTime={f.createdAt}>{new Date(f.createdAt).toLocaleDateString(FEEDBACK_DATE_LOCALE[lang] || 'pt-AO', { day: '2-digit', month: 'short', year: 'numeric' })}</time>
+            </footer>
+          </article>
+        ))}</div>
+        : <p className="feedback-empty">{t('Ainda não há avaliações públicas. Seja o primeiro a partilhar a sua experiência — inicie sessão e vá a Suporte → Feedback.')}</p>}
     </div>
   </section>;
 }

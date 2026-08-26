@@ -201,22 +201,22 @@ model Company {
 
   // Nome + cidade + país normalizados (ver migração 20260831010000).
   // Mantido por gatilho, como o dos produtos.
-  searchText     String?         @map("search_text")
-  apiKeys        ApiKey[]
+  searchText                String?         @map("search_text")
+  apiKeys                   ApiKey[]
   // Até quando a subscrição está paga. Null = nunca foi cobrada (o Base de
   // arranque, ou uma empresa que a KIXIMA pôs num plano à mão).
-  planoValidoAte DateTime?       @map("plano_valido_ate")
-  cobrancas      PlanoCobranca[]
+  planoValidoAte            DateTime?       @map("plano_valido_ate")
+  cobrancas                 PlanoCobranca[]
   // Preço por utilizador/mês (USD). Teto do plano BASICO: 100 USD.
-  seatPriceUsd   Decimal         @default(100) @map("seat_price_usd") @db.Decimal(10, 2)
-  planNotes      String?         @map("plan_notes")
+  seatPriceUsd              Decimal         @default(100) @map("seat_price_usd") @db.Decimal(10, 2)
+  planNotes                 String?         @map("plan_notes")
   // Último patamar de aviso de expiração já enviado (D30/D7/D3/D1/D0/
   // GRACE_INICIO/GRACE_META) — ver subscriptionExpiryJob.js. Impede repetir o
   // MESMO aviso todos os dias (isso seria spam); um cron atrasado ou que
   // falhou um dia ainda assim avança para o patamar certo no dia seguinte,
   // porque o que conta é o patamar alcançado, não um dia exato batido.
   // Reposto a null em cada confirmação de subscrição (novo ciclo).
-  ultimoAvisoSubscricaoTier String? @map("ultimo_aviso_subscricao_tier")
+  ultimoAvisoSubscricaoTier String?         @map("ultimo_aviso_subscricao_tier")
 
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
@@ -244,6 +244,7 @@ model Company {
   supplierDevRequests     SupplierDevRequest[]
   conversationsAsBuyer    Conversation[]           @relation("ConversationAsBuyer")
   conversationsAsSupplier Conversation[]           @relation("ConversationAsSupplier")
+  feedbacks               Feedback[]
 
   @@map("companies")
 }
@@ -472,6 +473,7 @@ model User {
   supportMessages         SupportMessage[]
   conversationMessages    ConversationMessage[]
   riskAlertsAnalisados    RiskAlert[]           @relation("RiskAlertReviewer")
+  feedbacks               Feedback[]
 
   @@index([companyId])
   @@map("users")
@@ -841,8 +843,8 @@ model PurchaseOrder {
   // Recusa do fornecedor (distinta da rejeição do Company Admin acima): o
   // motivo é obrigatório — sem ele a ordem fica num beco sem explicação para
   // quem a emitiu.
-  refusedAt      DateTime? @map("refused_at")
-  refusalReason  String?   @map("refusal_reason")
+  refusedAt     DateTime? @map("refused_at")
+  refusalReason String?   @map("refusal_reason")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -988,8 +990,8 @@ model InvoiceLine {
 // (ver faturacaoService.atribuir, agora com o parâmetro `codigo`) — não um
 // segundo sistema de numeração paralelo.
 model CreditNote {
-  id        String  @id @default(uuid())
-  reference String  @unique // ex: NC-2026-000001
+  id        String @id @default(uuid())
+  reference String @unique // ex: NC-2026-000001
 
   invoiceId String  @map("invoice_id")
   invoice   Invoice @relation(fields: [invoiceId], references: [id])
@@ -1600,16 +1602,46 @@ model SupplierDevRequest {
 // (área SUPORTE) a torna pública. "Feedback real, não decorativo": enquanto
 // não houver avaliações aprovadas, a homepage mostra um estado vazio em vez
 // de testemunhos inventados.
+// Categoria da avaliação — a que é que se refere, não quem a escreve (isso já
+// vem de userId/companyId). EXPERIENCIA_GERAL é a única sem alvo (targetId
+// nulo); todas as outras têm de apontar para algo real que a empresa do autor
+// viveu (ver feedbackService.js: resolverAlvo valida isto na criação).
+enum FeedbackCategoria {
+  FORNECEDOR
+  PRODUTO
+  SERVICO
+  PEDIDO
+  ENTREGA
+  PAGAMENTO
+  ATENDIMENTO
+  EXPERIENCIA_GERAL
+}
+
 model Feedback {
-  id        String   @id @default(uuid())
-  name      String
-  company   String
-  role      String // Comprador | Fornecedor | Parceiro | Outro
-  rating    Int // 1 a 5
-  message   String
-  approved  Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String            @id @default(uuid())
+  userId      String            @map("user_id")
+  user        User              @relation(fields: [userId], references: [id])
+  companyId   String            @map("company_id")
+  company     Company           @relation(fields: [companyId], references: [id])
+  categoria   FeedbackCategoria
+  // Alvo real da avaliação (empresa, produto, pedido, pagamento, ticket de
+  // suporte…), consoante a categoria. targetLabel é um snapshot do nome/
+  // referência no momento da avaliação — não muda se o alvo for editado ou
+  // apagado depois, tal como o resto da faturação já faz com as suas linhas.
+  targetId    String?           @map("target_id")
+  targetLabel String?           @map("target_label")
+  rating      Int // 1 a 5
+  message     String
+  // Sempre true nesta versão: só quem está autenticado com uma conta e
+  // empresa reais na KIXIMA consegue submeter feedback (ver feedbackService.js
+  // criar()) — já não há testemunho anónimo por escrever à mão. O selo existe
+  // para o distinguir do que a homepage mostrava antes desta mudança.
+  verified    Boolean           @default(true)
+  approved    Boolean           @default(false)
+  createdAt   DateTime          @default(now()) @map("created_at")
 
   @@index([approved, createdAt])
+  @@index([userId])
+  @@index([companyId])
   @@map("feedback")
 }

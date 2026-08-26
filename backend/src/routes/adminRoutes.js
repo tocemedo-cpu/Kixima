@@ -271,8 +271,8 @@ router.patch('/feedback/:id/aprovar', requirePermission(SUPORTE), async (req, re
     action: 'FEEDBACK_APROVADO',
     entityType: 'Feedback',
     entityId: aprovada.id,
-    entityRef: aprovada.company,
-    detail: { autor: aprovada.name, classificacao: aprovada.rating },
+    entityRef: aprovada.company?.name,
+    detail: { autor: aprovada.user?.name, categoria: aprovada.categoria, classificacao: aprovada.rating },
   });
   res.json(aprovada);
 });

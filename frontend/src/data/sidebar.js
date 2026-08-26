@@ -9,6 +9,7 @@
 // Itens comuns ao rodapé de todas as personas.
 const COMMON_TAIL = [
   { label: 'Suporte — Chat', icon: 'chat', to: '/suporte/chat', badge: 'suporte' },
+  { label: 'Suporte — Feedback', icon: 'report', to: '/suporte/feedback' },
   { label: 'Chat Comercial', icon: 'chat', to: '/mensagens/chat-comercial', badge: 'chatComercial' },
   { label: 'Ajuda', icon: 'help', to: '/ajuda' },
   { label: 'Sair', icon: 'logout', action: 'logout' },

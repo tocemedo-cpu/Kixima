@@ -1,9 +1,11 @@
 // src/pages/adminSistema/Avaliacoes.jsx
 // Moderação das avaliações públicas da homepage ("Avaliações Verificadas").
-// Ninguém vê uma avaliação na home sem passar por aqui — o formulário público
-// (CorporateHome.jsx) grava sempre com approved=false; esta página é a única
-// forma de a aprovar (ou remover) e é por isso que precisa de existir: sem
-// ela, tudo o que é submetido fica para sempre pendente e invisível.
+// Ninguém vê uma avaliação na home sem passar por aqui — a submissão
+// (Suporte → Feedback, dentro da app, sempre autenticada) grava sempre com
+// approved=false; esta página é a única forma de a aprovar (ou remover).
+// Nome/empresa vêm sempre da conta que submeteu (nunca texto livre), e a
+// categoria + "relacionado a" mostram o alvo real (fornecedor, produto,
+// pedido…) validado no momento da submissão — ver feedbackService.js.
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead, Pill, Tabs, EmptyRow } from '../../components/BuyerUI';
@@ -16,6 +18,17 @@ const STATUS_TABS = [
   { key: 'aprovado', label: 'Aprovadas' },
   { key: '', label: 'Todas' },
 ];
+
+const CATEGORIA_LABEL = {
+  FORNECEDOR: 'Fornecedor / Empresa',
+  PRODUTO: 'Produto',
+  SERVICO: 'Serviço',
+  PEDIDO: 'Pedido',
+  ENTREGA: 'Entrega',
+  PAGAMENTO: 'Pagamento',
+  ATENDIMENTO: 'Atendimento',
+  EXPERIENCIA_GERAL: 'Experiência geral',
+};
 
 export default function Avaliacoes() {
   const { t } = useI18n();
@@ -35,7 +48,7 @@ export default function Avaliacoes() {
     setBusy(f.id); setError(''); setAviso('');
     try {
       await api.patch(`/api/admin/feedback/${f.id}/aprovar`);
-      setAviso(t('Avaliação de {nome} ({empresa}) aprovada — já é visível na homepage.', { nome: f.name, empresa: f.company }));
+      setAviso(t('Avaliação de {nome} ({empresa}) aprovada — já é visível na homepage.', { nome: f.user.name, empresa: f.company.name }));
       carregar();
     } catch (e) {
       setError(e.message);
@@ -45,7 +58,7 @@ export default function Avaliacoes() {
   }
 
   async function remover(f) {
-    const ok = window.confirm(t('Remover a avaliação de {nome} ({empresa})? Não fica registo — se aprovada, também sai da homepage.', { nome: f.name, empresa: f.company }));
+    const ok = window.confirm(t('Remover a avaliação de {nome} ({empresa})? Não fica registo — se aprovada, também sai da homepage.', { nome: f.user.name, empresa: f.company.name }));
     if (!ok) return;
     setBusy(f.id); setError('');
     try {
@@ -65,7 +78,7 @@ export default function Avaliacoes() {
       <Crumbs trail={['Suporte', 'Avaliações']} />
       <PageHead
         title="Avaliações"
-        subtitle="O que é submetido no formulário da homepage ('Avaliações Verificadas') fica aqui até ser revisto. Só o que aprovar aparece publicamente."
+        subtitle="O que é submetido em Suporte → Feedback por utilizadores autenticados fica aqui até ser revisto. Só o que aprovar aparece na homepage ('Avaliações Verificadas')."
       />
 
       {error ? <ErrorBanner message={error} /> : null}
@@ -81,26 +94,30 @@ export default function Avaliacoes() {
                 <th>{t('Submetida em')}</th>
                 <th>{t('Nome')}</th>
                 <th>{t('Empresa')}</th>
-                <th>{t('Perfil')}</th>
+                <th>{t('Categoria')}</th>
+                <th>{t('Relacionado a')}</th>
                 <th>{t('Classificação')}</th>
                 <th>{t('Mensagem')}</th>
+                <th>{t('Verificado')}</th>
                 <th>{t('Estado')}</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {!data ? (
-                <tr><td colSpan={8}><EmptyRow>{t('A carregar…')}</EmptyRow></td></tr>
+                <tr><td colSpan={10}><EmptyRow>{t('A carregar…')}</EmptyRow></td></tr>
               ) : itens.length === 0 ? (
-                <tr><td colSpan={8}><EmptyRow>{t('Nenhuma avaliação neste estado.')}</EmptyRow></td></tr>
+                <tr><td colSpan={10}><EmptyRow>{t('Nenhuma avaliação neste estado.')}</EmptyRow></td></tr>
               ) : itens.map((f) => (
                 <tr key={f.id}>
                   <td>{formatDateTime(f.createdAt)}</td>
-                  <td>{f.name}</td>
-                  <td>{f.company}</td>
-                  <td>{t(f.role)}</td>
+                  <td>{f.user.name}</td>
+                  <td>{f.company.name}</td>
+                  <td>{t(CATEGORIA_LABEL[f.categoria] || f.categoria)}</td>
+                  <td>{f.targetLabel || '—'}</td>
                   <td>{'★'.repeat(f.rating)}{'☆'.repeat(5 - f.rating)}</td>
                   <td style={{ maxWidth: 360, whiteSpace: 'pre-wrap' }}>{f.message}</td>
+                  <td>{f.verified ? <Pill tone="success">✓ {t('Verificado')}</Pill> : '—'}</td>
                   <td><Pill tone={f.approved ? 'success' : 'pending'}>{f.approved ? 'Aprovada' : 'Por rever'}</Pill></td>
                   <td style={{ display: 'flex', gap: 8 }}>
                     {!f.approved ? (

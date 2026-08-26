@@ -47,6 +47,7 @@ const companyAdminRoutes = require('./routes/companyAdminRoutes');
 const financeiroRoutes = require('./routes/financeiroRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const integrationRoutes = require('./routes/integrationRoutes');
+const feedbackRoutes = require('./routes/feedbackRoutes');
 
 const app = express();
 
@@ -204,6 +205,7 @@ app.use('/api/quotes', quoteRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/buyer', buyerRoutes);
+app.use('/api/feedback', feedbackRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/conversations', conversationRoutes);
