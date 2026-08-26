@@ -9,6 +9,14 @@
 // por isso qualquer link de secção clicado a partir de outra página tem de
 // navegar para "/" primeiro. O scroll até à secção é feito pelo hook
 // useScrollToHash(), usado em CorporateHome.
+//
+// O design de origem (pacote "SELECTED_EXACT") não tem mega-menu — é uma
+// lista plana de âncoras, porque a página dele só tem a home. Este site
+// corporativo tem mais páginas reais (Notícias, Carreiras, FAQ, Recursos,
+// Supplier Development, Parceiros, Planos, Termos, Privacidade), por isso o
+// mega-menu com sub-grupos foi mantido (já existia nas versões anteriores
+// desta página) — só a aparência foi actualizada para a nova identidade
+// (barra superior, cabeçalho maior, tipografia mais densa).
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n, LANGS } from '../../i18n';
@@ -26,11 +34,11 @@ export function useCorporateActive() {
 
 export function buildNavGroups(t) {
   return [
-    { label: t('Sobre'), featured: t('Conheça a origem, a ambição e o impacto da KIXIMA.NET.'), links: [[t('Sobre a Kixima'), '#sobre'], [t('A nossa história'), '#historia'], [t('Impacto e conteúdo local'), '#impacto'], [t('Notícias e perspectivas'), '/noticias'], [t('Carreiras'), '/carreiras']] },
-    { label: t('Soluções'), featured: t('Um ecossistema para quem compra, vende e desenvolve capacidade.'), links: [[t('Para compradores'), '#compradores'], [t('Para fornecedores'), '#fornecedores'], [t('Marketplace B2B'), '#marketplace'], [t('Sectores que servimos'), '#sectores'], [t('Demonstração da plataforma'), '#demonstracao'], ['Supplier Development', '/supplier-development'], [t('Parceiros internacionais'), '/parcerias'], [t('Planos e preços'), '/planos']] },
-    { label: t('Como funciona'), featured: t('Da verificação ao pagamento, com visibilidade em cada etapa.'), links: [[t('Credenciamento'), '#como-funciona'], [t('Catálogo e classificação'), '#como-funciona'], [t('Pedidos e ordens de compra'), '#como-funciona'], [t('Entrega e recepção'), '#como-funciona'], [t('Pagamento em 7 dias'), '#pagamento']] },
-    { label: t('Confiança'), featured: t('Due diligence uma vez. Confiança em cada transacção.'), links: [[t('Rede verificada'), '#confianca'], [t('Fornecedor verificado'), '#confianca'], [t('Avaliações'), '#avaliacoes'], [t('Segurança e privacidade'), '/privacidade'], [t('Termos de uso'), '/termos']] },
-    { label: t('Recursos'), featured: t('Informação prática para começar e crescer na plataforma.'), links: [[t('Central de ajuda'), '#ajuda'], [t('Perguntas frequentes'), '/faq'], [t('Guias para fornecedores'), '/recursos'], [t('Contactos'), '#contactos']] },
+    { label: t('Sobre'), featured: t('Conheça a origem, a ambição e o impacto da KIXIMA.NET.'), links: [[t('Sobre a Kixima'), '#sobre'], ['Roadmap', '#roadmap'], [t('Notícias e perspectivas'), '/noticias'], [t('Carreiras'), '/carreiras']] },
+    { label: t('Plataforma'), featured: t('Um ecossistema para quem compra, vende e desenvolve capacidade.'), links: [[t('Visão geral da plataforma'), '#plataforma'], [t('Para compradores'), '#compradores'], [t('Para fornecedores'), '#fornecedores'], [t('Sectores que servimos'), '#sectores'], [t('Demonstração da plataforma'), '#demonstracao'], ['Supplier Development', '/supplier-development'], [t('Parceiros internacionais'), '/parcerias'], [t('Planos e preços'), '/planos']] },
+    { label: t('Como funciona'), featured: t('Da verificação ao pagamento, com visibilidade em cada etapa.'), links: [[t('Credenciamento'), '#como-funciona'], [t('Mercado'), '#como-funciona'], [t('Execução'), '#como-funciona'], [t('Pagamento em 7 dias'), '#pagamento']] },
+    { label: t('Confiança'), featured: t('Due diligence uma vez. Confiança em cada transacção.'), links: [[t('Diferenciais'), '#diferenciais'], [t('Avaliações'), '#avaliacoes'], [t('Segurança e privacidade'), '/privacidade'], [t('Termos de uso'), '/termos']] },
+    { label: t('Recursos'), featured: t('Informação prática para começar e crescer na plataforma.'), links: [[t('Central de ajuda'), '#contactos'], [t('Perguntas frequentes'), '/faq'], [t('Guias para fornecedores'), '/recursos'], [t('Contactos'), '#contactos']] },
   ];
 }
 
@@ -46,7 +54,7 @@ export function Brand({ inverse = false, compact = false, isHome = false }) {
   const { t } = useI18n();
   const content = <><img src={inverse ? kiximaMarkReversed : kiximaMark} alt="" /><span>KIXIMA<small>.NET</small></span></>;
   const className = `brand ${compact ? 'brand-compact' : ''}`;
-  const label = t('KIXIMA.NET - página inicial');
+  const label = t('KIXIMA.NET — página inicial');
   // "#top" só na home, onde <main id="top"> existe — o logótipo faz scroll
   // até ao topo em vez de navegar. Nas restantes páginas, navega para "/".
   if (isHome) return <a className={className} href="#top" aria-label={label}>{content}</a>;
@@ -57,6 +65,14 @@ export function Arrow() { return <span aria-hidden="true">↗</span>; }
 
 function ChevronIcon() {
   return <svg aria-hidden="true" viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2"><path d="m5 8 5 5 5-5" /></svg>;
+}
+
+// Barra superior fixa no topo da página (não fixa ao scroll — só o
+// <header> abaixo é sticky) — parte da nova identidade visual, sem
+// equivalente nas versões anteriores desta página.
+export function TopStrip() {
+  const { t } = useI18n();
+  return <div className="top-strip"><span>{t('E-MARKETPLACE B2B · SOURCE-TO-PAY')}</span><b>{t('NASCIDO EM ANGOLA · PREPARADO PARA ÁFRICA')}</b></div>;
 }
 
 // Dropdown de idiomas real — mesma lógica (useI18n/LANGS/setLang) que já
@@ -129,10 +145,15 @@ function MobileNavigation() {
 
 export function CorporateHeader({ isHome = false }) {
   const { t } = useI18n();
-  return <header className="site-header"><div className="header-inner"><Brand compact isHome={isHome} /><DesktopNavigation /><div className="header-actions"><LanguageDropdown /><Link className="login-link" to="/login">{t('Entrar')}</Link><Link className="button button-primary button-small" to="/cadastro">{t('Registar empresa')}</Link></div><MobileNavigation /></div></header>;
+  return <><TopStrip /><header className="site-header"><Brand compact isHome={isHome} /><DesktopNavigation /><Link className="login-link" to="/login">{t('Entrar')}</Link><Link className="button button-primary" to="/cadastro">{t('Registar empresa')}</Link><div className="header-actions"><LanguageDropdown /></div><MobileNavigation /></header></>;
 }
 
 export function CorporateFooter({ isHome = false }) {
   const { t } = useI18n();
-  return <footer className="site-footer" id="contactos"><div className="footer-top"><div className="footer-brand"><Brand inverse isHome={isHome} /><p>{t('Procurement garantido. Oportunidades ligadas. Capacidade africana visível.')}</p><LanguageDropdown /></div><div className="footer-column"><h3>{t('Conheça a Kixima')}</h3><NavLink href="#sobre">{t('Sobre nós')}</NavLink><NavLink href="#historia">{t('A nossa história')}</NavLink><NavLink href="#impacto">{t('Impacto e conteúdo local')}</NavLink><Link to="/noticias">{t('Notícias e perspectivas')}</Link><Link to="/carreiras">{t('Carreiras')}</Link></div><div className="footer-column"><h3>{t('Faça negócios connosco')}</h3><NavLink href="#compradores">{t('Comprar na Kixima')}</NavLink><NavLink href="#fornecedores">{t('Vender na Kixima')}</NavLink><Link to="/supplier-development">Supplier Development</Link><Link to="/parcerias">{t('Parceiros internacionais')}</Link><Link to="/planos">{t('Planos e preços')}</Link></div><div className="footer-column" id="ajuda"><h3>{t('Confiança e suporte')}</h3><Link to="/faq">{t('Perguntas frequentes')}</Link><Link to="/recursos">{t('Guias e recursos')}</Link><NavLink href="#confianca">{t('Fornecedor verificado')}</NavLink><Link to="/login">{t('Aceder à minha conta')}</Link><a href="mailto:geral@kixima.net">{t('Contactar a Kixima')}</a></div></div><div className="footer-bottom"><span>{t('© 2026 KIXIMA.NET. Todos os direitos reservados.')}</span><div><Link to="/termos">{t('Termos de uso')}</Link><Link to="/privacidade">{t('Política de privacidade')}</Link></div><span>{t('Uma marca nascida em Angola.')}</span></div></footer>;
+  return <footer className="site-footer" id="contactos"><div className="footer-main">
+    <div className="footer-brand"><Brand inverse isHome={isHome} /><p>{t('The state of the art — do procurement à execução.')}</p><LanguageDropdown /></div>
+    <div className="footer-column"><h3>{t('Plataforma')}</h3><NavLink href="#plataforma">{t('Visão geral')}</NavLink><NavLink href="#demonstracao">{t('Demonstração')}</NavLink><NavLink href="#empresas">{t('Para empresas')}</NavLink><NavLink href="#como-funciona">{t('Como funciona')}</NavLink><Link to="/planos">{t('Planos e preços')}</Link></div>
+    <div className="footer-column"><h3>{t('Empresa')}</h3><NavLink href="#sobre">{t('Sobre a Kixima')}</NavLink><NavLink href="#roadmap">Roadmap</NavLink><Link to="/noticias">{t('Notícias e perspectivas')}</Link><Link to="/carreiras">{t('Carreiras')}</Link><a href="mailto:geral@kixima.net">{t('Contactos')}</a><Link to="/login">{t('Entrar')}</Link></div>
+    <div className="footer-column"><h3>{t('Confiança')}</h3><NavLink href="#diferenciais">{t('Diferenciais')}</NavLink><NavLink href="#avaliacoes">{t('Avaliações verificadas')}</NavLink><Link to="/faq">{t('Perguntas frequentes')}</Link><Link to="/recursos">{t('Guias e recursos')}</Link><Link to="/supplier-development">Supplier Development</Link><Link to="/parcerias">{t('Parceiros internacionais')}</Link><Link to="/termos">{t('Termos de uso')}</Link><Link to="/privacidade">{t('Privacidade')}</Link></div>
+  </div><div className="footer-bottom"><span>{t('© 2026 KIXIMA.NET. Todos os direitos reservados.')}</span><b>{t('NASCIDO EM ANGOLA · PREPARADO PARA ÁFRICA')}</b></div></footer>;
 }

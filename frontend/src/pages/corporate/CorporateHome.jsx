@@ -1,8 +1,8 @@
 // src/pages/corporate/CorporateHome.jsx
-// Porta de app/page.tsx do repositório tocemedo-cpu/kiximaa (o código-fonte
-// da página corporativa KIXIMA.NET) — mesma estrutura, mesmas classes CSS
-// (ver corporate.css), mesmo texto por omissão (português). Mudanças em
-// relação ao original:
+// Porta de app/page.tsx do pacote "KIXIMA_FRONTEND_SELECTED_EXACT" (2ª
+// geração do design da página corporativa KIXIMA.NET — mesma estrutura,
+// mesmas classes CSS (ver corporate.css), mesmo texto por omissão
+// (português). Mudanças em relação ao original:
 //   1. Os links que no original apontavam para "https://kixima.net/..."
 //      passam a rotas relativas via <Link> — já vivem no mesmo sítio.
 //   2. "Registar como comprador/fornecedor" incluem ?tipo=CLIENTE|
@@ -11,19 +11,28 @@
 //   4. Todo o texto passa pelo sistema de tradução do KIXIMA (useI18n/t) —
 //      a chave é o próprio texto em português, exactamente como no resto
 //      da app (ver src/i18n/index.jsx).
-//   5. Uma nova secção ("stats-strip") com números REAIS da plataforma
-//      (GET /api/public/stats), e o cartão "07 · Pagamento em 7 dias" da
-//      secção "proof" passa a usar o prazo real configurado no backend
-//      em vez de um texto fixo — pedido explícito do utilizador, para
-//      "nada ser estático" nesta página. Isto diverge da fonte de verdade
-//      visual (o repositório kiximaa não tem isto) de propósito.
-//   6. Cabeçalho/rodapé/navegação foram extraídos para CorporateChrome.jsx
-//      e passaram a ser partilhados com as novas páginas /noticias,
-//      /carreiras, /faq e /recursos — os itens de menu que antes eram
-//      âncoras sem destino real ("Notícias", "Carreiras", "Perguntas
-//      frequentes", "Guias e recursos") agora apontam para páginas
-//      próprias, e useScrollToHash() garante que os links de secção
-//      (ex.: "Sobre a Kixima") funcionam mesmo vindos de outra página.
+//   5. Duas secções do pacote de origem usam conteúdo fabricado — uma
+//      maquete decorativa em "Demonstração" e um cartão placeholder "em
+//      breve" em "Avaliações". Aqui ficam, respectivamente, o vídeo real de
+//      ecrã da plataforma (gravação genuína, não uma montagem) e a parede
+//      de avaliações real com formulário público e moderação no Admin do
+//      Sistema (GET/POST /api/public/feedback) — construídas em versões
+//      anteriores desta página e mantidas propositadamente ao adoptar este
+//      novo visual, para não perder funcionalidade real por uma versão
+//      fabricada ("sem quebrar o que já funciona").
+//   6. Uma faixa de estatísticas reais ("stats-strip", GET /api/public/stats)
+//      e o indicador "07 · Pagamento em 7 dias" (secção "metrics") usam o
+//      prazo real configurado no backend em vez de texto fixo — pedido
+//      explícito do utilizador, para "nada ser estático" nesta página; não
+//      existe em nenhuma versão do design de referência.
+//   7. A secção "Programas" (Supplier Development / Parceiros
+//      internacionais) é específica do KIXIMA e não existe no design de
+//      referência — mantida por serem páginas e programas reais da
+//      plataforma.
+//   8. Cabeçalho/rodapé/navegação vivem em CorporateChrome.jsx, partilhados
+//      com /noticias, /carreiras, /faq e /recursos — useScrollToHash()
+//      garante que os links de secção funcionam mesmo vindos de outra
+//      página.
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useI18n } from '../../i18n';
@@ -32,9 +41,17 @@ import { Arrow, CorporateHeader, CorporateFooter, useCorporateActive } from './C
 import './corporate.css';
 import kiximaMark from '../../assets/brand/kixima-mark.png';
 import kiximaMarkReversed from '../../assets/brand/kixima-mark-reversed.png';
-import kiximaHumanNetwork from '../../assets/corporate/kixima-human-network.webp';
-import kiximaEnergyMining from '../../assets/corporate/kixima-energy-mining.webp';
-import kiximaLogisticsAgri from '../../assets/corporate/kixima-logistics-agri.webp';
+
+// Maquete decorativa da plataforma (formas e rótulos genéricos desenhados em
+// CSS, não uma captura de ecrã) — usada só como ilustração de marca no herói.
+// Na secção "Demonstração" real usa-se o vídeo genuíno em vez desta maquete.
+function DashboardMockup({ compact = false, t }) {
+  return <div className={`dashboard-shell ${compact ? 'dashboard-compact' : ''}`} aria-label={t('Pré-visualização da plataforma KIXIMA')}>
+    <div className="dashboard-top"><span className="brand brand-compact" aria-hidden="true"><img src={kiximaMark} alt="" /><span>KIXIMA<small>.NET</small></span></span><nav><span>{t('Visão geral')}</span><span>{t('Mercado')}</span><span>{t('Fornecedores')}</span></nav><i>AO</i></div>
+    <aside><b>+</b><span></span><span></span><span></span><span></span></aside>
+    <div className="dashboard-body"><p>{t('BOM DIA')}</p><h3>{t('O que precisa comprar?')}</h3><div className="search-bar"><span>{t('Pesquise produtos, serviços ou fornecedores')}</span><b>⌕</b></div><div className="dashboard-kpis"><article><span>{t('FORNECEDORES')}</span><strong>{t('Rede verificada')}</strong><i className="dot green"></i></article><article><span>{t('PROCESSO')}</span><strong>{t('360° auditável')}</strong><i className="dot gold"></i></article><article><span>{t('PAGAMENTO')}</span><strong>{t('Até 7 dias')}</strong><i className="dot red"></i></article></div><div className="dashboard-table"><div><b>{t('Oportunidades recentes')}</b><span>{t('Estado')}</span></div><div><p>{t('Equipamento industrial')}</p><i>{t('ABERTO')}</i></div><div><p>{t('Serviços de inspecção')}</p><i>{t('EM ANÁLISE')}</i></div></div></div>
+  </div>;
+}
 
 // Um dos 3 números da faixa de estatísticas — "—" enquanto não há dados
 // reais ainda (nunca um número inventado a aparecer primeiro e ser
@@ -78,7 +95,7 @@ function FeedbackSection({ t }) {
     }
   }
 
-  return <section className="section feedback" id="avaliacoes"><div className="section-heading"><p className="eyebrow">{t('AVALIAÇÕES')}</p><h2>{t('Feedback real, não decorativo.')}</h2><p>{t('Compradores, fornecedores e parceiros avaliam a experiência na KIXIMA. Cada avaliação é revista antes de ser publicada e a média mostrada conta sempre todas as aprovadas.')}</p></div>
+  return <section className="section feedback" id="avaliacoes"><div className="section-title"><p className="eyebrow"><i></i>{t('AVALIAÇÕES VERIFICADAS')}</p><h2>{t('Reputação construída')}<br /><em>{t('com transacções reais.')}</em></h2><p>{t('Compradores, fornecedores e parceiros avaliam a experiência na KIXIMA. Cada avaliação é revista antes de ser publicada e a média mostrada conta sempre todas as aprovadas.')}</p></div>
     <div className="feedback-grid">
       <div className="feedback-wall">
         {wall && wall.total > 0
@@ -127,6 +144,8 @@ function useScrollToHash() {
   }, [hash]);
 }
 
+const SECTORS = ['Oil & Gas', 'Energia', 'Mineração', 'Construção', 'Logística', 'Serviços profissionais'];
+
 export default function CorporateHome() {
   const { t } = useI18n();
   const [stats, setStats] = useState(null);
@@ -145,8 +164,7 @@ export default function CorporateHome() {
   return <main id="top" className="kixima-corp">
     <CorporateHeader isHome />
 
-    <section className="hero" aria-labelledby="hero-title"><div className="hero-pattern" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><div className="hero-inner"><div className="hero-copy"><p className="kicker"><span></span> {t('Marketplace B2B nascido em Angola')}</p><h1 id="hero-title">{t('A fonte que liga')} <em>{t('negócios.')}</em></h1><p className="hero-lead">{t('Ligamos compradores a fornecedores qualificados num ecossistema seguro, transparente e auditável - preparado para o Oil & Gas e construído para crescer além dele.')}</p><div className="hero-actions"><Link className="button button-primary" to="/cadastro">{t('Registar a minha empresa')} <Arrow /></Link><a className="button button-secondary" href="#como-funciona">{t('Ver como funciona')}</a></div><div className="trust-line"><span><b>✓</b> {t('Empresas verificadas')}</span><span><b>✓</b> {t('Procurement garantido')}</span><span><b>✓</b> {t('Operação auditável')}</span></div></div>
-      <div className="hero-visual" aria-label={t('Ecossistema KIXIMA.NET')}><div className="source-core"><img src={kiximaMark} alt={t('Símbolo KIXIMA.NET')} /><strong>{t('Uma fonte')}</strong><span>{t('Várias oportunidades')}</span></div><div className="orbit orbit-one"><b>{t('COMPRADORES')}</b><span>{t('Mais escolha')}</span></div><div className="orbit orbit-two"><b>{t('FORNECEDORES')}</b><span>{t('Mais mercado')}</span></div><div className="orbit orbit-three"><b>{t('CONFIANÇA')}</b><span>{t('Mais segurança')}</span></div><div className="connector connector-one"></div><div className="connector connector-two"></div><div className="connector connector-three"></div></div></div><div className="hero-bottom-pattern" aria-hidden="true"></div></section>
+    <section className="hero" aria-labelledby="hero-title"><div className="hero-copy"><p className="eyebrow"><i></i>{t('A fonte dos seus negócios.')}</p><h1 id="hero-title">{t('The state of the art —')} <em>{t('do procurement à execução.')}</em></h1><p className="hero-lead">{t('O Oil & Gas na palma da sua mão - e o seu negócio à distância de um clique.')}</p><p className="hero-note">{t('Um conceito global. Uma solução local.')}</p><div className="hero-actions"><Link className="button button-primary" to="/cadastro">{t('Registar empresa')} <Arrow /></Link><a className="button button-secondary" href="#demonstracao">{t('Conhecer a plataforma')}</a></div></div><div className="hero-product"><div className="product-halo"></div><DashboardMockup compact t={t} /><div className="sam-diamond d-one"></div><div className="sam-diamond d-two"></div><div className="sam-diamond d-three"></div></div></section>
 
     <section className="stats-strip" aria-label={t('KIXIMA em números')}>
       <div className="stats-grid">
@@ -156,34 +174,36 @@ export default function CorporateHome() {
       </div>
     </section>
 
-    <section className="proof" aria-label={t('Proposta de valor')}><div className="proof-grid"><article><strong>01</strong><div><h2>{t('Due diligence uma vez')}</h2><p>{t('Credenciamento estruturado para gerar confiança em cada transacção.')}</p></div></article><article><strong>02</strong><div><h2>{t('Rede qualificada')}</h2><p>{t('Acesso a compradores, fornecedores e prestadores com capacidade verificada.')}</p></div></article><article id="pagamento"><strong>{String(diasPagamento).padStart(2, '0')}</strong><div><h2>{t('Pagamento em {dias} dias', { dias: diasPagamento })}</h2><p>{t('Mais previsibilidade financeira para fornecedores e melhor execução para compradores.')}</p></div></article><article><strong>360°</strong><div><h2>{t('Processo auditável')}</h2><p>{t('Catálogo, pedido, PO, entrega, recepção e pagamento numa só jornada.')}</p></div></article></div></section>
+    <section className="metrics" aria-label={t('Indicadores da proposta de valor')}><article><strong>01×</strong><span>{t('Due diligence')}<br />{t('uma única vez')}</span></article><article><strong>360°</strong><span>{t('Procurement')}<br />{t('auditável')}</span></article><article><strong>{diasPagamento}</strong><span>{t('Pagamento em')}<br />{t('até {dias} dias', { dias: diasPagamento })}</span></article><article><strong>UNSPSC</strong><span>{t('Catálogo')}<br />{t('estruturado')}</span></article></section>
 
-    <section className="section demo" id="demonstracao"><div className="section-heading centered"><p className="eyebrow">{t('DEMONSTRAÇÃO')}</p><h2>{t('Veja a KIXIMA a funcionar, do login ao checkout.')}</h2><p>{t('Gravação real da plataforma, numa conta de demonstração - sem dados forjados: o mesmo catálogo, carrinho, impostos e checkout por fornecedor que os clientes usam todos os dias.')}</p></div>
+    <section className="section platform" id="plataforma"><div className="section-title"><p className="eyebrow"><i></i>{t('A PLATAFORMA')}</p><h2>{t('Um mercado transacional.')}<br /><em>{t('Um ecossistema funcional.')}</em></h2></div><div className="platform-intro"><p>{t('A KIXIMA integra descoberta, qualificação, contratação e execução numa experiência B2B concebida para reduzir a distância entre quem compra e quem está preparado para fornecer.')}</p><Link className="text-link" to="/cadastro">{t('Entrar no ecossistema')} <Arrow /></Link></div><div className="platform-grid"><article><span>01</span><h3>{t('Marketplace B2B')}</h3><p>{t('Produtos, serviços e capacidade empresarial classificados para facilitar a procura.')}</p></article><article><span>02</span><h3>{t('Rede verificada')}</h3><p>{t('Credenciamento estruturado para gerar confiança antes da primeira transacção.')}</p></article><article><span>03</span><h3>{t('Execução integrada')}</h3><p>{t('Pedido, ordem de compra, entrega, recepção e pagamento numa jornada rastreável.')}</p></article><article><span>04</span><h3>{t('Visibilidade 360°')}</h3><p>{t('Informação organizada para compradores, fornecedores e equipas de decisão.')}</p></article></div></section>
+
+    <section className="section demo" id="demonstracao"><div className="section-title"><p className="eyebrow"><i></i>{t('DEMONSTRAÇÃO DA EXPERIÊNCIA')}</p><h2>{t('Procurement claro.')}<br /><em>{t('Decisões mais rápidas.')}</em></h2><p>{t('Gravação real da plataforma, numa conta de demonstração - sem dados forjados: o mesmo catálogo, carrinho, impostos e checkout por fornecedor que os clientes usam todos os dias.')}</p></div>
       <div className="demo-frame"><video controls preload="none" poster="/videos/kixima-login-checkout-poster.jpg" aria-label={t('Demonstração da plataforma KIXIMA, do login ao checkout')}><source src="/videos/kixima-login-checkout.mp4" type="video/mp4" /><track kind="captions" src="/videos/kixima-login-checkout.vtt" srcLang="pt" label={t('Português')} default /></video></div>
       <ol className="demo-journey"><li>{t('Login seguro')}</li><li>{t('Painel do comprador')}</li><li>{t('Catálogo e pesquisa')}</li><li>{t('Ficha de produto')}</li><li>{t('Carrinho e impostos')}</li><li>{t('Checkout por fornecedor')}</li></ol>
       <p className="demo-note">{t('Conta de demonstração. O IVA de 14% e o agrupamento por fornecedor são calculados exactamente como em produção.')}</p>
     </section>
 
-    <section className="human-network" aria-label={t('A rede KIXIMA é feita por pessoas')}><div className="human-photo"><img src={kiximaHumanNetwork} alt={t('Compradora e fornecedor angolanos a analisar uma oportunidade de negócio')} loading="lazy" /></div><div className="human-copy"><p className="eyebrow">{t('NEGÓCIOS ENTRE PESSOAS')}</p><h2>{t('Tecnologia que aproxima')} <em>{t('capacidade e oportunidade.')}</em></h2><p>{t('Por detrás de cada catálogo, ordem de compra e entrega estão empresas que querem crescer e profissionais que precisam de comprar com confiança. A KIXIMA existe para tornar essa relação mais simples, visível e segura.')}</p><div className="human-groups"><span><i></i> {t('Compradores')}</span><span><i></i> {t('Fornecedores')}</span><span><i></i> {t('Parceiros')}</span></div></div></section>
-
-    <section className="section two-doors" id="marketplace"><div className="section-heading"><p className="eyebrow">{t('UM ECOSSISTEMA. DUAS PORTAS.')}</p><h2>{t('Entre para comprar.')}<br />{t('Entre para crescer.')}</h2><p>{t('A KIXIMA.NET reduz a distância entre quem precisa de comprar e quem está preparado para fornecer.')}</p></div><div className="door-grid">
-      <article className="door buyer" id="compradores"><span className="door-number">01</span><div className="door-icon" aria-hidden="true">⌕</div><p className="eyebrow">{t('PARA COMPRADORES')}</p><h3>{t('Encontre capacidade. Compre com confiança.')}</h3><p>{t('Descubra novos fornecedores, compare ofertas e transforme necessidades em ordens de compra rastreáveis.')}</p><ul><li>{t('Catálogo classificado por UNSPSC')}</li><li>{t('Fornecedores credenciados')}</li><li>{t('Processo transparente e auditável')}</li></ul><Link to="/cadastro?tipo=CLIENTE">{t('Registar como comprador')} <Arrow /></Link></article>
-      <article className="door supplier" id="fornecedores"><span className="door-number">02</span><div className="door-icon" aria-hidden="true">◇</div><p className="eyebrow">{t('PARA FORNECEDORES')}</p><h3>{t('Ganhe visibilidade. Aceda ao mercado.')}</h3><p>{t('Apresente o seu catálogo, responda a oportunidades e receba com maior previsibilidade.')}</p><ul><li>{t('Catálogo digital sem fronteiras')}</li><li>{t('Pedidos e POs organizados')}</li><li>{t('Programas de desenvolvimento')}</li></ul><Link to="/cadastro?tipo=FORNECEDOR">{t('Registar como fornecedor')} <Arrow /></Link></article>
+    <section className="section business" id="empresas"><div className="section-title"><p className="eyebrow"><i></i>{t('PARA EMPRESAS')}</p><h2>{t('Duas necessidades.')}<br /><em>{t('Uma só fonte.')}</em></h2></div><div className="business-grid">
+      <article className="buyer-card" id="compradores"><span>{t('COMPRADORES')}</span><h3>{t('Mais escolha.')}<br />{t('Mais controlo.')}</h3><p>{t('Encontre fornecedores qualificados, transforme necessidades em ordens de compra e acompanhe a execução ponta a ponta.')}</p><ul><li>{t('Pesquisa e comparação')}</li><li>{t('Fornecedores credenciados')}</li><li>{t('Rastreabilidade e controlo')}</li></ul><Link to="/cadastro?tipo=CLIENTE">{t('Registar como comprador')} <Arrow /></Link></article>
+      <article className="supplier-card" id="fornecedores"><span>{t('FORNECEDORES')}</span><h3>{t('Mais mercado.')}<br />{t('Mais previsibilidade.')}</h3><p>{t('Apresente o seu catálogo, responda a oportunidades reais e transforme capacidade local em crescimento sustentável.')}</p><ul><li>{t('Visibilidade empresarial')}</li><li>{t('Acesso a oportunidades')}</li><li>{t('Pagamento em até 7 dias')}</li></ul><Link to="/cadastro?tipo=FORNECEDOR">{t('Registar como fornecedor')} <Arrow /></Link></article>
     </div></section>
 
-    <section className="section story" id="sobre"><div className="story-visual" aria-hidden="true"><div className="story-mark"><img src={kiximaMarkReversed} alt="" /></div><div className="story-quote">{t('“Por que razão uma pequena empresa do Cazenga não pode fornecer a uma grande operadora?”')}</div><div className="story-diamonds"><i></i><i></i><i></i><i></i></div></div><div className="story-copy" id="historia"><p className="eyebrow">{t('A NOSSA ORIGEM')}</p><h2>{t('Uma inquietação transformada em infraestrutura.')}</h2><p>{t('A KIXIMA nasceu de uma realidade observada durante mais de 20 anos de procurement: compradores concentrados nos mesmos fornecedores e empresas locais capazes sem acesso ao mercado.')}</p><p>{t('Construímos a ponte. Levamos fornecedores qualificados até aos compradores e damos às empresas locais a visibilidade, a capacitação e a confiança necessárias para competir.')}</p><a className="text-link" href="#impacto">{t('Conheça o nosso impacto')} <Arrow /></a></div></section>
+    <section className="process-section" id="como-funciona"><div className="section-title light"><p className="eyebrow"><i></i>{t('COMO FUNCIONA')}</p><h2>{t('Da necessidade ao pagamento.')}</h2><p>{t('Uma sequência simples para processos exigentes.')}</p></div><ol><li><span>01</span><i></i><h3>{t('Credenciamento')}</h3><p>{t('Dados e documentos são submetidos para verificação.')}</p></li><li><span>02</span><i></i><h3>{t('Mercado')}</h3><p>{t('Compradores pesquisam; fornecedores apresentam ofertas.')}</p></li><li><span>03</span><i></i><h3>{t('Execução')}</h3><p>{t('O pedido transforma-se em PO, entrega e recepção.')}</p></li><li id="pagamento"><span>04</span><i></i><h3>{t('Pagamento')}</h3><p>{t('A jornada termina com rastreabilidade e previsibilidade.')}</p></li></ol></section>
 
-    <section className="section process" id="como-funciona"><div className="section-heading centered"><p className="eyebrow">{t('COMO FUNCIONA')}</p><h2>{t('Da necessidade ao pagamento.')}</h2><p>{t('Uma jornada simples para processos complexos.')}</p></div><ol className="process-grid"><li><span>01</span><div className="process-diamond"></div><h3>{t('Credenciamento')}</h3><p>{t('A empresa submete os seus dados e documentos para verificação.')}</p></li><li><span>02</span><div className="process-diamond"></div><h3>{t('Mercado')}</h3><p>{t('Compradores pesquisam e fornecedores apresentam catálogos e propostas.')}</p></li><li><span>03</span><div className="process-diamond"></div><h3>{t('Execução')}</h3><p>{t('O pedido transforma-se em PO, entrega e confirmação de recepção.')}</p></li><li><span>04</span><div className="process-diamond"></div><h3>{t('Pagamento')}</h3><p>{t('A KIXIMA garante rastreabilidade e pagamento ao fornecedor em até 7 dias.')}</p></li></ol><div className="process-action"><Link className="button button-dark" to="/cadastro">{t('Começar agora')} <Arrow /></Link></div></section>
+    <section className="section differentiators" id="diferenciais"><div className="section-title"><p className="eyebrow"><i></i>{t('DIFERENCIAIS')}</p><h2>{t('Confiança incorporada')}<br /><em>{t('em cada etapa.')}</em></h2></div><div className="difference-grid"><article><b>✓</b><h3>{t('Due diligence uma vez')}</h3><p>{t('O fornecedor organiza a sua informação e beneficia da verificação em toda a rede.')}</p></article><article><b>↔</b><h3>{t('Compradores e fornecedores')}</h3><p>{t('As duas partes operam dentro do mesmo fluxo, com informação visível e estruturada.')}</p></article><article><b>◈</b><h3>{t('Capacidade local visível')}</h3><p>{t('Empresas angolanas ganham acesso, contexto e instrumentos para competir.')}</p></article><article><b>7</b><h3>{t('Previsibilidade financeira')}</h3><p>{t('O compromisso de pagamento reduz pressão de caixa e fortalece a execução.')}</p></article></div></section>
 
-    <section className="programs" id="impacto"><div className="programs-inner"><div className="programs-heading"><p className="eyebrow">{t('MAIS DO QUE UM MARKETPLACE')}</p><h2>{t('Capacidade local. Parcerias globais.')}</h2></div><div className="program-cards"><article><span>SD</span><p className="eyebrow">{t('SUPPLIER DEVELOPMENT')}</p><h3>{t('Prepare a sua empresa para fornecer.')}</h3><p>{t('Apoio no processo de credenciamento, organização documental e desenvolvimento da capacidade empresarial.')}</p><Link to="/supplier-development">{t('Conhecer o programa')} <Arrow /></Link></article><article><span>↔</span><p className="eyebrow">{t('PARCEIROS INTERNACIONAIS')}</p><h3>{t('Ligue capacidade local a tecnologia global.')}</h3><p>{t('Facilitamos relações com parceiros estrangeiros para tecnologia, especialização, capacitação e crescimento conjunto.')}</p><Link to="/parcerias">{t('Encontrar parceiros')} <Arrow /></Link></article></div></div></section>
+    <section className="programs" id="impacto"><div className="programs-inner"><div className="programs-heading"><p className="eyebrow"><i></i>{t('MAIS DO QUE UM MARKETPLACE')}</p><h2>{t('Capacidade local. Parcerias globais.')}</h2></div><div className="program-cards"><article><span>SD</span><p className="eyebrow">{t('SUPPLIER DEVELOPMENT')}</p><h3>{t('Prepare a sua empresa para fornecer.')}</h3><p>{t('Apoio no processo de credenciamento, organização documental e desenvolvimento da capacidade empresarial.')}</p><Link to="/supplier-development">{t('Conhecer o programa')} <Arrow /></Link></article><article><span>↔</span><p className="eyebrow">{t('PARCEIROS INTERNACIONAIS')}</p><h3>{t('Ligue capacidade local a tecnologia global.')}</h3><p>{t('Facilitamos relações com parceiros estrangeiros para tecnologia, especialização, capacitação e crescimento conjunto.')}</p><Link to="/parcerias">{t('Encontrar parceiros')} <Arrow /></Link></article></div></div></section>
 
-    <section className="section sectors" id="sectores"><div className="section-heading"><p className="eyebrow">{t('UMA REDE MULTISSECTORIAL')}</p><h2>{t('Nascida no Oil & Gas.')}<br />{t('Preparada para toda a economia.')}</h2><p>{t('A mesma disciplina de credenciamento, conformidade e execução pode ligar empresas em diferentes cadeias de valor, sem tornar a plataforma dependente de um único sector.')}</p></div><div className="sector-visuals"><figure><img src={kiximaEnergyMining} alt={t('Profissionais angolanos nos sectores de energia, Oil & Gas, indústria e mineração')} loading="lazy" /><figcaption><span>{t('OPERAÇÕES DE ALTA EXIGÊNCIA')}</span><b>{t('Energia · Oil & Gas · Indústria · Mineração')}</b></figcaption></figure><figure><img src={kiximaLogisticsAgri} alt={t('Profissionais angolanos nos sectores de logística, aviação, indústria e agricultura')} loading="lazy" /><figcaption><span>{t('CADEIAS DE VALOR EM CRESCIMENTO')}</span><b>{t('Logística · Aviação · Agricultura · Bens e serviços')}</b></figcaption></figure></div><div className="sector-grid"><article><span>01</span><h3>{t('Oil & Gas')}</h3><p>{t('O ponto de partida e a referência de exigência operacional.')}</p></article><article><span>02</span><h3>{t('Energia')}</h3><p>{t('Equipamentos, serviços técnicos e suporte às operações.')}</p></article><article><span>03</span><h3>{t('Indústria')}</h3><p>{t('Capacidade produtiva, manutenção e fornecimento especializado.')}</p></article><article><span>04</span><h3>{t('Mineração')}</h3><p>{t('Bens, serviços e parceiros para operações extractivas.')}</p></article><article><span>05</span><h3>{t('Logística e aviação')}</h3><p>{t('Mobilidade, carga, armazenagem e serviços aeroportuários.')}</p></article><article><span>06</span><h3>{t('Agricultura e outros')}</h3><p>{t('Uma infraestrutura preparada para novos mercados.')}</p></article></div></section>
-
-    <section className="section trust" id="confianca"><div className="trust-copy"><p className="eyebrow">{t('CONFIANÇA KIXIMA')}</p><h2>{t('Verificação que cria valor para os dois lados.')}</h2><p>{t('O nosso modelo foi concebido para reduzir risco, aumentar transparência e fortalecer a confiança entre empresas que ainda não fizeram negócios entre si.')}</p><Link className="text-link" to="/termos">{t('Conheça as regras da plataforma')} <Arrow /></Link></div><div className="trust-seal"><div className="seal-ring"><img src={kiximaMark} alt="" /><strong>{t('FORNECEDOR')}<br />{t('VERIFICADO')}</strong></div><div className="trust-list"><span><b>✓</b> {t('Documentação validada')}</span><span><b>✓</b> {t('Identidade empresarial confirmada')}</span><span><b>✓</b> {t('Histórico e processo auditáveis')}</span></div></div></section>
+    <section className="sectors" id="sectores"><div className="section-title"><p className="eyebrow"><i></i>{t('SECTORES')}</p><h2>{t('Nascido no Oil & Gas.')}<br /><em>{t('Preparado para crescer.')}</em></h2><p>{t('A arquitectura da KIXIMA permite expandir o modelo a novas cadeias de valor sem perder o rigor do procurement industrial.')}</p></div><div>{SECTORS.map((sector, index) => <article key={sector}><span>{String(index + 1).padStart(2, '0')}</span><h3>{t(sector)}</h3><Arrow /></article>)}</div></section>
 
     <FeedbackSection t={t} />
 
-    <section className="final-cta"><div className="final-pattern" aria-hidden="true"></div><div><p className="eyebrow">{t('A SUA PRÓXIMA OPORTUNIDADE PODE COMEÇAR AQUI')}</p><h2>{t('Faça parte da fonte.')}</h2><p>{t('Registe a sua empresa e entre num novo ecossistema de procurement africano.')}</p></div><Link className="button button-light" to="/cadastro">{t('Registar empresa')} <Arrow /></Link></section>
+    <section className="roadmap" id="roadmap"><div className="section-title light"><p className="eyebrow"><i></i>ROADMAP</p><h2>{t('De Angola para África.')}</h2></div><ol><li><span>01</span><h3>{t('Lançamento')}</h3><p>{t('Marketplace e rede inicial para Oil & Gas.')}</p></li><li><span>02</span><h3>{t('Consolidação')}</h3><p>{t('Mais compradores, fornecedores e execução digital.')}</p></li><li><span>03</span><h3>{t('Expansão')}</h3><p>{t('Novos sectores e capacidades empresariais.')}</p></li><li><span>04</span><h3>{t('Escala africana')}</h3><p>{t('Integração regional e novas oportunidades.')}</p></li></ol></section>
+
+    <section className="section about" id="sobre"><div className="about-mark"><img src={kiximaMarkReversed} alt="" /><span>{t('A FONTE')}</span></div><div><p className="eyebrow"><i></i>{t('SOBRE A KIXIMA')}</p><h2>{t('Uma inquietação transformada em infraestrutura.')}</h2><p>{t('A KIXIMA nasceu de uma questão simples: por que razão empresas locais capazes continuam longe das oportunidades das grandes organizações?')}</p><p>{t('Construímos uma ponte entre procura, capacidade e confiança. Levamos fornecedores qualificados até aos compradores e damos às empresas instrumentos para competir, executar e crescer.')}</p><blockquote>{t('“Por que razão uma pequena empresa do Cazenga não pode fornecer a uma grande operadora?”')}</blockquote></div></section>
+
+    <section className="final-cta"><div><p className="eyebrow"><i></i>{t('A SUA PRÓXIMA OPORTUNIDADE COMEÇA AQUI')}</p><h2>{t('Faça parte da fonte.')}</h2><p>{t('Entre no novo ecossistema africano de procurement.')}</p></div><div><Link className="button light-button" to="/cadastro">{t('Registar empresa')} <Arrow /></Link><a className="button dark-button" href="mailto:geral@kixima.net?subject=Solicitar%20demonstração%20KIXIMA.NET">{t('Solicitar demonstração')}</a></div></section>
 
     <CorporateFooter isHome />
   </main>;
