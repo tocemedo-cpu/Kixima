@@ -285,7 +285,7 @@ export default function Register() {
                 </label>
 
                 {error ? <p className="error-text" style={{ margin: '12px 0' }}>{error}</p> : null}
-                <button className="btn btn-accent" type="submit" disabled={submitting || !termsAccepted} style={{ width: '100%', marginTop: 14 }}>
+                <button className="btn btn-accent btn-lg" type="submit" disabled={submitting || !termsAccepted} style={{ width: '100%', marginTop: 14 }}>
                   {submitting ? t('A submeter…') : t('Submeter cadastro')}
                 </button>
               </form>

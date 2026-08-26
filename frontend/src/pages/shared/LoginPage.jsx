@@ -144,7 +144,7 @@ export default function LoginPage() {
               <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
             {error ? <p className="error-text" style={{ marginBottom: 12 }}>{error}</p> : null}
-            <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%' }}>
+            <button className="btn btn-accent btn-lg" type="submit" disabled={submitting} style={{ width: '100%' }}>
               {submitting ? t('A entrar…') : t('Entrar')}
             </button>
             <p style={{ marginTop: 10, textAlign: 'right' }}>

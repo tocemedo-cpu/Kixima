@@ -22,6 +22,12 @@
      página corporativa — disponível para quem precisar do segundo acento
      da marca sem inventar um tom novo. */
   --ochre-500: #d99a05;
+  /* Ivory/sand — fundos e painéis quentes do pacote de identidade v2 da
+     homepage corporativa (ver src/pages/corporate/corporate.css, --ivory/
+     --sand). Ainda não usados fora da página corporativa — disponíveis para
+     quem precisar de um painel quente sem inventar um tom novo. */
+  --ivory: #f7f3ea;
+  --sand: #e8ddcf;
 
   /* Chrome escuro da app (sidebar) */
   --side-bg: #100e15;
@@ -67,7 +73,12 @@
   --terracotta-600: #97341f;
   --terracotta-100: #f6ddd5;
 
-  --paper-050: #f7f7f8;
+  /* Reaquecido de #f7f7f8 para o --paper da identidade v2 da homepage
+     (corporate.css) — o fundo cinza-frio da app deixava de "combinar" com o
+     branco quente da página corporativa assim que se navegava de uma para a
+     outra. Contraste de --ink-900 sobre este fundo sobe de 16,6:1 para
+     17,2:1 — mais folgado, não menos. */
+  --paper-050: #fcfbf8;
   --paper-100: #eeeef1;
   --ink-900: #16181d;
   --ink-600: #4b4f59;
@@ -81,8 +92,13 @@
      usa sobre --surface-2 (#f1f5f9), onde caía para 4,41:1 — abaixo do mínimo.
      Um token validado contra um fundo e usado sobre outro passa a auditoria e
      falha no ecrã. #646b78 dá 5,36:1 sobre branco e 4,89:1 sobre a superfície
-     tingida: seguro nos dois, e a diferença a olho é imperceptível. */
-  --ink-400: #646b78;
+     tingida: seguro nos dois, e a diferença a olho é imperceptível.
+
+     ACTUALIZAÇÃO (identidade v2 da homepage): reaquecido para #66666c — o
+     --muted da página corporativa (ver corporate.css). Contraste reverificado
+     e melhora em vez de piorar: 5,7:1 sobre branco, 5,21:1 sobre --surface-2
+     (era 5,36:1 e 4,89:1), ambos ainda acima do mínimo de 4,5:1. */
+  --ink-400: #66666c;
   /* Estava a ser usado em três sítios só com fallback — e com DOIS fallbacks
      diferentes (#4b5563 e #64748b), ou seja, dois cinzentos ligeiramente
      distintos a fingir que eram o mesmo token. */
@@ -118,7 +134,11 @@
   /* Verde de "está tudo bem". O #16884f andava escrito à mão em quatro ecrãs e
      dava 3,4:1 sobre branco: o estado positivo era o menos legível. */
   --ok-700: #0f6b3d;
-  --line: #e2e2e7;
+  /* Reaquecido de #e2e2e7 para o --line da identidade v2 da homepage
+     (corporate.css) — a mesma linha cinza-azulada fria não batia com o
+     --paper quente abaixo; contraste de borda não-textual, sem impacto em
+     legibilidade de texto. */
+  --line: #dedbd5;
 
   --font-display: 'Sora Variable', 'Sora', system-ui, 'Segoe UI', sans-serif;
   --font-body: 'Inter Variable', 'Inter', system-ui, 'Segoe UI', sans-serif;
@@ -727,7 +747,10 @@ tbody tr:hover {
   border-radius: var(--radius-sm);
   padding: 9px 16px;
   font-size: var(--fs-xl);
-  font-weight: 600;
+  /* Era 600 — a identidade v2 da homepage usa botões visivelmente mais
+     ousados (750-850). 700 aproxima sem chegar ao peso de CTA de marketing,
+     que fica reservado ao .btn-lg abaixo. */
+  font-weight: 700;
   cursor: pointer;
   border: 1px solid transparent;
   transition: filter 0.12s ease, background 0.12s ease;
@@ -790,13 +813,16 @@ tbody tr:hover {
   font-size: var(--fs-base);
 }
 
-/* Tamanho grande. NÃO existia — é a única adição de aparência desta fase, e
-   entra porque o componente Button expõe sm/md/lg e um `lg` sem regra sairia
-   igual ao médio, o que é pior do que não o ter: parece que funciona.
-   Deriva dos mesmos degraus (padding e tipo um passo acima do base). */
+/* Tamanho grande — o CTA de marketing (52px, peso 800), para o momento em
+   que se entra na app a partir da homepage (ex.: os botões de submissão de
+   Login/Registo) não parecer um degrau abaixo do botão que o trouxe até
+   aqui. Continua sem uso em ecrãs de trabalho densos (tabelas, barras de
+   ferramentas), onde .btn/.btn-sm continuam a ser o tamanho certo. */
 .btn-lg {
-  padding: 12px 22px;
+  min-height: 52px;
+  padding: 14px 28px;
   font-size: var(--fs-2xl);
+  font-weight: 800;
 }
 
 .field {
@@ -1871,8 +1897,13 @@ tbody tr:hover {
 /* Sidebar ERP (accordion) — data-driven, estilo SAP Ariba/Oracle     */
 /* ================================================================== */
 .sb {
-  --sb-bg: #0B0B0B;
-  --sb-active: #E30613;
+  /* Eram #0B0B0B/#E30613 — dois valores escritos à mão, à parte do sistema
+     de tokens, e o vermelho era um tom distinto do vermelho de marca usado
+     em todo o resto da aplicação (botões, links, emblemas). Repostos aos
+     tokens correspondentes: visualmente quase idênticos (--navy-950 é
+     #0b0c0e), mas agora mudam num sítio só. */
+  --sb-bg: var(--navy-950);
+  --sb-active: var(--brand-600);
   grid-area: menu;
   background: var(--sb-bg);
   color: #fff;
@@ -2182,7 +2213,7 @@ tbody tr:hover {
 .navbar {
   grid-area: navbar;
   display: flex; align-items: center; gap: 18px;
-  background: #0B0B0B; border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: var(--navy-950); border-bottom: 1px solid rgba(255,255,255,0.08);
   padding: 0 20px; height: 62px;
   position: sticky; top: 0; z-index: 40;
 }
@@ -2299,7 +2330,7 @@ tbody tr:hover {
 .cat-ico { color: var(--ink-900); }
 .cat-name { font-size: var(--fs-md); text-align: center; }
 
-.protect-card { background: #0B0B0B; color: #fff; border-radius: 12px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+.protect-card { background: var(--navy-950); color: #fff; border-radius: 12px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; justify-content: center; }
 .protect-shield { color: var(--amber-500); }
 .protect-card h3 { color: var(--amber-claro); font-size: var(--fs-4xl); letter-spacing: 0.02em; }
 .protect-card p { color: rgba(255,255,255,0.8); font-size: var(--fs-lg); line-height: 1.5; }
