@@ -1592,3 +1592,24 @@ model SupplierDevRequest {
   @@index([status])
   @@map("supplier_dev_requests")
 }
+
+// Avaliação pública da plataforma (homepage corporativa — secção "Avaliações").
+// Sem conta associada de propósito: quem avalia pode ser um comprador, um
+// fornecedor ou um parceiro, e o formulário é público, tal como o resto da
+// home. Fica sempre "approved: false" ao ser criada — só o Admin do Sistema
+// (área SUPORTE) a torna pública. "Feedback real, não decorativo": enquanto
+// não houver avaliações aprovadas, a homepage mostra um estado vazio em vez
+// de testemunhos inventados.
+model Feedback {
+  id        String   @id @default(uuid())
+  name      String
+  company   String
+  role      String // Comprador | Fornecedor | Parceiro | Outro
+  rating    Int // 1 a 5
+  message   String
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([approved, createdAt])
+  @@map("feedback")
+}

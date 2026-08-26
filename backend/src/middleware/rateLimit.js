@@ -96,4 +96,4 @@ const chatMessageLimiter = make({
   keyGenerator: porUtilizadorOuIp,
 });
 
-module.exports = { apiLimiter, authLimiter, sensitiveLimiter, chatMessageLimiter, porUtilizadorOuIp };
+module.exports = { make, apiLimiter, authLimiter, sensitiveLimiter, chatMessageLimiter, porUtilizadorOuIp };

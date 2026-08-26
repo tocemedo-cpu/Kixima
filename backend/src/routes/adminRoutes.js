@@ -4,7 +4,7 @@
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
 const { requireRole, requirePermission, requireSuperAdmin } = require('../middleware/rbac');
-const { FINANCEIRO, OPERACOES, AREAS_ADMIN } = require('../utils/adminAreas');
+const { FINANCEIRO, OPERACOES, SUPORTE, AREAS_ADMIN } = require('../utils/adminAreas');
 const { validate } = require('../utils/validate');
 const { createAdminInviteSchema, acceptAdminInviteSchema } = require('../utils/schemas');
 const adminService = require('../services/adminService');
@@ -14,6 +14,7 @@ const backupJob = require('../jobs/backupJob');
 const notificationService = require('../services/notificationService');
 const mfaLembreteService = require('../services/mfaLembreteService');
 const backupVerificacao = require('../services/backupVerificacaoService');
+const feedbackService = require('../services/feedbackService');
 
 const router = express.Router();
 
@@ -254,6 +255,37 @@ router.post('/mfa-lembrete', requirePermission(OPERACOES), async (req, res) => {
     actor: auditService.actorFrom(req),
   });
   res.json(r);
+});
+
+// --- Moderação das avaliações públicas ("Avaliações" da home) --------------
+// Ninguém vê uma avaliação na home sem passar por aqui primeiro — ver
+// feedbackService.js: "approved: false" ao ser criada, sempre.
+router.get('/feedback', requirePermission(SUPORTE), async (req, res) => {
+  res.json(await feedbackService.listarAdmin({ page: req.query.page, limit: req.query.limit, status: req.query.status }));
+});
+
+router.patch('/feedback/:id/aprovar', requirePermission(SUPORTE), async (req, res) => {
+  const aprovada = await feedbackService.aprovar(req.params.id);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'FEEDBACK_APROVADO',
+    entityType: 'Feedback',
+    entityId: aprovada.id,
+    entityRef: aprovada.company,
+    detail: { autor: aprovada.name, classificacao: aprovada.rating },
+  });
+  res.json(aprovada);
+});
+
+router.delete('/feedback/:id', requirePermission(SUPORTE), async (req, res) => {
+  await feedbackService.remover(req.params.id);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'FEEDBACK_REMOVIDO',
+    entityType: 'Feedback',
+    entityId: req.params.id,
+  });
+  res.status(204).end();
 });
 
 module.exports = router;
