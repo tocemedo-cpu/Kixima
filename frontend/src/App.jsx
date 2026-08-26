@@ -105,6 +105,7 @@ const AdminSupplierDev = lazy(() => import('./pages/adminSistema/SupplierDev'));
 const Prontidao = lazy(() => import('./pages/adminSistema/Prontidao'));
 const Cobrancas = lazy(() => import('./pages/adminSistema/Cobrancas'));
 const SecurityAlerts = lazy(() => import('./pages/adminSistema/SecurityAlerts'));
+const Avaliacoes = lazy(() => import('./pages/adminSistema/Avaliacoes'));
 
 // Ecrã de recurso enquanto o chunk de uma rota é carregado.
 function PageLoading() {
@@ -278,6 +279,7 @@ export default function App() {
             <Route path="/sistema/prontidao" element={<Prontidao />} />
             <Route path="/sistema/cobrancas" element={<Cobrancas />} />
             <Route path="/sistema/alertas-seguranca" element={<SecurityAlerts />} />
+            <Route path="/sistema/avaliacoes" element={<Avaliacoes />} />
           </Route>
         </Route>
       </Route>

@@ -204,6 +204,7 @@ const ADMIN_SISTEMA = [
   { label: 'Supplier Development', icon: 'suppliers', to: '/sistema/supplier-development', area: 'suporte' },
   { label: 'Chat de Suporte', icon: 'chat', to: '/suporte/chat', area: 'suporte', badge: 'suporte' },
   { label: 'Alertas de Segurança', icon: 'alert', to: '/sistema/alertas-seguranca', area: 'suporte', badge: 'alertas' },
+  { label: 'Avaliações', icon: 'report', to: '/sistema/avaliacoes', area: 'suporte' },
   {
     // No Admin do Sistema, o suporte e a ajuda vivem dentro das configurações.
     // Grupo sem `area` própria — mistura itens pessoais (sempre visíveis) com
