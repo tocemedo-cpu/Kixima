@@ -9,7 +9,7 @@
 // por isso qualquer link de secção clicado a partir de outra página tem de
 // navegar para "/" primeiro. O scroll até à secção é feito pelo hook
 // useScrollToHash(), usado em CorporateHome.
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n, LANGS } from '../../i18n';
 import kiximaMark from '../../assets/brand/kixima-mark.png';
@@ -27,7 +27,7 @@ export function useCorporateActive() {
 export function buildNavGroups(t) {
   return [
     { label: t('Sobre'), featured: t('Conheça a origem, a ambição e o impacto da KIXIMA.NET.'), links: [[t('Sobre a Kixima'), '#sobre'], [t('A nossa história'), '#historia'], [t('Impacto e conteúdo local'), '#impacto'], [t('Notícias e perspectivas'), '/noticias'], [t('Carreiras'), '/carreiras']] },
-    { label: t('Soluções'), featured: t('Um ecossistema para quem compra, vende e desenvolve capacidade.'), links: [[t('Para compradores'), '#compradores'], [t('Para fornecedores'), '#fornecedores'], [t('Marketplace B2B'), '#marketplace'], ['Supplier Development', '/supplier-development'], [t('Parceiros internacionais'), '/parcerias'], [t('Planos e preços'), '/planos']] },
+    { label: t('Soluções'), featured: t('Um ecossistema para quem compra, vende e desenvolve capacidade.'), links: [[t('Para compradores'), '#compradores'], [t('Para fornecedores'), '#fornecedores'], [t('Marketplace B2B'), '#marketplace'], [t('Sectores que servimos'), '#sectores'], ['Supplier Development', '/supplier-development'], [t('Parceiros internacionais'), '/parcerias'], [t('Planos e preços'), '/planos']] },
     { label: t('Como funciona'), featured: t('Da verificação ao pagamento, com visibilidade em cada etapa.'), links: [[t('Credenciamento'), '#como-funciona'], [t('Catálogo e classificação'), '#como-funciona'], [t('Pedidos e ordens de compra'), '#como-funciona'], [t('Entrega e recepção'), '#como-funciona'], [t('Pagamento em 7 dias'), '#pagamento']] },
     { label: t('Confiança'), featured: t('Due diligence uma vez. Confiança em cada transacção.'), links: [[t('Rede verificada'), '#confianca'], [t('Fornecedor verificado'), '#confianca'], [t('Segurança e privacidade'), '/privacidade'], [t('Termos de uso'), '/termos']] },
     { label: t('Recursos'), featured: t('Informação prática para começar e crescer na plataforma.'), links: [[t('Central de ajuda'), '#ajuda'], [t('Perguntas frequentes'), '/faq'], [t('Guias para fornecedores'), '/recursos'], [t('Contactos'), '#contactos']] },
@@ -55,6 +55,66 @@ export function Brand({ inverse = false, compact = false, isHome = false }) {
 
 export function Arrow() { return <span aria-hidden="true">↗</span>; }
 
+function ChevronIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2"><path d="m5 8 5 5 5-5" /></svg>;
+}
+
+// Dropdown de idiomas real — mesma lógica (useI18n/LANGS/setLang) que já
+// existia no pill do rodapé, agora com as três opções visíveis de uma vez em
+// vez de ciclar num clique só. Usado no cabeçalho (pedido do utilizador) e
+// no rodapé, que ganha a mesma interação em vez de duas formas diferentes de
+// mudar de idioma no mesmo site.
+export function LanguageDropdown() {
+  const { t, lang, setLang } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onClickOutside = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onClickOutside);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const current = LANGS.find((l) => l.code === lang) ?? LANGS[0];
+
+  return (
+    <div className={`lang-switch${open ? ' open' : ''}`} ref={ref}>
+      <button
+        type="button"
+        className="lang-switch-btn"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={t('Idioma')}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span>{current.flag}</span> {current.label} <ChevronIcon />
+      </button>
+      {open && (
+        <div className="lang-switch-menu" role="listbox" aria-label={t('Idioma')}>
+          {LANGS.map((l) => (
+            <button
+              key={l.code}
+              type="button"
+              role="option"
+              aria-selected={l.code === lang}
+              className={`lang-switch-item${l.code === lang ? ' on' : ''}`}
+              onClick={() => { setLang(l.code); setOpen(false); }}
+            >
+              <span>{l.flag}</span> {l.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DesktopNavigation() {
   const { t } = useI18n();
   const navGroups = buildNavGroups(t);
@@ -64,40 +124,15 @@ function DesktopNavigation() {
 function MobileNavigation() {
   const { t } = useI18n();
   const navGroups = buildNavGroups(t);
-  return <details className="mobile-nav"><summary aria-label={t('Abrir menu')}><span></span><span></span><span></span></summary><div className="mobile-panel">{navGroups.map((group) => <details key={group.label}><summary>{group.label}<span>+</span></summary><div>{group.links.map(([label, href]) => <NavLink href={href} key={label}>{label}</NavLink>)}</div></details>)}<Link className="mobile-login" to="/login">{t('Entrar')}</Link><Link className="button button-primary" to="/cadastro">{t('Registar empresa')}</Link></div></details>;
-}
-
-// O pill de idioma do rodapé, no original só mostra "🇦🇴 Português ⌄" sem
-// fazer nada — aqui ganha a única coisa que lhe falta para ser real: clicar
-// avança para o próximo idioma (PT → EN → FR → PT), sem nenhum elemento
-// novo no ecrã. Div (não button) para não herdar o reset de <button> do
-// browser e manter o visual bit a bit igual ao original.
-export function LanguagePicker() {
-  const { t, lang, setLang } = useI18n();
-  const idx = LANGS.findIndex((l) => l.code === lang);
-  const current = LANGS[idx] ?? LANGS[0];
-  const next = LANGS[(idx + 1) % LANGS.length];
-  const activar = () => setLang(next.code);
-  return (
-    <div
-      className="language"
-      role="button"
-      tabIndex={0}
-      aria-label={t('Idioma')}
-      onClick={activar}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activar(); } }}
-    >
-      <span>{current.flag}</span> {current.label} <b>⌄</b>
-    </div>
-  );
+  return <details className="mobile-nav"><summary aria-label={t('Abrir menu')}><span></span><span></span><span></span></summary><div className="mobile-panel">{navGroups.map((group) => <details key={group.label}><summary>{group.label}<span>+</span></summary><div>{group.links.map(([label, href]) => <NavLink href={href} key={label}>{label}</NavLink>)}</div></details>)}<LanguageDropdown /><Link className="mobile-login" to="/login">{t('Entrar')}</Link><Link className="button button-primary" to="/cadastro">{t('Registar empresa')}</Link></div></details>;
 }
 
 export function CorporateHeader({ isHome = false }) {
   const { t } = useI18n();
-  return <header className="site-header"><div className="header-inner"><Brand compact isHome={isHome} /><DesktopNavigation /><div className="header-actions"><Link className="login-link" to="/login">{t('Entrar')}</Link><Link className="button button-primary button-small" to="/cadastro">{t('Registar empresa')}</Link></div><MobileNavigation /></div></header>;
+  return <header className="site-header"><div className="header-inner"><Brand compact isHome={isHome} /><DesktopNavigation /><div className="header-actions"><LanguageDropdown /><Link className="login-link" to="/login">{t('Entrar')}</Link><Link className="button button-primary button-small" to="/cadastro">{t('Registar empresa')}</Link></div><MobileNavigation /></div></header>;
 }
 
 export function CorporateFooter({ isHome = false }) {
   const { t } = useI18n();
-  return <footer className="site-footer" id="contactos"><div className="footer-top"><div className="footer-brand"><Brand inverse isHome={isHome} /><p>{t('Procurement garantido. Oportunidades ligadas. Capacidade africana visível.')}</p><LanguagePicker /></div><div className="footer-column"><h3>{t('Conheça a Kixima')}</h3><NavLink href="#sobre">{t('Sobre nós')}</NavLink><NavLink href="#historia">{t('A nossa história')}</NavLink><NavLink href="#impacto">{t('Impacto e conteúdo local')}</NavLink><Link to="/noticias">{t('Notícias e perspectivas')}</Link><Link to="/carreiras">{t('Carreiras')}</Link></div><div className="footer-column"><h3>{t('Faça negócios connosco')}</h3><NavLink href="#compradores">{t('Comprar na Kixima')}</NavLink><NavLink href="#fornecedores">{t('Vender na Kixima')}</NavLink><Link to="/supplier-development">Supplier Development</Link><Link to="/parcerias">{t('Parceiros internacionais')}</Link><Link to="/planos">{t('Planos e preços')}</Link></div><div className="footer-column" id="ajuda"><h3>{t('Confiança e suporte')}</h3><Link to="/faq">{t('Perguntas frequentes')}</Link><Link to="/recursos">{t('Guias e recursos')}</Link><NavLink href="#confianca">{t('Fornecedor verificado')}</NavLink><Link to="/login">{t('Aceder à minha conta')}</Link><a href="mailto:geral@kixima.net">{t('Contactar a Kixima')}</a></div></div><div className="footer-bottom"><span>{t('© 2026 KIXIMA.NET. Todos os direitos reservados.')}</span><div><Link to="/termos">{t('Termos de uso')}</Link><Link to="/privacidade">{t('Política de privacidade')}</Link></div><span>{t('Uma marca nascida em Angola.')}</span></div></footer>;
+  return <footer className="site-footer" id="contactos"><div className="footer-top"><div className="footer-brand"><Brand inverse isHome={isHome} /><p>{t('Procurement garantido. Oportunidades ligadas. Capacidade africana visível.')}</p><LanguageDropdown /></div><div className="footer-column"><h3>{t('Conheça a Kixima')}</h3><NavLink href="#sobre">{t('Sobre nós')}</NavLink><NavLink href="#historia">{t('A nossa história')}</NavLink><NavLink href="#impacto">{t('Impacto e conteúdo local')}</NavLink><Link to="/noticias">{t('Notícias e perspectivas')}</Link><Link to="/carreiras">{t('Carreiras')}</Link></div><div className="footer-column"><h3>{t('Faça negócios connosco')}</h3><NavLink href="#compradores">{t('Comprar na Kixima')}</NavLink><NavLink href="#fornecedores">{t('Vender na Kixima')}</NavLink><Link to="/supplier-development">Supplier Development</Link><Link to="/parcerias">{t('Parceiros internacionais')}</Link><Link to="/planos">{t('Planos e preços')}</Link></div><div className="footer-column" id="ajuda"><h3>{t('Confiança e suporte')}</h3><Link to="/faq">{t('Perguntas frequentes')}</Link><Link to="/recursos">{t('Guias e recursos')}</Link><NavLink href="#confianca">{t('Fornecedor verificado')}</NavLink><Link to="/login">{t('Aceder à minha conta')}</Link><a href="mailto:geral@kixima.net">{t('Contactar a Kixima')}</a></div></div><div className="footer-bottom"><span>{t('© 2026 KIXIMA.NET. Todos os direitos reservados.')}</span><div><Link to="/termos">{t('Termos de uso')}</Link><Link to="/privacidade">{t('Política de privacidade')}</Link></div><span>{t('Uma marca nascida em Angola.')}</span></div></footer>;
 }

@@ -5,13 +5,23 @@
 
 :root {
   /* Vermelho KIXIMA — cor primária da marca */
-  --brand-700: #b3141f;
+  /* #b8202e é o vermelho oficial do sistema de identidade KIXIMA (ver
+     src/pages/corporate/corporate.css, --red); 6,39:1 sobre branco e 5,61:1
+     sobre --brand-050 — acima do mínimo de 4,5:1 nos dois casos onde este
+     token serve de texto, tal como o valor anterior (#b3141f, 6,92:1/6,06:1). */
+  --brand-700: #b8202e;
   --brand-600: #e11d2a;
   --brand-500: #ef3340;
   --brand-100: #fbdadd;
   --brand-050: #fdecee;
   --magenta: #f5327c;
   --brand-grad: linear-gradient(135deg, var(--brand-600), var(--magenta));
+  /* Ocre KIXIMA — acento secundário do sistema de identidade (ver
+     docs do pacote de identidade visual; mesmo valor usado em
+     src/pages/corporate/corporate.css, --ochre). Ainda não usado fora da
+     página corporativa — disponível para quem precisar do segundo acento
+     da marca sem inventar um tom novo. */
+  --ochre-500: #d99a05;
 
   /* Chrome escuro da app (sidebar) */
   --side-bg: #100e15;

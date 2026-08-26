@@ -1,0 +1,1 @@
+import{u as e,j as n}from"./index-n3snpE7r.js";function r({tone:t="neutral",children:s}){const{t:a}=e();return n.jsx("span",{className:`badge badge-${t}`,children:typeof s=="string"?a(s):s})}export{r as B};
