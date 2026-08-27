@@ -1,10 +1,15 @@
 -- CreateEnum
 CREATE TYPE "FeedbackCategoria" AS ENUM ('FORNECEDOR', 'PRODUTO', 'SERVICO', 'PEDIDO', 'ENTREGA', 'PAGAMENTO', 'ATENDIMENTO', 'EXPERIENCIA_GERAL');
 
+-- As avaliações antigas eram anónimas (nome/empresa escritos à mão, sem
+-- conta ligada) — não há nenhuma User/Company real a que atribuí-las sob o
+-- novo esquema, que exige sempre um autor autenticado. Não há migração de
+-- dados possível aqui: se quiser preservar um registo do que existia,
+-- exporte a tabela "feedback" ANTES de aplicar esta migração (ex.:
+-- `\copy (select * from feedback) to 'feedback_backup.csv' csv header`).
+DELETE FROM "feedback";
+
 -- AlterTable
--- A tabela "feedback" está vazia em produção (funcionalidade recém-lançada,
--- ainda sem avaliação real submetida) — por isso trocam-se as colunas
--- diretamente, sem migração de dados nem valor por omissão temporário.
 ALTER TABLE "feedback" DROP COLUMN "company",
 DROP COLUMN "name",
 DROP COLUMN "role",
