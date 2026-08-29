@@ -1,14 +1,26 @@
 // src/services/assinaturaService.js
-// Subscrição: pedir um plano, pagar por transferência, a KIXIMA confirma.
+// Subscrição: pedir um plano, pagar (por transferência ou por um canal
+// automático), o plano ativa-se.
 //
-// PORQUE NÃO HÁ GATEWAY DE PAGAMENTO. Em Angola, no B2B, o pagamento entre
-// empresas é transferência bancária com comprovativo — é assim que já funciona
-// o pagamento das faturas nesta plataforma (paymentService.processPayment exige
-// o comprovativo e recusa sem ele). A subscrição segue exatamente o mesmo
-// caminho, e de propósito: um segundo modelo de pagamento seria um segundo
-// sítio onde o dinheiro pode desaparecer sem ninguém dar por isso.
+// DOIS CAMINHOS DE PAGAMENTO, DUAS FORMAS DE CONFIRMAR. Em Angola, no B2B, o
+// pagamento entre empresas é normalmente transferência bancária com
+// comprovativo — é assim que já funciona o pagamento das faturas nesta
+// plataforma (paymentService.processPayment exige o comprovativo e recusa
+// sem ele), e a subscrição sempre teve exatamente esse caminho: um humano da
+// KIXIMA confirma (confirmar()), porque sem gateway não há outra forma de
+// saber que o dinheiro chegou.
 //
-// AS DUAS REGRAS QUE GOVERNAM ESTE FICHEIRO:
+// Os planos BASE e CORE (nunca o PRO — fica só na transferência, por ser o
+// contrato de maior valor) podem ALTERNATIVAMENTE ser pagos por um canal
+// automático — EMIS Multicaixa Express, PayPay, ou a API de um banco (BAI,
+// BFA, Standard Bank Angola) — em que o próprio gateway confirma o
+// pagamento, e o plano ativa-se sozinho (confirmarViaGateway(), chamada pela
+// rota de webhook, nunca por um humano). Ver canaisPagamentoService.js: cada
+// adaptador RECUSA-SE A FINGIR — sem credenciais reais, nenhum canal
+// automático funciona, e a página de planos só mostra os que estiverem
+// configurados.
+//
+// AS DUAS REGRAS QUE GOVERNAM ESTE FICHEIRO, em qualquer dos dois caminhos:
 //
 //   1. O PLANO SÓ MUDA NA CONFIRMAÇÃO. Entre pedir e confirmar não muda nada.
 //      Quem pedisse o Pro e ficasse logo com o Pro tinha o plano de graça
@@ -22,6 +34,7 @@ const planService = require('./planService');
 const storageService = require('./storageService');
 const auditService = require('./auditService');
 const notificationService = require('./notificationService');
+const canaisPagamentoService = require('./canaisPagamentoService');
 const { nextReference } = require('../utils/reference');
 const {
   NotFoundError, ForbiddenError, ValidationError, ConflictError, BusinessRuleError,
@@ -400,38 +413,24 @@ function novoValidoAte(validoAtual, meses, agora = new Date()) {
 }
 
 /**
- * O único sítio em toda a plataforma onde uma subscrição paga muda o plano.
+ * O único sítio em toda a plataforma onde uma subscrição paga muda o plano —
+ * partilhado pelos dois caminhos que chegam aqui: confirmar() (um humano da
+ * KIXIMA, depois de ver o comprovativo) e confirmarViaGateway() (o próprio
+ * gateway, via webhook). Os dois preenchem `dadosExtra` de forma diferente
+ * (confirmadaPor+notas vs. referenciaExterna) mas a ativação do plano — e a
+ * auditoria dela — é exatamente a mesma conta.
  */
-async function confirmar(cobrancaId, adminId, { notas } = {}, actor = null) {
-  const cobranca = await prisma.planoCobranca.findUnique({
-    where: { id: cobrancaId },
-    include: { company: { select: { id: true, name: true, plan: true, planoValidoAte: true } } },
-  });
-  if (!cobranca) throw new NotFoundError('Cobrança');
-  if (cobranca.status === 'CONFIRMADA') {
-    throw new ConflictError(`A cobrança ${cobranca.referencia} já foi confirmada.`);
-  }
-  if (cobranca.status === 'CANCELADA') {
-    throw new ConflictError(`A cobrança ${cobranca.referencia} está cancelada.`);
-  }
-  if (!cobranca.comprovativoUrl) {
-    throw new BusinessRuleError(
-      `A cobrança ${cobranca.referencia} não tem comprovativo. `
-      + 'Confirmar sem ele deixaria a plataforma a afirmar um pagamento que ninguém consegue mostrar.',
-    );
-  }
-
+async function aplicarConfirmacao(cobranca, { dadosExtra = {}, actor, mensagemNotificacao }) {
   const validoAte = novoValidoAte(cobranca.company.planoValidoAte, cobranca.meses);
 
   const atualizada = await prisma.$transaction(async (tx) => {
     const c = await tx.planoCobranca.update({
-      where: { id: cobrancaId },
+      where: { id: cobranca.id },
       data: {
         status: 'CONFIRMADA',
-        confirmadaPor: adminId || null,
         confirmadaEm: new Date(),
         validoAte,
-        ...(notas ? { notas } : {}),
+        ...dadosExtra,
       },
     });
 
@@ -456,7 +455,7 @@ async function confirmar(cobrancaId, adminId, { notas } = {}, actor = null) {
     // Auditoria DENTRO da transação: um plano que muda sem registo não se
     // consegue explicar a ninguém depois.
     await auditService.record(tx, {
-      actor: actor || { actorId: adminId },
+      actor,
       action: 'SUBSCRICAO_CONFIRMADA',
       entityType: 'PlanoCobranca',
       entityId: cobranca.id,
@@ -466,6 +465,7 @@ async function confirmar(cobrancaId, adminId, { notas } = {}, actor = null) {
         de: cobranca.planoAtual,
         para: cobranca.planoNovo,
         valorUsd: String(cobranca.valorUsd),
+        canal: cobranca.canal,
         validoAte: validoAte.toISOString(),
       },
     });
@@ -478,13 +478,132 @@ async function confirmar(cobrancaId, adminId, { notas } = {}, actor = null) {
     roles: ['COMPANY_ADMIN', 'FINANCEIRO'],
     type: 'SUBSCRICAO_CONFIRMADA',
     title: `Plano ${cobranca.planoNovo} ativo`,
-    message: `A subscrição ${cobranca.referencia} foi confirmada. O plano ${cobranca.planoNovo} `
+    message: mensagemNotificacao
+      || `A subscrição ${cobranca.referencia} foi confirmada. O plano ${cobranca.planoNovo} `
       + `está ativo até ${validoAte.toISOString().slice(0, 10)}.`,
     relatedEntityType: 'PlanoCobranca',
     relatedEntityId: cobranca.id,
   }).catch(() => {});
 
   return atualizada;
+}
+
+async function confirmar(cobrancaId, adminId, { notas } = {}, actor = null) {
+  const cobranca = await prisma.planoCobranca.findUnique({
+    where: { id: cobrancaId },
+    include: { company: { select: { id: true, name: true, plan: true, planoValidoAte: true } } },
+  });
+  if (!cobranca) throw new NotFoundError('Cobrança');
+  if (cobranca.status === 'CONFIRMADA') {
+    throw new ConflictError(`A cobrança ${cobranca.referencia} já foi confirmada.`);
+  }
+  if (cobranca.status === 'CANCELADA') {
+    throw new ConflictError(`A cobrança ${cobranca.referencia} está cancelada.`);
+  }
+  if (!cobranca.comprovativoUrl) {
+    throw new BusinessRuleError(
+      `A cobrança ${cobranca.referencia} não tem comprovativo. `
+      + 'Confirmar sem ele deixaria a plataforma a afirmar um pagamento que ninguém consegue mostrar.',
+    );
+  }
+
+  return aplicarConfirmacao(cobranca, {
+    dadosExtra: { confirmadaPor: adminId || null, ...(notas ? { notas } : {}) },
+    actor: actor || { actorId: adminId },
+  });
+}
+
+// --- Pagamento automático (EMIS, PayPay, bancos) -----------------------------
+
+// Só BASE e CORE — o PRO, de maior valor, fica exclusivamente na transferência
+// manual confirmada por um humano da KIXIMA (ver cabeçalho do ficheiro).
+const PLANOS_COM_GATEWAY = ['BASE', 'CORE'];
+
+/**
+ * Inicia o pagamento de uma cobrança PENDENTE num canal automático — chama o
+ * adaptador do gateway (que se recusa a fingir sem credenciais reais) e
+ * guarda a referência externa devolvida, para o webhook a poder encontrar
+ * depois. NÃO confirma nada: só o callback confirmado contra o próprio
+ * gateway faz isso (ver confirmarViaGateway).
+ */
+async function iniciarPagamentoGateway(companyId, cobrancaId, { canal, telemovel } = {}, actor = null) {
+  if (!canaisPagamentoService.CANAIS_GATEWAY.includes(canal)) {
+    throw new ValidationError(`Canal desconhecido: "${canal}". Os canais automáticos são: ${canaisPagamentoService.CANAIS_GATEWAY.join(', ')}.`);
+  }
+
+  const cobranca = await prisma.planoCobranca.findUnique({ where: { id: cobrancaId } });
+  if (!cobranca) throw new NotFoundError('Cobrança');
+  if (cobranca.companyId !== companyId) {
+    throw new ForbiddenError('Só pode pagar cobranças da sua própria empresa.');
+  }
+  if (cobranca.status !== 'PENDENTE') {
+    throw new ConflictError(`A cobrança ${cobranca.referencia} está ${cobranca.status.toLowerCase()} e não aceita um novo pagamento.`);
+  }
+  if (!PLANOS_COM_GATEWAY.includes(cobranca.planoNovo)) {
+    throw new BusinessRuleError(
+      `O plano ${cobranca.planoNovo} só se paga por transferência bancária. `
+      + `Os canais automáticos existem apenas para ${PLANOS_COM_GATEWAY.join('/')}.`,
+    );
+  }
+
+  const adaptador = canaisPagamentoService.adaptador(canal);
+  const resultado = await adaptador.pedirPagamento({
+    referencia: cobranca.referencia,
+    valor: cobranca.valorUsd,
+    moeda: 'USD',
+    telemovel,
+  });
+
+  const referenciaExterna = String(resultado?.id || resultado?.transactionId || '');
+  if (!referenciaExterna) {
+    throw new Error(`${canal} não devolveu um identificador de transação — não há forma de confirmar este pagamento depois.`);
+  }
+
+  const atualizada = await prisma.planoCobranca.update({
+    where: { id: cobrancaId },
+    data: { canal, referenciaExterna, telemovel: telemovel || null },
+  });
+
+  await auditService.recordSafe({
+    actor: actor || {},
+    action: 'SUBSCRICAO_PAGAMENTO_INICIADO',
+    entityType: 'PlanoCobranca',
+    entityId: cobranca.id,
+    entityRef: cobranca.referencia,
+    detail: { canal, referenciaExterna },
+  });
+
+  return atualizada;
+}
+
+/**
+ * O gateway confirmou — chamado só pela rota de webhook, nunca por um humano.
+ * Idempotente: um callback duplicado (os gateways reenviam) não tenta
+ * confirmar duas vezes.
+ */
+async function confirmarViaGateway(cobrancaId, { canal, referenciaExterna }) {
+  const cobranca = await prisma.planoCobranca.findUnique({
+    where: { id: cobrancaId },
+    include: { company: { select: { id: true, name: true, plan: true, planoValidoAte: true } } },
+  });
+  if (!cobranca) throw new NotFoundError('Cobrança');
+  if (cobranca.status === 'CONFIRMADA') return cobranca;
+  if (cobranca.status === 'CANCELADA') {
+    throw new ConflictError(`A cobrança ${cobranca.referencia} está cancelada — o pagamento chegou tarde de mais.`);
+  }
+  if (cobranca.canal !== canal || cobranca.referenciaExterna !== referenciaExterna) {
+    throw new ConflictError(`O callback de ${canal} (${referenciaExterna}) não corresponde ao pagamento iniciado para ${cobranca.referencia}.`);
+  }
+
+  return aplicarConfirmacao(cobranca, {
+    dadosExtra: {},
+    // Sem adminId — ninguém da KIXIMA carregou em nada. `actorName` diz a
+    // verdade em vez de inventar um utilizador "sistema" a quem depois
+    // ninguém pede contas (mesmo padrão de conciliacaoService.js).
+    actor: { actorId: null, actorName: `Pagamento automático (${canal})`, companyId: cobranca.companyId },
+    mensagemNotificacao: `A subscrição ${cobranca.referencia} foi paga via ${canal} e confirmada automaticamente. `
+      + `O plano ${cobranca.planoNovo} está ativo.`,
+  });
 }
 
 /**
@@ -636,7 +755,8 @@ async function enviarAvisosDeExpiracao() {
 
 module.exports = {
   estado, pedir, submeterComprovativo, confirmar, cancelar, fila, enviarAvisosDeExpiracao,
+  iniciarPagamentoGateway, confirmarViaGateway,
   // Exportados para teste: são as duas contas que decidem dinheiro e acesso.
   novoValidoAte, lugaresOcupados, impedimento, impedimentoEmTexto, dadosBancarios, EM_ABERTO,
-  patamarAtual, PATAMARES_AVISO,
+  patamarAtual, PATAMARES_AVISO, PLANOS_COM_GATEWAY,
 };

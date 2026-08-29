@@ -11,6 +11,7 @@ const { FINANCEIRO } = require('../utils/adminAreas');
 const { uploadDocuments } = require('../config/upload');
 const auditService = require('../services/auditService');
 const svc = require('../services/assinaturaService');
+const canaisPagamentoService = require('../services/canaisPagamentoService');
 
 const router = express.Router();
 router.use(authenticate);
@@ -42,6 +43,26 @@ router.post('/pedir', requireRole('COMPANY_ADMIN'), async (req, res) => {
     auditService.actorFrom(req),
   );
   res.status(201).json(cobranca);
+});
+
+// Quais canais automáticos (EMIS/PayPay/bancos) estão configurados — a
+// página só mostra o que responde `disponivel: true` aqui, nunca um botão
+// que vai falhar ao clicar.
+router.get('/canais', requireRole('COMPANY_ADMIN', 'FINANCEIRO'), async (req, res) => {
+  res.json(canaisPagamentoService.estados());
+});
+
+// Inicia o pagamento num canal automático (mesma dupla que carrega o
+// comprovativo na transferência manual — pagar não é a mesma decisão que
+// escolher o plano).
+router.post('/:id/pagar-com', requireRole('COMPANY_ADMIN', 'FINANCEIRO'), async (req, res) => {
+  const cobranca = await svc.iniciarPagamentoGateway(
+    req.user.companyId,
+    req.params.id,
+    { canal: req.body?.canal, telemovel: req.body?.telemovel },
+    auditService.actorFrom(req),
+  );
+  res.json(cobranca);
 });
 
 // Comprovativo OBRIGATÓRIO (multipart, campo "comprovativo": PDF ou imagem).

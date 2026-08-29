@@ -48,6 +48,7 @@ const financeiroRoutes = require('./routes/financeiroRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const integrationRoutes = require('./routes/integrationRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
+const webhookPagamentoRoutes = require('./routes/webhookPagamentoRoutes');
 
 const app = express();
 
@@ -200,6 +201,7 @@ app.get('/api/retencao', (req, res) => res.json({ politica: require('./services/
 // Subscrição: pedir plano, carregar comprovativo, confirmar. Autenticada —
 // ao contrário de /api/planos, que é a tabela pública de preços.
 app.use('/api/assinatura', assinaturaRoutes);
+app.use('/api/webhooks/pagamento', webhookPagamentoRoutes);
 app.use('/api/kits', kitRoutes);
 app.use('/api/quotes', quoteRoutes);
 app.use('/api/marketplace', marketplaceRoutes);

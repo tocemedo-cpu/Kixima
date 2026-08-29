@@ -19,6 +19,14 @@ import { ErrorBanner, SuccessBanner } from '../../components/Common';
 import { formatDate, formatUsd } from '../../domain';
 import { useI18n } from '../../i18n';
 
+const NOME_CANAL = {
+  EMIS_MULTICAIXA: 'Multicaixa Express',
+  PAYPAY: 'PayPay',
+  BAI: 'BAI',
+  BFA: 'BFA',
+  STANDARD_BANK_ANGOLA: 'Standard Bank Angola',
+};
+
 
 export default function Cobrancas() {
   const { t } = useI18n();
@@ -160,19 +168,23 @@ export default function Cobrancas() {
               <th>{t('Empresa')}</th>
               <th>{t('Mudança')}</th>
               <th>{t('Valor')}</th>
+              <th>{t('Canal')}</th>
               <th>{t('Emitida em')}</th>
               <th />
             </tr>
           </thead>
           <tbody>
             {porPagar.length === 0 ? (
-              <tr><td colSpan={6}><EmptyRow>{t('Nenhuma cobrança por liquidar. Aparecem aqui as que foram emitidas e ainda não foram pagas.')}</EmptyRow></td></tr>
+              <tr><td colSpan={7}><EmptyRow>{t('Nenhuma cobrança por liquidar. Aparecem aqui as que foram emitidas e ainda não foram pagas.')}</EmptyRow></td></tr>
             ) : porPagar.map((c) => (
               <tr key={c.id}>
                 <td>{c.referencia}</td>
                 <td>{c.company?.name}</td>
                 <td>{c.planoAtual} → <strong>{c.planoNovo}</strong></td>
                 <td>{formatUsd(c.valorUsd)}</td>
+                <td>{c.canal === 'TRANSFERENCIA_MANUAL'
+                  ? t('Transferência')
+                  : <Pill tone="info">{t('{canal} — a aguardar', { canal: NOME_CANAL[c.canal] || c.canal })}</Pill>}</td>
                 <td>{formatDate(c.createdAt)}</td>
                 <td>
                   <button className="btn btn-ghost btn-sm" disabled={busy === c.id} onClick={() => cancelar(c)}>

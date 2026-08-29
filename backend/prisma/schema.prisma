@@ -90,6 +90,23 @@ enum CobrancaStatus {
   CANCELADA
 }
 
+// Por onde uma cobrança de subscrição é paga. TRANSFERENCIA_MANUAL é o único
+// caminho verificado (comprovativo + confirmação humana, ver acima); os
+// outros quatro só existem para os planos BASE e CORE (o PRO continua
+// exclusivamente manual) e cada um está implementado contra a forma provável
+// da respetiva API — sem credenciais nenhuma delas funciona, e nenhuma finge
+// que funciona (ver assinaturaService.js/multicaixaService.js/
+// paypayService.js/bancoGatewayService.js: exigirConfiguracao() lança em vez
+// de simular sucesso).
+enum CanalCobranca {
+  TRANSFERENCIA_MANUAL
+  EMIS_MULTICAIXA
+  PAYPAY
+  BAI
+  BFA
+  STANDARD_BANK_ANGOLA
+}
+
 model PlanoCobranca {
   id         String  @id @default(uuid())
   referencia String  @unique // SUB-2026-000001
@@ -114,12 +131,22 @@ model PlanoCobranca {
   validoAte       DateTime?      @map("valido_ate")
   notas           String?
 
+  // Canal de pagamento automático (EMIS/PayPay/banco) — ver CanalCobranca.
+  // `referenciaExterna` é o identificador da transação NO GATEWAY, guardado
+  // ao iniciar o pagamento e usado para verificar o callback contra a fonte
+  // (nunca se confia no que o callback afirma, ver os adaptadores). Nula
+  // sempre que o canal é TRANSFERENCIA_MANUAL.
+  canal             CanalCobranca @default(TRANSFERENCIA_MANUAL)
+  referenciaExterna String?       @map("referencia_externa")
+  telemovel         String? // usado pelo EMIS/PayPay para pedir o pagamento ao telemóvel
+
   createdById String?  @map("created_by_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@index([companyId])
   @@index([status])
+  @@index([canal, referenciaExterna])
   @@map("plano_cobrancas")
 }
 

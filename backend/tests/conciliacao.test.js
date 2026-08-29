@@ -233,7 +233,7 @@ describe('Multicaixa Express', () => {
     // avaria possível — e um modo de simulação acaba sempre por ser ligado em
     // produção por engano.
     expect(multicaixa.disponivel()).toBe(false);
-    await expect(multicaixa.pedirPagamento({ invoice: { amount: 1, currency: 'AOA' }, telemovel: '900000000' }))
+    await expect(multicaixa.pedirPagamento({ referencia: 'FAT-TESTE', valor: 1, moeda: 'AOA', telemovel: '900000000' }))
       .rejects.toThrow(/não está configurado/i);
   });
 

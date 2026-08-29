@@ -288,6 +288,14 @@ export const EN10 = {
   'Qual': 'Which one',
   'Sobre o que é': 'What it\'s about',
   'Suporte — Feedback': 'Support — Feedback',
+  '{canal} — a aguardar': '{canal} — awaiting confirmation',
+  'Canal': 'Channel',
+  'Número de telemóvel para pedir o pagamento:': 'Phone number to request the payment:',
+  'o plano ativa-se automaticamente assim que o pagamento for confirmado — sem esperar pela KIXIMA.': 'the plan activates automatically as soon as the payment is confirmed — no need to wait for KIXIMA.',
+  'Pagar agora:': 'Pay now:',
+  'Pagar com {canal}': 'Pay with {canal}',
+  'Pedido de pagamento enviado para {canal}. Confirme no telemóvel/aplicação — o plano ativa-se automaticamente assim que o pagamento for confirmado.': 'Payment request sent to {canal}. Confirm on your phone/app — the plan activates automatically as soon as the payment is confirmed.',
+  'Transferência': 'Bank transfer',
 };
 
 export const FR10 = {
@@ -548,4 +556,12 @@ export const FR10 = {
   'Qual': 'Lequel',
   'Sobre o que é': 'Sur quoi porte l\'avis',
   'Suporte — Feedback': 'Support — Avis',
+  '{canal} — a aguardar': '{canal} — en attente de confirmation',
+  'Canal': 'Canal',
+  'Número de telemóvel para pedir o pagamento:': 'Numéro de téléphone pour demander le paiement :',
+  'o plano ativa-se automaticamente assim que o pagamento for confirmado — sem esperar pela KIXIMA.': 'le plan s\'active automatiquement dès que le paiement est confirmé — sans attendre KIXIMA.',
+  'Pagar agora:': 'Payer maintenant :',
+  'Pagar com {canal}': 'Payer avec {canal}',
+  'Pedido de pagamento enviado para {canal}. Confirme no telemóvel/aplicação — o plano ativa-se automaticamente assim que o pagamento for confirmado.': 'Demande de paiement envoyée à {canal}. Confirmez sur votre téléphone/application — le plan s\'active automatiquement dès que le paiement est confirmé.',
+  'Transferência': 'Virement bancaire',
 };

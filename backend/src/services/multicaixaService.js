@@ -50,22 +50,29 @@ function exigirConfiguracao() {
 /**
  * Pede um pagamento ao telemóvel do comprador.
  *
+ * Genérico de propósito — usado tanto para faturas de fornecedor como para
+ * cobranças de subscrição (planoCobranca), que não têm nada em comum além de
+ * "uma referência, um valor, uma moeda". Passar o documento inteiro obrigaria
+ * este ficheiro a conhecer dois modelos diferentes; passar só o que é preciso
+ * mantém-no cego ao resto da plataforma.
+ *
  * O montante vai em cêntimos e como INTEIRO. Enviar decimais a uma API de
  * pagamentos é como se perde dinheiro em arredondamentos que ninguém vê até ao
  * fecho de contas.
  */
-async function pedirPagamento({ invoice, telemovel }) {
+async function pedirPagamento({ referencia, valor, moeda, telemovel }) {
   exigirConfiguracao();
 
-  if (invoice.currency !== 'AOA') {
-    // O Multicaixa é kwanza. Uma fatura noutra moeda tem de ir por outro canal
-    // em vez de ser convertida em silêncio a uma taxa que ninguém escolheu.
-    throw new Error(`O Multicaixa Express só liquida em AOA; esta fatura está em ${invoice.currency}.`);
+  if (moeda !== 'AOA') {
+    // O Multicaixa é kwanza. Um documento noutra moeda (as subscrições são em
+    // USD) tem de ir por outro canal em vez de ser convertido em silêncio a
+    // uma taxa que ninguém escolheu.
+    throw new Error(`O Multicaixa Express só liquida em AOA; este documento está em ${moeda}.`);
   }
 
   const corpo = {
-    reference: invoice.referenciaPagamento || invoice.reference,
-    amount: Math.round(Number(invoice.amount) * 100),
+    reference: referencia,
+    amount: Math.round(Number(valor) * 100),
     currency: 'AOA',
     token: CONFIG.token,
     mobile: telemovel,

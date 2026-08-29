@@ -584,8 +584,20 @@ async function verFaturacao() {
   return checks;
 }
 
+// Nome de exibição de cada canal automático, para a mensagem de ação —
+// separado de canaisPagamentoService porque esse serviço fala de CanalCobranca
+// (subscrição); aqui a mesma lista serve também para explicar os canais às
+// faturas de fornecedor, que partilham os mesmos adaptadores.
+const NOME_CANAL = {
+  EMIS_MULTICAIXA: 'Multicaixa Express',
+  PAYPAY: 'PayPay',
+  BAI: 'BAI',
+  BFA: 'BFA',
+  STANDARD_BANK_ANGOLA: 'Standard Bank Angola',
+};
+
 function verCanaisDePagamento() {
-  const multicaixa = require('./multicaixaService');
+  const canaisPagamentoService = require('./canaisPagamentoService');
   const checks = [];
 
   checks.push({ id: 'pag-manual', titulo: 'Transferência com comprovativo', estado: OK,
@@ -600,12 +612,19 @@ function verCanaisDePagamento() {
       detalhe: 'O IBAN não está definido.',
       acao: 'Sem ele a plataforma gera a referência mas não tem para onde dizer que se transfira — o comprador vê uma referência e nenhuma conta.' });
 
-  const m = multicaixa.estado();
-  checks.push(m.disponivel
-    ? { id: 'pag-multicaixa', titulo: 'Multicaixa Express', estado: OK, detalhe: 'Configurado.' }
-    : { id: 'pag-multicaixa', titulo: 'Multicaixa Express', estado: AVISO,
-      detalhe: m.nota,
-      acao: `Requer contrato com a EMIS. Em falta: ${m.emFalta.join(', ')}. Sem isto o canal recusa-se a funcionar em vez de simular — que é o comportamento certo.` });
+  // Os quatro canais automáticos da subscrição (planos BASE/CORE — o PRO fica
+  // só na transferência manual). Nenhum funciona sem credenciais reais, e
+  // nenhum finge que funciona — ver canaisPagamentoService.js.
+  const estados = canaisPagamentoService.estados();
+  for (const canal of canaisPagamentoService.CANAIS_GATEWAY) {
+    const e = estados[canal];
+    const nome = NOME_CANAL[canal] || canal;
+    checks.push(e.disponivel
+      ? { id: `pag-${canal.toLowerCase()}`, titulo: nome, estado: OK, detalhe: 'Configurado.' }
+      : { id: `pag-${canal.toLowerCase()}`, titulo: nome, estado: AVISO,
+        detalhe: e.nota,
+        acao: `Requer contrato e credenciais do ${nome}. Em falta: ${e.emFalta.join(', ')}. Sem isto o canal recusa-se a funcionar em vez de simular — que é o comportamento certo.` });
+  }
 
   return checks;
 }

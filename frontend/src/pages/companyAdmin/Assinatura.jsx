@@ -41,6 +41,19 @@ const ESTADO_TEXTO = {
   CANCELADA: 'Cancelada',
 };
 
+// Só BASE e CORE têm canais automáticos (ver assinaturaService.js) — o PRO
+// fica exclusivamente na transferência manual. E só telemóveis (EMIS/PayPay)
+// pedem um número antes de iniciar o pagamento; um banco não.
+const PLANOS_COM_GATEWAY = ['BASE', 'CORE'];
+const CANAIS_COM_TELEMOVEL = ['EMIS_MULTICAIXA', 'PAYPAY'];
+const NOME_CANAL = {
+  EMIS_MULTICAIXA: 'Multicaixa Express',
+  PAYPAY: 'PayPay',
+  BAI: 'BAI',
+  BFA: 'BFA',
+  STANDARD_BANK_ANGOLA: 'Standard Bank Angola',
+};
+
 
 export default function Assinatura() {
   const { t } = useI18n();
@@ -50,6 +63,7 @@ export default function Assinatura() {
   const { user } = useAuth();
   const podeEscolherPlano = user?.role === 'COMPANY_ADMIN';
   const [data, setData] = useState(null);
+  const [canais, setCanais] = useState(null);
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [busy, setBusy] = useState(false);
@@ -58,8 +72,30 @@ export default function Assinatura() {
   function carregar() {
     setError('');
     api.get('/api/assinatura').then(setData).catch((e) => setError(e.message));
+    // Só o Admin/Financeiro chegam a esta página (guardado na rota), por isso
+    // não há problema em pedir sempre — canais que faltam configurar não
+    // aparecem, não travam a página.
+    api.get('/api/assinatura/canais').then(setCanais).catch(() => setCanais({}));
   }
   useEffect(() => { carregar(); }, []);
+
+  async function pagarComGateway(cobrancaId, canal) {
+    let telemovel;
+    if (CANAIS_COM_TELEMOVEL.includes(canal)) {
+      telemovel = window.prompt(t('Número de telemóvel para pedir o pagamento:'));
+      if (!telemovel) return;
+    }
+    setBusy(true); setError(''); setAviso('');
+    try {
+      await api.post(`/api/assinatura/${cobrancaId}/pagar-com`, { canal, telemovel });
+      setAviso(t('Pedido de pagamento enviado para {canal}. Confirme no telemóvel/aplicação — o plano ativa-se automaticamente assim que o pagamento for confirmado.', { canal: NOME_CANAL[canal] || canal }));
+      carregar();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function pedir(plano, aceitaPerdas = false) {
     setBusy(true); setError(''); setAviso('');
@@ -166,6 +202,23 @@ export default function Assinatura() {
             ) : null}
           </div>
 
+          {aberta.status === 'PENDENTE' && podeEscolherPlano && PLANOS_COM_GATEWAY.includes(aberta.planoNovo)
+            && canais && Object.values(canais).some((c) => c.disponivel) ? (
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
+              <p style={{ margin: '0 0 10px', fontSize: 14 }}>
+                <strong>{t('Pagar agora:')}</strong>{' '}
+                {t('o plano ativa-se automaticamente assim que o pagamento for confirmado — sem esperar pela KIXIMA.')}
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                {Object.entries(canais).filter(([, c]) => c.disponivel).map(([canal]) => (
+                  <button key={canal} className="btn btn-accent btn-sm" disabled={busy} onClick={() => pagarComGateway(aberta.id, canal)}>
+                    {t('Pagar com {canal}', { canal: NOME_CANAL[canal] || canal })}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {aberta.status === 'PENDENTE' ? (
             <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
               <p style={{ margin: '0 0 10px', fontSize: 14 }}>
@@ -263,6 +316,7 @@ export default function Assinatura() {
               <th>{t('Referência')}</th>
               <th>{t('Plano')}</th>
               <th>{t('Valor')}</th>
+              <th>{t('Canal')}</th>
               <th>{t('Estado')}</th>
               <th>{t('Confirmada em')}</th>
               <th>{t('Válido até')}</th>
@@ -270,12 +324,13 @@ export default function Assinatura() {
           </thead>
           <tbody>
             {data.historico.length === 0 ? (
-              <tr><td colSpan={6}><EmptyRow>{t('Ainda não há cobranças.')}</EmptyRow></td></tr>
+              <tr><td colSpan={7}><EmptyRow>{t('Ainda não há cobranças.')}</EmptyRow></td></tr>
             ) : data.historico.map((c) => (
               <tr key={c.id}>
                 <td>{c.referencia}</td>
                 <td>{c.planoNovo}</td>
                 <td>{formatUsd(c.valorUsd)}</td>
+                <td>{c.canal === 'TRANSFERENCIA_MANUAL' ? t('Transferência') : (NOME_CANAL[c.canal] || c.canal)}</td>
                 <td><Pill tone={ESTADO_PILL[c.status]}>{ESTADO_TEXTO[c.status]}</Pill></td>
                 <td>{c.confirmadaEm ? formatDate(c.confirmadaEm) : '—'}</td>
                 <td>{c.validoAte ? formatDate(c.validoAte) : '—'}</td>
