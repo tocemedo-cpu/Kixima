@@ -13,6 +13,7 @@
     "seed:catalog": "cross-env LOAD_DEMO_CATALOG=1 node -r dotenv/config prisma/seed.catalog.js",
     "seed:catalog-company": "node -r dotenv/config prisma/seed.catalog-company.js",
     "demo:remove": "node -r dotenv/config scripts/remove-demo-catalog.js",
+    "catalogo:copiar-para-teste": "node -r dotenv/config scripts/copiar-catalogo-producao-teste.js",
     "storage:check": "node -r dotenv/config scripts/storage-check.js",
     "backup": "node -r dotenv/config scripts/backup.js",
     "backup:restore-test": "node -r dotenv/config scripts/restore-test.js",
