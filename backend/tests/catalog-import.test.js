@@ -4,6 +4,7 @@
 // verificadas manualmente (o SheetJS não escreve imagens); aqui cobrimos o
 // caminho de dados com um ficheiro construído em memória.
 const XLSX = require('xlsx');
+const AdmZip = require('adm-zip');
 const { auth, prisma, loginAll } = require('./helpers');
 const importService = require('../src/services/catalogImportService');
 
@@ -18,6 +19,31 @@ function buildXlsxBuffer(rows) {
 }
 
 const HEADER = ['Categoria', 'Produto/Serviço', 'Descrição', 'Tipo', 'UOM', 'Código UNSPSC', 'Título Oficial UNSPSC', 'Segmento UNSPSC', 'Família UNSPSC', 'País de Origem', 'Preço'];
+const HEADER_COM_STOCK_CIDADE = [...HEADER, 'Stock', 'Cidade'];
+
+// O SheetJS (`xlsx`) não escreve desenhos/imagens embebidas — para testar o
+// aviso de desalinhamento (extractImages conta ficheiros em xl/drawings/,
+// sem depender da relação com a folha), injeta-se um drawing.xml + media
+// mínimos diretamente no .xlsx via adm-zip, imitando o que o Excel produz.
+function comImagensFalsas(buffer, quantidade) {
+  const zip = new AdmZip(buffer);
+  const PNG = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    'base64'
+  );
+  let anchors = '';
+  let rels = '';
+  for (let i = 1; i <= quantidade; i++) {
+    anchors += `<xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${i}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:pic><xdr:blipFill><a:blip r:embed="rId${i}"/></xdr:blipFill></xdr:pic></xdr:oneCellAnchor>`;
+    rels += `<Relationship Id="rId${i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${i}.png"/>`;
+    zip.addFile(`xl/media/image${i}.png`, PNG);
+  }
+  const drawingXml = `<?xml version="1.0"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${anchors}</xdr:wsDr>`;
+  const relsXml = `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}</Relationships>`;
+  zip.addFile('xl/drawings/drawing1.xml', Buffer.from(drawingXml));
+  zip.addFile('xl/drawings/_rels/drawing1.xml.rels', Buffer.from(relsXml));
+  return zip.toBuffer();
+}
 
 let planoOriginal;
 
@@ -42,7 +68,17 @@ afterAll(async () => {
   // essa percentagem acima de zero e faziam falhar um teste noutro ficheiro,
   // que não tinha nada a ver com importação nenhuma.
   await prisma.product.deleteMany({
-    where: { supplierId, name: { in: ['Válvula de teste', 'Inspeção de teste'] } },
+    where: {
+      supplierId,
+      name: {
+        in: [
+          'Válvula de teste', 'Inspeção de teste',
+          'Válvula com preço de teste', 'Válvula sem preço de teste',
+          'Bomba com stock de teste', 'Bomba sem stock de teste',
+          'Item com fotos desalinhadas', 'Item com fotos alinhadas',
+        ],
+      },
+    },
   });
   if (planoOriginal) {
     await prisma.company.update({ where: { id: supplierId }, data: { plan: planoOriginal } });
@@ -112,5 +148,59 @@ describe('importCatalog (dados)', () => {
 
     const denied = await auth(tokens.comprador).post('/api/catalog/import').attach('file', buf, 'catalogo.xlsx');
     expect(denied.status).toBe(403);
+  });
+
+  test('conta preços estimados quando a coluna Preço vem vazia', async () => {
+    const buf = buildXlsxBuffer([
+      HEADER,
+      ['Válvulas e Conexões', 'Válvula com preço de teste', 'x', 'Produto', 'un', '', '', '', '', '', '700000'],
+      ['Válvulas e Conexões', 'Válvula sem preço de teste', 'x', 'Produto', 'un', '', '', '', '', '', ''],
+    ]);
+    const res = await importService.importCatalog(buf, supplierId);
+    expect(res.precosEstimados).toBe(1);
+  });
+
+  test('usa as colunas Stock e Cidade quando presentes; conta por omissão quando ausentes', async () => {
+    const buf = buildXlsxBuffer([
+      HEADER_COM_STOCK_CIDADE,
+      ['Bombas e Compressores', 'Bomba com stock de teste', 'x', 'Produto', 'un', '', '', '', '', '', '500000', '17', 'Cabinda'],
+      ['Bombas e Compressores', 'Bomba sem stock de teste', 'x', 'Produto', 'un', '', '', '', '', '', '500000', '', ''],
+    ]);
+    const res = await importService.importCatalog(buf, supplierId);
+    expect(res.stockPorOmissao).toBe(1);
+    expect(res.localizacaoPorOmissao).toBe(1);
+
+    const comColuna = await prisma.product.findFirst({ where: { supplierId, name: 'Bomba com stock de teste' } });
+    expect(comColuna.stockQuantity).toBe(17);
+    expect(comColuna.city).toBe('Cabinda');
+    expect(comColuna.province).toBe('Cabinda');
+
+    const semColuna = await prisma.product.findFirst({ where: { supplierId, name: 'Bomba sem stock de teste' } });
+    expect(semColuna.stockQuantity).toBe(50);
+    expect(semColuna.city).toBe('Luanda');
+  });
+
+  test('avisa quando o número de fotos não bate com o de linhas de dados', async () => {
+    const base = buildXlsxBuffer([
+      HEADER,
+      ['Elétrico, Iluminação e Automação', 'Item com fotos desalinhadas', 'x', 'Produto', 'un', '', '', '', '', '', '400000'],
+    ]);
+    // 1 linha de dados, 2 "fotos" embebidas — desalinhado de propósito.
+    const buf = comImagensFalsas(base, 2);
+    const res = await importService.importCatalog(buf, supplierId);
+    expect(res.warnings).toHaveLength(1);
+    expect(res.warnings[0]).toMatch(/2 imagem/);
+    expect(res.warnings[0]).toMatch(/1 linha/);
+  });
+
+  test('não avisa quando o número de fotos bate com o de linhas', async () => {
+    const base = buildXlsxBuffer([
+      HEADER,
+      ['Elétrico, Iluminação e Automação', 'Item com fotos alinhadas', 'x', 'Produto', 'un', '', '', '', '', '', '400000'],
+    ]);
+    const buf = comImagensFalsas(base, 1);
+    const res = await importService.importCatalog(buf, supplierId);
+    expect(res.warnings).toHaveLength(0);
+    expect(res.withImages).toBe(1);
   });
 });

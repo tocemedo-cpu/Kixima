@@ -1321,6 +1321,9 @@ enum NotificationType {
   PO_CONCLUIDA
   // Correção fiscal de uma fatura — ver creditNoteService.js.
   NOTA_CREDITO_EMITIDA
+  // Stock de um produto cruzou o mínimo definido pelo fornecedor — ver
+  // catalogService.createStockMovement/updateStock.
+  ESTOQUE_BAIXO
 }
 
 model Notification {

@@ -25,6 +25,11 @@ const COLS = {
   familia: ['família unspsc', 'familia unspsc', 'família', 'familia'],
   origem: ['país de origem', 'pais de origem', 'origem', 'proveniência', 'proveniencia', 'país', 'pais', 'country of origin'],
   preco: ['preço', 'preco', 'preço unitário', 'preco unitario', 'preço (aoa)', 'preço unitário (aoa)', 'preco (aoa)'],
+  // Colunas opcionais — quando ausentes, os valores por omissão (ver
+  // importCatalog) continuam a ser usados como antes; quando presentes, são
+  // respeitados em vez de inventados.
+  stock: ['stock', 'estoque', 'quantidade', 'quantidade em stock', 'quantidade em estoque'],
+  cidade: ['cidade', 'localização', 'localizacao', 'localidade'],
 };
 
 // Preço-base por categoria (AOA) quando o Excel não traz coluna de preço.
@@ -136,7 +141,22 @@ async function importCatalog(buffer, supplierId) {
   const images = extractImages(buffer);
   const dataRows = rows.slice(1).filter((r) => r && r[idx.nome] != null && String(r[idx.nome]).trim());
 
-  let created = 0; let updated = 0; let withImages = 0; const errors = [];
+  // O número de fotos embebidas raramente bate certo com o de linhas de
+  // dados quando a folha de imagens foi editada à parte — a associação é por
+  // POSIÇÃO (ver extractImages), por isso um total diferente é sinal de que
+  // a correspondência pode estar desalinhada. Avisa; não bloqueia.
+  const warnings = [];
+  if (images.length && images.length !== dataRows.length) {
+    warnings.push(
+      `O ficheiro tem ${images.length} imagem(ns) mas ${dataRows.length} linha(s) de dados — `
+      + 'as fotos são associadas por posição (ordem na folha), por isso a correspondência pode estar incorreta. '
+      + 'Reveja as fotos publicadas no catálogo.'
+    );
+  }
+
+  let created = 0; let updated = 0; let withImages = 0;
+  let precosEstimados = 0; let stockPorOmissao = 0; let localizacaoPorOmissao = 0;
+  const errors = [];
   for (let i = 0; i < dataRows.length; i++) {
     const r = dataRows[i];
     const excelRow = i + 2; // linha real no Excel (cabeçalho = 1)
@@ -148,7 +168,28 @@ async function importCatalog(buffer, supplierId) {
       const seg2 = ((idx.segmento >= 0 ? String(r[idx.segmento] || '') : '').match(/\d+/) || [''])[0];
       const fam4 = ((idx.familia >= 0 ? String(r[idx.familia] || '') : '').match(/\d+/) || [''])[0];
       const origem = idx.origem >= 0 && r[idx.origem] != null ? String(r[idx.origem]).trim() || null : null;
-      const price = parsePrice(idx.preco >= 0 ? r[idx.preco] : null) ?? defaultPrice(categoria, code);
+      const precoDaFolha = parsePrice(idx.preco >= 0 ? r[idx.preco] : null);
+      const price = precoDaFolha ?? defaultPrice(categoria, code);
+      if (precoDaFolha == null) precosEstimados++;
+
+      // Stock: usa a coluna quando presente e válida; sem ela, os defaults de
+      // sempre (50 unidades para produto, sem stock aplicável a serviço).
+      const stockDaFolha = idx.stock >= 0 ? parsePrice(r[idx.stock]) : null;
+      let stockQuantity;
+      if (isService) {
+        stockQuantity = null;
+      } else if (stockDaFolha != null) {
+        stockQuantity = Math.max(0, Math.round(stockDaFolha));
+      } else {
+        stockQuantity = 50;
+        stockPorOmissao++;
+      }
+
+      // Localização: idem — coluna "Cidade" quando presente, "Luanda" por
+      // omissão (cidade e província juntas, como sempre foi).
+      const cidadeDaFolha = idx.cidade >= 0 && r[idx.cidade] != null ? String(r[idx.cidade]).trim() : '';
+      const cidade = cidadeDaFolha || 'Luanda';
+      if (!cidadeDaFolha) localizacaoPorOmissao++;
 
       let imageUrl;
       const im = images[i];
@@ -183,8 +224,8 @@ async function importCatalog(buffer, supplierId) {
         currency: 'AOA',
         leadTimeDays: isService ? 5 : 15,
         availability: 'Em stock',
-        stockQuantity: isService ? null : 50,
-        city: 'Luanda', province: 'Luanda', country: 'Angola',
+        stockQuantity,
+        city: cidade, province: cidade, country: 'Angola',
         active: true,
         ...(imageUrl ? { imageUrl } : {}),
       };
@@ -197,7 +238,10 @@ async function importCatalog(buffer, supplierId) {
     }
   }
 
-  return { total: dataRows.length, created, updated, withImages, errors };
+  return {
+    total: dataRows.length, created, updated, withImages, errors, warnings,
+    precosEstimados, stockPorOmissao, localizacaoPorOmissao,
+  };
 }
 
 module.exports = { importCatalog, extractImages, parsePrice };

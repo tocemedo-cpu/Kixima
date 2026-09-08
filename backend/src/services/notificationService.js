@@ -425,6 +425,22 @@ const events = {
       channel: 'IN_APP_EMAIL',
     });
   },
+
+  // Stock de um item cruzou o mínimo definido pelo fornecedor — ver
+  // catalogService.createStockMovement/updateStock (só dispara na
+  // TRANSIÇÃO para não repetir o aviso a cada movimento seguinte enquanto o
+  // stock continuar baixo).
+  estoqueBaixo: (product) =>
+    notifyUsersByRole({
+      companyId: product.supplierId,
+      roles: ['FORNECEDOR', 'COMPANY_ADMIN'],
+      type: 'ESTOQUE_BAIXO',
+      title: 'Stock abaixo do mínimo',
+      message: `O produto "${product.name}" está com ${product.stockQuantity ?? 0} unidades em stock, abaixo do mínimo definido (${product.minStock}). Considere repor.`,
+      channel: 'IN_APP',
+      relatedEntityType: 'Product',
+      relatedEntityId: product.id,
+    }),
 };
 
 module.exports = {

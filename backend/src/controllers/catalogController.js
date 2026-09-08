@@ -1,6 +1,7 @@
 const catalogService = require('../services/catalogService');
 const reviewService = require('../services/reviewService');
 const catalogImportService = require('../services/catalogImportService');
+const auditService = require('../services/auditService');
 
 const PRODUCT_DOC_TYPES = ['FICHA_TECNICA', 'DATASHEET', 'MANUAL', 'CATALOGO', 'CERTIFICADO', 'DESENHO_TECNICO'];
 
@@ -46,16 +47,59 @@ async function create(req, res) {
     documents: PRODUCT_DOC_TYPES.flatMap((type) => (files[type] || []).map((file) => ({ type, file }))),
   };
   const product = await catalogService.createProduct(req.user.companyId, req.body, media);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'CATALOGO_PRODUTO_CRIADO',
+    entityType: 'Product',
+    entityId: product.id,
+    entityRef: product.name,
+  });
   res.status(201).json(product);
+}
+
+async function addMedia(req, res) {
+  const files = req.files || {};
+  const media = {
+    gallery: files.gallery || [],
+    documents: PRODUCT_DOC_TYPES.flatMap((type) => (files[type] || []).map((file) => ({ type, file }))),
+  };
+  const product = await catalogService.addProductMedia(req.params.id, req.user.companyId, media);
+  res.json(product);
+}
+
+async function removeImage(req, res) {
+  const result = await catalogService.removeProductImage(req.params.id, req.user.companyId, req.params.imageId);
+  res.json(result);
+}
+
+async function removeDocument(req, res) {
+  const result = await catalogService.removeProductDocument(req.params.id, req.user.companyId, req.params.docId);
+  res.json(result);
 }
 
 async function update(req, res) {
   const product = await catalogService.updateProduct(req.params.id, req.user.companyId, req.body);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'CATALOGO_PRODUTO_ATUALIZADO',
+    entityType: 'Product',
+    entityId: product.id,
+    entityRef: product.name,
+    detail: { camposAlterados: Object.keys(req.body) },
+  });
   res.json(product);
 }
 
 async function updateStock(req, res) {
   const product = await catalogService.updateStock(req.params.id, req.user.companyId, req.body);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'CATALOGO_STOCK_ATUALIZADO',
+    entityType: 'Product',
+    entityId: product.id,
+    entityRef: product.name,
+    detail: { camposAlterados: Object.keys(req.body) },
+  });
   res.json(product);
 }
 
@@ -73,11 +117,25 @@ async function listMovements(req, res) {
 
 async function createMovement(req, res) {
   const movement = await catalogService.createStockMovement(req.user.companyId, req.user.id, req.body);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'CATALOGO_MOVIMENTO_CRIADO',
+    entityType: 'StockMovement',
+    entityId: movement.id,
+    detail: { produtoId: req.body.productId, tipo: req.body.type, quantidade: req.body.quantity },
+  });
   res.status(201).json(movement);
 }
 
 async function deactivate(req, res) {
   const product = await catalogService.deactivateProduct(req.params.id, req.user.companyId);
+  await auditService.recordSafe({
+    actor: auditService.actorFrom(req),
+    action: 'CATALOGO_PRODUTO_REMOVIDO',
+    entityType: 'Product',
+    entityId: product.id,
+    entityRef: product.name,
+  });
   res.json(product);
 }
 
@@ -99,4 +157,7 @@ async function importCatalog(req, res) {
   return res.status(201).json(result);
 }
 
-module.exports = { list, getOne, getBySlug, create, update, updateStock, documents, listMovements, createMovement, listReviews, addReview, deactivate, uploadImage, importCatalog };
+module.exports = {
+  list, getOne, getBySlug, create, update, updateStock, documents, listMovements, createMovement, listReviews,
+  addReview, deactivate, uploadImage, addMedia, removeImage, removeDocument, importCatalog,
+};

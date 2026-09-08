@@ -92,6 +92,12 @@ export const POLICY_STATUS = {
   EXPIRADA: { label: 'Expirada', tone: 'danger' },
 };
 
+// Disponibilidade de um item do catálogo (Product.availability — texto livre
+// na base, mas só estes 3 valores são oferecidos na interface). Único sítio
+// que define a lista — CatalogManage.jsx e Inventory.jsx importam daqui, para
+// nunca divergir entre a página de cadastro e a de inventário.
+export const PRODUCT_AVAILABILITY = ['Em stock', 'Sob encomenda', 'Esgotado'];
+
 // Taxas apresentadas ao COMPRADOR no resumo da cesta.
 //
 // A Taxa KIXIMA não está aqui de propósito: é cobrada ao FORNECEDOR, à parte da

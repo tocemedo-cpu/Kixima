@@ -3,10 +3,11 @@
 // 3 abas — apenas o essencial: Produto (nome, categoria, marca, descrição,
 // unidade), Preço & Disponibilidade e Imagens & Documentos.
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
-import { formatMoney } from '../../domain';
+import { formatMoney, PRODUCT_AVAILABILITY } from '../../domain';
 import ProductCover from '../../components/ProductCover';
 import { Icon } from '../../components/icons';
 import { useI18n } from '../../i18n';
@@ -47,14 +48,50 @@ const TAXONOMY = {
 };
 const CATEGORIES = Object.keys(TAXONOMY);
 const CURRENCIES = ['AOA', 'USD', 'EUR'];
-const AVAILABILITY = ['Em stock', 'Sob encomenda', 'Esgotado'];
 
-// Documentos relevantes para o setor (compliance). Opcionais.
+// Documentos relevantes para o setor (compliance). Opcionais. Os 6 tipos que
+// o backend/schema aceitam (ProductDocType) — antes só 3 apareciam aqui.
 const DOC_TYPES = [
   ['FICHA_TECNICA', 'Ficha Técnica'],
-  ['CERTIFICADO', 'Certificados'],
+  ['DATASHEET', 'Datasheet'],
+  ['MANUAL', 'Manual'],
   ['CATALOGO', 'Catálogo PDF'],
+  ['CERTIFICADO', 'Certificados'],
+  ['DESENHO_TECNICO', 'Desenho Técnico'],
 ];
+
+// Liga o "setor" do UNSPSC (classificação internacional) à categoria O&G
+// livre da KIXIMA — as duas classificações coexistem no formulário sem
+// nenhuma ligação hoje. Aqui só se PRÉ-SUGERE a categoria mais próxima ao
+// escolher um item; o fornecedor pode sempre ajustar (ver pickItem, que só
+// aplica a sugestão se a categoria ainda estiver por preencher).
+const SETOR_TO_CATEGORY = {
+  'Bombas e Compressores': 'Equipamentos Rotativos',
+  'Elevação, Içamento e Rigging': 'Logística & Movimentação',
+  'Elétrico, Iluminação e Automação': 'Elétrica & Energia',
+  'Ferramentas e Equipamento de Oficina': 'Engenharia & Manutenção',
+  'Geração de Energia': 'Equipamentos Rotativos',
+  'Hidráulica e Pneumática': 'Válvulas & Controlo de Fluxo',
+  'Inspeção, Testes e Certificação': 'Inspeção, Ensaios & Certificação',
+  'Instrumentação e Controlo': 'Instrumentação & Automação',
+  'Logística, Transporte e Armazenagem': 'Logística & Movimentação',
+  'Material de Escritório e TI': 'Outros',
+  'Perfuração e Completação': 'Perfuração & Poço',
+  'Produtos Químicos e Fluidos': 'Químicos & Consumíveis',
+  'Segurança e EPI': 'EPI & Segurança',
+  'Serviços Ambientais e Gestão de Resíduos': 'Outros',
+  'Serviços de Engenharia e Manutenção': 'Engenharia & Manutenção',
+  'Tubulares e Acessórios (OCTG)': 'Tubulação & Acessórios',
+  'Válvulas e Conexões': 'Válvulas & Controlo de Fluxo',
+};
+
+// Posição de relevância na pesquisa do marketplace, por plano (ver
+// planService.FEATURES.posicaoNaPesquisa no backend: 0=BASE, 1=CORE, 2=PRO —
+// quanto maior, melhor a posição). Convertido para "1º/2º/3º" para o
+// fornecedor, sem expor o número interno.
+function posicaoOrdinal(rank) {
+  return 3 - (Number(rank) || 0);
+}
 
 const TABS = ['Produto', 'Preço & Disponibilidade', 'Imagens & Documentos'];
 
@@ -100,6 +137,15 @@ export default function CatalogManage() {
   const [docs, setDocs] = useState({});              // { TYPE: File[] }
   const [submitting, setSubmitting] = useState(false);
 
+  // edição de um item já publicado (null = a criar um novo)
+  const [editingId, setEditingId] = useState(null);
+  const [existingImages, setExistingImages] = useState([]); // galeria já publicada
+  const [existingDocs, setExistingDocs] = useState([]);      // documentos já publicados
+
+  // tabela de planos (pública) — usada para o limite de mídia em tempo real e
+  // para o indicador de posição na pesquisa.
+  const [planos, setPlanos] = useState(null);
+
   // gestão da foto do cartão existente (produtos já publicados)
   const [uploadingId, setUploadingId] = useState(null);
   const cardInputs = useRef({});
@@ -108,6 +154,15 @@ export default function CatalogManage() {
     api.get('/api/catalog', { supplierId: user.companyId }).then(setProducts).catch((e) => setError(e));
   }
   useEffect(load, [user.companyId]);
+  useEffect(() => { api.get('/api/planos').then((r) => setPlanos(r.planos)).catch(() => {}); }, []);
+
+  const meuPlano = planos?.find((p) => p.plano === (user.companyPlan || 'BASE')) || null;
+  const limiteImagens = meuPlano ? meuPlano.features.imagensPorItem : null; // null = sem limite (ou ainda a carregar)
+  const limiteDocs = meuPlano ? meuPlano.features.documentosPorItem : null;
+  const totalImagens = (mainImage ? 1 : 0) + gallery.length + (editingId ? existingImages.length : 0);
+  const totalDocs = DOC_TYPES.reduce((n, [type]) => n + (docs[type]?.length || 0), 0) + (editingId ? existingDocs.length : 0);
+  const imagensNoLimite = meuPlano && limiteImagens != null && totalImagens >= limiteImagens;
+  const docsNoLimite = meuPlano && limiteDocs != null && totalDocs >= limiteDocs;
 
   const update = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
@@ -123,6 +178,9 @@ export default function CatalogManage() {
       kind: kindFromTipo(it.tipo),
       measurementUnit: f.measurementUnit || it.uom || '',
       description: f.description || it.descricao || '',
+      // Sugestão automática, só se ainda não houver categoria escolhida —
+      // liga a classificação UNSPSC à taxonomia O&G livre sem impor nada.
+      category: f.category || SETOR_TO_CATEGORY[it.setor] || f.category,
       unspscCode: it.code,
       unspscTitle: it.tituloEN || '',
       unspscSegment: it.segmento,
@@ -144,6 +202,62 @@ export default function CatalogManage() {
     setGallery([]);
     setDocs({});
     setTab(0);
+    setEditingId(null);
+    setExistingImages([]);
+    setExistingDocs([]);
+  }
+
+  // Abre o formulário pré-preenchido para editar um item já publicado. Busca
+  // o produto completo (a listagem do catálogo não traz galeria/documentos).
+  async function startEdit(p) {
+    setError('');
+    setSuccess('');
+    try {
+      const full = await api.get(`/api/catalog/${p.id}`);
+      const it = full.unspscCode ? UNSPSC_ITEMS.find((i) => i.code === full.unspscCode) : null;
+      setSetor(it?.setor || '');
+      setCategoria(it?.categoria || '');
+      setForm({
+        kind: full.kind || 'PRODUTO',
+        unspscCode: full.unspscCode || '', unspscTitle: full.unspscTitle || '',
+        unspscSegment: full.unspscSegment || '', unspscFamily: full.unspscFamily || '', unspscClass: full.unspscClass || '',
+        imageUrl: full.imageUrl || '',
+        name: full.name || '', category: full.category || '', subcategory: full.subcategory || '',
+        brand: full.brand || '', description: full.description || '', measurementUnit: full.measurementUnit || '',
+        countryOfOrigin: full.countryOfOrigin || '',
+        model: full.model || '', keySpec: full.keySpec || '', standard: full.standard || '',
+        warranty: full.warranty || '', incoterm: full.incoterm || '', supplierNotes: full.supplierNotes || '',
+        currency: full.currency || 'AOA', unitPrice: full.unitPrice ?? '', promoPrice: full.promoPrice ?? '',
+        availability: full.availability || 'Em stock', stockQuantity: full.stockQuantity ?? '', leadTimeDays: full.leadTimeDays ?? '',
+      });
+      setEditingId(full.id);
+      setExistingImages(full.images || []);
+      setExistingDocs(full.documents || []);
+      setMainImage(null);
+      setGallery([]);
+      setDocs({});
+      setTab(0);
+      setShowForm(true);
+    } catch (err) {
+      setError(err);
+    }
+  }
+
+  async function handleRemoveExistingImage(imageId) {
+    try {
+      await api.del(`/api/catalog/${editingId}/images/${imageId}`);
+      setExistingImages((imgs) => imgs.filter((i) => i.id !== imageId));
+    } catch (err) {
+      setError(err);
+    }
+  }
+  async function handleRemoveExistingDoc(docId) {
+    try {
+      await api.del(`/api/catalog/${editingId}/documents/${docId}`);
+      setExistingDocs((ds) => ds.filter((d) => d.id !== docId));
+    } catch (err) {
+      setError(err);
+    }
   }
 
   function addMainImage(fileList) {
@@ -180,16 +294,36 @@ export default function CatalogManage() {
     if (!form.description.trim()) { setTab(0); setError(t('Escreva uma descrição curta (aparece nos cartões).')); return; }
     if (!form.unitPrice) { setTab(1); setError(t('Indique o preço unitário.')); return; }
 
-    const fd = new FormData();
-    Object.entries(form).forEach(([k, v]) => { if (v !== '' && v != null) fd.append(k, v); });
-    if (mainImage) fd.append('mainImage', mainImage.file);
-    gallery.forEach((g) => fd.append('gallery', g.file));
-    DOC_TYPES.forEach(([type]) => (docs[type] || []).forEach((file) => fd.append(type, file)));
-
     setSubmitting(true);
     try {
-      await api.postForm('/api/catalog', fd);
-      setSuccess(t('Produto publicado no catálogo com a ficha completa.'));
+      if (editingId) {
+        // Edição: campos de texto/preço/classificação por JSON (PUT); media
+        // nova (se houver) por multipart, à parte — a foto de capa continua a
+        // ir por /:id/image (mesmo endpoint que "Trocar foto" no cartão).
+        const body = {};
+        Object.entries(form).forEach(([k, v]) => { if (v !== '' && v != null) body[k] = v; });
+        await api.put(`/api/catalog/${editingId}`, body);
+
+        const temMediaNova = gallery.length || DOC_TYPES.some(([type]) => (docs[type] || []).length);
+        if (temMediaNova) {
+          const fd = new FormData();
+          gallery.forEach((g) => fd.append('gallery', g.file));
+          DOC_TYPES.forEach(([type]) => (docs[type] || []).forEach((file) => fd.append(type, file)));
+          await api.postForm(`/api/catalog/${editingId}/media`, fd);
+        }
+        if (mainImage) {
+          await api.upload(`/api/catalog/${editingId}/image`, mainImage.file);
+        }
+        setSuccess(t('Alterações guardadas.'));
+      } else {
+        const fd = new FormData();
+        Object.entries(form).forEach(([k, v]) => { if (v !== '' && v != null) fd.append(k, v); });
+        if (mainImage) fd.append('mainImage', mainImage.file);
+        gallery.forEach((g) => fd.append('gallery', g.file));
+        DOC_TYPES.forEach(([type]) => (docs[type] || []).forEach((file) => fd.append(type, file)));
+        await api.postForm('/api/catalog', fd);
+        setSuccess(t('Produto publicado no catálogo com a ficha completa.'));
+      }
       resetForm();
       setShowForm(false);
       load();
@@ -221,14 +355,41 @@ export default function CatalogManage() {
       <PageHeader
         title="Catálogo de Produtos e Serviços"
         subtitle="Publique os seus itens com o essencial — produto, preço e disponibilidade, imagens e documentos."
-        action={<button className="btn btn-accent" onClick={() => { setShowForm((v) => !v); if (showForm) resetForm(); }}>{showForm ? t('Cancelar') : t('+ Novo item')}</button>}
+        action={
+          <div style={{ display: 'flex', gap: 8 }}>
+            {showForm ? (
+              <button type="button" className="btn btn-ghost" onClick={() => { setShowForm(false); resetForm(); }}>{t('Cancelar')}</button>
+            ) : null}
+            <button type="button" className="btn btn-accent" onClick={() => { resetForm(); setShowForm(true); }}>{t('+ Novo item')}</button>
+          </div>
+        }
       />
 
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 
+      {meuPlano ? (
+        <div className="cls-box" style={{ marginBottom: 18 }}>
+          <span className="cls-k">{t('Posição na pesquisa')}</span>
+          <p style={{ margin: '4px 0 0' }}>
+            {t('O seu plano {plano} coloca os seus itens em {pos}º na relevância da pesquisa do marketplace.', {
+              plano: meuPlano.plano, pos: posicaoOrdinal(meuPlano.features.posicaoNaPesquisa),
+            })}
+            {meuPlano.plano !== 'PRO' ? (
+              ` ${t('O plano seguinte melhora essa posição.')}`
+            ) : (
+              ` ${t('É a melhor posição disponível.')}`
+            )}
+          </p>
+          {meuPlano.plano !== 'PRO' ? (
+            <Link to="/planos" className="btn btn-ghost btn-sm" style={{ marginTop: 8 }}>{t('Ver planos')}</Link>
+          ) : null}
+        </div>
+      ) : null}
+
       {showForm && (
         <div className="card card-pad" style={{ marginBottom: 22 }}>
+          {editingId ? <p className="helptext" style={{ marginTop: 0 }}>{t('A editar: {nome}', { nome: form.name })}</p> : null}
           <div className="tabs">
             {TABS.map((tabLabel, i) => (
               <button key={tabLabel} type="button" className={`tab ${tab === i ? 'tab-active' : ''}`} onClick={() => setTab(i)}>
@@ -380,7 +541,7 @@ export default function CatalogManage() {
                 <Field label={t('Disponibilidade')}>
                   {(id) => (<>
                     <select id={id} value={form.availability} onChange={(e) => update('availability', e.target.value)}>
-                      {AVAILABILITY.map((a) => <option key={a} value={a}>{t(a)}</option>)}
+                      {PRODUCT_AVAILABILITY.map((a) => <option key={a} value={a}>{t(a)}</option>)}
                     </select>
                   </>)}
                 </Field>
@@ -419,13 +580,40 @@ export default function CatalogManage() {
 
             {/* ABA 3 — Imagens & Documentos */}
             <div className="tab-panel" style={{ display: tab === 2 ? 'block' : 'none' }}>
-              <label className="reg-section" style={{ display: 'block' }}>{t('Imagem Principal')}</label>
-              <Dropzone onFiles={addMainImage} hint={t('Arraste a imagem principal ou clique para escolher')}>
+              {editingId && form.imageUrl ? (
+                <>
+                  <label className="reg-section" style={{ display: 'block' }}>{t('Imagem principal atual')}</label>
+                  <img src={form.imageUrl} alt={form.name} className="dz-thumb" style={{ marginBottom: 12 }} />
+                </>
+              ) : null}
+              <label className="reg-section" style={{ display: 'block' }}>{editingId ? t('Substituir imagem principal') : t('Imagem Principal')}</label>
+              <Dropzone onFiles={addMainImage} hint={editingId ? t('Arraste uma nova imagem para substituir a atual') : t('Arraste a imagem principal ou clique para escolher')}>
                 {mainImage ? <img src={mainImage.preview} alt={t('principal')} className="dz-thumb" /> : null}
               </Dropzone>
 
-              <label className="reg-section" style={{ display: 'block', marginTop: 16 }}>{t('Galeria')}</label>
-              <Dropzone multiple onFiles={addGallery} hint={t('Arraste várias imagens ou clique para escolher')} />
+              {editingId && existingImages.filter((img) => !img.isPrimary).length > 0 ? (
+                <>
+                  <label className="reg-section" style={{ display: 'block', marginTop: 16 }}>{t('Galeria atual')}</label>
+                  <div className="dz-grid">
+                    {existingImages.filter((img) => !img.isPrimary).map((img) => (
+                      <div key={img.id} className="dz-item">
+                        <img src={img.url} alt="" />
+                        <button type="button" className="dz-remove" onClick={() => handleRemoveExistingImage(img.id)} aria-label={t('Remover')}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+
+              <label className="reg-section" style={{ display: 'block', marginTop: 16 }}>{editingId ? t('Acrescentar à galeria') : t('Galeria')}</label>
+              <Dropzone multiple disabled={imagensNoLimite} onFiles={addGallery} hint={t('Arraste várias imagens ou clique para escolher')} />
+              {meuPlano && limiteImagens != null ? (
+                <p className="helptext" style={{ marginTop: 4 }}>
+                  {imagensNoLimite
+                    ? t('{n} de {max} imagens do plano {plano} — limite atingido (imagem principal + galeria).', { n: totalImagens, max: limiteImagens, plano: meuPlano.plano })
+                    : t('{n} de {max} imagens do plano {plano} (imagem principal + galeria).', { n: totalImagens, max: limiteImagens, plano: meuPlano.plano })}
+                </p>
+              ) : null}
               {gallery.length > 0 && (
                 <div className="dz-grid">
                   {gallery.map((g, i) => (
@@ -437,12 +625,32 @@ export default function CatalogManage() {
                 </div>
               )}
 
-              <label className="reg-section" style={{ display: 'block', marginTop: 16 }}>{t('Documentos')}</label>
+              {editingId && existingDocs.length > 0 ? (
+                <>
+                  <label className="reg-section" style={{ display: 'block', marginTop: 16 }}>{t('Documentos atuais')}</label>
+                  <ul className="doc-chips">
+                    {existingDocs.map((d) => (
+                      <li key={d.id}><Icon name="invoice" size={13} /> {d.originalName}
+                        <button type="button" onClick={() => handleRemoveExistingDoc(d.id)} aria-label={t('Remover')}>×</button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+
+              <label className="reg-section" style={{ display: 'block', marginTop: 16 }}>{editingId ? t('Acrescentar documentos') : t('Documentos')}</label>
               <p className="helptext" style={{ marginTop: 0 }}>{t('PDF ou imagem, até 15 MB cada. Opcional — pode anexar vários por tipo.')}</p>
+              {meuPlano && limiteDocs != null ? (
+                <p className="helptext" style={{ marginTop: 0 }}>
+                  {docsNoLimite
+                    ? t('{n} de {max} documentos do plano {plano} — limite atingido.', { n: totalDocs, max: limiteDocs, plano: meuPlano.plano })
+                    : t('{n} de {max} documentos do plano {plano}.', { n: totalDocs, max: limiteDocs, plano: meuPlano.plano })}
+                </p>
+              ) : null}
               {DOC_TYPES.map(([type, label]) => (
                 <Field label={t(label)} key={type}>
                   {(id) => (<>
-                    <input id={id} type="file" multiple accept="application/pdf,image/*" onChange={(e) => { addDocs(type, e.target.files); e.target.value = ''; }} />
+                    <input id={id} type="file" multiple disabled={docsNoLimite} accept="application/pdf,image/*" onChange={(e) => { addDocs(type, e.target.files); e.target.value = ''; }} />
                     {(docs[type] || []).length > 0 && (
                       <ul className="doc-chips">
                         {docs[type].map((f, i) => (
@@ -465,7 +673,7 @@ export default function CatalogManage() {
                   : null}
               </div>
               <button className="btn btn-accent" type="submit" disabled={submitting}>
-                {submitting ? t('A publicar…') : t('Publicar produto')}
+                {submitting ? t('A guardar…') : editingId ? t('Guardar alterações') : t('Publicar produto')}
               </button>
             </div>
           </form>
@@ -511,6 +719,7 @@ export default function CatalogManage() {
                   {p.leadTimeDays ? <span className="mk-lead">{t('Prazo {n} dias', { n: p.leadTimeDays })}</span> : null}
                 </div>
                 <div className="mk-actions">
+                  <button className="btn btn-ghost btn-sm" onClick={() => startEdit(p)}>{t('Editar')}</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => handleDeactivate(p.id)}>{t('Remover')}</button>
                 </div>
               </div>
@@ -523,19 +732,21 @@ export default function CatalogManage() {
   );
 }
 
-// Área de arrastar/soltar + clique. Chama onFiles(FileList).
-function Dropzone({ onFiles, hint, multiple, children }) {
+// Área de arrastar/soltar + clique. Chama onFiles(FileList). `disabled`
+// desliga clique/arraste (usado ao atingir o limite de imagens do plano).
+function Dropzone({ onFiles, hint, multiple, children, disabled }) {
   const inputRef = useRef(null);
   const [over, setOver] = useState(false);
   return (
     <div
       className={`dropzone ${over ? 'dropzone-over' : ''}`}
+      style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
       onClick={() => inputRef.current?.click()}
       onDragOver={(e) => { e.preventDefault(); setOver(true); }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { e.preventDefault(); setOver(false); if (e.dataTransfer.files?.length) onFiles(e.dataTransfer.files); }}
     >
-      <input ref={inputRef} type="file" accept="image/*" multiple={multiple} style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.length) onFiles(e.target.files); e.target.value = ''; }} />
+      <input ref={inputRef} type="file" accept="image/*" multiple={multiple} disabled={disabled} style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.length) onFiles(e.target.files); e.target.value = ''; }} />
       {children}
       <div className="dz-hint"><Icon name="catalog" size={16} /> {hint}</div>
     </div>

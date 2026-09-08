@@ -9,8 +9,8 @@ import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner, StatCard } from '../../components/Common';
 import Badge from '../../components/Badge';
 import { useI18n } from '../../i18n';
+import { PRODUCT_AVAILABILITY } from '../../domain';
 
-const AVAILABILITY = ['Em stock', 'Sob encomenda', 'Esgotado'];
 const isLow = (p) => p.stockQuantity != null && p.minStock != null && p.stockQuantity <= p.minStock;
 
 export default function Inventory() {
@@ -109,7 +109,7 @@ export default function Inventory() {
                         <td><input type="number" min="0" style={{ width: 80 }} value={draft.minStock} onChange={(e) => setDraft((d) => ({ ...d, minStock: e.target.value }))} /></td>
                         <td>
                           <select aria-label={t('Disponibilidade')} value={draft.availability} onChange={(e) => setDraft((d) => ({ ...d, availability: e.target.value }))}>
-                            {AVAILABILITY.map((a) => <option key={a} value={a}>{t(a)}</option>)}
+                            {PRODUCT_AVAILABILITY.map((a) => <option key={a} value={a}>{t(a)}</option>)}
                           </select>
                         </td>
                         <td style={{ whiteSpace: 'nowrap' }}>

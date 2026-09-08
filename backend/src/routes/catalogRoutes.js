@@ -24,6 +24,18 @@ const productMedia = uploadProductMedia.fields([
   { name: 'DESENHO_TECNICO', maxCount: 5 },
 ]);
 
+// Acrescentar media a um item já publicado — sem mainImage: a foto de capa
+// continua a trocar-se só por /:id/image.
+const productMediaAppend = uploadProductMedia.fields([
+  { name: 'gallery', maxCount: 10 },
+  { name: 'FICHA_TECNICA', maxCount: 5 },
+  { name: 'DATASHEET', maxCount: 5 },
+  { name: 'MANUAL', maxCount: 5 },
+  { name: 'CATALOGO', maxCount: 5 },
+  { name: 'CERTIFICADO', maxCount: 5 },
+  { name: 'DESENHO_TECNICO', maxCount: 5 },
+]);
+
 router.use(authenticate);
 
 router.get('/', catalogController.list);
@@ -78,6 +90,10 @@ router.post('/', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), productMedia, valid
 router.put('/:id', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), validate(updateProductSchema), catalogController.update);
 router.patch('/:id/stock', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), validate(stockUpdateSchema), catalogController.updateStock);
 router.post('/:id/image', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), upload.single('image'), catalogController.uploadImage);
+// Acrescentar/remover galeria e documentos de um item já publicado (edição).
+router.post('/:id/media', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), productMediaAppend, catalogController.addMedia);
+router.delete('/:id/images/:imageId', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogController.removeImage);
+router.delete('/:id/documents/:docId', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogController.removeDocument);
 router.delete('/:id', requireRole('FORNECEDOR', 'COMPANY_ADMIN'), catalogController.deactivate);
 
 module.exports = router;

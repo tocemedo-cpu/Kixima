@@ -47,4 +47,20 @@ describe('Kits', () => {
     const res = await auth(fornecedorToken).post('/api/kits').send({ name: 'Kit Inválido', items: [{ productId: other.id, quantity: 1 }] });
     expect(res.status).toBe(400);
   });
+
+  test('criar e remover um kit fica no trilho de auditoria', async () => {
+    const criado = await auth(fornecedorToken).post('/api/kits').send({
+      name: 'Kit Auditado', items: [{ productId: p1.id, quantity: 1 }],
+    });
+    expect(criado.status).toBe(201);
+    createdKitIds.push(criado.body.id);
+    const logCriado = await prisma.auditLog.findFirst({ where: { action: 'CATALOGO_KIT_CRIADO', entityId: criado.body.id } });
+    expect(logCriado).toBeTruthy();
+    expect(logCriado.entityRef).toBe('Kit Auditado');
+
+    const removido = await auth(fornecedorToken).del(`/api/kits/${criado.body.id}`);
+    expect(removido.status).toBe(200);
+    const logRemovido = await prisma.auditLog.findFirst({ where: { action: 'CATALOGO_KIT_REMOVIDO', entityId: criado.body.id } });
+    expect(logRemovido).toBeTruthy();
+  });
 });

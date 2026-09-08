@@ -39,7 +39,7 @@ async function authenticate(req, res, next) {
 
   const user = await prisma.user.findUnique({
     where: { id: payload.sub },
-    include: { company: { select: { type: true } } },
+    include: { company: { select: { type: true, plan: true } } },
   });
   if (!user || !user.active) {
     throw new UnauthorizedError('Utilizador inválido ou inativo.');
@@ -61,6 +61,11 @@ async function authenticate(req, res, next) {
     // negócio (ex.: Financeiro numa fornecedora vê "recebimentos", não "faturas
     // a pagar").
     companyType: user.company?.type ?? null,
+    // Plano da empresa (BASE/CORE/PRO/BASICO) — usado no lado do cliente para
+    // pré-visualizar limites do plano (mídia por item, pesquisa) sem ter de
+    // esperar pelo erro 403 do backend. Ver planosRoutes.js para a tabela
+    // pública de funcionalidades por plano.
+    companyPlan: user.company?.plan ?? null,
     approvalCap: user.approvalCap,
     name: user.name,
     email: user.email,
