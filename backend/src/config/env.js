@@ -178,6 +178,27 @@ const config = {
     // Atribuído pela AGT ao programa, no fim do processo de certificação.
     certificadoAgt: process.env.KIXIMA_CERTIFICADO_AGT || '',
   },
+
+  // Payload de submissão AGT (e-Fatura, schema v1.2) — assinatura JWS/RS256.
+  // Distinto de `faturacao` acima: aquele identifica a KIXIMA no SAF-T
+  // (exportação manual); isto assina o payload JSON que provaria a origem do
+  // documento perante a AGT. Sem a chave e o número de validação REAIS, o
+  // agtSigningService recusa-se a assinar — ver a nota "RECUSA-SE A FINGIR"
+  // em multicaixaService.js, o mesmo princípio aplicado aqui.
+  agt: {
+    // A chave privada vive em Base64 na variável de ambiente (um PEM tem
+    // quebras de linha, que a maioria dos painéis de variáveis de ambiente
+    // não preserva de forma fiável) — decodificada uma única vez aqui.
+    jwsPrivateKeyPem: process.env.AGT_JWS_PRIVATE_KEY_BASE64
+      ? Buffer.from(process.env.AGT_JWS_PRIVATE_KEY_BASE64, 'base64').toString('utf8')
+      : '',
+    softwareId: process.env.AGT_SOFTWARE_ID || 'KIXIMA',
+    softwareVersion: process.env.AGT_SOFTWARE_VERSION || process.env.npm_package_version || '1.0',
+    // Atribuído pela AGT ao software, no fim da certificação (formato
+    // "FE/NN/AAAA/AGT"). Sem ele não há payload assinado — nunca um valor
+    // inventado num documento que se apresenta como fiscalmente válido.
+    softwareValidationNumber: process.env.AGT_SOFTWARE_VALIDATION_NUMBER || '',
+  },
   versao: process.env.npm_package_version || '1.0',
 };
 

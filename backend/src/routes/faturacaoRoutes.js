@@ -16,6 +16,7 @@ const { FATURACAO } = require('../utils/adminAreas');
 const faturacaoService = require('../services/faturacaoService');
 const saftService = require('../services/saftService');
 const metricasService = require('../services/metricasService');
+const agtPayloadService = require('../services/agtPayloadService');
 
 const router = express.Router();
 router.use(authenticate);
@@ -67,6 +68,21 @@ router.get(
     const supplierCompanyId = resolverEmpresaFornecedora(req);
     const { resumo } = await saftService.gerar({ de: req.query.de, ate: req.query.ate, supplierCompanyId });
     res.json(resumo);
+  },
+);
+
+// Payload de submissão AGT (e-Fatura, schema v1.2) — FT (fatura), NC (nota de
+// crédito) ou RC (recibo). Mesma posse que o SAF-T: o Fornecedor só pede o
+// payload dos SEUS documentos; o Admin do Sistema tem de indicar de qual
+// empresa. Devolve o JSON já assinado (ver agtPayloadService.js) — não
+// submete a nada, só gera e assina.
+router.get(
+  '/agt-payload/:tipo/:id',
+  requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'ADMIN_SISTEMA'),
+  requirePermission(FATURACAO),
+  async (req, res) => {
+    const supplierCompanyId = resolverEmpresaFornecedora(req);
+    res.json(await agtPayloadService.construirPayload(req.params.tipo.toUpperCase(), req.params.id, supplierCompanyId));
   },
 );
 

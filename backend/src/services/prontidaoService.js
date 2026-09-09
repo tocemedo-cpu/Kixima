@@ -581,6 +581,17 @@ async function verFaturacao() {
       detalhe: 'Ainda não atribuído.',
       acao: 'Sai do processo de certificação junto da AGT. Fica vazio até existir — um número de certificado inventado num ficheiro fiscal é uma declaração falsa.' });
 
+  // Assinatura JWS do payload de submissão (e-Fatura) — distinta do
+  // certificado do programa acima: aquele identifica o PROGRAMA perante a
+  // AGT, isto assina cada documento. Ver agtSigningService.js.
+  const agtSigningService = require('./agtSigningService');
+  const assinatura = agtSigningService.estado();
+  checks.push(assinatura.disponivel
+    ? { id: 'agt-assinatura', titulo: 'Assinatura JWS do payload de submissão (AGT)', estado: OK, detalhe: 'Configurada.' }
+    : { id: 'agt-assinatura', titulo: 'Assinatura JWS do payload de submissão (AGT)', estado: AVISO,
+      detalhe: assinatura.nota,
+      acao: `Requer certificação e chave privada reais da AGT. Em falta: ${assinatura.emFalta.join(', ')}. Sem isto o payload não é assinado — nunca uma assinatura simulada.` });
+
   return checks;
 }
 
