@@ -20,6 +20,18 @@ const agtSigningService = require('./agtSigningService');
 
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
+// Placeholder que a própria AGT documenta para comprador sem NIF
+// identificado ("poderá ser utilizado o valor '999999999'" — spec DS.120,
+// 4.1.6, linha customerTaxID). A tabela da spec só o associa explicitamente
+// a compradores domésticos, mas o validador real da AGT devolveu
+// "customerTaxID: é obrigatório" também para um documento de comprador
+// ESTRANGEIRO sem NIF — ou seja, na prática o campo é sempre obrigatório,
+// apesar de a tabela impressa o marcar como opcional ("N") nesse caso. O
+// comportamento real do validador é a fonte de verdade aqui, não a leitura
+// da tabela; por isso usa-se o mesmo placeholder já sancionado pela AGT
+// (nunca um valor inventado) em qualquer cenário sem NIF, doméstico ou não.
+const CUSTOMER_TAX_ID_DESCONHECIDO = '999999999';
+
 // Regra de arredondamento de imposto da própria spec (DS.120, 4.1.6,
 // "taxContribution"): sempre POR EXCESSO ao cêntimo, nunca ao mais próximo.
 // Testado contra os 3 exemplos da própria tabela da spec:
@@ -63,13 +75,13 @@ function totaisDeLinhas(linhas) {
  * porque é esse o objetivo aqui: exercitar cenários fora do que o KIXIMA
  * gera sozinho.
  *
- * `cliente.taxId` pode vir por preencher (comprador estrangeiro sem NIF —
- * o campo é opcional na spec, "N"; ao contrário do comprador doméstico sem
- * identificação, não há nenhum valor de substituição documentado para este
- * caso, por isso fica mesmo por preencher em vez de se inventar um).
+ * `cliente.taxId` pode vir por preencher (comprador sem NIF identificado,
+ * doméstico ou estrangeiro) — cai no placeholder que a própria AGT
+ * documenta (`CUSTOMER_TAX_ID_DESCONHECIDO`), confirmado obrigatório pelo
+ * validador real mesmo quando a tabela da spec o marcava "N" nalguns casos.
  */
 function construirDocumento({ documentType, documentNo, taxRegistrationNumber, documentDate, cliente, linhas, withholdingTaxList = [] }) {
-  const customerTaxID = cliente.taxId;
+  const customerTaxID = cliente.taxId || CUSTOMER_TAX_ID_DESCONHECIDO;
   const customerCountry = cliente.country;
   const companyName = cliente.name;
   const documentTotals = totaisDeLinhas(linhas);

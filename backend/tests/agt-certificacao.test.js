@@ -68,14 +68,14 @@ describe('construirDocumento', () => {
     });
   });
 
-  test('cliente sem taxId (comprador estrangeiro sem NIF) fica sem customerTaxID no documento e na assinatura — nunca um valor inventado', () => {
+  test('cliente sem taxId (estrangeiro ou doméstico sem NIF) usa o placeholder "999999999" que a AGT documenta — o validador real rejeita o campo em falta mesmo para estrangeiros', () => {
     const doc = agtCertificacaoService.construirDocumento({
       documentType: 'FR', documentNo: 'FR TESTE.2026/0000002', taxRegistrationNumber: '5001636863', documentDate: '2026-01-01',
       cliente: { country: 'PT', name: 'Cliente Estrangeiro' }, linhas,
     });
-    expect(doc.customerTaxID).toBeUndefined();
+    expect(doc.customerTaxID).toBe('999999999');
     const { payload } = verificarJWS(doc.jwsDocumentSignature);
-    expect(payload).not.toHaveProperty('customerTaxID');
+    expect(payload.customerTaxID).toBe('999999999');
   });
 });
 

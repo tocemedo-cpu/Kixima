@@ -92,9 +92,11 @@ const doc3Linhas = [
 ];
 
 // --- Documento 4: comprador estrangeiro, sem NIF ---------------------------
-// Mesma isenção de exportação; customerTaxID fica por preencher — o "999999999"
-// da spec é só para domésticos sem identificação (secção 4.1.6), não há
-// substituto documentado para estrangeiro sem NIF.
+// Mesma isenção de exportação. customerTaxID não é passado (cliente.taxId
+// fica por preencher) — agtCertificacaoService.construirDocumento() cai
+// então no placeholder "999999999" que a AGT documenta, confirmado
+// obrigatório pelo validador real mesmo para comprador estrangeiro (a
+// tabela da spec marcava-o "N" só para este caso; o validador não).
 const doc4Linhas = [
   linhaIVA({ lineNumber: 1, productCode: 'PROD-EXP-02', descricao: 'Bem exportado para cliente estrangeiro sem NIF identificado', quantity: 2, unitPrice: 400, taxCode: 'ISE', taxPercentage: 0, taxExemptionCode: 'M30' }),
 ];
