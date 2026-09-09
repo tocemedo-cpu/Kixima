@@ -45,6 +45,11 @@ function paisISO(nome) {
   return PAIS_ISO[nome] || nome;
 }
 
+// Placeholder sancionado pela própria AGT para comprador doméstico sem NIF
+// identificado ("poderá ser utilizado o valor '999999999'" — spec oficial,
+// 4.1.6, linha customerTaxID) — não é um valor inventado por nós.
+const CUSTOMER_TAX_ID_DESCONHECIDO = '999999999';
+
 function withholdingListDe(valor) {
   const v = round2(valor || 0);
   if (v <= 0) return [];
@@ -70,12 +75,16 @@ function clienteDe(documentoComPoOuContrato) {
 /**
  * Monta o objeto comum a FT/NC/RC dentro de `documents[]` — envelope de
  * campos e assinatura partilhados; só `lines`/`documentTotals`/
- * `withholdingTaxList` variam por tipo (recebidos já prontos).
+ * `withholdingTaxList`/`paymentReceipt` variam por tipo (recebidos já
+ * prontos). `paymentReceipt` só é passado pelo RC — nos outros tipos fica
+ * `undefined`, o que o `JSON.stringify` (aqui e no `res.json()` da rota) omite
+ * do JSON final, tal como a spec exige ("não preenchido para os demais
+ * tipos", 4.1.6) — nunca `null`.
  */
-function montarDocumentoComum({ documentType, documentNo, dataDocumento, dataCriacao, taxRegistrationNumber, cliente, linhas, documentTotals, withholdingTaxList }) {
+function montarDocumentoComum({ documentType, documentNo, dataDocumento, dataCriacao, taxRegistrationNumber, cliente, linhas, documentTotals, withholdingTaxList, paymentReceipt }) {
   const documentDate = new Date(dataDocumento || dataCriacao || Date.now()).toISOString().slice(0, 10);
   const systemEntryDate = new Date(dataCriacao || dataDocumento || Date.now()).toISOString();
-  const customerTaxID = cliente?.taxId || 'DESCONHECIDO';
+  const customerTaxID = cliente?.taxId || CUSTOMER_TAX_ID_DESCONHECIDO;
   const customerCountry = paisISO(cliente?.country);
   const companyName = cliente?.name || 'Desconhecido';
 
@@ -83,7 +92,7 @@ function montarDocumentoComum({ documentType, documentNo, dataDocumento, dataCri
     documentNo,
     documentStatus: 'N',
     jwsDocumentSignature: agtSigningService.assinarDocumento({
-      documentNo, taxRegistrationNumber, documentType, documentDate, customerTaxID, customerCountry, companyName,
+      documentNo, taxRegistrationNumber, documentType, documentDate, customerTaxID, customerCountry, companyName, documentTotals,
     }),
     documentDate,
     documentType,
@@ -92,7 +101,7 @@ function montarDocumentoComum({ documentType, documentNo, dataDocumento, dataCri
     customerCountry,
     companyName,
     lines: linhas,
-    paymentReceipt: null,
+    paymentReceipt,
     documentTotals,
     withholdingTaxList,
   };
@@ -188,9 +197,15 @@ function documentoDeNotaCredito(creditNote, fornecedorTaxId) {
 
 // RC (recibo) quita uma fatura — sem linhas de produto próprias; os totais
 // são os da fatura que liquida (o valor bruto é o efetivamente pago).
+// `paymentReceipt` é obrigatório neste tipo (spec oficial, 4.1.6): aponta
+// para o documento pago (`originatingON`/`documentDate` da FT, valor sem
+// impostos em `creditAmount`) — é este campo, não `lines`, que liga o recibo
+// à fatura que quita.
 function documentoDeRecibo(payment, fornecedorTaxId) {
   const invoice = payment.invoice;
   const cliente = clienteDe(invoice);
+  const faturaNo = numeroDocumento('FT', invoice);
+  const faturaData = new Date(invoice.assinadaEm || invoice.createdAt).toISOString().slice(0, 10);
 
   return montarDocumentoComum({
     documentType: 'RC',
@@ -200,6 +215,13 @@ function documentoDeRecibo(payment, fornecedorTaxId) {
     taxRegistrationNumber: fornecedorTaxId,
     cliente,
     linhas: [],
+    paymentReceipt: {
+      sourceDocuments: [{
+        lineNo: 1,
+        sourceDocumentID: { originatingON: faturaNo, documentDate: faturaData },
+        creditAmount: Number(invoice.netAmount || 0),
+      }],
+    },
     documentTotals: {
       taxPayable: Number(invoice.taxAmount || 0),
       netTotal: Number(invoice.netAmount || 0),
@@ -227,7 +249,7 @@ function envelope(taxRegistrationNumber, documento) {
     submissionUUID: crypto.randomUUID(),
     taxRegistrationNumber,
     submissionTimeStamp: new Date().toISOString(),
-    softwareInfo: agtSigningService.construirSoftwareInfo(taxRegistrationNumber),
+    softwareInfo: agtSigningService.construirSoftwareInfo(),
     numberOfEntries: 1,
     documents: [documento],
   };

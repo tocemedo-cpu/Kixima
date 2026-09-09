@@ -49,7 +49,7 @@ describe('agtSigningService sem configuração', () => {
   });
 
   test('construirSoftwareInfo() recusa-se a assinar', () => {
-    expect(() => agtSigningService.construirSoftwareInfo('AO123')).toThrow(/não está configurada/);
+    expect(() => agtSigningService.construirSoftwareInfo()).toThrow(/não está configurada/);
   });
 
   test('estado() reporta indisponível, para o painel de Prontidão', () => {

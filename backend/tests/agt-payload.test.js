@@ -205,9 +205,14 @@ describe('construirPayload — FT (fatura)', () => {
     expect(doc.lines[0].taxes[0]).toMatchObject({ taxType: 'IVA', taxCountryRegion: 'AO', taxCode: 'NOR', taxPercentage: 14, taxContribution: 140 });
     expect(doc.documentTotals).toEqual({ taxPayable: 140, netTotal: 1000, grossTotal: 1140 });
     expect(doc.withholdingTaxList).toEqual([]);
+    // paymentReceipt "não é preenchido para os demais tipos de documentos de
+    // facturação" (spec oficial 4.1.6) — fica undefined aqui (o objeto JS),
+    // e a verificação de que a CHAVE desaparece do JSON final (não fica
+    // null) está no teste do endpoint HTTP, abaixo.
+    expect(doc.paymentReceipt).toBeUndefined();
   });
 
-  test('jwsDocumentSignature verifica com a chave pública, sobre exatamente os 7 campos esperados', async () => {
+  test('jwsDocumentSignature verifica com a chave pública, sobre exatamente os 8 campos esperados (spec oficial AGT/SETIC-FP 4.1.6)', async () => {
     const payload = await agtPayloadService.construirPayload('FT', invoice.id, fornecedorId);
     const doc = payload.documents[0];
     const { ok, header, payload: assinado } = verificarJWS(doc.jwsDocumentSignature);
@@ -216,14 +221,16 @@ describe('construirPayload — FT (fatura)', () => {
     expect(assinado).toEqual({
       documentNo: doc.documentNo, taxRegistrationNumber: fornecedorTaxId, documentType: 'FT',
       documentDate: doc.documentDate, customerTaxID: doc.customerTaxID, customerCountry: doc.customerCountry, companyName: doc.companyName,
+      documentTotals: doc.documentTotals,
     });
   });
 
-  test('softwareInfo traz o número de validação e uma jwsSoftwareSignature verificável', async () => {
+  test('softwareInfo traz o número de validação e uma jwsSoftwareSignature verificável sobre só os 3 campos de softwareInfoDetail', async () => {
     const payload = await agtPayloadService.construirPayload('FT', invoice.id, fornecedorId);
     expect(payload.softwareInfo.softwareInfoDetail).toMatchObject({ productId: 'KIXIMA', softwareValidationNumber: 'FE/00/2025/AGT-TESTE' });
-    const { ok } = verificarJWS(payload.softwareInfo.jwsSoftwareSignature);
+    const { ok, payload: assinado } = verificarJWS(payload.softwareInfo.jwsSoftwareSignature);
     expect(ok).toBe(true);
+    expect(assinado).toEqual(payload.softwareInfo.softwareInfoDetail);
   });
 
   test('com retenção na fatura original, withholdingTaxList sai preenchida (IRT)', async () => {
@@ -263,12 +270,27 @@ describe('construirPayload — NC (nota de crédito)', () => {
 });
 
 describe('construirPayload — RC (recibo)', () => {
-  test('sem linhas, totais herdados da fatura quitada', async () => {
+  test('sem linhas, totais herdados da fatura quitada, paymentReceipt aponta para a fatura paga', async () => {
     const payload = await agtPayloadService.construirPayload('RC', payment.id, fornecedorId);
     const doc = payload.documents[0];
+    const numeroFatura = faturacaoService.numeroDocumentoAGT({
+      serie: invoice.serie, ano: invoice.assinadaEm.getFullYear(), numeroNaSerie: invoice.numeroNaSerie,
+    });
     expect(doc.documentType).toBe('RC');
     expect(doc.lines).toEqual([]);
     expect(doc.documentTotals).toEqual({ taxPayable: 140, netTotal: 1000, grossTotal: 1140 });
+    // paymentReceipt é obrigatório no RC (spec oficial 4.1.6) — liga o
+    // recibo à fatura paga, não as "lines" (que ficam vazias).
+    expect(doc.paymentReceipt).toEqual({
+      sourceDocuments: [{
+        lineNo: 1,
+        sourceDocumentID: {
+          originatingON: `FT ${numeroFatura}`,
+          documentDate: invoice.assinadaEm.toISOString().slice(0, 10),
+        },
+        creditAmount: 1000,
+      }],
+    });
     const { ok } = verificarJWS(doc.jwsDocumentSignature);
     expect(ok).toBe(true);
   });
@@ -298,6 +320,10 @@ describe('Posse', () => {
     expect(res.status).toBe(200);
     expect(res.body.documents[0].documentType).toBe('FT');
     expect(res.body.taxRegistrationNumber).toBe(fornecedorTaxId);
+    // No JSON de verdade (depois de passar por res.json()/JSON.stringify),
+    // "paymentReceipt" não é só null num tipo que não é RC — a chave
+    // desaparece por completo, tal como a spec exige.
+    expect(Object.prototype.hasOwnProperty.call(res.body.documents[0], 'paymentReceipt')).toBe(false);
   });
 });
 

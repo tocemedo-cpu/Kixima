@@ -13,12 +13,16 @@
 // é pior do que recusar-se a assinar.
 //
 // O QUE É UM JWS AQUI. Compacto de 3 partes (header.payload.assinatura),
-// cabeçalho fixo {"typ":"JOSE","alg":"RS256"} — confirmado por descodificação
-// de 3 amostras reais fornecidas (FT, FR, NC). Não se usa a biblioteca
-// `jsonwebtoken` (já usada para as sessões de utilizador): ela pressupõe a
-// forma de um JWT e injeta campos (`iat`) que não pertencem a este payload —
-// usa-se `crypto` nativo, o mesmo que já assina a cadeia de integridade local
-// (ver faturacaoService.calcularHash).
+// cabeçalho fixo {"typ":"JOSE","alg":"RS256"}. Os campos assinados em cada
+// nível (software vs. documento) vêm da especificação técnica oficial da AGT
+// (SETIC-FP, DS.120 "FE — Facturação Eletrónica", secção 4.1.6) — não das 3
+// amostras JSON fornecidas antes, cujo `jwsSoftwareSignature`/
+// `jwsDocumentSignature` afinal eram valores placeholder IDÊNTICOS entre FT/
+// NC/FR (confirmado por comparação directa), logo não codificavam nada real.
+// Não se usa a biblioteca `jsonwebtoken` (já usada para as sessões de
+// utilizador): ela pressupõe a forma de um JWT e injeta campos (`iat`) que
+// não pertencem a este payload — usa-se `crypto` nativo, o mesmo que já
+// assina a cadeia de integridade local (ver faturacaoService.calcularHash).
 
 const crypto = require('crypto');
 const config = require('../config/env');
@@ -79,14 +83,13 @@ function assinarJWS(payloadObj) {
 
 /**
  * `softwareInfo` do envelope — identifica o SOFTWARE (a KIXIMA), não o
- * documento. DECISÃO REGISTADA: o conjunto de campos assinados aqui não foi
- * possível confirmar contra as amostras fornecidas — a `jwsSoftwareSignature`
- * de amostra tem só 2 segmentos (sem payload legível), ao contrário da
- * `jwsDocumentSignature` (3 segmentos, confirmada por descodificação). Ajustar
- * SÓ aqui quando a especificação completa ou a certificação real estiverem
- * disponíveis.
+ * documento. Campos assinados: exatamente os de `softwareInfoDetail`
+ * (productId, productVersion, softwareValidationNumber) — "Todos os campos
+ * do objecto softwareInfo devem ser usados na assinatura" (spec oficial,
+ * 4.1.6, linha `jwsSoftwareSignature`); `taxRegistrationNumber` NÃO entra
+ * aqui (é assinado no documento, não no software).
  */
-function construirSoftwareInfo(taxRegistrationNumber) {
+function construirSoftwareInfo() {
   const detail = {
     productId: config.agt.softwareId,
     productVersion: config.agt.softwareVersion,
@@ -94,16 +97,18 @@ function construirSoftwareInfo(taxRegistrationNumber) {
   };
   return {
     softwareInfoDetail: detail,
-    jwsSoftwareSignature: assinarJWS({ ...detail, taxRegistrationNumber }),
+    jwsSoftwareSignature: assinarJWS(detail),
   };
 }
 
 /**
- * `jwsDocumentSignature` — confirmado por descodificação de amostras reais
- * (FT e NC): exatamente estes 7 campos, por esta ordem.
+ * `jwsDocumentSignature` — exatamente estes 8 campos, por esta ordem,
+ * conforme a especificação oficial da AGT (SETIC-FP, DS.120, 4.1.6, linha
+ * `jwsDocumentSignature`): "documentNo, taxRegistrationNumber, documentType,
+ * documentDate, customerTaxID, customerCountry, companyName, documentTotals".
  */
-function assinarDocumento({ documentNo, taxRegistrationNumber, documentType, documentDate, customerTaxID, customerCountry, companyName }) {
-  return assinarJWS({ documentNo, taxRegistrationNumber, documentType, documentDate, customerTaxID, customerCountry, companyName });
+function assinarDocumento({ documentNo, taxRegistrationNumber, documentType, documentDate, customerTaxID, customerCountry, companyName, documentTotals }) {
+  return assinarJWS({ documentNo, taxRegistrationNumber, documentType, documentDate, customerTaxID, customerCountry, companyName, documentTotals });
 }
 
 // Estado para o painel de Prontidão — mesmo formato de multicaixaService.estado().
