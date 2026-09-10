@@ -34,7 +34,7 @@ const ATOR_ERP = { actorId: null, actorName: 'ERP', actorRole: null, companyId: 
 
 // --- 1. Checkout: criação da PO ---------------------------------------------
 
-async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdById, items }) {
+async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdById, items, createdBySource = 'HUMANO' }) {
   if (!items || items.length === 0) {
     throw new BusinessRuleError('A ordem de compra precisa de pelo menos um item.');
   }
@@ -114,6 +114,7 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
       approvedAt: isCallOff ? new Date() : null,
       erpManaged,
       erpApprovalRequestedAt,
+      createdBySource,
       items: { create: lineItems },
     },
     include: { items: true },

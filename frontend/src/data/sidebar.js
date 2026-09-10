@@ -131,6 +131,7 @@ const COMPRADOR = [
   { label: 'Pagamento', icon: 'payment', to: '/comprador/pagamentos' },
   { label: 'Fornecedores', icon: 'suppliers', to: '/comprador/fornecedores' },
   { label: 'Economia de Escala', icon: 'chart', to: '/comprador/economia-de-escala' },
+  { label: 'Automatic PO Robot', icon: 'engineering', to: '/comprador/po-robot' },
   { label: 'Atividades', icon: 'activities', to: '/comprador/atividades' },
   { label: 'Perfil', icon: 'profile', to: '/comprador/perfil' },
   ...COMMON_TAIL,

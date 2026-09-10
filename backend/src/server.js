@@ -11,6 +11,7 @@ const { scheduleSubscriptionExpiryJob } = require('./jobs/subscriptionExpiryJob'
 const { scheduleBackupJob } = require('./jobs/backupJob');
 const { scheduleMfaLembreteJob } = require('./jobs/mfaLembreteJob');
 const { scheduleRetencaoJob } = require('./jobs/retencaoJob');
+const { schedulePoRoboJob } = require('./jobs/poRoboJob');
 const eventBus = require('./services/eventBus');
 const realtimeService = require('./services/realtimeService');
 
@@ -58,6 +59,7 @@ const server = app.listen(config.port, () => {
   scheduleBackupJob();
   scheduleMfaLembreteJob();
   scheduleRetencaoJob();
+  schedulePoRoboJob();
   // Regista nos logs se a integração ERP (RabbitMQ) está ativa.
   eventBus.init();
   // Chat de Suporte, Chat Comercial e notificações em tempo real.

@@ -150,6 +150,67 @@ model PlanoCobranca {
   @@map("plano_cobrancas")
 }
 
+// ---------------------------------------------------------------------------
+// Add-ons — funcionalidades PRO pagas à parte do plano. O primeiro é o
+// Automatic PO Robot. Mesma separação de Company.plan/PlanoCobranca: o
+// add-on só fica ATIVO na CONFIRMAÇÃO da cobrança, nunca no pedido (ver
+// assinaturaService.aplicarConfirmacao — addonService.js segue o mesmo molde).
+// ---------------------------------------------------------------------------
+enum CompanyAddonStatus {
+  INATIVO
+  ATIVO
+}
+
+model CompanyAddon {
+  id          String             @id @default(uuid())
+  companyId   String             @map("company_id")
+  company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  addonKey    String             @map("addon_key") // ex.: "PO_ROBOT"
+  status      CompanyAddonStatus @default(INATIVO)
+  activatedAt DateTime?          @map("activated_at")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  @@unique([companyId, addonKey])
+  @@map("company_addons")
+}
+
+// Cobrança de um add-on — espelha PlanoCobranca campo a campo (mesmo
+// mecanismo pedir → comprovativo → confirmar, mesmos canais automáticos e
+// mesma regra "só muda na confirmação").
+model AddonCobranca {
+  id         String  @id @default(uuid())
+  referencia String  @unique // ADD-2026-000001
+  companyId  String  @map("company_id")
+  company    Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  addonKey String  @map("addon_key")
+  valorUsd Decimal @map("valor_usd") @db.Decimal(12, 2)
+  periodo  String // MENSAL | TRIMESTRAL | ANUAL
+  meses    Int
+
+  status          CobrancaStatus @default(PENDENTE)
+  comprovativoUrl String?        @map("comprovativo_url")
+  submetidoEm     DateTime?      @map("submetido_em")
+  confirmadaPor   String?        @map("confirmada_por")
+  confirmadaEm    DateTime?      @map("confirmada_em")
+  validoAte       DateTime?      @map("valido_ate")
+  notas           String?
+
+  canal             CanalCobranca @default(TRANSFERENCIA_MANUAL)
+  referenciaExterna String?       @map("referencia_externa")
+  telemovel         String?
+
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@index([status])
+  @@index([canal, referenciaExterna])
+  @@map("addon_cobrancas")
+}
+
 enum CompanyStatus {
   PENDENTE // aguarda due diligence
   APROVADA
@@ -272,6 +333,9 @@ model Company {
   conversationsAsBuyer    Conversation[]           @relation("ConversationAsBuyer")
   conversationsAsSupplier Conversation[]           @relation("ConversationAsSupplier")
   feedbacks               Feedback[]
+  addons                  CompanyAddon[]
+  addonCobrancas          AddonCobranca[]
+  poRoboRegras            PoRoboRegra[]
 
   @@map("companies")
 }
@@ -613,14 +677,15 @@ model Product {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  poItems    PurchaseOrderItem[]
-  images     ProductImage[]
-  documents  ProductDocument[]
-  movements  StockMovement[]
-  kitItems   KitItem[]
-  quoteItems QuoteItem[]
-  favorites  Favorite[]
-  reviews    Review[]
+  poItems      PurchaseOrderItem[]
+  images       ProductImage[]
+  documents    ProductDocument[]
+  movements    StockMovement[]
+  kitItems     KitItem[]
+  quoteItems   QuoteItem[]
+  favorites    Favorite[]
+  reviews      Review[]
+  poRoboRegras PoRoboRegra[]
 
   @@index([category])
   @@index([kind])
@@ -885,6 +950,11 @@ model PurchaseOrder {
   erpExternalId          String?   @map("erp_external_id") // id do documento no ERP, quando conhecido
   erpApprovalRequestedAt DateTime? @map("erp_approval_requested_at")
 
+  // Automatic PO Robot (add-on PRO): "HUMANO" (omissão, sempre) ou "ROBOT"
+  // quando gerada por poRoboService.executarCiclo(). Nasce sempre em
+  // AGUARDANDO_APROVACAO como qualquer outra — o robot cria, nunca aprova.
+  createdBySource String @default("HUMANO") @map("created_by_source")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -948,6 +1018,57 @@ model PurchaseOrderItem {
   @@index([productId])
   @@index([purchaseOrderId])
   @@map("purchase_order_items")
+}
+
+// ---------------------------------------------------------------------------
+// Automatic PO Robot (add-on PRO) — regra por produto: com que periodicidade,
+// que quantidade (aceite da IA ou definida à mão) e que limite de segurança.
+// O robot PREPARA a PO (poRoboService.executarCiclo); NUNCA a aprova nem
+// paga — isso continua sujeito à aprovação humana ou ao workflow DOA do ERP
+// (funcionalidade 1), exatamente como qualquer PO criada por uma pessoa.
+// ---------------------------------------------------------------------------
+enum PoRoboMediaOrigem {
+  IA
+  MANUAL
+}
+
+enum PoRoboPeriodicidade {
+  SEMANAL
+  QUINZENAL
+  MENSAL
+}
+
+model PoRoboRegra {
+  id        String  @id @default(uuid())
+  companyId String  @map("company_id")
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+
+  // IA: mediaMensal vem de categoryAnalyticsService.mediaMensalPorProduto
+  // (mesma função do Category Management, nunca duplicada). MANUAL: o
+  // cliente definiu a média/quantidade à mão.
+  mediaOrigem   PoRoboMediaOrigem   @default(IA) @map("media_origem")
+  mediaMensal   Decimal             @map("media_mensal") @db.Decimal(14, 3)
+  periodicidade PoRoboPeriodicidade @default(MENSAL)
+  // Quantidade fixa por execução, quando definida à mão — sobrepõe o cálculo
+  // pela média mensal/periodicidade quando presente.
+  quantidade    Int?
+
+  ativo             Boolean  @default(true)
+  // Limite de segurança pedido explicitamente: nenhuma PO desta regra
+  // ultrapassa este valor, nem quando a média/quantidade calculada excede.
+  limiteMaximoUsd   Decimal? @map("limite_maximo_usd") @db.Decimal(14, 2)
+  // Quando corre a seguir. Só avança DEPOIS de criar a PO com sucesso — é
+  // isto que impede duplicar a PO se o job correr duas vezes no mesmo ciclo.
+  proximaExecucaoEm DateTime @map("proxima_execucao_em")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@index([ativo, proximaExecucaoEm])
+  @@map("po_robo_regras")
 }
 
 // ---------------------------------------------------------------------------

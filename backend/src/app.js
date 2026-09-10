@@ -34,6 +34,8 @@ const conciliacaoRoutes = require('./routes/conciliacaoRoutes');
 const apiCatalogoRoutes = require('./routes/apiCatalogoRoutes');
 const planosRoutes = require('./routes/planosRoutes');
 const assinaturaRoutes = require('./routes/assinaturaRoutes');
+const addonRoutes = require('./routes/addonRoutes');
+const poRoboRoutes = require('./routes/poRoboRoutes');
 const kitRoutes = require('./routes/kitRoutes');
 const quoteRoutes = require('./routes/quoteRoutes');
 const marketplaceRoutes = require('./routes/marketplaceRoutes');
@@ -202,6 +204,8 @@ app.get('/api/retencao', (req, res) => res.json({ politica: require('./services/
 // Subscrição: pedir plano, carregar comprovativo, confirmar. Autenticada —
 // ao contrário de /api/planos, que é a tabela pública de preços.
 app.use('/api/assinatura', assinaturaRoutes);
+app.use('/api/addons', addonRoutes);
+app.use('/api/po-robot', poRoboRoutes);
 app.use('/api/webhooks/pagamento', webhookPagamentoRoutes);
 app.use('/api/kits', kitRoutes);
 app.use('/api/quotes', quoteRoutes);

@@ -31,6 +31,8 @@ const NOME_CANAL = {
 export default function Cobrancas() {
   const { t } = useI18n();
   const [data, setData] = useState(null);
+  const [addons, setAddons] = useState(null);
+  const [catalogoAddons, setCatalogoAddons] = useState({});
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [busy, setBusy] = useState('');
@@ -38,8 +40,50 @@ export default function Cobrancas() {
   function carregar() {
     setError('');
     api.get('/api/assinatura/fila').then(setData).catch((e) => setError(e.message));
+    api.get('/api/addons/fila').then(setAddons).catch((e) => setError(e.message));
   }
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => {
+    carregar();
+    api.get('/api/addons/catalogo').then((lista) => {
+      setCatalogoAddons(Object.fromEntries(lista.map((a) => [a.addonKey, a.label])));
+    }).catch(() => {});
+  }, []);
+
+  async function confirmarAddon(c) {
+    const ok = window.confirm(
+      t('Confirma que o valor de {valor} referente a {ref} ({empresa}) entrou na conta da KIXIMA?', {
+        valor: formatUsd(c.valorUsd), ref: c.referencia, empresa: c.company?.name || '',
+      })
+    );
+    if (!ok) return;
+    const notas = window.prompt(t('Nota interna (opcional) — ex.: data e banco da entrada.')) || '';
+    setBusy(c.id); setError(''); setAviso('');
+    try {
+      await api.post(`/api/addons/${c.id}/confirmar`, { notas });
+      setAviso(t('{ref} confirmada. O add-on "{addon}" está ativo para {empresa}.', {
+        ref: c.referencia, empresa: c.company?.name || '', addon: catalogoAddons[c.addonKey] || c.addonKey,
+      }));
+      carregar();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function cancelarAddon(c) {
+    const motivo = window.prompt(t('Porque está a cancelar {ref}?', { ref: c.referencia }));
+    if (!motivo) return;
+    setBusy(c.id); setError('');
+    try {
+      await api.post(`/api/addons/${c.id}/cancelar`, { motivo });
+      carregar();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy('');
+    }
+  }
 
   async function confirmar(c) {
     // A confirmação afirma que o dinheiro ENTROU. Quem clica tem de o ter visto
@@ -197,6 +241,104 @@ export default function Cobrancas() {
         </table>
         </div>
       </div>
+
+      <h3 style={{ margin: '28px 0 10px' }}>{t('Add-ons')}</h3>
+      <p className="helptext" style={{ marginTop: -4 }}>
+        {t('Cobranças de add-ons pagos (ex.: Automatic PO Robot) — mesmo mecanismo dos planos: transferência com comprovativo, confirmada aqui.')}
+      </p>
+      {addons ? (
+        <>
+          <KpiRow cards={[
+            { label: 'Por confirmar', value: addons.porConfirmar, icon: 'wallet', tone: 'info' },
+            { label: 'Por pagar', value: addons.porPagar, icon: 'invoice', tone: 'pending' },
+          ]} />
+
+          <h4 style={{ margin: '14px 0 8px' }}>{t('Por confirmar')}</h4>
+          <div className="bz-card">
+            <div className="bz-scroll-x">
+            <table className="bz-table">
+              <thead>
+                <tr>
+                  <th>{t('Referência')}</th>
+                  <th>{t('Empresa')}</th>
+                  <th>{t('Add-on')}</th>
+                  <th>{t('Valor')}</th>
+                  <th>{t('Comprovativo')}</th>
+                  <th>{t('Enviado em')}</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {addons.emAberto.filter((c) => c.status === 'COMPROVATIVO_ENVIADO').length === 0 ? (
+                  <tr><td colSpan={7}><EmptyRow>{t('Nada por confirmar. As cobranças aparecem aqui quando uma empresa carrega o comprovativo da transferência.')}</EmptyRow></td></tr>
+                ) : addons.emAberto.filter((c) => c.status === 'COMPROVATIVO_ENVIADO').map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.referencia}</td>
+                    <td>{c.company?.name}</td>
+                    <td>{catalogoAddons[c.addonKey] || c.addonKey}</td>
+                    <td>{formatUsd(c.valorUsd)}</td>
+                    <td>
+                      <a href={c.comprovativoUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>
+                        {t('Abrir')}
+                      </a>
+                    </td>
+                    <td>{formatDate(c.submetidoEm)}</td>
+                    <td style={{ display: 'flex', gap: 8 }}>
+                      <button className="btn btn-accent btn-sm" disabled={busy === c.id} onClick={() => confirmarAddon(c)}>
+                        {t('Confirmar')}
+                      </button>
+                      <button className="btn btn-ghost btn-sm" disabled={busy === c.id} onClick={() => cancelarAddon(c)}>
+                        {t('Cancelar')}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            </div>
+          </div>
+
+          <h4 style={{ margin: '18px 0 8px' }}>{t('Por pagar')}</h4>
+          <div className="bz-card">
+            <div className="bz-scroll-x">
+            <table className="bz-table">
+              <thead>
+                <tr>
+                  <th>{t('Referência')}</th>
+                  <th>{t('Empresa')}</th>
+                  <th>{t('Add-on')}</th>
+                  <th>{t('Valor')}</th>
+                  <th>{t('Canal')}</th>
+                  <th>{t('Emitida em')}</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {addons.emAberto.filter((c) => c.status === 'PENDENTE').length === 0 ? (
+                  <tr><td colSpan={7}><EmptyRow>{t('Nenhuma cobrança por liquidar. Aparecem aqui as que foram emitidas e ainda não foram pagas.')}</EmptyRow></td></tr>
+                ) : addons.emAberto.filter((c) => c.status === 'PENDENTE').map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.referencia}</td>
+                    <td>{c.company?.name}</td>
+                    <td>{catalogoAddons[c.addonKey] || c.addonKey}</td>
+                    <td>{formatUsd(c.valorUsd)}</td>
+                    <td>{c.canal === 'TRANSFERENCIA_MANUAL'
+                      ? t('Transferência')
+                      : <Pill tone="info">{t('{canal} — a aguardar', { canal: NOME_CANAL[c.canal] || c.canal })}</Pill>}</td>
+                    <td>{formatDate(c.createdAt)}</td>
+                    <td>
+                      <button className="btn btn-ghost btn-sm" disabled={busy === c.id} onClick={() => cancelarAddon(c)}>
+                        {t('Cancelar')}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </>
+      ) : null}
 
       <h3 style={{ margin: '22px 0 10px' }}>{t('Em período de tolerância')}</h3>
       <p className="helptext" style={{ marginTop: -4 }}>

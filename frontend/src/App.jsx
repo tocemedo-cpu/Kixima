@@ -54,6 +54,7 @@ const Receptions = lazy(() => import('./pages/comprador/Receptions'));
 const Suppliers = lazy(() => import('./pages/comprador/Suppliers'));
 const Activities = lazy(() => import('./pages/comprador/Activities'));
 const CategoryManagement = lazy(() => import('./pages/comprador/CategoryManagement'));
+const PoRobot = lazy(() => import('./pages/comprador/PoRobot'));
 
 const CompanyAdminHome = lazy(() => import('./pages/companyAdmin/Home'));
 const Approvals = lazy(() => import('./pages/companyAdmin/Approvals'));
@@ -194,6 +195,7 @@ export default function App() {
             <Route path="/comprador/recepcao" element={<Receptions />} />
             <Route path="/comprador/fornecedores" element={<Suppliers />} />
             <Route path="/comprador/economia-de-escala" element={<CategoryManagement />} />
+            <Route path="/comprador/po-robot" element={<PoRobot />} />
             <Route path="/comprador/atividades" element={<Activities />} />
             <Route path="/comprador/perfil" element={<Profile />} />
           </Route>

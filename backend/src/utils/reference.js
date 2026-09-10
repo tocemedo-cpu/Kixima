@@ -25,6 +25,7 @@ const TABELA_DO_MODELO = {
   supplierDevRequest: { tabela: 'supplier_dev_requests', coluna: 'reference' },
   planoCobranca: { tabela: 'plano_cobrancas', coluna: 'referencia' },
   creditNote: { tabela: 'credit_notes', coluna: 'reference' },
+  addonCobranca: { tabela: 'addon_cobrancas', coluna: 'referencia' },
 };
 
 /**
