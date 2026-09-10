@@ -206,4 +206,4 @@ async function listAudits(companyId) {
   });
 }
 
-module.exports = { getConfig, setConfig, testConnection, listAudits, ERP_FIELDS, ERP_SYSTEMS };
+module.exports = { getConfig, setConfig, testConnection, listAudits, ERP_FIELDS, ERP_SYSTEMS, isRealErp };

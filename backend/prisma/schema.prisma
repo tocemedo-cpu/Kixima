@@ -873,11 +873,24 @@ model PurchaseOrder {
   refusedAt     DateTime? @map("refused_at")
   refusalReason String?   @map("refusal_reason")
 
+  // --- ERP DOA Approval (PRO) -----------------------------------------------
+  // Quando `erpManaged` é true, a APROVAÇÃO E O PAGAMENTO desta PO acontecem
+  // no ERP do comprador (workflow/DOA próprio) — não no KIXIMA. A PO nasce e
+  // fica em AGUARDANDO_APROVACAO (nenhum estado novo no enum: menos risco,
+  // todo o código que já verifica este estado continua válido), mas
+  // approvePurchaseOrder/rejectPurchaseOrder recusam a decisão manual — só
+  // poService.aplicarDecisaoErp (via callback assinado) a pode mudar. Ver
+  // erpConfigService.js (config por empresa) e integrationRoutes.js (callback).
+  erpManaged             Boolean   @default(false) @map("erp_managed")
+  erpExternalId          String?   @map("erp_external_id") // id do documento no ERP, quando conhecido
+  erpApprovalRequestedAt DateTime? @map("erp_approval_requested_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  items   PurchaseOrderItem[]
-  invoice Invoice?
+  items       PurchaseOrderItem[]
+  invoice     Invoice?
+  erpSyncLogs ErpSyncLog[]
 
   @@index([status])
   @@index([buyerCompanyId])
@@ -886,6 +899,38 @@ model PurchaseOrder {
   @@index([contractId])
   @@index([createdById])
   @@map("purchase_orders")
+}
+
+// ---------------------------------------------------------------------------
+// Histórico de sincronização ERP de uma PO — pedido explícito ("registar logs
+// e histórico de sincronização"). NÃO guarda o payload bruto completo (pode
+// conter dados de negócio — mesma cautela do integrationRoutes.js ao não
+// logar o corpo do callback).
+// ---------------------------------------------------------------------------
+enum ErpSyncDirection {
+  OUTBOUND // KIXIMA → ERP (pedido de aprovação enviado)
+  INBOUND // ERP → KIXIMA (decisão/pagamento recebido via callback)
+}
+
+enum ErpSyncStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model ErpSyncLog {
+  id              String           @id @default(uuid())
+  purchaseOrderId String           @map("purchase_order_id")
+  purchaseOrder   PurchaseOrder    @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  direction       ErpSyncDirection
+  eventType       String           @map("event_type") // ex.: approval_requested, approval_decided, payment_confirmed
+  status          ErpSyncStatus
+  externalId      String?          @map("external_id")
+  errorMessage    String?          @map("error_message")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  @@index([purchaseOrderId])
+  @@map("erp_sync_logs")
 }
 
 model PurchaseOrderItem {
@@ -1110,6 +1155,9 @@ enum CanalPagamento {
   TRANSFERENCIA_MANUAL
   REFERENCIA_BANCARIA
   MULTICAIXA_EXPRESS
+  // Pagamento confirmado pelo ERP do comprador (funcionalidade ERP DOA
+  // Approval, PRO) — o dinheiro não passa pelo KIXIMA, só a confirmação.
+  ERP
 }
 
 model Payment {

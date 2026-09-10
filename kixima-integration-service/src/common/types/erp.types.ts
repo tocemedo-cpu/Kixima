@@ -63,6 +63,24 @@ export interface PurchaseOrderApprovedPayload {
   approvedAt: string;
 }
 
+/** ERP DOA Approval: pede ao ERP para correr o próprio workflow de aprovação. */
+export interface PurchaseOrderApprovalRequestedPayload {
+  poId: string;
+  reference: string;
+  buyer: { taxId: string; name: string };
+  supplier: { taxId: string; name: string };
+  currency: string;
+  totalAmount: number;
+  lines: Array<{
+    sku?: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+  }>;
+  requestedAt: string;
+}
+
 export interface InvoiceIssuedPayload {
   invoiceId: string;
   reference: string;

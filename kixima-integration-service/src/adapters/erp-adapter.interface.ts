@@ -50,6 +50,16 @@ export abstract class ErpAdapter {
   /** Empurra um pagamento concluído. */
   abstract pushPayment(payload: unknown, ctx: ErpSyncContext): Promise<ErpSyncResult>;
 
+  /**
+   * ERP DOA Approval: submete a PO ao workflow de aprovação PRÓPRIO do ERP.
+   * `externalId` no resultado é o id da instância do workflow no ERP — NÃO a
+   * decisão em si. A decisão (aprovado/rejeitado) chega depois, de volta, por
+   * um canal assíncrono próprio de cada ERP (callback/webhook ou polling —
+   * ver src/webhooks/webhook.controller.ts), porque nenhum destes workflows
+   * de aprovação é síncrono em produção real.
+   */
+  abstract requestApproval(payload: unknown, ctx: ErpSyncContext): Promise<ErpSyncResult>;
+
   /** Encaminha por tipo de entidade — usado pelo orquestrador. */
   async sync(entity: EntityType, payload: unknown, ctx: ErpSyncContext): Promise<ErpSyncResult> {
     switch (entity) {

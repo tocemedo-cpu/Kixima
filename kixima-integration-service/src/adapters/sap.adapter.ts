@@ -7,6 +7,7 @@ import {
   GoodsReceivedPayload,
   InvoiceIssuedPayload,
   PaymentCompletedPayload,
+  PurchaseOrderApprovalRequestedPayload,
   PurchaseOrderApprovedPayload,
 } from '@app/common/types/erp.types';
 
@@ -53,6 +54,23 @@ export class SapAdapter extends ErpAdapter {
       return { erp: this.system, entityType: 'PURCHASE_ORDER', externalId, raw: res.data, durationMs: Date.now() - started };
     } catch (err) {
       throw this.toAdapterError(err, 'pushPurchaseOrder');
+    }
+  }
+
+  async requestApproval(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
+    const started = Date.now();
+    try {
+      const csrf = await this.fetchCsrf('/API_PURCHASEORDER_PROCESS_SRV');
+      const res = await this.http.post(
+        '/API_PURCHASEORDER_PROCESS_SRV/A_PurchaseOrder',
+        SapMapper.approvalRequest(payload as PurchaseOrderApprovalRequestedPayload),
+        { headers: { 'x-csrf-token': csrf.token, Cookie: csrf.cookie, 'Content-Type': 'application/json' } },
+      );
+      const externalId =
+        (res.data?.d?.PurchaseOrder as string | undefined) ?? (res.data?.PurchaseOrder as string | undefined) ?? null;
+      return { erp: this.system, entityType: 'PURCHASE_ORDER', externalId, raw: res.data, durationMs: Date.now() - started };
+    } catch (err) {
+      throw this.toAdapterError(err, 'requestApproval');
     }
   }
 

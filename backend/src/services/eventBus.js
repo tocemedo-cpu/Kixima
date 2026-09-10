@@ -124,6 +124,28 @@ function purchaseOrderApproved(po, approvedAt) {
   };
 }
 
+// PO ERP-managed criada: pede ao ERP do comprador para correr o próprio
+// workflow/DOA de aprovação. A decisão chega de volta via callback (ver
+// integrationRoutes.js -> poService.aplicarDecisaoErp).
+function purchaseOrderApprovalRequested(po, requestedAt) {
+  return {
+    poId: po.id,
+    reference: po.reference,
+    buyer: { taxId: po.buyerCompany?.taxId || '', name: po.buyerCompany?.name || '' },
+    supplier: { taxId: po.supplierCompany?.taxId || '', name: po.supplierCompany?.name || '' },
+    currency: po.currency,
+    totalAmount: num(po.totalAmount),
+    lines: (po.items || []).map((it) => ({
+      sku: it.product?.sku || it.product?.manufacturerCode || '',
+      description: it.product?.name || 'Item',
+      quantity: it.quantity,
+      unitPrice: num(it.unitPrice),
+      lineTotal: num(it.lineTotal),
+    })),
+    requestedAt: (requestedAt || new Date()).toISOString(),
+  };
+}
+
 function invoiceIssued(invoice, po) {
   return {
     invoiceId: invoice.id,
@@ -165,5 +187,5 @@ module.exports = {
   publish,
   init,
   EXCHANGE,
-  payloads: { purchaseOrderApproved, invoiceIssued, goodsReceived, paymentCompleted },
+  payloads: { purchaseOrderApproved, purchaseOrderApprovalRequested, invoiceIssued, goodsReceived, paymentCompleted },
 };

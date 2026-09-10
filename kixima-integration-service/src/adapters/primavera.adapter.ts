@@ -7,6 +7,7 @@ import {
   GoodsReceivedPayload,
   InvoiceIssuedPayload,
   PaymentCompletedPayload,
+  PurchaseOrderApprovalRequestedPayload,
   PurchaseOrderApprovedPayload,
 } from '@app/common/types/erp.types';
 
@@ -46,6 +47,10 @@ export class PrimaveraAdapter extends ErpAdapter {
 
   pushPurchaseOrder(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
     return this.post('purchaseOrders', PrimaveraMapper.purchaseOrder(payload as PurchaseOrderApprovedPayload), 'PURCHASE_ORDER');
+  }
+
+  requestApproval(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
+    return this.post('purchaseOrders/approval', PrimaveraMapper.approvalRequest(payload as PurchaseOrderApprovalRequestedPayload), 'PURCHASE_ORDER');
   }
 
   pushInvoice(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {

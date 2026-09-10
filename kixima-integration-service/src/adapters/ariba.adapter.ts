@@ -8,6 +8,7 @@ import {
   GoodsReceivedPayload,
   InvoiceIssuedPayload,
   PaymentCompletedPayload,
+  PurchaseOrderApprovalRequestedPayload,
   PurchaseOrderApprovedPayload,
 } from '@app/common/types/erp.types';
 
@@ -72,6 +73,10 @@ export class AribaAdapter extends ErpAdapter {
 
   pushPurchaseOrder(payload: unknown, ctx: ErpSyncContext): Promise<ErpSyncResult> {
     return this.send(ctx.eventId, { OrderRequest: AribaMapper.orderRequest(payload as PurchaseOrderApprovedPayload) }, 'PURCHASE_ORDER');
+  }
+
+  requestApproval(payload: unknown, ctx: ErpSyncContext): Promise<ErpSyncResult> {
+    return this.send(ctx.eventId, { ApprovalRequest: AribaMapper.approvalRequest(payload as PurchaseOrderApprovalRequestedPayload) }, 'PURCHASE_ORDER');
   }
 
   pushInvoice(payload: unknown, ctx: ErpSyncContext): Promise<ErpSyncResult> {

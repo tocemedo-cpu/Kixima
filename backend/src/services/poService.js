@@ -12,6 +12,7 @@
 // Call-offs (contrato-quadro ativo) dispensam os passos 2 e 5 (aprovação e
 // pagamento antecipado por PO) — ver contractService.
 
+const { v4: uuid } = require('uuid');
 const prisma = require('../config/database');
 const config = require('../config/env');
 const { NotFoundError, BusinessRuleError, ForbiddenError, ConflictError } = require('../utils/errors');
@@ -22,6 +23,14 @@ const eventBus = require('./eventBus');
 const taxService = require('./taxService');
 const faturacaoService = require('./faturacaoService');
 const conciliacaoService = require('./conciliacaoService');
+const planService = require('./planService');
+const erpConfigService = require('./erpConfigService');
+const platformFeeService = require('./platformFeeService');
+const auditService = require('./auditService');
+
+// Ator sintético para o trilho de auditoria quando a ação chega do ERP e não
+// de um utilizador — mesma forma de actorFrom(req), sem sessão nenhuma.
+const ATOR_ERP = { actorId: null, actorName: 'ERP', actorRole: null, companyId: null };
 
 // --- 1. Checkout: criação da PO ---------------------------------------------
 
@@ -74,6 +83,20 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
   const reference = await nextReference('PO', 'purchaseOrder');
   const isCallOff = Boolean(contract);
 
+  // ERP DOA Approval (PRO): quando o comprador tem a feature erpIntegration
+  // no plano E um ERP real configurado (≠ MANUAL), a aprovação acontece no
+  // ERP dele, não no KIXIMA. Call-offs ficam de fora — já nascem aprovados
+  // pela assinatura do contrato-quadro, não há decisão nenhuma para o ERP tomar.
+  let erpManaged = false;
+  if (!isCallOff) {
+    const buyerCompany = await prisma.company.findUnique({ where: { id: buyerCompanyId }, select: { plan: true } });
+    if (planService.hasFeature(buyerCompany?.plan, 'erpIntegration')) {
+      const erpConfig = await erpConfigService.getConfig(buyerCompanyId).catch(() => null);
+      erpManaged = Boolean(erpConfig && erpConfigService.isRealErp(erpConfig.erp));
+    }
+  }
+  const erpApprovalRequestedAt = erpManaged ? new Date() : null;
+
   const po = await prisma.purchaseOrder.create({
     data: {
       reference,
@@ -89,6 +112,8 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
       // Call-off: a aprovação de negócio já aconteceu na assinatura do contrato.
       status: isCallOff ? 'APROVADA' : 'AGUARDANDO_APROVACAO',
       approvedAt: isCallOff ? new Date() : null,
+      erpManaged,
+      erpApprovalRequestedAt,
       items: { create: lineItems },
     },
     include: { items: true },
@@ -104,6 +129,25 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
     });
     // Já aprovada -> segue diretamente para o fornecedor.
     await notificationService.events.poRecebidaPeloFornecedor(po);
+  } else if (erpManaged) {
+    // O ERP corre o próprio workflow/DOA; a decisão chega de volta pelo
+    // callback assinado (integrationRoutes.js -> aplicarDecisaoErp). Não se
+    // notifica o Company Admin para aprovar — não é ele quem decide agora.
+    const poCompleto = await getPurchaseOrder(po.id);
+    const publicado = await eventBus.publish(
+      'purchase_order.approval_requested',
+      eventBus.payloads.purchaseOrderApprovalRequested(poCompleto, erpApprovalRequestedAt),
+      { eventId: `po-approval-requested:${po.id}`, tenantId: buyerCompanyId },
+    );
+    await prisma.erpSyncLog.create({
+      data: {
+        purchaseOrderId: po.id,
+        direction: 'OUTBOUND',
+        eventType: 'approval_requested',
+        status: publicado ? 'SUCCESS' : 'FAILED',
+        errorMessage: publicado ? null : 'Não foi possível publicar no barramento de eventos (broker indisponível).',
+      },
+    });
   } else {
     await notificationService.events.poAguardaAprovacao(po);
   }
@@ -193,6 +237,11 @@ async function approvePurchaseOrder(id, approverId) {
   if (po.isCallOff) {
     throw new BusinessRuleError('Call-offs não passam por aprovação individual.');
   }
+  if (po.erpManaged) {
+    throw new BusinessRuleError(
+      'Esta PO é aprovada através do ERP configurado — a decisão chega automaticamente, não é aprovável manualmente.',
+    );
+  }
   if (po.status !== 'AGUARDANDO_APROVACAO') {
     throw new ConflictError(`PO no estado "${po.status}" não pode ser aprovada.`);
   }
@@ -218,6 +267,11 @@ async function rejectPurchaseOrder(id, approverId, reason) {
   if (po.isCallOff) {
     throw new BusinessRuleError('Call-offs não passam por aprovação individual.');
   }
+  if (po.erpManaged) {
+    throw new BusinessRuleError(
+      'Esta PO é aprovada através do ERP configurado — a decisão chega automaticamente, não é rejeitável manualmente.',
+    );
+  }
   if (po.status !== 'AGUARDANDO_APROVACAO') {
     throw new ConflictError(`PO no estado "${po.status}" não pode ser rejeitada.`);
   }
@@ -233,6 +287,141 @@ async function rejectPurchaseOrder(id, approverId, reason) {
   });
 
   await notificationService.events.poAprovadaOuRejeitada(updated);
+  return updated;
+}
+
+// --- ERP DOA Approval: decisão e pagamento vindos do ERP --------------------
+
+/**
+ * Aplica a decisão do workflow/DOA do ERP a uma PO erpManaged.
+ *
+ * Idempotente por ESTADO, mesmo molde de assinaturaService.confirmarViaGateway:
+ * um callback duplicado (reenvio do ERP, retry de rede) encontra a PO já fora
+ * de AGUARDANDO_APROVACAO e devolve-a tal como está, sem reaplicar a decisão.
+ */
+async function aplicarDecisaoErp(poId, { aprovado, erpExternalId, motivo } = {}) {
+  const po = await prisma.purchaseOrder.findUnique({ where: { id: poId } });
+  if (!po) throw new NotFoundError('Ordem de compra');
+  if (!po.erpManaged) throw new BusinessRuleError('Esta PO não é gerida por ERP.');
+  if (po.status !== 'AGUARDANDO_APROVACAO') return po;
+
+  const agora = new Date();
+  const data = aprovado
+    ? { status: 'APROVADA', approvedAt: agora, erpExternalId: erpExternalId || po.erpExternalId }
+    : {
+      status: 'REJEITADA',
+      rejectedAt: agora,
+      rejectionReason: motivo || 'Rejeitada pelo workflow de aprovação do ERP.',
+      erpExternalId: erpExternalId || po.erpExternalId,
+    };
+
+  const [updated] = await prisma.$transaction(async (tx) => {
+    const upd = await tx.purchaseOrder.update({ where: { id: poId }, data });
+    await tx.erpSyncLog.create({
+      data: {
+        purchaseOrderId: poId,
+        direction: 'INBOUND',
+        eventType: 'approval_decided',
+        status: 'SUCCESS',
+        externalId: erpExternalId || null,
+      },
+    });
+    await auditService.record(tx, {
+      actor: ATOR_ERP,
+      action: aprovado ? 'PO_APROVADA_ERP' : 'PO_REJEITADA_ERP',
+      entityType: 'PurchaseOrder',
+      entityId: po.id,
+      entityRef: po.reference,
+      detail: { erpExternalId: erpExternalId || null, motivo: motivo || null },
+    });
+    return [upd];
+  });
+
+  await notificationService.events.poAprovadaOuRejeitada(updated);
+  if (aprovado) await notificationService.events.poRecebidaPeloFornecedor(updated);
+  // NÃO republica purchase_order.approved no eventBus — o ERP já sabe da sua
+  // própria decisão; republicá-la criaria um loop entre os dois sistemas.
+  return updated;
+}
+
+/**
+ * Aplica a confirmação de pagamento do ERP a uma PO erpManaged — o dinheiro
+ * não passa pelo KIXIMA, só a confirmação. Mesma idempotência por estado.
+ */
+async function aplicarPagamentoErp(poId, { erpExternalId, valorPago, pagoEm } = {}) {
+  const po = await prisma.purchaseOrder.findUnique({ where: { id: poId }, include: { invoice: true } });
+  if (!po) throw new NotFoundError('Ordem de compra');
+  if (!po.erpManaged) throw new BusinessRuleError('Esta PO não é gerida por ERP.');
+  if (po.status === 'PAGA') return po;
+  if (!po.invoice) {
+    throw new BusinessRuleError('Esta PO ainda não tem fatura — o fornecedor precisa de a aceitar primeiro.');
+  }
+  if (po.status !== 'AGUARDANDO_PAGAMENTO') {
+    throw new ConflictError(`PO no estado "${po.status}" não pode receber confirmação de pagamento.`);
+  }
+
+  const { invoice } = po;
+  const supplierCompany = await prisma.company.findUnique({
+    where: { id: po.supplierCompanyId },
+    select: { serieFiscal: true, dataAdesaoFacturacaoElectronica: true },
+  });
+
+  const [payment] = await prisma.$transaction(async (tx) => {
+    // O pagamento É o documento "RC" (Recibo) da AGT — mesma cadeia de
+    // integridade de qualquer outro pagamento, independentemente do canal.
+    const certificacao = await faturacaoService.atribuir(tx, {
+      emitidaEm: pagoEm ? new Date(pagoEm) : new Date(),
+      total: invoice.amount,
+      codigo: faturacaoService.serieReciboDoFornecedor(supplierCompany),
+      dataAdesao: supplierCompany?.dataAdesaoFacturacaoElectronica,
+    });
+
+    const createdPayment = await tx.payment.create({
+      data: {
+        ...certificacao,
+        invoiceId: invoice.id,
+        amount: valorPago != null ? valorPago : invoice.amount,
+        currency: invoice.currency,
+        canal: 'ERP',
+        processedById: null, // ninguém do KIXIMA executou — foi o ERP a confirmar
+        reference: `PAY-ERP-${uuid().slice(0, 8).toUpperCase()}`,
+        status: 'PROCESSADO',
+      },
+    });
+
+    await tx.invoice.update({ where: { id: invoice.id }, data: { status: 'PAGA' } });
+    await tx.purchaseOrder.update({
+      where: { id: poId },
+      data: { status: 'PAGA', paidAt: new Date(), erpExternalId: erpExternalId || po.erpExternalId },
+    });
+
+    // Taxa da plataforma — cobrada ao fornecedor, independentemente de o
+    // pagamento ter passado pelo KIXIMA ou ter sido confirmado pelo ERP.
+    await platformFeeService.createForInvoice(tx, { invoice, companyId: po.supplierCompanyId });
+
+    await tx.erpSyncLog.create({
+      data: {
+        purchaseOrderId: poId,
+        direction: 'INBOUND',
+        eventType: 'payment_confirmed',
+        status: 'SUCCESS',
+        externalId: erpExternalId || null,
+      },
+    });
+    await auditService.record(tx, {
+      actor: ATOR_ERP,
+      action: 'PAGAMENTO_CONFIRMADO_ERP',
+      entityType: 'Payment',
+      entityId: createdPayment.id,
+      entityRef: createdPayment.reference,
+      detail: { po: po.reference, valor: String(createdPayment.amount), erpExternalId: erpExternalId || null },
+    });
+
+    return [createdPayment];
+  });
+
+  const updated = await prisma.purchaseOrder.findUnique({ where: { id: poId } });
+  await notificationService.events.pagamentoProcessado(payment, updated);
   return updated;
 }
 
@@ -473,6 +662,8 @@ module.exports = {
   listPurchaseOrders,
   approvePurchaseOrder,
   rejectPurchaseOrder,
+  aplicarDecisaoErp,
+  aplicarPagamentoErp,
   acceptPurchaseOrder,
   refusePurchaseOrder,
   dispatchPurchaseOrder,

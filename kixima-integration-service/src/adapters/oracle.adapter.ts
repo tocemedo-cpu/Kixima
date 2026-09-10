@@ -7,6 +7,7 @@ import {
   GoodsReceivedPayload,
   InvoiceIssuedPayload,
   PaymentCompletedPayload,
+  PurchaseOrderApprovalRequestedPayload,
   PurchaseOrderApprovedPayload,
 } from '@app/common/types/erp.types';
 
@@ -50,6 +51,10 @@ export class OracleAdapter extends ErpAdapter {
 
   pushPurchaseOrder(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
     return this.post('purchaseOrders', OracleMapper.purchaseOrder(payload as PurchaseOrderApprovedPayload), 'PURCHASE_ORDER');
+  }
+
+  requestApproval(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {
+    return this.post('purchaseOrders', OracleMapper.approvalRequest(payload as PurchaseOrderApprovalRequestedPayload), 'PURCHASE_ORDER');
   }
 
   pushInvoice(payload: unknown, _ctx: ErpSyncContext): Promise<ErpSyncResult> {

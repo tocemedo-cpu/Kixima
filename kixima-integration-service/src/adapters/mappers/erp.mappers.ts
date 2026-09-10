@@ -7,6 +7,7 @@ import {
   GoodsReceivedPayload,
   InvoiceIssuedPayload,
   PaymentCompletedPayload,
+  PurchaseOrderApprovalRequestedPayload,
   PurchaseOrderApprovedPayload,
 } from '@app/common/types/erp.types';
 
@@ -43,6 +44,29 @@ export const SapMapper = {
       DocumentCurrency: p.currency,
       InvoiceGrossAmount: p.amount,
       SupplierInvoiceIDByInvcgParty: p.reference,
+    };
+  },
+  // Cria a PO sob estratégia de liberação (Release Strategy) — em SAP, isto é
+  // o que efetivamente dispara o workflow de aprovação (DOA) próprio do
+  // cliente; a instância fica identificável pelo próprio número do documento.
+  approvalRequest(p: PurchaseOrderApprovalRequestedPayload): Record<string, unknown> {
+    return {
+      PurchaseOrderType: 'NB',
+      CompanyCode: '1000',
+      PurchasingOrganization: '1000',
+      Supplier: p.supplier.taxId,
+      DocumentCurrency: p.currency,
+      PurchaseOrderReference: p.reference,
+      ReleaseNotYetRelevant: false,
+      to_PurchaseOrderItem: {
+        results: p.lines.map((l, i) => ({
+          PurchaseOrderItem: String((i + 1) * 10),
+          Material: l.sku ?? '',
+          PurchaseOrderItemText: l.description,
+          OrderQuantity: l.quantity,
+          NetPriceAmount: l.unitPrice,
+        })),
+      },
     };
   },
   materialDocument(p: GoodsReceivedPayload): Record<string, unknown> {
@@ -94,6 +118,22 @@ export const OracleMapper = {
       PaymentTermsDate: iso(p.dueAt),
     };
   },
+  // Oracle Financials Cloud: submissão à Approval Workflow própria do cliente.
+  approvalRequest(p: PurchaseOrderApprovalRequestedPayload): Record<string, unknown> {
+    return {
+      OrderNumber: p.reference,
+      Supplier: p.supplier.name,
+      CurrencyCode: p.currency,
+      Total: p.totalAmount,
+      RequestApproval: true,
+      lines: p.lines.map((l, i) => ({
+        LineNumber: i + 1,
+        Description: l.description,
+        Quantity: l.quantity,
+        Price: l.unitPrice,
+      })),
+    };
+  },
   receivingReceipt(p: GoodsReceivedPayload): Record<string, unknown> {
     return {
       ReceiptSourceCode: 'VENDOR',
@@ -135,6 +175,16 @@ export const PrimaveraMapper = {
       dataVencimento: iso(p.dueAt),
     };
   },
+  approvalRequest(p: PurchaseOrderApprovalRequestedPayload): Record<string, unknown> {
+    return {
+      numero: p.reference,
+      fornecedorNif: p.supplier.taxId,
+      moeda: p.currency,
+      total: p.totalAmount,
+      pedirAprovacao: true,
+      linhas: p.lines.map((l) => ({ artigo: l.sku ?? '', descricao: l.description, qtd: l.quantity, preco: l.unitPrice })),
+    };
+  },
   goodsReceipt(p: GoodsReceivedPayload): Record<string, unknown> {
     return {
       ordemCompra: p.poReference,
@@ -162,6 +212,26 @@ export const AribaMapper = {
       OrderRequestHeader: {
         '@_orderID': p.reference,
         '@_orderDate': iso(p.approvedAt),
+        Total: { Money: { '@_currency': p.currency, '#text': p.totalAmount } },
+      },
+      ItemOut: p.lines.map((l, i) => ({
+        '@_quantity': l.quantity,
+        '@_lineNumber': i + 1,
+        ItemID: { SupplierPartID: l.sku ?? '' },
+        ItemDetail: {
+          UnitPrice: { Money: { '@_currency': p.currency, '#text': l.unitPrice } },
+          Description: l.description,
+        },
+      })),
+    };
+  },
+  // cXML ApprovalRequest — inicia o workflow de aprovação nativo do Ariba
+  // Network (distinto de OrderRequest, que empurra a PO já aprovada).
+  approvalRequest(p: PurchaseOrderApprovalRequestedPayload): Record<string, unknown> {
+    return {
+      ApprovalRequestHeader: {
+        '@_orderID': p.reference,
+        '@_orderDate': iso(p.requestedAt),
         Total: { Money: { '@_currency': p.currency, '#text': p.totalAmount } },
       },
       ItemOut: p.lines.map((l, i) => ({

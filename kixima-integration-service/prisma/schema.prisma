@@ -25,10 +25,14 @@ enum ErpSystem {
 }
 
 enum EventType {
-  PURCHASE_ORDER_APPROVED // purchase_order.approved
-  INVOICE_ISSUED          // invoice.issued
-  GOODS_RECEIVED          // goods.received
-  PAYMENT_COMPLETED       // payment.completed
+  PURCHASE_ORDER_APPROVED            // purchase_order.approved
+  // PO ERP DOA Approval (KIXIMA PRO): pede ao ERP para correr o próprio
+  // workflow/DOA de aprovação — distinto de PURCHASE_ORDER_APPROVED, que
+  // empurra uma PO JÁ aprovada para registo no ERP.
+  PURCHASE_ORDER_APPROVAL_REQUESTED  // purchase_order.approval_requested
+  INVOICE_ISSUED                     // invoice.issued
+  GOODS_RECEIVED                     // goods.received
+  PAYMENT_COMPLETED                  // payment.completed
 }
 
 enum EntityType {

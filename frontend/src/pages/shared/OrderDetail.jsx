@@ -90,7 +90,7 @@ export default function OrderDetail() {
 
   const statusInfo = PO_STATUS[po.status] || {};
 
-  const canApprove = user.role === 'COMPANY_ADMIN' && po.status === 'AGUARDANDO_APROVACAO' && !po.isCallOff;
+  const canApprove = user.role === 'COMPANY_ADMIN' && po.status === 'AGUARDANDO_APROVACAO' && !po.isCallOff && !po.erpManaged;
   const canAcceptRefuse = user.role === 'FORNECEDOR' && po.status === 'APROVADA';
   const canDispatch = user.role === 'FORNECEDOR' && ((po.isCallOff && po.status === 'EM_EXECUCAO' && !po.dispatchedAt) || (!po.isCallOff && po.status === 'PAGA'));
   const canMarkDelivered = user.role === 'FORNECEDOR' && po.status === 'EM_EXECUCAO' && po.dispatchedAt;
@@ -113,6 +113,7 @@ export default function OrderDetail() {
           <p>
             <Badge tone={statusInfo.tone}>{statusInfo.label}</Badge>
             {po.isCallOff ? <span style={{ marginLeft: 8 }}><Badge tone="info">Call-off</Badge></span> : null}
+            {po.erpManaged ? <span style={{ marginLeft: 8 }}><Badge tone="info">{t('Aprovação via ERP')}</Badge></span> : null}
           </p>
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 600, color: 'var(--navy-900)' }}>
@@ -438,6 +439,9 @@ const TIMELINE_LABELS = {
   PO_CRIADA: { label: 'PO criada', icon: '📝' },
   PO_APROVADA: { label: 'Aprovada pelo Company Admin', icon: '✅' },
   PO_REJEITADA: { label: 'Rejeitada pelo Company Admin', icon: '⛔' },
+  PO_APROVADA_ERP: { label: 'Aprovada pelo ERP', icon: '✅' },
+  PO_REJEITADA_ERP: { label: 'Rejeitada pelo ERP', icon: '⛔' },
+  PAGAMENTO_CONFIRMADO_ERP: { label: 'Pagamento confirmado pelo ERP', icon: '💳' },
   PO_ACEITE: { label: 'Aceite pelo fornecedor', icon: '🤝' },
   PO_RECUSADA_FORNECEDOR: { label: 'Recusada pelo fornecedor', icon: '⛔' },
   PAGAMENTO_EXECUTADO: { label: 'Pagamento efetuado', icon: '💳' },

@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { EventStatus, SyncStatus } from '@prisma/client';
+import { EventStatus, EventType, SyncStatus } from '@prisma/client';
 import { PrismaService } from '@app/common/prisma/prisma.service';
 import { CryptoService } from '@app/crypto/crypto.service';
 import { AuditService } from '@app/audit/audit.service';
@@ -68,14 +68,25 @@ export class SyncProcessor extends WorkerHost {
 
     const failures: ErpAdapterError[] = [];
 
+    // ERP DOA Approval: submete ao workflow de aprovação do ERP em vez do
+    // fan-out genérico por EntityType — é uma operação distinta de "empurrar
+    // uma PO já aprovada" (pushPurchaseOrder), mesmo partilhando a entidade.
+    const isApprovalRequest = event.eventType === EventType.PURCHASE_ORDER_APPROVAL_REQUESTED;
+
     for (const { adapter } of resolved) {
       const started = Date.now();
       try {
-        const result = await adapter.sync(entityType, event.payload, {
-          eventId: event.eventId,
-          eventType: event.eventType,
-          traceId: event.eventId,
-        });
+        const result = isApprovalRequest
+          ? await adapter.requestApproval(event.payload, {
+            eventId: event.eventId,
+            eventType: event.eventType,
+            traceId: event.eventId,
+          })
+          : await adapter.sync(entityType, event.payload, {
+            eventId: event.eventId,
+            eventType: event.eventType,
+            traceId: event.eventId,
+          });
 
         await this.prisma.erpSyncRecord.upsert({
           where: { integrationEventId_erp_entityType: { integrationEventId: event.id, erp: adapter.system, entityType } },

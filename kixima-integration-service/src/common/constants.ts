@@ -5,6 +5,7 @@
 /** Routing keys dos eventos consumidos do exchange `kixima.events`. */
 export const ROUTING_KEYS = {
   PURCHASE_ORDER_APPROVED: 'purchase_order.approved',
+  PURCHASE_ORDER_APPROVAL_REQUESTED: 'purchase_order.approval_requested',
   INVOICE_ISSUED: 'invoice.issued',
   GOODS_RECEIVED: 'goods.received',
   PAYMENT_COMPLETED: 'payment.completed',

@@ -6,6 +6,8 @@ export function routingKeyToEventType(routingKey: string): EventType | null {
   switch (routingKey) {
     case ROUTING_KEYS.PURCHASE_ORDER_APPROVED:
       return EventType.PURCHASE_ORDER_APPROVED;
+    case ROUTING_KEYS.PURCHASE_ORDER_APPROVAL_REQUESTED:
+      return EventType.PURCHASE_ORDER_APPROVAL_REQUESTED;
     case ROUTING_KEYS.INVOICE_ISSUED:
       return EventType.INVOICE_ISSUED;
     case ROUTING_KEYS.GOODS_RECEIVED:
@@ -21,6 +23,7 @@ export function routingKeyToEventType(routingKey: string): EventType | null {
 export function eventTypeToEntity(eventType: EventType): EntityType {
   switch (eventType) {
     case EventType.PURCHASE_ORDER_APPROVED:
+    case EventType.PURCHASE_ORDER_APPROVAL_REQUESTED:
       return EntityType.PURCHASE_ORDER;
     case EventType.INVOICE_ISSUED:
       return EntityType.INVOICE;
