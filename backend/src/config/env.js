@@ -199,6 +199,16 @@ const config = {
     // inventado num documento que se apresenta como fiscalmente válido.
     softwareValidationNumber: process.env.AGT_SOFTWARE_VALIDATION_NUMBER || '',
   },
+  // Recomendação em linguagem natural do Category Management (economia de
+  // escala) — chamada real à API da Claude. Sem chave, aiRecommendationService
+  // devolve a análise numérica na mesma (thresholds/poupança continuam a
+  // funcionar) mas a recomendação em texto vem null com o motivo explícito —
+  // mesmo princípio "RECUSA-SE A FINGIR" do multicaixaService.js: nunca um
+  // texto de IA fabricado.
+  anthropic: {
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
+    model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5',
+  },
   versao: process.env.npm_package_version || '1.0',
 };
 

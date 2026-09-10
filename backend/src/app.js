@@ -47,6 +47,7 @@ const companyAdminRoutes = require('./routes/companyAdminRoutes');
 const financeiroRoutes = require('./routes/financeiroRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const integrationRoutes = require('./routes/integrationRoutes');
+const categoryManagementRoutes = require('./routes/categoryManagementRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const webhookPagamentoRoutes = require('./routes/webhookPagamentoRoutes');
 
@@ -215,6 +216,7 @@ app.use('/api/company-admin', companyAdminRoutes);
 app.use('/api/financeiro', financeiroRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/integration', integrationRoutes);
+app.use('/api/category-management', categoryManagementRoutes);
 
 // Servir o frontend compilado (deploy de serviço único). Em produção a app
 // serve a API em /api e o SPA na mesma origem. O caminho pode vir de

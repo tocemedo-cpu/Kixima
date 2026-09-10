@@ -201,6 +201,7 @@ const FEATURES = {
     apiCatalogo: false,
     supplierComparison: true,
     auditTrail: true,
+    categoryManagement: false,
   },
   CORE: {
     itensNoCatalogo: ILIMITADO,
@@ -219,6 +220,7 @@ const FEATURES = {
     apiCatalogo: false,
     supplierComparison: true,
     auditTrail: true,
+    categoryManagement: false,
   },
   PRO: {
     itensNoCatalogo: ILIMITADO,
@@ -237,6 +239,11 @@ const FEATURES = {
     apiCatalogo: true,
     supplierComparison: true,
     auditTrail: true,
+    // Category Management + Economia de Escala — análise de compras por
+    // categoria, thresholds de desconto e recomendação por IA (ver
+    // categoryManagementRoutes.js). PRO-only, mesmo critério do ERP: recurso
+    // de escala, não de dados/histórico.
+    categoryManagement: true,
   },
 };
 

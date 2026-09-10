@@ -1625,6 +1625,24 @@ model SupplierDevRequest {
   @@map("supplier_dev_requests")
 }
 
+// ---------------------------------------------------------------------------
+// Category Management — thresholds de desconto por economia de escala,
+// configuráveis em runtime (pedido explícito: nada disto pode ficar
+// hardcoded). Lidos por discountThresholdService.js; sem linhas aqui, nenhum
+// desconto se aplica — não há um valor por omissão escondido no código.
+// ---------------------------------------------------------------------------
+model DiscountThreshold {
+  id              String   @id @default(uuid())
+  minVolumeUsd    Decimal  @map("min_volume_usd") @db.Decimal(16, 2)
+  discountPercent Decimal  @map("discount_percent") @db.Decimal(5, 2)
+  ativo           Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([ativo, minVolumeUsd])
+  @@map("discount_thresholds")
+}
+
 // Avaliação pública da plataforma (homepage corporativa — secção "Avaliações").
 // Sem conta associada de propósito: quem avalia pode ser um comprador, um
 // fornecedor ou um parceiro, e o formulário é público, tal como o resto da

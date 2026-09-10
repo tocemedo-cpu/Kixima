@@ -53,6 +53,7 @@ const Deliveries = lazy(() => import('./pages/comprador/Deliveries'));
 const Receptions = lazy(() => import('./pages/comprador/Receptions'));
 const Suppliers = lazy(() => import('./pages/comprador/Suppliers'));
 const Activities = lazy(() => import('./pages/comprador/Activities'));
+const CategoryManagement = lazy(() => import('./pages/comprador/CategoryManagement'));
 
 const CompanyAdminHome = lazy(() => import('./pages/companyAdmin/Home'));
 const Approvals = lazy(() => import('./pages/companyAdmin/Approvals'));
@@ -107,6 +108,7 @@ const Prontidao = lazy(() => import('./pages/adminSistema/Prontidao'));
 const Cobrancas = lazy(() => import('./pages/adminSistema/Cobrancas'));
 const SecurityAlerts = lazy(() => import('./pages/adminSistema/SecurityAlerts'));
 const Avaliacoes = lazy(() => import('./pages/adminSistema/Avaliacoes'));
+const DescontosEconomiaEscala = lazy(() => import('./pages/adminSistema/DescontosEconomiaEscala'));
 
 // Ecrã de recurso enquanto o chunk de uma rota é carregado.
 function PageLoading() {
@@ -191,6 +193,7 @@ export default function App() {
             <Route path="/comprador/entregas" element={<Deliveries />} />
             <Route path="/comprador/recepcao" element={<Receptions />} />
             <Route path="/comprador/fornecedores" element={<Suppliers />} />
+            <Route path="/comprador/economia-de-escala" element={<CategoryManagement />} />
             <Route path="/comprador/atividades" element={<Activities />} />
             <Route path="/comprador/perfil" element={<Profile />} />
           </Route>
@@ -282,6 +285,7 @@ export default function App() {
             <Route path="/sistema/cobrancas" element={<Cobrancas />} />
             <Route path="/sistema/alertas-seguranca" element={<SecurityAlerts />} />
             <Route path="/sistema/avaliacoes" element={<Avaliacoes />} />
+            <Route path="/sistema/economia-de-escala" element={<DescontosEconomiaEscala />} />
           </Route>
         </Route>
       </Route>
