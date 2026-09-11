@@ -198,6 +198,15 @@ const config = {
     // "FE/NN/AAAA/AGT"). Sem ele não há payload assinado — nunca um valor
     // inventado num documento que se apresenta como fiscalmente válido.
     softwareValidationNumber: process.env.AGT_SOFTWARE_VALIDATION_NUMBER || '',
+
+    // Ligação REST à Sandbox/homologação da AGT (agtSandboxClient.js) —
+    // autenticação por HTTP Basic (utilizador/senha), sem OAuth2. Distinta do
+    // envelope schema v1.2 acima: são os 4 endpoints de registo/consulta em
+    // tempo real, não a submissão em lote. Nunca um valor por omissão aqui —
+    // sem os 3 preenchidos, o cliente recusa-se a chamar a AGT.
+    sandboxBaseUrl: process.env.AGT_SANDBOX_BASE_URL || '',
+    sandboxUsername: process.env.AGT_SANDBOX_USERNAME || '',
+    sandboxPassword: process.env.AGT_SANDBOX_PASSWORD || '',
   },
   // Recomendação em linguagem natural do Category Management (economia de
   // escala) — chamada real à API da Claude. Sem chave, aiRecommendationService
