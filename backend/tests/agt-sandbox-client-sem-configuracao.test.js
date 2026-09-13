@@ -48,8 +48,9 @@ describe('agtSandboxClient sem configuração', () => {
       .toThrow(/não está configurada/);
   });
 
-  test('registarFactura()/obterEstado()/consultarFactura()/listarFacturas() recusam-se a chamar a rede', async () => {
+  test('registarFactura()/solicitarSerie()/obterEstado()/consultarFactura()/listarFacturas() recusam-se a chamar a rede', async () => {
     await expect(agtSandboxClient.registarFactura({})).rejects.toThrow(/não está configurada/);
+    await expect(agtSandboxClient.solicitarSerie({})).rejects.toThrow(/não está configurada/);
     await expect(agtSandboxClient.obterEstado({})).rejects.toThrow(/não está configurada/);
     await expect(agtSandboxClient.consultarFactura({})).rejects.toThrow(/não está configurada/);
     await expect(agtSandboxClient.listarFacturas({})).rejects.toThrow(/não está configurada/);

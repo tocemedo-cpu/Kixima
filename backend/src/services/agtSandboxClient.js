@@ -39,6 +39,7 @@ const config = require('../config/env');
 
 const ENDPOINTS = {
   registarFactura: 'registarFactura',
+  solicitarSerie: 'solicitarSerie',
   obterEstado: 'obterEstado',
   consultarFactura: 'consultarFactura',
   listarFacturas: 'listarFacturas',
@@ -233,9 +234,16 @@ async function pedido(endpoint, { method = 'GET', body, query } = {}) {
 async function registarFactura(documento) {
   return pedido(ENDPOINTS.registarFactura, { method: 'POST', body: documento });
 }
-async function solicitarserie(documento) {
-  return pedido(ENDPOINTS.solicitarserie, { method: 'POST', body: documento });
+
+/**
+ * POST /solicitarSerie — pedido de atribuição de série de numeração (DS.120,
+ * 4.5), já assinado por quem chama (mesmo princípio de registarFactura: este
+ * cliente só transporta, não decide a forma do envelope).
+ */
+async function solicitarSerie(documento) {
+  return pedido(ENDPOINTS.solicitarSerie, { method: 'POST', body: documento });
 }
+
 /** GET /obterEstado — estado do processamento de uma submissão. */
 async function obterEstado({ submissionUUID, documentNo } = {}) {
   return pedido(ENDPOINTS.obterEstado, { query: { submissionUUID, documentNo } });
@@ -259,7 +267,7 @@ module.exports = {
   // Assinaturas JWS
   assinarJWS, assinarSoftware, assinarDocumento, assinarSolicitacao,
   // Endpoints da Sandbox
-  registarFactura, obterEstado, consultarFactura, listarFacturas,
+  registarFactura, solicitarSerie, obterEstado, consultarFactura, listarFacturas,
   // Erro tipado
   AgtApiError,
 };

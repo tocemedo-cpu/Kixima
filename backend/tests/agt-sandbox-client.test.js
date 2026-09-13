@@ -115,6 +115,21 @@ describe('Endpoints da Sandbox — cabeçalhos, rota e tratamento de resultCode'
     expect(opcoes.headers['Content-Type']).toBe('application/json');
   });
 
+  test('solicitarSerie(): POST com corpo JSON e Authorization Basic corretos', async () => {
+    const fetchMock = mockFetch(200, { resultCode: '0', seriesYear: 2026 });
+    const documento = { taxRegistrationNumber: 'AO5417000000', seriesYear: 2026, documentType: 'FT' };
+
+    const resposta = await agtSandboxClient.solicitarSerie(documento);
+    expect(resposta).toEqual({ resultCode: '0', seriesYear: 2026 });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, opcoes] = fetchMock.mock.calls[0];
+    expect(String(url)).toBe('https://sifphml.minfin.gov.ao/sigt/fe/v1/solicitarSerie');
+    expect(opcoes.method).toBe('POST');
+    expect(opcoes.body).toBe(JSON.stringify(documento));
+    expect(opcoes.headers.Authorization).toBe(`Basic ${Buffer.from('ws.hml.kixima:segredo-teste').toString('base64')}`);
+  });
+
   test('obterEstado(): GET com os parâmetros na query string', async () => {
     const fetchMock = mockFetch(200, { resultCode: '0', status: 'PROCESSADO' });
     await agtSandboxClient.obterEstado({ submissionUUID: 'uuid-abc' });
