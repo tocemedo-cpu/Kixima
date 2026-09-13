@@ -106,7 +106,7 @@ function construirDocumento({ documentType, documentNo, taxRegistrationNumber, d
 
 function envelope(taxRegistrationNumber, documentos) {
   return {
-    schemaVersion: '1.2',
+    schemaVersion: '2.0',
     submissionUUID: crypto.randomUUID(),
     taxRegistrationNumber,
     submissionTimeStamp: new Date().toISOString(),
