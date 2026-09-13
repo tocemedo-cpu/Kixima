@@ -1,220 +1,183 @@
-# Auditoria de Arquitetura e Bugs Ocultos — KIXIMA
+# Auditoria de Arquitetura e Bugs Ocultos — KIXIMA (v2)
 
-Data: 2026-09-13
+Data: 2026-09-13 (segunda ronda — ver histórico de correções abaixo)
 Âmbito: `backend/` (Node/Express/Prisma/PostgreSQL), `frontend/` (React/Vite), `kixima-integration-service/` (NestJS/TypeScript).
 
-Este documento tem duas partes: **(A)** o levantamento da arquitetura tal como está hoje, e **(B)** os bugs ocultos encontrados, ordenados por severidade, cada um com ficheiro:linha, o cenário concreto que o dispara, e uma recomendação.
+Este documento substitui a versão anterior (commit `d48b2be`). Mantém o que ainda está por corrigir dessa ronda, regista o que já foi corrigido entretanto, e acrescenta os achados novos desta segunda ronda — focada deliberadamente em código que a primeira ronda não tinha coberto em profundidade (contratos-quadro/call-offs, add-ons, conciliação bancária, adapters SAP/Primavera/Oracle, o novo cliente REST da Sandbox AGT).
 
 ---
 
-## Resumo executivo — achados por severidade
+## Resumo executivo — o que mudou desde a v1
+
+| # da v1 | Achado | Estado |
+|---|---|---|
+| 1 · Crítico | Race no PO Robot duplicava POs | ✅ **Corrigido** (`bc9488d`) |
+| 3 · Alto | Timestamp fixo em 1970 no adapter Ariba | ✅ **Corrigido** (`bc9488d`) |
+| 5 · Médio | `aplicarPagamentoErp` sem idempotência limpa | ✅ **Corrigido** (`d6ac13a`) |
+| 6 · Médio | Duas cobranças abertas por duplo clique | ✅ **Corrigido** (`d6ac13a`) |
+| 7 · Médio | Traduções i18n conflituantes | ✅ **Corrigido** (`d6ac13a`) |
+| 8 · Médio | Webhook do ERP sem idempotência de relay | ✅ **Corrigido** (`d6ac13a`) |
+| 9 · Médio | Segredo de webhook único e global | ✅ **Corrigido** (`d6ac13a`) — mas ver **#N5** abaixo, uma lacuna que esta correção deixou por resolver |
+| 2 · Alto | `aplicarDecisaoErp` TOCTOU | ⏳ **Ainda aberto** — ver detalhe original, não repetido aqui |
+| 4 · Alto | Perda silenciosa de mensagens no consumidor RabbitMQ | ⏳ **Ainda aberto** — ver detalhe original, não repetido aqui |
+| 10 · Baixo | Dead-letter conta como sucesso no BullMQ | ⏳ **Ainda aberto** |
+| 11 · Informativo | `requireSameCompany` morto em `rbac.js` | ⏳ **Ainda aberto** (agora mais relevante — ver **#N2**/**#N3**, que são exatamente o buraco que este guard não usado deixou) |
+
+Os quatro itens "ainda aberto" **mantêm a descrição completa da v1** (não repetida aqui para não duplicar); ficam disponíveis no histórico do git em `d48b2be:AUDITORIA_ARQUITETURA.md`.
+
+## Resumo executivo — achados novos desta ronda
 
 | # | Severidade | Achado | Onde |
 |---|---|---|---|
-| 1 | **Crítico** | `poRoboService.executarCiclo()` sem lock — duas corridas concorrentes duplicam POs geradas pelo robot | `backend/src/services/poRoboService.js:122-145` |
-| 2 | **Alto** | `aplicarDecisaoErp` — TOCTOU sem guarda de estado no UPDATE; uma decisão pode sobrepor silenciosamente outra já aplicada | `backend/src/services/poService.js:303-346` |
-| 3 | **Alto** | Adapter SAP Ariba envia `timestamp` cXML fixo em `1970-01-01` — quebra a integração Ariba em produção | `kixima-integration-service/src/adapters/ariba.adapter.ts:41` |
-| 4 | **Alto** | Perda silenciosa de mensagem no consumidor RabbitMQ — chave de idempotência gravada antes do evento persistir; um crash a meio marca eventos reais como "duplicados" e o `ack` descarta-os para sempre | `kixima-integration-service/src/sync/sync.service.ts:31-59` |
-| 5 | Médio | `aplicarPagamentoErp` — mesmo padrão TOCTOU, mas protegido acidentalmente por `Payment.invoiceId`/`PlatformFee.invoiceId` únicos; produz erro Prisma cru em vez de idempotência limpa | `backend/src/services/poService.js:352-427` |
-| 6 | Médio | "Uma cobrança em aberto por empresa" não é garantida pela BD (check-then-create) — duplo clique cria duas cobranças abertas | `backend/src/services/addonService.js:91-140`, `assinaturaService.js:272-337` |
-| 7 | Médio | 19 chaves i18n (EN) + 18 (FR) com traduções **diferentes** para a mesma chave PT, dependendo do ficheiro — duas mudam o sentido, não só a formulação | `frontend/src/i18n/content*.js` |
-| 8 | Médio | Webhook de decisão do ERP (microserviço) sem idempotência nem correlação com o pedido original — decisão pode ser reencaminhada ao KIXIMA repetidamente | `kixima-integration-service/src/webhooks/webhook.controller.ts:62-68` |
-| 9 | Médio | `WEBHOOK_SIGNING_SECRET` único e global para os 4 ERPs/todos os tenants — uma fuga falsifica webhooks de qualquer ERP | `kixima-integration-service/src/config/configuration.ts:31,62` |
-| 10 | Baixo | Job de dead-letter retorna sucesso ao BullMQ — painel de monitorização subestima falhas reais | `kixima-integration-service/src/sync/sync.processor.ts:166` |
-| 11 | Informativo | `requireSameCompany` definido mas nunca usado — código morto, falsa sensação de guarda central de isolamento por empresa | `backend/src/middleware/rbac.js:29-39` |
+| N1 | **Crítico** | `consolidateContractBilling` gera fatura certificada, depois rebenta com `ReferenceError` — e nada impede re-faturar as mesmas call-offs num pedido repetido | `backend/src/services/contractService.js:130-219` |
+| N2 | **Alto** | `POST /api/contracts` sem verificar que o `COMPANY_ADMIN` pertence a uma das duas empresas — cria contratos entre empresas alheias | `backend/src/controllers/contractController.js:3-6`, `backend/src/routes/contractRoutes.js:13` |
+| N3 | **Alto** | `POST /api/contracts/:id/consolidate-billing` sem verificar posse do contrato — qualquer empresa força faturação de qualquer contrato | `backend/src/controllers/contractController.js:22-25` |
+| N4 | **Alto** | Add-on PO Robot nunca expira automaticamente — paga-se um mês, fica ativo para sempre | `backend/src/services/addonService.js` + `prisma/schema.prisma:164-176` (`CompanyAddon`) |
+| N5 | **Alto** | Segredo de webhook por-tenant (correção #9) não liga o tenant autenticado ao `poId` afetado — decisão/pagamento pode ser aplicado à PO de outra empresa | `kixima-integration-service/src/webhooks/webhook.controller.ts:60-96`, `webhook.producer.ts:52-56` |
+| N6 | **Alto** | Retry de sincronização multi-ERP reenvia a adapters que já tinham tido sucesso | `kixima-integration-service/src/sync/sync.processor.ts:76-140` |
+| N7 | **Alto** | Adapter SAP com `CompanyCode`/`PurchasingOrganization` fixos em `'1000'` para todos os tenants | `kixima-integration-service/src/adapters/mappers/erp.mappers.ts:23-24,41,55-56` |
+| N8 | Médio | Conciliação bancária: TOCTOU sem tratamento de `P2002`, aborta o resto do lote | `backend/src/services/conciliacaoService.js:154-229` |
+| N9 | Médio | Sem validação nem decremento de stock ligado ao ciclo de compra (pode ser intencional — ver nota) | `backend/src/services/poService.js` (ausência confirmada) |
+| N10 | Baixo/Informativo | `agtSandboxClient.js` implementado e testado, mas nunca invocado por nenhuma rota/serviço | `backend/src/services/agtSandboxClient.js` |
 
-**O que está bem implementado** (verificado, não presumido): RBAC/IDOR em `poRoboRoutes`, `addonRoutes`, `catalogRoutes`, `faturacaoRoutes`, `webhookPagamentoRoutes`; assinatura JWS/RS256 (`agtSigningService`/`agtSandboxClient` — base64url consistente, nunca assina sem configuração, nunca diverge entre o assinado e o submetido); verificação HMAC do callback ERP com `timingSafeEqual`; lógica de `auth.js`/`rbac.js`; numeração de faturas/referências (`nextReference` via `INSERT ON CONFLICT`, `faturacaoService.atribuir` via `SELECT FOR UPDATE` — sem race possível); mecanismo de retry/backoff/dead-letter do microserviço (limites e backoff corretos); verificação de assinatura do webhook de entrada do microserviço.
-
----
-
-## A. Levantamento da Arquitetura
-
-### A.1 Backend — Modelo de dados
-
-Fonte: `backend/prisma/schema.prisma`.
-
-- **Empresas/utilizadores**: `Company` (tipo CLIENTE/FORNECEDOR, estado, dimensão MPME, plano BASE/CORE/PRO), `User` (papel, `adminAreas[]` para delegação de Admin do Sistema, MFA, bloqueio progressivo).
-- **Catálogo**: `Product` + imagens/documentos/stock/kits/favoritos/reviews; `QuoteRequest`/`QuoteItem` (RFQ).
-- **Compras (núcleo do sistema)**: `PurchaseOrder` (12 estados, desde `AGUARDANDO_APROVACAO` até `CONCLUIDA`; campos ERP-DOA `erpManaged`/`erpExternalId`; origem `createdBySource` HUMANO/ROBOT) + `PurchaseOrderItem`; `ErpSyncLog`; `PoRoboRegra` (add-on robot).
-- **Faturação/AGT**: `Invoice` + `InvoiceLine` (cadeia de hash/série certificada), `CreditNote`, `Payment` (1:1 com Invoice), `LinhaExtrato` (conciliação bancária), `SerieFaturacao`, `PlatformFee`.
-- **Billing/add-ons**: `PlanoCobranca`, `CompanyAddon` + `AddonCobranca`.
-- **Integração ERP**: `CompanyErpConfig` (credenciais cifradas AES-256-GCM) + `CompanyErpConfigAudit`.
-- **Contratos**: `Contract` (call-offs, periodicidade de faturação).
-- **Notificações**, **Chat/Trust&Safety** (`Conversation`, `RiskAlert`, `SupportTicket`), **Auditoria** (`AuditLog`, append-only), **Feedback**, **DiscountThreshold**, apólices.
-
-### A.2 Backend — Camada de serviços (`backend/src/services/*.js`)
-
-Agrupados por domínio: **Compras/PO** (`poService`, `poRoboService`+`categoryAnalyticsService`, `contractService`, `quoteService`); **Faturação/AGT** (`faturacaoService`, `agtPayloadService`, `agtSigningService`, `agtSandboxClient`, `agtSeriesService`, `creditNoteService`, `saftService`, `taxService`, `conciliacaoService`, `platformFeeService`); **Billing** (`assinaturaService`, `addonService`, `canaisPagamentoService`, `planService`); **ERP** (`erpConfigService`, `erpCrypto`, `eventBus`); **Catálogo** (`catalogService`, `catalogImportService`, `kitService`, `marketplaceService`); **Chat/Trust&Safety** (`conversationService`, `riskAnalysisService`, `riskAlertService`, `supportChatService`, `realtimeService`); **Notificações** (`notificationService`, `mfaEmailService`, `alertaOperacionalService`); **Outros** (`authService`, `auditService`, `companyService`, `policyService`, `retencaoService`, `backupVerificacaoService`, `prontidaoService` — o "painel de verdade" do que está mesmo configurado em produção).
-
-### A.3 Backend — Jobs agendados (`backend/src/jobs/`, registados em `server.js`)
-
-| Job | Agendamento | Função |
-|---|---|---|
-| `policyExpiryJob` | cron diário 07:00 UTC | Avisos de expiração de apólice KIXIMA→Cliente |
-| `subscriptionExpiryJob` | cron diário 07:00 UTC | Avisos escalonados de expiração de subscrição |
-| `poRoboJob` | cron diário 06:00 UTC | `poRoboService.executarCiclo()` — **ver achado #1** |
-| `backupJob` | `BACKUP_CRON` opt-in + polling de recuperação | `pg_dump` + upload S3, single-flight |
-| `mfaLembreteJob` | `setInterval` 1h | Lembretes de ativação de 2FA |
-| `retencaoJob` | `setTimeout`+`setInterval` 24h | Limpeza de retenção de dados |
-
-### A.4 Backend — RBAC
-
-`PersonaRole`: COMPRADOR, COMPANY_ADMIN, FORNECEDOR, FINANCEIRO, ADMIN_SISTEMA. `requireRole`/`requirePermission`/`requireSuperAdmin` em `middleware/rbac.js`; `adminAreas` (CADASTRO, FINANCEIRO, FATURACAO, APOLICES, SUPORTE, OPERACOES) permite delegar Admin do Sistema em "assessores" restritos — array vazio = Super Admin.
-
-### A.5 Backend — Integrações externas
-
-| Serviço | Estado |
-|---|---|
-| Multicaixa Express, PayPay, Bancos (BAI/BFA/Standard Bank) | Placeholders "recusa-se a fingir" — por ligar, sem credenciais reais |
-| AGT (assinatura JWS + Sandbox REST) | Implementado contra a spec/documentação oficial, por ligar |
-| ERP (`erpConfigService` + `kixima-integration-service` via RabbitMQ) | Funcional; execução real delegada ao microserviço |
-| Claude API (`aiRecommendationService`) | Real quando configurado; nunca inventa números, só texto sobre agregados já calculados |
-
-### A.6 Frontend — Arquitetura
-
-- **Roteamento** (`App.jsx`): 92 páginas lazy-loaded, árvore por persona (`comprador/*`, `empresa/*`, `fornecedor/*`, `financeiro/*`, `sistema/*`), `RequireAuth`/`RequireRole` como guardas client-side (a autorização real é sempre no backend).
-- **Cliente API** (`api/client.js`): sessão via cookie `httpOnly` (sem JWT em localStorage); exceção só para o wrapper nativo Capacitor (`Authorization: Bearer` em memória); formato de erro padronizado `{code, message, status}`.
-- **i18n** (`i18n/index.jsx` + 15 ficheiros `content*.js`): dicionário final montado por spread — ordem de import decide quem vence em caso de chave duplicada. **Ver achado #7.**
-- **Componentes partilhados** (`BuyerUI.jsx`, `Common.jsx`): tudo passa por `t()`/`tr()` — daí a i18n consistente ser crítica.
-- **Realtime**: uma ligação Socket.IO por sessão (`RealtimeContext.jsx`), usada por Chat de Suporte e Chat Comercial; autorização de "join" decidida sempre pelo servidor.
-- **Auth** (`AuthContext.jsx`): sem JWT persistido; `sessaoIndeterminada` como terceiro estado explícito (falha de rede ≠ sessão inválida) — evita logout falso por soluço de rede.
-
-### A.7 `kixima-integration-service` — Arquitetura
-
-Pipeline: `RabbitmqConsumer` → `SyncService.ingest()` (idempotência + persiste `IntegrationEvent` + enfileira BullMQ) → `SyncProcessor` (resolve adapters do tenant, chama `ErpAdapter.sync()`/`requestApproval()`, grava `ErpSyncRecord` cifrado) → `WebhookProducer.notifyKixima()` (HMAC-SHA256 de saída). Decisões assíncronas do ERP entram por `WebhookController` (verifica `x-signature` com `timingSafeEqual`, fail-closed sem segredo) e são reencaminhadas ao KIXIMA. Retry com backoff exponencial e limite de tentativas (BullMQ); erros não-retryable (4xx) e tentativas esgotadas vão para `DeadLetterService` (Postgres + DLX/DLQ AMQP). Credenciais por tenant cifradas AES-256-GCM, com fallback para config global (`tenantId = '*'`).
+**O que continua bem implementado** (reverificado nesta ronda): isolamento por empresa em `conversationService`/`riskAnalysisService`/`riskAlertService`/`supportChatService`; `feedbackService.js`; `discountThresholdService.js`+`categoryAnalyticsService.js`; `retencaoService.js`/`backupVerificacaoService.js`; RBAC de `poRoboRoutes.js`/`addonRoutes.js` (verificação de `companyId` presente); adapters Primavera/Oracle (sem valores fixos indevidos); `crypto.service.ts` do microserviço (AES-256-GCM com IV aleatório de 12 bytes, `authTag` sempre verificado); `credentials.controller.ts` (API server-to-server, sem caminho de IDOR tenant-a-tenant a partir do frontend); frontend recém-adicionado (`PoRobot.jsx`, `CategoryManagement.jsx`, `DescontosEconomiaEscala.jsx`, `ErpIntegrations.jsx`) — botões de mutação sempre com `disabled` durante o pedido, sem `dangerouslySetInnerHTML`, sem dados sensíveis em `localStorage`, guardas `RequireAuth`/`RequireRole` aplicadas a todas as rotas novas.
 
 ---
 
-## B. Bugs ocultos — detalhe, cenário e recomendação
+## B. Achados novos — detalhe, cenário e recomendação
 
-### #1 · CRÍTICO — Race no PO Robot duplica ordens de compra
+### N1 · CRÍTICO — Faturação consolidada de contrato: crash garantido + reemissão da mesma fatura
 
-**`backend/src/services/poRoboService.js:122-145`** (`executarCiclo`), disparado por **`backend/src/jobs/poRoboJob.js:12`** (`cron.schedule('0 6 * * *', ...)`).
+**`backend/src/services/contractService.js:130-219`**, rota `POST /api/contracts/:id/consolidate-billing`.
 
-Não existe `SELECT ... FOR UPDATE`, `$transaction` a envolver a seleção, nem um `UPDATE ... WHERE proximaExecucaoEm <= now() RETURNING *` atómico a "reservar" cada regra. O fluxo é: `findMany` (sem lock) → loop → `createPurchaseOrder` → só no fim `poRoboRegra.update({ proximaExecucaoEm })`.
+Dois problemas, um a alimentar o outro:
 
-**Cenário**: duas instâncias da app (ou uma sobreposição durante um redeploy, ou uma corrida manual disparada enquanto a das 06:00 ainda decorre) chamam `executarCiclo()` quase ao mesmo tempo. Ambas leem a mesma regra como devida antes de qualquer uma avançar `proximaExecucaoEm` — cada uma cria a sua própria PO para o mesmo produto/quantidade. Resultado: encomenda duplicada, sem qualquer erro ou aviso.
+1. **Crash garantido, sempre.** Na notificação após a transação (linha ~215), a mensagem usa a variável `amount`, que não existe nesse escopo — só existe `invoice.amount`. `ReferenceError: amount is not defined` acontece **depois** de a fatura já ter sido criada e certificada (AGT) dentro da transação, mas antes de a função devolver. Ou seja: a operação de negócio já se efetivou no lado da base de dados, mas quem chamou recebe um 500.
+2. **Nada impede reprocessar as mesmas call-offs.** A query que seleciona call-offs pendentes filtra por `invoice: null` (relação inversa de `Invoice.purchaseOrderId`). Mas esse campo é **estrutural e deliberadamente `null` para faturas consolidadas** (comentário no schema: "null se fatura consolidada de call-offs" — `prisma/schema.prisma:1089`); o vínculo real é só `Invoice.consolidatedPoIds` (array na fatura), que a query de pendências nunca consulta. Isto significa que a mesma PO consolidada **continua a aparecer como "pendente de faturação" para sempre**, em qualquer chamada seguinte à mesma função.
 
-Hoje mitigado apenas porque o deploy está numa única instância (plano free do Render) — **não pelo código**. Qualquer escalonamento horizontal futuro, ou um redeploy que deixe o processo antigo vivo por segundos a mais, reintroduz a duplicação.
+**Cenário concreto**: o Financeiro clica em "Consolidar Faturação" — a fatura é criada e certificada com sucesso, mas o ecrã mostra um erro 500 (por causa do `ReferenceError`). Sem saber que já funcionou, o utilizador tenta novamente (ou o frontend tem lógica de retry). A segunda chamada volta a encontrar as MESMAS call-offs como "pendentes" (porque `invoice: null` continua verdadeiro) e emite uma **segunda fatura certificada AGT a cobrar exatamente os mesmos call-offs outra vez** — duplicação de faturação fiscal real, não um bug cosmético.
 
-**Recomendação**: envolver a seleção+reserva numa única operação atómica, ex.:
-```sql
-UPDATE po_robo_regras SET proxima_execucao_em = <novo valor temporário/lock>
-WHERE id IN (SELECT id FROM po_robo_regras WHERE ativo AND proxima_execucao_em <= now() FOR UPDATE SKIP LOCKED)
-RETURNING *;
-```
-ou um `SELECT ... FOR UPDATE SKIP LOCKED` por regra dentro de uma transação antes de criar a PO.
+**Recomendação**:
+- Corrigir `amount` → `invoice.amount` (trivial, mas crítico — sem isto a função nunca teve sucesso "silencioso").
+- Impedir reprocessamento: antes de selecionar `pendingCallOffs`, excluir POs cujo id já apareça em `consolidatedPoIds` de qualquer fatura existente do contrato (ou introduzir um campo explícito, ex. `PurchaseOrder.consolidatedInvoiceId`, atualizado dentro da mesma transação).
+- Não existem testes para esta função — acrescentar cobertura (consolidação normal; chamada repetida não duplica; falha na notificação não deixa a fatura "invisível" para o utilizador).
 
 ---
 
-### #2 · ALTO — `aplicarDecisaoErp` pode sobrepor silenciosamente uma decisão já aplicada
+### N2 · ALTO — Criação de contrato-quadro sem verificar a empresa do utilizador
 
-**`backend/src/services/poService.js:303-346`**.
+**`backend/src/controllers/contractController.js:3-6`** + **`backend/src/routes/contractRoutes.js:13`** + schema em `backend/src/utils/schemas.js:406-416`.
 
-A verificação de idempotência (`if (po.status !== 'AGUARDANDO_APROVACAO') return po;`, linha 307) acontece **fora** da transação (leitura solta na linha 304), e o `UPDATE` final (linha 320) só filtra por `id`, não por `status`.
+`POST /api/contracts` aceita `clientCompanyId`/`supplierCompanyId` diretamente do corpo do pedido (`createContractSchema`, dois UUIDs livres). A rota permite `COMPANY_ADMIN` (não só `ADMIN_SISTEMA`), mas nem a rota, nem o controller, nem `contractService.createContract` verificam que `req.user.companyId` corresponde a uma das duas empresas indicadas.
 
-**Cenário**: o ERP reenvia o callback (retry de rede, ou duas decisões próximas no workflow DOA) e dois pedidos concorrentes chegam a `POST /api/integration/callback` quase em simultâneo. Ambos passam a verificação antes de qualquer um comitar — o segundo `UPDATE` sobrepõe o primeiro sem erro (ex.: uma PO fica `REJEITADA` depois de já ter sido `APROVADA`). Cada passagem duplica ainda `ErpSyncLog`, `AuditLog` e notificações, sem constraint de unicidade a impedir.
+**Cenário concreto**: um `COMPANY_ADMIN` de qualquer empresa com plano PRO consegue criar, sem qualquer relação real, um contrato-quadro entre **duas empresas terceiras** (`clientCompanyId`/`supplierCompanyId` arbitrários), desde que a empresa-cliente escolhida tenha a feature `frameworkContracts`. O impacto é real: `poService.createPurchaseOrder` deteta call-offs automaticamente a partir de `clientCompanyId+supplierCompanyId+categorias` — POs reais e futuras entre essas duas empresas passam a nascer já `APROVADA` (sem aprovação humana) e a entrar no ciclo de faturação consolidada do contrato forjado.
 
-Nota: `aplicarPagamentoErp` (mesmo ficheiro, linhas 352-427) tem o **mesmo padrão TOCTOU**, mas está protegido *acidentalmente* por `Payment.invoiceId @unique`/`PlatformFee.invoiceId @unique` — a segunda escrita falha por violação de unicidade em vez de duplicar dinheiro (ver achado #5 para o efeito colateral disso).
-
-**Recomendação**: trocar o `update` por `updateMany({ where: { id: poId, status: 'AGUARDANDO_APROVACAO' }, data })` e verificar `count === 1` antes de prosseguir com auditoria/notificações — o mesmo padrão que já protege (por acidente) o caminho de pagamento, mas de forma intencional.
+**Recomendação**: exigir `req.user.companyId === clientCompanyId` quando o papel é `COMPANY_ADMIN` (só `ADMIN_SISTEMA` pode criar livremente, com uma justificação de negócio explícita), reutilizando o padrão de `requireSameCompany` já definido (mas morto) em `rbac.js` — ver achado #11 da v1.
 
 ---
 
-### #3 · ALTO — Adapter SAP Ariba envia timestamp fixo em 1970
+### N3 · ALTO — Consolidação de faturação sem verificar posse do contrato
 
-**`kixima-integration-service/src/adapters/ariba.adapter.ts:41`**: `'@_timestamp': new Date(0).toISOString()` no cabeçalho cXML, em vez de `new Date().toISOString()`.
+**`backend/src/controllers/contractController.js:22-25`** + **`backend/src/routes/contractRoutes.js:16`**.
 
-O protocolo cXML do Ariba usa `payloadID`+`timestamp` para deteção de duplicados/replay — um timestamp fixo no passado tende a ser rejeitado ou tratado como mensagem expirada por implementações reais do lado do Ariba. **Isto provavelmente quebra toda a integração com SAP Ariba em produção**, e cada tentativa de retry reenviaria o mesmo timestamp inválido, nunca recuperando sozinho.
+`consolidateBilling` chama `contractService.consolidateContractBilling(req.params.id)` sem sequer passar `req.user`; a função de serviço nunca compara `contract.clientCompanyId`/`supplierCompanyId` com quem fez o pedido (ao contrário de `getContract`, que já tem essa verificação e devolve 404 quando a empresa não é parte do contrato).
 
-**Recomendação**: trivial — trocar para `new Date().toISOString()`. Corrigir com prioridade antes de qualquer teste real com um tenant Ariba.
+**Cenário concreto**: qualquer `COMPANY_ADMIN` ou `FINANCEIRO`, de qualquer empresa da plataforma, pode forçar a geração de uma fatura consolidada certificada para **qualquer contrato existente**, bastando saber (ou adivinhar) o UUID — nem precisa de ser parte do contrato.
 
----
-
-### #4 · ALTO — Perda silenciosa de mensagens no consumidor RabbitMQ do microserviço
-
-**`kixima-integration-service/src/sync/sync.service.ts:31-59`**.
-
-`ingest()` faz `idempotencyKey.create()` (linha 34) e só depois, em chamadas Prisma separadas e **não transacionadas**, `integrationEvent.create()` (linha 48) e `syncQueue.add()` (linha 67).
-
-**Cenário**: o processo morre (crash, OOM-kill, restart) entre gravar a chave de idempotência e enfileirar o job — ou `integrationEvent.create()`/`syncQueue.add()` falha por qualquer razão (Postgres/Redis indisponível). Numa reentrega do RabbitMQ, `idempotencyKey.create()` volta a falhar com `P2002`, o código trata isso como "duplicado legítimo" (linha 38-43), o consumidor faz `ack`, e a mensagem é **perdida para sempre** — nunca chega a nenhum ERP, nunca vai para Dead Letter, e nada acusa o problema.
-
-**Recomendação**: envolver `idempotencyKey.create()` + `integrationEvent.create()` + `syncQueue.add()` numa única transação lógica (ex.: gravar a chave de idempotência e o evento na mesma transação Prisma; só depois enfileirar o job BullMQ com retry se a transação tiver sucesso — ou usar um outbox pattern).
+**Recomendação**: usar `contractService.getContract(id, req.user)` (já tem a verificação de posse) antes de consolidar, ou passar `req.user` a `consolidateContractBilling` e replicar a mesma verificação aí.
 
 ---
 
-### #5 · MÉDIO — `aplicarPagamentoErp` produz erro Prisma cru em vez de idempotência limpa
+### N4 · ALTO — Add-on "Automatic PO Robot" nunca expira automaticamente
 
-**`backend/src/services/poService.js:352-427`** + **`backend/src/routes/integrationRoutes.js:67-75`**.
+**`backend/src/services/addonService.js`** (modelo de dados: `prisma/schema.prisma:164-176`, `CompanyAddon`).
 
-Mesmo padrão TOCTOU do achado #2, mas salvo pela constraint `Payment.invoiceId @unique`. Num duplo callback concorrente, a segunda transação rebenta com violação de unicidade (P2002); `integrationRoutes.js` apanha isso como "erro de negócio" e grava a mensagem crua do Prisma no `ErpSyncLog`, respondendo 200 com `error: ...`. Sem risco financeiro, mas confuso operacionalmente — parece uma falha do sistema quando é apenas uma repetição legítima.
+Ao contrário da subscrição de plano (`Company.planoValidoAte` + `subscriptionExpiryJob.js`, com avisos escalonados e restrição automática ao expirar), o modelo `CompanyAddon` **não tem nenhum campo de validade** — só `status` (`ATIVO`/`INATIVO`) e `activatedAt`. A validade da mensalidade fica só em `AddonCobranca.validoAte` (o registo de cobrança), mas nada volta a lê-la depois de o add-on ser ativado. `assertAddon` — chamada antes de toda a operação do robot — só verifica `status === 'ATIVO'`. Confirmado por grep: não existe nenhum job de expiração de add-ons em `backend/src/jobs/`, e `subscriptionExpiryJob.js`/`planService.js` não mencionam addons.
 
-**Recomendação**: tratar `P2002` sobre `Payment.invoiceId` explicitamente como sucesso idempotente (devolver o pagamento já existente), não como erro.
+**Cenário concreto**: uma empresa paga um único mês do add-on (200 USD por omissão). O `CompanyAddon.status` fica `ATIVO` **para sempre** — o robot continua a criar Purchase Orders reais (compromissos financeiros da empresa) indefinidamente, sem nunca mais ser cobrado.
 
----
-
-### #6 · MÉDIO — Duas cobranças abertas concorrentes por duplo clique
-
-**`backend/src/services/addonService.js:91-140`**, **`backend/src/services/assinaturaService.js:272-337`**.
-
-`pedir()` faz `findFirst` sobre cobranças abertas e só depois `create` — check-then-create em JS. Não existe nenhum índice único (nem parcial) que impeça duas cobranças `PENDENTE`/`COMPROVATIVO_ENVIADO` para a mesma empresa em simultâneo (`PlanoCobranca`/`AddonCobranca` só têm `referencia @unique`).
-
-**Cenário**: duplo clique em "Pedir plano PRO" (ou duas abas) gera dois `POST /pedir` quase simultâneos; ambos passam o `findFirst` antes de qualquer um criar a linha. Resultado: duas cobranças abertas para a mesma empresa, risco de confirmação duplicada por um humano da KIXIMA.
-
-**Recomendação**: índice único parcial em Postgres, ex. `CREATE UNIQUE INDEX ... ON plano_cobrancas (company_id) WHERE status IN ('PENDENTE','COMPROVATIVO_ENVIADO')` (e equivalente para `addon_cobrancas` sobre `(company_id, addon_key)`).
+**Recomendação**: persistir a validade em `CompanyAddon` (ex. `validoAte`, copiado de `AddonCobranca.validoAte` ao confirmar) e ou (a) verificar em `assertAddon` que ainda não expirou, ou (b) criar um job diário de expiração de add-ons, espelhando `subscriptionExpiryJob.js`.
 
 ---
 
-### #7 · MÉDIO — Traduções i18n conflituantes entre ficheiros `content*.js`
+### N5 · ALTO — Segredo de webhook por-tenant não liga o tenant à PO afetada
 
-15 ficheiros `content.js`..`content15.js`, montados por spread em `frontend/src/i18n/index.jsx:86` — a ordem de import decide qual tradução vence quando a mesma chave PT aparece em mais de um ficheiro com valores diferentes (chaves duplicadas com o **mesmo** valor são inofensivas e não entram nesta lista).
+**`kixima-integration-service/src/webhooks/webhook.controller.ts:60-96`** (`receive`) + **`webhook.producer.ts:52-56`** (`notifyKixima`) + **`backend/src/services/poService.js:303-360`** (`aplicarDecisaoErp`/`aplicarPagamentoErp`).
 
-**Casos que mudam o sentido, não só a formulação** (os mais graves):
-- `"Credenciamento"` — `content3.js`: *Accreditation* vs. base `EN` (`index.jsx`): *Onboarding*.
-- `"Pedidos"` — `content4.js`: *Requests* vs. base `EN`: *Orders* (pode confundir Pedidos de Cotação com Ordens de Compra).
+A correção do achado #9 da v1 resolveu a assinatura (agora por tenant+ERP), mas deixou uma lacuna estrutural: `tenantId` (parâmetro da rota `POST /webhooks/erp/:tenantId/:erp`) serve **só** para escolher o segredo de verificação (`resolveSecret`) e para um log de auditoria — nunca é usado para confirmar que o `poId` no corpo do webhook pertence a esse tenant. `notifyKixima(null, type, data)` nem sequer recebe `tenantId` como parâmetro. O callback que chega ao backend Kixima (`POST /api/integration/callback`) aplica a decisão só com base no `poId`, sem qualquer verificação de qual empresa "devia" estar a confirmá-la.
 
-Mais 17 casos EN e 18 FR de divergência de formulação (ex. "Catálogo"/"Catalogue" vs "Catalog", "Remover"/"Retirer" vs "Supprimer") — listados na íntegra no relatório do agente de exploração (secção i18n, disponível no histórico desta sessão). Muitos destes são texto morto (a entrada em `content3.js`/`content4.js` nunca aparece, porque o dicionário base `EN`/`FR` hardcoded em `index.jsx` é espalhado por último e sempre vence) — mas indicam traduções mantidas em duplicado sem nunca serem reconciliadas, o que é uma armadilha para quem editar um dos dois sem saber do outro.
+**Cenário concreto**: uma entidade que conheça o segredo de webhook legítimo do tenant B (o próprio ERP de B, ou uma credencial de B comprometida) pode assinar corretamente `POST /webhooks/erp/B/sap` com um `poId` que pertence à empresa A. A assinatura é válida (é mesmo o segredo de B), o microserviço reencaminha, e o backend aplica a decisão/pagamento à PO de A — incluindo emitir um recibo fiscal certificado via `aplicarPagamentoErp`.
 
-**Recomendação**: correr um script de auditoria de chaves duplicadas (fácil de escrever — comparar todos os `content*.js` chave a chave) como parte do `npm run i18n:missing`, e decidir uma fonte única por chave, especialmente para "Credenciamento"/"Pedidos".
+**Fator atenuante, para não exagerar a gravidade**: `PurchaseOrder.id` é um UUID (`prisma/schema.prisma:884`), não sequencial e não exposto publicamente; na prática, um tenant só chega a conhecer o `poId` de uma PO que lhe foi endereçada pelo próprio fluxo de sincronização (o `approval_requested` que o microserviço lhe envia). Por isso, hoje, explorar isto exige já ter uma forma de obter o UUID de uma PO alheia — algo que os controlos de acesso normais da aplicação não expõem. Ainda assim, é uma lacuna de defesa em profundidade real: a autorização depende inteiramente do sigilo do UUID nalgum outro sítio do sistema, e não de uma verificação explícita no ponto onde a decisão é aplicada.
 
----
-
-### #8 · MÉDIO — Webhook de decisão do ERP sem idempotência nem correlação
-
-**`kixima-integration-service/src/webhooks/webhook.controller.ts:62-68`**.
-
-Ao contrário do consumidor RabbitMQ (que tem `IdempotencyKey`), `WebhookController.receive()` chama `notifyKixima(null, type, data)` sem qualquer deduplicação por `poId`/tipo, e sem atualizar o `ErpSyncRecord` original do pedido de aprovação com o desfecho real.
-
-**Cenário**: o ERP reentrega o mesmo webhook de decisão (comportamento comum em sistemas de webhook) — a mesma decisão é reencaminhada ao KIXIMA repetidamente. O KIXIMA está protegido pela idempotência por-estado do achado #2 (para o caso feliz), mas a base de dados do microserviço nunca fica com o histórico de qual foi o desfecho real da aprovação — só sabe que "foi submetida".
-
-**Recomendação**: gravar o desfecho no `ErpSyncRecord` original (via `integrationEventId` correlacionado por `poId`) e aplicar a mesma tabela `IdempotencyKey` também aos webhooks de entrada.
+**Recomendação**: o backend (`aplicarDecisaoErp`/`aplicarPagamentoErp`) devia validar que a PO pertence à empresa que o `tenantId` do webhook identifica — o que exige passar `tenantId` até ao callback (hoje perdido em `notifyKixima`) e mapear tenant→companyId de forma fiável nos dois lados.
 
 ---
 
-### #9 · MÉDIO — Segredo de webhook único e global para os 4 ERPs
+### N6 · ALTO — Retry de sincronização multi-ERP reenvia a adapters já bem-sucedidos
 
-**`kixima-integration-service/src/config/configuration.ts:31,62`**: `WEBHOOK_SIGNING_SECRET` é um único valor partilhado por SAP, Oracle, Ariba e Primavera, para todos os tenants.
+**`kixima-integration-service/src/sync/sync.processor.ts:76-140`**.
 
-Uma única fuga permite forjar webhooks "vindos" de qualquer um dos 4 ERPs, para qualquer tenant — a verificação em si está bem implementada (`timingSafeEqual`, fail-closed), mas o alcance do segredo é maior do que precisava de ser.
+Quando um tenant tem mais do que um ERP ativo, `resolveEnabledAdapters` devolve vários adapters e o `process()` itera `for (const {adapter} of resolved)` chamando `adapter.sync(...)`/`requestApproval(...)` para **todos**, sem verificar se já existe um `ErpSyncRecord` com `status: SUCCESS` para aquele `(integrationEventId, erp, entityType)`.
 
-**Recomendação**: segredo por-tenant (ou pelo menos por-ERP), guardado como as outras credenciais (`ErpCredential`, AES-256-GCM).
+**Cenário concreto**: um tenant com SAP e Ariba ativos processa um evento; o SAP tem sucesso, o Ariba falha com um erro retryable (timeout, 5xx). `attemptsLeft > 0` faz o BullMQ relançar o job inteiro — no próximo attempt, o loop volta a correr para **ambos** os adapters, incluindo o SAP que já tinha criado a PO/fatura/pagamento com sucesso na primeira tentativa. Como as operações dos adapters são POSTs de criação (não idempotentes do lado do ERP), isto duplica registos no ERP já sincronizado — no pior caso (`pushPayment`), poderia iniciar uma segunda confirmação de pagamento real no lado que já tinha tido sucesso, só porque outro ERP do mesmo evento falhou.
 
----
-
-### #10 · BAIXO — Painel de monitorização subestima falhas reais
-
-**`kixima-integration-service/src/sync/sync.processor.ts:166`**: quando um job vai para Dead Letter, `process()` retorna normalmente em vez de lançar — o BullMQ regista isso como sucesso, não falha. `monitoring.controller.ts:39/56` usa `getFailedCount()` para o card "Falhados", que nunca conta estes casos.
-
-**Recomendação**: lançar a exceção original depois de `moveToDeadLetter` completar, para o BullMQ contabilizar corretamente.
+**Recomendação**: antes de invocar cada adapter, verificar se já existe `erpSyncRecord` com `status: SUCCESS` para esse `(integrationEventId, erp, entityType)` e saltar esse adapter no retry.
 
 ---
 
-### #11 · INFORMATIVO — Código morto em `rbac.js`
+### N7 · ALTO — Adapter SAP com código de empresa fixo para todos os tenants
 
-**`backend/src/middleware/rbac.js:29-39`**: `requireSameCompany` está definido mas não é usado em rota nenhuma (cada rota reimplementa a verificação manualmente, e todas verificadas estão corretas). Não é uma vulnerabilidade, mas pode induzir a falsa impressão de que existe um guard central de isolamento por empresa. Remover ou adotar consistentemente.
+**`kixima-integration-service/src/adapters/mappers/erp.mappers.ts:22-24, 41, 55-56`** (usado por `sap.adapter.ts`).
+
+`SapMapper.purchaseOrder`, `approvalRequest` e `supplierInvoice` codificam `CompanyCode: '1000'` e `PurchasingOrganization: '1000'` como constantes — apesar de o adapter já ser configurável por tenant (`baseUrl`, `username`, `password`, `client`), estes dois campos não fazem parte dessa configuração.
+
+**Cenário concreto**: qualquer tenant cujo SAP real use um código de empresa diferente de `1000` vê as suas POs, aprovações e faturas de fornecedor submetidas ao código de empresa/organização de compras **errado** — na melhor hipótese a chamada falha (código inexistente no SAP do cliente), na pior o código `1000` existe mas pertence a outra unidade de negócio do mesmo cliente, misturando dados financeiros entre unidades. É a mesma classe de bug do timestamp fixo do adapter Ariba (já corrigido) — um valor que devia vir da configuração por tenant e está fixo no código.
+
+**Recomendação**: tornar `companyCode`/`purchasingOrganization` campos da configuração do tenant (como `client` já é), e usá-los no mapper.
 
 ---
 
-## Metodologia
+### N8 · MÉDIO — Conciliação bancária: corrida sem tratamento no `P2002`
 
-Levantamento feito por 5 agentes de exploração/revisão em paralelo, cada um focado num recorte diferente (dados+serviços+jobs+RBAC do backend; concorrência financeira; RBAC/IDOR+criptografia AGT; arquitetura do frontend+i18n; microserviço de integração ERP), com instrução explícita de só reportar achados reais e verificados no código (com ficheiro:linha como prova), nunca problemas hipotéticos ou de estilo. Nenhuma alteração de código foi feita como parte desta auditoria — é só o levantamento e a análise, conforme pedido.
+**`backend/src/services/conciliacaoService.js:154-229`** (`tentarConciliar`), chamada em loop por `importarExtrato` (linhas 90-130, sem `try/catch` por linha).
+
+`tentarConciliar` lê a fatura com `include: { payment: true }` e verifica `if (fatura.payment)` (linha 172) **antes** de abrir a `$transaction` (linha 205) que cria o `Payment` (`invoiceId @unique`). Ao contrário de `poService.aplicarPagamentoErp` (que já trata este mesmo padrão explicitamente, tratando `P2002` como sucesso idempotente), aqui não há `try/catch` nenhum à volta da transação.
+
+**Cenário concreto**: duas linhas de extrato com referências que apontam para a mesma fatura, processadas por chamadas concorrentes a `importarExtrato`/`reconciliarManualmente` (ex.: dois administradores a importar extratos sobrepostos ao mesmo tempo), podem ambas passar a verificação de `fatura.payment` antes de qualquer uma criar o `Payment`. A segunda rebenta com `P2002` sem tratamento — o erro sobe por `tentarConciliar` e interrompe o `for` de `importarExtrato` **a meio do lote**, deixando as linhas seguintes do extrato por processar e devolvendo 500 ao chamador.
+
+**Recomendação**: envolver o bloco em `try/catch` (mesmo padrão de `aplicarPagamentoErp`): em `P2002`, marcar a linha como `DIVERGENTE` ("pagamento já registado por outra linha") em vez de propagar o erro e abortar o resto do lote.
+
+---
+
+### N9 · MÉDIO — Sem validação nem decremento de stock ligado ao ciclo da PO
+
+**Ausência confirmada** em `backend/src/services/poService.js` (grep: `stockQuantity` só aparece em `catalogService.js`/`catalogImportService.js`/`reportsService.js` — nunca em `poService.js`).
+
+Não existe qualquer verificação de "quantidade pedida ≤ stock disponível" na criação de uma PO, nem decremento automático de `Product.stockQuantity` em nenhum ponto do ciclo (criação, aceitação, despacho, entrega). O `stockQuantity` só é alterado manualmente pelo fornecedor via `catalogService.updateStock`/`createStockMovement`.
+
+**Cenário concreto**: várias POs concorrentes para o mesmo produto podem, em conjunto, pedir uma quantidade muito superior ao que o fornecedor declarou em stock, sem qualquer aviso ou bloqueio do sistema.
+
+**Nota importante**: isto pode ser uma decisão de produto deliberada — um marketplace B2B com fulfillment manual, em que "stock" é só informativo para o comprador decidir, não um controlo de disponibilidade automático. Não classifico isto como um bug confirmado; é uma lacuna relativamente à expectativa comum de "stock", que vale a pena confirmar como intencional (e documentar como tal) ou corrigir.
+
+**Recomendação, se for suposto ser um controlo real**: adicionar validação em `createPurchaseOrder` e decrementar dentro da mesma transação, com guarda condicional no `WHERE` (`updateMany` com `stockQuantity: { gte: quantity }`) para evitar oversell sob concorrência.
+
+---
+
+### N10 · BAIXO/INFORMATIVO — Cliente REST da Sandbox AGT implementado mas nunca ligado
+
+**`backend/src/services/agtSandboxClient.js`** — confirmado por grep: só é referenciado pelos próprios testes (`tests/agt-sandbox-client*.test.js`) e por um comentário em `env.js`; nenhuma rota, controller ou outro serviço o invoca.
+
+O módulo (registo/consulta de faturas na Sandbox da AGT, com as 3 assinaturas JWS exigidas) está implementado e testado isoladamente, mas não há nenhum caminho de código que o chame a partir de um evento de negócio real (emissão de fatura, nota de crédito, recibo). Isto não é um bug de correção — é um lembrete de que a submissão à AGT via Sandbox **ainda não está integrada no fluxo**, apesar de o módulo já existir; alguém a olhar só para o código do serviço poderia presumir o contrário.
+
+**Recomendação**: nenhuma ação corretiva necessária agora — só não apresentar isto como "submissão à AGT implementada" sem qualificar que falta a ligação ao fluxo de faturação real.
+
+---
+
+## Metodologia desta ronda
+
+Reverificação direta (leitura de código, não presunção) dos 4 achados da v1 ainda por corrigir, mais 2 agentes de exploração em paralelo, cada um instruído a não repetir achados já conhecidos e a só reportar problemas verificados com ficheiro:linha e cenário concreto de disparo:
+- Agente A: `contractService`/`quoteService`/`catalogService` (stock)/`conciliacaoService`/`retencaoService`/`backupVerificacaoService`/Trust & Safety/`feedbackService`/Category Management/`saftService`/`poRoboService`/`addonService`.
+- Agente B: adapters SAP/Primavera/Oracle do microserviço, `sync.processor.ts`, `credentials.service.ts`/`crypto.service.ts`, correlação tenant↔PO no webhook de entrada, e páginas novas do frontend (PO Robot, Category Management, Descontos, integrações ERP).
+
+Todos os achados Alto e Crítico reportados pelos agentes foram reverificados manualmente por mim antes de entrarem neste documento (leitura direta do ficheiro:linha citado, confirmação do schema Prisma relevante, e no caso de N1/N2/N3, confirmação também do schema de validação Zod e das rotas). Nenhuma alteração de código foi feita como parte desta auditoria.
