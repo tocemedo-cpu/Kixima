@@ -18,8 +18,8 @@ Este documento substitui a versão anterior (commit `d48b2be`). Mantém o que ai
 | 7 · Médio | Traduções i18n conflituantes | ✅ **Corrigido** (`d6ac13a`) |
 | 8 · Médio | Webhook do ERP sem idempotência de relay | ✅ **Corrigido** (`d6ac13a`) |
 | 9 · Médio | Segredo de webhook único e global | ✅ **Corrigido** (`d6ac13a`) — mas ver **#N5** abaixo, uma lacuna que esta correção deixou por resolver |
-| 2 · Alto | `aplicarDecisaoErp` TOCTOU | ⏳ **Ainda aberto** — ver detalhe original, não repetido aqui |
-| 4 · Alto | Perda silenciosa de mensagens no consumidor RabbitMQ | ⏳ **Ainda aberto** — ver detalhe original, não repetido aqui |
+| 2 · Alto | `aplicarDecisaoErp` TOCTOU | ✅ **Corrigido** (`e2f5c61`) |
+| 4 · Alto | Perda silenciosa de mensagens no consumidor RabbitMQ | ✅ **Corrigido** (`e2f5c61`) — fecha o crash antes do commit da transação; uma janela residual mais estreita (crash entre o commit e o `syncQueue.add()` seguinte) fica por fechar, precisaria de um padrão outbox ou job de reconciliação |
 | 10 · Baixo | Dead-letter conta como sucesso no BullMQ | ⏳ **Ainda aberto** |
 | 11 · Informativo | `requireSameCompany` morto em `rbac.js` | ⏳ **Ainda aberto** (agora mais relevante — ver **#N2**/**#N3**, que são exatamente o buraco que este guard não usado deixou) |
 
@@ -36,9 +36,9 @@ Os quatro itens "ainda aberto" **mantêm a descrição completa da v1** (não re
 | N5 | **Alto** | Segredo de webhook por-tenant (correção #9) não liga o tenant autenticado ao `poId` afetado — decisão/pagamento pode ser aplicado à PO de outra empresa | ✅ **Corrigido** (`7e4cec9`) |
 | N6 | **Alto** | Retry de sincronização multi-ERP reenvia a adapters que já tinham tido sucesso | ✅ **Corrigido** (`7e4cec9`) |
 | N7 | **Alto** | Adapter SAP com `CompanyCode`/`PurchasingOrganization` fixos em `'1000'` para todos os tenants | ✅ **Corrigido** (`7e4cec9`) |
-| N8 | Médio | Conciliação bancária: TOCTOU sem tratamento de `P2002`, aborta o resto do lote | `backend/src/services/conciliacaoService.js:154-229` |
-| N9 | Médio | Sem validação nem decremento de stock ligado ao ciclo de compra (pode ser intencional — ver nota) | `backend/src/services/poService.js` (ausência confirmada) |
-| N10 | Baixo/Informativo | `agtSandboxClient.js` implementado e testado, mas nunca invocado por nenhuma rota/serviço | `backend/src/services/agtSandboxClient.js` |
+| N8 | Médio | Conciliação bancária: TOCTOU sem tratamento de `P2002`, aborta o resto do lote | ✅ **Corrigido** (`e2f5c61`) |
+| N9 | Médio | Sem validação nem decremento de stock ligado ao ciclo de compra (pode ser intencional — ver nota) | ✅ **Corrigido** (`e2f5c61`) — confirmado com o utilizador: adicionar validação + decremento |
+| N10 | Baixo/Informativo | `agtSandboxClient.js` implementado e testado, mas nunca invocado por nenhuma rota/serviço | ✅ **Corrigido** (`e2f5c61`) — confirmado com o utilizador: ligar ao fluxo real agora |
 
 **O que continua bem implementado** (reverificado nesta ronda): isolamento por empresa em `conversationService`/`riskAnalysisService`/`riskAlertService`/`supportChatService`; `feedbackService.js`; `discountThresholdService.js`+`categoryAnalyticsService.js`; `retencaoService.js`/`backupVerificacaoService.js`; RBAC de `poRoboRoutes.js`/`addonRoutes.js` (verificação de `companyId` presente); adapters Primavera/Oracle (sem valores fixos indevidos); `crypto.service.ts` do microserviço (AES-256-GCM com IV aleatório de 12 bytes, `authTag` sempre verificado); `credentials.controller.ts` (API server-to-server, sem caminho de IDOR tenant-a-tenant a partir do frontend); frontend recém-adicionado (`PoRobot.jsx`, `CategoryManagement.jsx`, `DescontosEconomiaEscala.jsx`, `ErpIntegrations.jsx`) — botões de mutação sempre com `disabled` durante o pedido, sem `dangerouslySetInnerHTML`, sem dados sensíveis em `localStorage`, guardas `RequireAuth`/`RequireRole` aplicadas a todas as rotas novas.
 
