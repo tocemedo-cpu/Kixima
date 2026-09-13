@@ -38,7 +38,7 @@ export class AribaAdapter extends ErpAdapter {
       '?xml': { '@_version': '1.0', '@_encoding': 'UTF-8' },
       cXML: {
         '@_payloadID': payloadId,
-        '@_timestamp': new Date(0).toISOString(),
+        '@_timestamp': new Date().toISOString(),
         Header: {
           Sender: {
             Credential: { '@_domain': 'NetworkID', Identity: this.networkId, SharedSecret: this.sharedSecret },

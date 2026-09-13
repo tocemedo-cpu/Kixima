@@ -222,6 +222,27 @@ describe('executarCiclo — várias regras, sem parar no primeiro erro', () => {
     await prisma.poRoboRegra.delete({ where: { id: regra.id } });
   });
 
+  test('duas corridas concorrentes de executarCiclo() na MESMA regra só criam UMA PO (reserva atómica)', async () => {
+    await ativarAddon();
+    const regra = await criarRegra({ quantidade: 1 });
+
+    // Simula duas instâncias da app (ou uma sobreposição de deploy) a correr
+    // o ciclo diário ao mesmo tempo — antes da reserva atómica, ambas liam a
+    // regra como devida e cada uma criava a sua própria PO.
+    const [resultadoA, resultadoB] = await Promise.all([
+      poRoboService.executarCiclo(),
+      poRoboService.executarCiclo(),
+    ]);
+
+    const contagem = await prisma.auditLog.count({
+      where: { entityType: 'PurchaseOrder', action: 'PO_CRIADA_ROBOT', detail: { path: ['regraId'], equals: regra.id } },
+    });
+    expect(contagem).toBe(1);
+    expect(resultadoA.criadas + resultadoB.criadas).toBe(1);
+
+    await prisma.poRoboRegra.delete({ where: { id: regra.id } });
+  });
+
   test('empresa sem o add-on ativo: a regra falha, sem criar PO', async () => {
     await desativarAddon();
     const regra = await criarRegra({ quantidade: 1 });

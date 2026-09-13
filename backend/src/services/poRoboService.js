@@ -16,6 +16,12 @@ const alertaOperacionalService = require('./alertaOperacionalService');
 
 const ATOR_ROBOT = { actorId: null, actorName: 'PO Robot', actorRole: null, companyId: null };
 
+// Janela da reserva de uma regra durante a execução (ver reclamarRegra) — só
+// precisa de ser maior do que o tempo que uma execução demora; não é o
+// intervalo real entre execuções (esse é sempre recalculado por
+// proximaExecucao() no sucesso).
+const RESERVA_MS = 10 * 60 * 1000;
+
 // Fração do mês que cada periodicidade representa, para escalar a média
 // mensal na quantidade de UMA execução — 30 dias é a mesma aproximação de
 // calendário já usada noutros pontos da plataforma para "um mês".
@@ -115,6 +121,30 @@ async function executarRegra(regra) {
 }
 
 /**
+ * Reserva atómica de uma regra antes de a executar — evita que duas corridas
+ * concorrentes de executarCiclo() (duas instâncias da app, ou uma
+ * sobreposição durante um redeploy) leiam a MESMA regra como devida e cada
+ * uma crie a sua própria PO para o mesmo produto.
+ *
+ * O `updateMany` só afeta a linha se `proximaExecucaoEm` ainda for EXATAMENTE
+ * o valor que acabámos de ler no findMany — um UPDATE condicional é atómico
+ * ao nível da linha em Postgres (mesmo sem transação explícita nem SELECT FOR
+ * UPDATE): a segunda corrida a tentar reclamar a mesma regra encontra o valor
+ * já mudado pela primeira e o seu `updateMany` afeta zero linhas. Fica
+ * marcada com uma data futura próxima (RESERVA_MS), não a data real da
+ * próxima execução — isso só é calculado no sucesso (ver executarRegra) ou
+ * reposto no fracasso (ver executarCiclo), para não alterar o que já
+ * acontecia antes desta reserva existir.
+ */
+async function reclamarRegra(regra) {
+  const reserva = await prisma.poRoboRegra.updateMany({
+    where: { id: regra.id, proximaExecucaoEm: regra.proximaExecucaoEm },
+    data: { proximaExecucaoEm: new Date(Date.now() + RESERVA_MS) },
+  });
+  return reserva.count === 1;
+}
+
+/**
  * Corre todas as regras ativas cuja vez chegou. Uma regra que falha (produto
  * descontinuado, limite excedido, empresa sem add-on ativo…) NÃO aborta o
  * ciclo inteiro — regista o erro e segue para a regra seguinte.
@@ -127,10 +157,20 @@ async function executarCiclo() {
   const resultado = { total: regras.length, criadas: 0, falhas: [] };
 
   for (const regra of regras) {
+    if (!(await reclamarRegra(regra))) continue; // outra corrida já reclamou esta regra
+
     try {
       await executarRegra(regra);
       resultado.criadas += 1;
     } catch (err) {
+      // Falhou depois de reservada — repõe a data original para o ciclo
+      // seguinte tentar de novo, exatamente como acontecia antes de existir
+      // a reserva (em vez de ficar presa aos poucos minutos de RESERVA_MS).
+      await prisma.poRoboRegra.update({
+        where: { id: regra.id },
+        data: { proximaExecucaoEm: regra.proximaExecucaoEm },
+      }).catch(() => {});
+
       resultado.falhas.push({ regraId: regra.id, companyId: regra.companyId, erro: err.message });
       logger.warn('poRoboService: falha ao executar regra', { regraId: regra.id, error: err.message });
       await alertaOperacionalService.avisarFalha(
