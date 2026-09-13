@@ -38,6 +38,7 @@ const crypto = require('crypto');
 const config = require('../config/env');
 
 const ENDPOINTS = {
+  solicitarserie:'solicitarserie',
   registarFactura: 'registarFactura',
   solicitarSerie: 'solicitarSerie',
   obterEstado: 'obterEstado',
