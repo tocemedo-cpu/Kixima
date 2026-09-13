@@ -233,7 +233,9 @@ async function pedido(endpoint, { method = 'GET', body, query } = {}) {
 async function registarFactura(documento) {
   return pedido(ENDPOINTS.registarFactura, { method: 'POST', body: documento });
 }
-
+async function solicitarserie(documento) {
+  return pedido(ENDPOINTS.solicitarserie, { method: 'POST', body: documento });
+}
 /** GET /obterEstado — estado do processamento de uma submissão. */
 async function obterEstado({ submissionUUID, documentNo } = {}) {
   return pedido(ENDPOINTS.obterEstado, { query: { submissionUUID, documentNo } });
