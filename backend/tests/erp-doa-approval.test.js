@@ -239,6 +239,34 @@ describe('Callback assinado do ERP', () => {
     await desligarErp();
   });
 
+  test('duas confirmações de pagamento concorrentes para a MESMA PO: nenhuma responde com erro, só um Payment', async () => {
+    await configurarErpReal();
+    const po = await criarPo();
+    await callback({ type: 'purchase_order.approval_decided', data: { poId: po.id, aprovado: true } });
+    await auth(tokens.fornecedor).patch(`/api/purchase-orders/${po.id}/accept`);
+
+    const comFatura = await auth(tokens.companyAdmin).get(`/api/purchase-orders/${po.id}`);
+
+    // Simula o ERP a reenviar a mesma confirmação por retry de rede antes de
+    // a primeira ter respondido — as duas chegam com a PO ainda em
+    // AGUARDANDO_PAGAMENTO (a verificação de estado é anterior à transação).
+    const payload = { type: 'payment.confirmed', data: { poId: po.id, erpExternalId: 'SAP-PAY-RACE', valorPago: Number(comFatura.body.totalAmount) } };
+    const [resA, resB] = await Promise.all([callback(payload), callback(payload)]);
+
+    expect(resA.status).toBe(200);
+    expect(resB.status).toBe(200);
+    expect(resA.body.error).toBeUndefined();
+    expect(resB.body.error).toBeUndefined();
+
+    const pagamentos = await prisma.payment.count({ where: { invoiceId: comFatura.body.invoice.id } });
+    expect(pagamentos).toBe(1);
+
+    const paga = await auth(tokens.companyAdmin).get(`/api/purchase-orders/${po.id}`);
+    expect(paga.body.status).toBe('PAGA');
+
+    await desligarErp();
+  });
+
   test('PO desconhecida: responde 200 (não deixa o ERP em retry-loop) e regista o motivo, sem lançar', async () => {
     const res = await callback({
       type: 'purchase_order.approval_decided',

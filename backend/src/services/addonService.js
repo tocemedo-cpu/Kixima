@@ -115,17 +115,35 @@ async function pedir(companyId, addonKey, userId, actor = null) {
   const preco = precoDe(addonKey);
   const referencia = await nextReference('ADD', 'addonCobranca', 'referencia');
 
-  const cobranca = await prisma.addonCobranca.create({
-    data: {
-      referencia,
-      companyId,
-      addonKey,
-      valorUsd: preco.valorUsd,
-      periodo: preco.periodo,
-      meses: preco.meses,
-      createdById: userId || null,
-    },
-  });
+  let cobranca;
+  try {
+    cobranca = await prisma.addonCobranca.create({
+      data: {
+        referencia,
+        companyId,
+        addonKey,
+        valorUsd: preco.valorUsd,
+        periodo: preco.periodo,
+        meses: preco.meses,
+        createdById: userId || null,
+      },
+    });
+  } catch (err) {
+    // O findFirst acima não é atómico — duas chamadas concorrentes a pedir()
+    // podem ambas passar por ele antes de qualquer uma criar a linha. O
+    // índice único parcial (migração 20260918000000) é a garantia real; isto
+    // só traduz a violação (P2002) na mesma mensagem que o check acima já dá.
+    if (err.code === 'P2002') {
+      const aberta2 = await prisma.addonCobranca.findFirst({ where: { companyId, addonKey, status: { in: EM_ABERTO } } });
+      if (aberta2) {
+        throw new ConflictError(
+          `Já existe a cobrança ${aberta2.referencia} do add-on "${def.label}" por liquidar (${aberta2.valorUsd} USD). `
+          + 'Conclua ou cancele essa antes de pedir outra.',
+        );
+      }
+    }
+    throw err;
+  }
 
   await auditService.recordSafe({
     actor: actor || { actorId: userId },

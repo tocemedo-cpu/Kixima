@@ -89,6 +89,24 @@ export class CredentialsService {
     return out;
   }
 
+  /**
+   * Segredo de verificação do webhook de ENTRADA deste tenant+ERP — guardado
+   * como um campo reservado (`webhookSecret`) dentro da MESMA config cifrada
+   * da ligação ao ERP (sem tabela/migração nova). `null` quando não há
+   * configuração para este tenant+ERP, ou quando a config não tem o campo.
+   */
+  async webhookSecretFor(tenantId: string, erp: ErpSystem): Promise<string | null> {
+    const row = await this.prisma.erpCredential.findUnique({ where: { tenantId_erp: { tenantId, erp } } });
+    if (!row) return null;
+    try {
+      const config = this.crypto.decryptJson<ErpConnectionConfig>(row.configEnc);
+      return config.webhookSecret || null;
+    } catch (err) {
+      this.logger.error(`Config inválida ao ler webhookSecret (${erp}/${tenantId}): ${(err as Error).message}`);
+      return null;
+    }
+  }
+
   /** Testa a ligação ao ERP de um tenant usando a config guardada. */
   async testConnection(tenantId: string, erp: ErpSystem): Promise<{ ok: boolean; message: string }> {
     const row = await this.prisma.erpCredential.findUnique({ where: { tenantId_erp: { tenantId, erp } } });

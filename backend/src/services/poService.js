@@ -367,59 +367,75 @@ async function aplicarPagamentoErp(poId, { erpExternalId, valorPago, pagoEm } = 
     select: { serieFiscal: true, dataAdesaoFacturacaoElectronica: true },
   });
 
-  const [payment] = await prisma.$transaction(async (tx) => {
-    // O pagamento É o documento "RC" (Recibo) da AGT — mesma cadeia de
-    // integridade de qualquer outro pagamento, independentemente do canal.
-    const certificacao = await faturacaoService.atribuir(tx, {
-      emitidaEm: pagoEm ? new Date(pagoEm) : new Date(),
-      total: invoice.amount,
-      codigo: faturacaoService.serieReciboDoFornecedor(supplierCompany),
-      dataAdesao: supplierCompany?.dataAdesaoFacturacaoElectronica,
-    });
+  let payment;
+  try {
+    [payment] = await prisma.$transaction(async (tx) => {
+      // O pagamento É o documento "RC" (Recibo) da AGT — mesma cadeia de
+      // integridade de qualquer outro pagamento, independentemente do canal.
+      const certificacao = await faturacaoService.atribuir(tx, {
+        emitidaEm: pagoEm ? new Date(pagoEm) : new Date(),
+        total: invoice.amount,
+        codigo: faturacaoService.serieReciboDoFornecedor(supplierCompany),
+        dataAdesao: supplierCompany?.dataAdesaoFacturacaoElectronica,
+      });
 
-    const createdPayment = await tx.payment.create({
-      data: {
-        ...certificacao,
-        invoiceId: invoice.id,
-        amount: valorPago != null ? valorPago : invoice.amount,
-        currency: invoice.currency,
-        canal: 'ERP',
-        processedById: null, // ninguém do KIXIMA executou — foi o ERP a confirmar
-        reference: `PAY-ERP-${uuid().slice(0, 8).toUpperCase()}`,
-        status: 'PROCESSADO',
-      },
-    });
+      const createdPayment = await tx.payment.create({
+        data: {
+          ...certificacao,
+          invoiceId: invoice.id,
+          amount: valorPago != null ? valorPago : invoice.amount,
+          currency: invoice.currency,
+          canal: 'ERP',
+          processedById: null, // ninguém do KIXIMA executou — foi o ERP a confirmar
+          reference: `PAY-ERP-${uuid().slice(0, 8).toUpperCase()}`,
+          status: 'PROCESSADO',
+        },
+      });
 
-    await tx.invoice.update({ where: { id: invoice.id }, data: { status: 'PAGA' } });
-    await tx.purchaseOrder.update({
-      where: { id: poId },
-      data: { status: 'PAGA', paidAt: new Date(), erpExternalId: erpExternalId || po.erpExternalId },
-    });
+      await tx.invoice.update({ where: { id: invoice.id }, data: { status: 'PAGA' } });
+      await tx.purchaseOrder.update({
+        where: { id: poId },
+        data: { status: 'PAGA', paidAt: new Date(), erpExternalId: erpExternalId || po.erpExternalId },
+      });
 
-    // Taxa da plataforma — cobrada ao fornecedor, independentemente de o
-    // pagamento ter passado pelo KIXIMA ou ter sido confirmado pelo ERP.
-    await platformFeeService.createForInvoice(tx, { invoice, companyId: po.supplierCompanyId });
+      // Taxa da plataforma — cobrada ao fornecedor, independentemente de o
+      // pagamento ter passado pelo KIXIMA ou ter sido confirmado pelo ERP.
+      await platformFeeService.createForInvoice(tx, { invoice, companyId: po.supplierCompanyId });
 
-    await tx.erpSyncLog.create({
-      data: {
-        purchaseOrderId: poId,
-        direction: 'INBOUND',
-        eventType: 'payment_confirmed',
-        status: 'SUCCESS',
-        externalId: erpExternalId || null,
-      },
-    });
-    await auditService.record(tx, {
-      actor: ATOR_ERP,
-      action: 'PAGAMENTO_CONFIRMADO_ERP',
-      entityType: 'Payment',
-      entityId: createdPayment.id,
-      entityRef: createdPayment.reference,
-      detail: { po: po.reference, valor: String(createdPayment.amount), erpExternalId: erpExternalId || null },
-    });
+      await tx.erpSyncLog.create({
+        data: {
+          purchaseOrderId: poId,
+          direction: 'INBOUND',
+          eventType: 'payment_confirmed',
+          status: 'SUCCESS',
+          externalId: erpExternalId || null,
+        },
+      });
+      await auditService.record(tx, {
+        actor: ATOR_ERP,
+        action: 'PAGAMENTO_CONFIRMADO_ERP',
+        entityType: 'Payment',
+        entityId: createdPayment.id,
+        entityRef: createdPayment.reference,
+        detail: { po: po.reference, valor: String(createdPayment.amount), erpExternalId: erpExternalId || null },
+      });
 
-    return [createdPayment];
-  });
+      return [createdPayment];
+    });
+  } catch (err) {
+    // Payment.invoiceId é único — duas confirmações concorrentes da mesma
+    // fatura chegam aqui ao mesmo tempo (verificação de estado feita antes da
+    // transação, TOCTOU conhecido), mas só uma consegue criar o Payment. A
+    // segunda não é uma falha de negócio real: é a MESMA confirmação a
+    // repetir-se, e a invariante já garantiu que não há pagamento duplicado —
+    // devolve-se o resultado já efetivado pela primeira, em vez de propagar
+    // o erro cru do Prisma como se fosse um problema novo.
+    if (err.code === 'P2002') {
+      const jaProcessada = await prisma.purchaseOrder.findUnique({ where: { id: poId } });
+      if (jaProcessada?.status === 'PAGA') return jaProcessada;
+    }
+    throw err;
+  }
 
   const updated = await prisma.purchaseOrder.findUnique({ where: { id: poId } });
   await notificationService.events.pagamentoProcessado(payment, updated);

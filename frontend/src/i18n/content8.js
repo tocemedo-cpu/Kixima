@@ -198,7 +198,6 @@ export const EN9 = {
   'Contratação nacional': 'National sourcing',
   'Bens de origem angolana': 'Goods of Angolan origin',
   'MPME angolanas': 'Angolan MSMEs',
-  'Valor comprado': 'Total purchased',
   'Valores sem IVA, de ordens com compromisso financeiro assumido. Linhas sem país de origem declarado não contam como angolanas.':
     'Excluding VAT, from orders with a financial commitment in place. Lines with no declared country of origin do not count as Angolan.',
   'A fornecedores nacionais': 'To national suppliers',

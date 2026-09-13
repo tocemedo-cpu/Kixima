@@ -307,19 +307,37 @@ async function pedir(companyId, planoNovo, userId, { aceitaPerdas = false } = {}
   const preco = planService.preco(plano);
   const referencia = await nextReference('SUB', 'planoCobranca', 'referencia');
 
-  const cobranca = await prisma.planoCobranca.create({
-    data: {
-      referencia,
-      companyId,
-      planoAtual: company.plan,
-      planoNovo: plano,
-      // Congelado. Ver a regra 2 no topo do ficheiro.
-      valorUsd: preco.valorUsd,
-      periodo: preco.periodo,
-      meses: preco.meses,
-      createdById: userId || null,
-    },
-  });
+  let cobranca;
+  try {
+    cobranca = await prisma.planoCobranca.create({
+      data: {
+        referencia,
+        companyId,
+        planoAtual: company.plan,
+        planoNovo: plano,
+        // Congelado. Ver a regra 2 no topo do ficheiro.
+        valorUsd: preco.valorUsd,
+        periodo: preco.periodo,
+        meses: preco.meses,
+        createdById: userId || null,
+      },
+    });
+  } catch (err) {
+    // O findFirst acima não é atómico — duas chamadas concorrentes a pedir()
+    // podem ambas passar por ele antes de qualquer uma criar a linha. O
+    // índice único parcial (migração 20260918000000) é a garantia real; isto
+    // só traduz a violação (P2002) na mesma mensagem que o check acima já dá.
+    if (err.code === 'P2002') {
+      const aberta2 = await prisma.planoCobranca.findFirst({ where: { companyId, status: { in: EM_ABERTO } } });
+      if (aberta2) {
+        throw new ConflictError(
+          `Já existe a cobrança ${aberta2.referencia} por liquidar (${aberta2.planoNovo}, ${aberta2.valorUsd} USD). `
+          + 'Conclua ou cancele essa antes de pedir outra.',
+        );
+      }
+    }
+    throw err;
+  }
 
   await auditService.recordSafe({
     actor: actor || { actorId: userId },

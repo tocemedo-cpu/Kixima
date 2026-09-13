@@ -27,6 +27,28 @@ export class WebhookProducer {
     this.timeout = config.get<number>('callback.timeoutMs') ?? 10_000;
   }
 
+  /**
+   * Idempotência do relay de decisões ERP DOA: a MESMA decisão de aprovação
+   * ou confirmação de pagamento não deve ser reencaminhada duas vezes ao
+   * Kixima — o Kixima já é idempotente por estado, mas repetir o relay ainda
+   * duplicaria auditoria/notificações lá. Um PO só é decidido/pago uma vez
+   * neste fluxo, por isso (type, poId) já identifica o evento de forma
+   * suficiente, sem precisar de um id próprio vindo do ERP.
+   */
+  async jaEncaminhadoComSucesso(type: string, poId: string): Promise<boolean> {
+    const existente = await this.prisma.webhookDelivery.findFirst({
+      where: {
+        status: WebhookStatus.DELIVERED,
+        AND: [
+          { payload: { path: ['type'], equals: type } },
+          { payload: { path: ['data', 'poId'], equals: poId } },
+        ],
+      },
+      select: { id: true },
+    });
+    return Boolean(existente);
+  }
+
   async notifyKixima(
     integrationEventId: string | null,
     type: string,

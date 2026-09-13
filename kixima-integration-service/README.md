@@ -100,7 +100,7 @@ docker compose -f docker-compose.integration.yml up --build
 | GET | `/monitoring/dead-letters` | Lista de eventos em Dead Letter |
 | POST | `/monitoring/dead-letters/:id/replay` | Reprocessa um evento da DLQ |
 | GET | `/metrics` | Métricas Prometheus |
-| POST | `/webhooks/erp/:erp` | Webhook de entrada de um ERP |
+| POST | `/webhooks/erp/:tenantId/:erp` | Webhook de entrada de um ERP, assinado com o segredo desse tenant+ERP (`webhookSecret` na config de credenciais) ou, na falta dele, `WEBHOOK_SIGNING_SECRET` |
 
 ## Multi-tenant multi-ERP (credenciais)
 
@@ -139,6 +139,13 @@ curl -X PUT https://SEU-MICROSERVICO.onrender.com/credentials/tenants/<companyId
 
 O `tenantId` corresponde ao **id da empresa (operadora/cliente)** do Kixima, que
 viaja no envelope do evento (`purchase_order.approved`, etc.).
+
+Qualquer `config` pode incluir também um campo `webhookSecret` — o segredo com
+que os webhooks de ENTRADA desse tenant+ERP (`POST /webhooks/erp/:tenantId/:erp`)
+são assinados. Sem ele, cai-se para a config global (`*`) e por fim para a
+variável de ambiente `WEBHOOK_SIGNING_SECRET` — mas um segredo único partilhado
+por todos os tenants/ERPs permite que uma fuga forje webhooks de qualquer um
+deles; definir `webhookSecret` por tenant fecha essa brecha.
 
 ## Migrações Prisma
 

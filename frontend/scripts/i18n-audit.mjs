@@ -88,7 +88,11 @@ function dictKeys(file) {
   const keys = { en: new Set(), fr: new Set() };
   let current = null;
   for (const line of src.split('\n')) {
-    const start = line.match(/export const (EN|FR)\d* =/);
+    // `index.jsx` também define os dicionários-base EN/FR sem `export` (só
+    // usados internamente para montar o DICT final) — sem este caso, o
+    // auditor não os via, e chaves só ali definidas apareciam como "em
+    // falta" mesmo estando corretamente traduzidas e a funcionar.
+    const start = line.match(/(?:export )?const (EN|FR)\d* =/);
     if (start) current = start[1].toLowerCase();
     if (!current) continue;
     for (const m of line.matchAll(/'((?:[^'\\]|\\.)+)'\s*:/g)) keys[current].add(m[1].replaceAll("\\'", "'"));

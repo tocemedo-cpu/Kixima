@@ -92,6 +92,26 @@ describe('Pedir o add-on — RBAC e gate de plano', () => {
     const outra = await auth(tokens.companyAdmin).post(`/api/addons/${ADDON_KEY}/pedir`);
     expect(outra.status).toBe(409);
   });
+
+  test('duas chamadas concorrentes a pedir() só criam UMA cobrança aberta (índice único parcial)', async () => {
+    await prisma.company.update({ where: { id: compradora.id }, data: { plan: 'PRO', searchRank: 2 } });
+
+    // O findFirst("já há cobrança aberta?") não é atómico — sem o índice
+    // único parcial da migração 20260918000000, duas chamadas simultâneas
+    // podiam ambas passar por ele e criar duas cobranças abertas.
+    const [resA, resB] = await Promise.all([
+      auth(tokens.companyAdmin).post(`/api/addons/${ADDON_KEY}/pedir`),
+      auth(tokens.companyAdmin).post(`/api/addons/${ADDON_KEY}/pedir`),
+    ]);
+
+    const statuses = [resA.status, resB.status].sort();
+    expect(statuses).toEqual([201, 409]);
+
+    const abertas = await prisma.addonCobranca.count({
+      where: { companyId: compradora.id, addonKey: ADDON_KEY, status: { in: ['PENDENTE', 'COMPROVATIVO_ENVIADO'] } },
+    });
+    expect(abertas).toBe(1);
+  });
 });
 
 describe('Fluxo completo: pedir → comprovativo → confirmar → add-on ativo', () => {

@@ -98,6 +98,25 @@ describe('Subscrição — pedir', () => {
     expect(res.body.error.message).toContain(primeira.referencia);
   });
 
+  test('duas chamadas concorrentes a pedir() só criam UMA cobrança aberta (índice único parcial)', async () => {
+    // O findFirst("já há cobrança aberta?") em assinaturaService.pedir() não é
+    // atómico — sem o índice único parcial (migração 20260918000000), duas
+    // chamadas simultâneas podiam ambas passar por ele antes de qualquer uma
+    // criar a linha, abrindo duas cobranças para a mesma empresa.
+    const [resA, resB] = await Promise.all([
+      auth(adminEmpresaToken).post('/api/assinatura/pedir').send({ plano: 'PRO' }),
+      auth(adminEmpresaToken).post('/api/assinatura/pedir').send({ plano: 'PRO' }),
+    ]);
+
+    const statuses = [resA.status, resB.status].sort();
+    expect(statuses).toEqual([201, 409]);
+
+    const abertas = await prisma.planoCobranca.count({
+      where: { companyId, status: { in: ['PENDENTE', 'COMPROVATIVO_ENVIADO'] } },
+    });
+    expect(abertas).toBe(1);
+  });
+
   test('recusa um plano que não existe', async () => {
     const res = await auth(adminEmpresaToken).post('/api/assinatura/pedir').send({ plano: 'PLATINUM' });
     expect(res.status).toBe(422);

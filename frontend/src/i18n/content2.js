@@ -223,7 +223,6 @@ export const FR3 = {
   'Esta gestão está reservada ao Super Admin (sem áreas restritas). Fale com quem lhe deu acesso ao sistema.': "Cette gestion est réservée au Super Admin (sans domaines restreints). Contactez la personne qui vous a donné accès au système.",
   'Cadastro & Empresas': 'Inscription & Entreprises',
   'Faturação (AGT)': 'Facturation (AGT)',
-  'Apólices': 'Polices',
   'Suporte': 'Support',
   'Operação da Plataforma': 'Exploitation de la Plateforme',
   // --- Convite de Assessor (ADMIN_SISTEMA por área) --------------------------
