@@ -19,6 +19,7 @@ const prisma = require('../config/database');
 const { NotFoundError, BusinessRuleError } = require('../utils/errors');
 const auditService = require('./auditService');
 const faturacaoService = require('./faturacaoService');
+const agtSandboxSubmissionService = require('./agtSandboxSubmissionService');
 
 const ESTADOS = {
   POR_CONCILIAR: 'POR_CONCILIAR',
@@ -202,31 +203,48 @@ async function tentarConciliar(linha, actor = null) {
     : null;
 
   // Tudo bate: paga-se, e as duas escritas vivem na mesma transação.
-  await prisma.$transaction(async (tx) => {
-    const certificacao = await faturacaoService.atribuir(tx, {
-      emitidaEm: linha.dataValor,
-      total: fatura.amount,
-      codigo: faturacaoService.serieReciboDoFornecedor(supplierCompany),
-      dataAdesao: supplierCompany?.dataAdesaoFacturacaoElectronica,
-    });
+  let pagamentoCriado;
+  try {
+    pagamentoCriado = await prisma.$transaction(async (tx) => {
+      const certificacao = await faturacaoService.atribuir(tx, {
+        emitidaEm: linha.dataValor,
+        total: fatura.amount,
+        codigo: faturacaoService.serieReciboDoFornecedor(supplierCompany),
+        dataAdesao: supplierCompany?.dataAdesaoFacturacaoElectronica,
+      });
 
-    await tx.payment.create({
-      data: {
-        ...certificacao,
-        invoiceId: fatura.id,
-        amount: fatura.amount,
-        currency: fatura.currency,
-        status: 'PROCESSADO',
-        canal: 'REFERENCIA_BANCARIA',
-        // A conciliação não tem uma pessoa por trás. Guarda-se a linha do
-        // extrato como origem, em vez de atribuir a alguém que não decidiu.
-        processedById: actor?.id || null,
-        reference: `CONC-${linha.idNoBanco}`,
-        processedAt: linha.dataValor,
-      },
+      const pagamento = await tx.payment.create({
+        data: {
+          ...certificacao,
+          invoiceId: fatura.id,
+          amount: fatura.amount,
+          currency: fatura.currency,
+          status: 'PROCESSADO',
+          canal: 'REFERENCIA_BANCARIA',
+          // A conciliação não tem uma pessoa por trás. Guarda-se a linha do
+          // extrato como origem, em vez de atribuir a alguém que não decidiu.
+          processedById: actor?.id || null,
+          reference: `CONC-${linha.idNoBanco}`,
+          processedAt: linha.dataValor,
+        },
+      });
+      await tx.invoice.update({ where: { id: fatura.id }, data: { status: 'PAGA' } });
+      return pagamento;
     });
-    await tx.invoice.update({ where: { id: fatura.id }, data: { status: 'PAGA' } });
-  });
+  } catch (err) {
+    // Payment.invoiceId é único — duas linhas de extrato distintas a apontar
+    // para a mesma fatura (ex.: dois administradores a importar extratos
+    // sobrepostos ao mesmo tempo) podem ambas passar a verificação de
+    // `fatura.payment` acima antes de qualquer uma criar o Payment. A
+    // segunda não é uma falha de negócio real: é a mesma fatura a ser paga
+    // duas vezes por linhas diferentes — mesmo princípio de
+    // poService.aplicarPagamentoErp. Sem isto, o erro cru do Prisma subia
+    // por importarExtrato e abortava o resto do lote a meio.
+    if (err.code === 'P2002') {
+      return marcar(linha.id, ESTADOS.DIVERGENTE, 'A fatura já tem pagamento registado por outra linha do extrato.', fatura.id);
+    }
+    throw err;
+  }
 
   await auditService.record({
     action: 'PAGAMENTO_CONCILIADO',
@@ -236,6 +254,10 @@ async function tentarConciliar(linha, actor = null) {
     actorName: actor?.name || 'Conciliação automática',
     metadata: { linhaExtrato: linha.idNoBanco, referencia: linha.referencia, montante: recebido },
   }).catch(() => {});
+
+  if (supplierCompanyId) {
+    await agtSandboxSubmissionService.submeter('RC', pagamentoCriado.id, supplierCompanyId);
+  }
 
   return marcar(linha.id, ESTADOS.CONCILIADA, null, fatura.id);
 }

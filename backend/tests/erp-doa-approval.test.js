@@ -267,6 +267,37 @@ describe('Callback assinado do ERP', () => {
     await desligarErp();
   });
 
+  test('duas decisões concorrentes para a MESMA PO: só a primeira a reivindicar o estado é aplicada, sem duplicar auditoria', async () => {
+    await configurarErpReal();
+    const po = await criarPo();
+
+    // Simula o ERP a reenviar uma decisão (retry de rede) — ou duas decisões
+    // próximas do workflow — chegando quase em simultâneo, com a PO ainda em
+    // AGUARDANDO_APROVACAO para ambas. Antes da correção, a verificação de
+    // estado era uma leitura solta ANTES da transação: as duas passavam, e o
+    // segundo UPDATE sobrepunha o primeiro sem erro (podia ficar REJEITADA
+    // depois de já ter ficado APROVADA), duplicando ErpSyncLog/auditoria.
+    const aprova = { type: 'purchase_order.approval_decided', data: { poId: po.id, aprovado: true, erpExternalId: 'SAP-DOA-RACE-A' } };
+    const rejeita = { type: 'purchase_order.approval_decided', data: { poId: po.id, aprovado: false, motivo: 'Corrida', erpExternalId: 'SAP-DOA-RACE-B' } };
+    const [resA, resB] = await Promise.all([callback(aprova), callback(rejeita)]);
+
+    expect(resA.status).toBe(200);
+    expect(resB.status).toBe(200);
+
+    const final = await auth(tokens.companyAdmin).get(`/api/purchase-orders/${po.id}`);
+    expect(['APROVADA', 'REJEITADA']).toContain(final.body.status); // uma decisão venceu, nunca as duas
+
+    // Só UMA decisão foi mesmo aplicada — nunca duas auditorias/sync-logs para o mesmo evento.
+    const auditorias = await prisma.auditLog.count({
+      where: { entityType: 'PurchaseOrder', entityId: po.id, action: { in: ['PO_APROVADA_ERP', 'PO_REJEITADA_ERP'] } },
+    });
+    expect(auditorias).toBe(1);
+    const syncLogs = await prisma.erpSyncLog.count({ where: { purchaseOrderId: po.id, eventType: 'approval_decided' } });
+    expect(syncLogs).toBe(1);
+
+    await desligarErp();
+  });
+
   test('PO desconhecida: responde 200 (não deixa o ERP em retry-loop) e regista o motivo, sem lançar', async () => {
     const res = await callback({
       type: 'purchase_order.approval_decided',

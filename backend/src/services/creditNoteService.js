@@ -154,6 +154,17 @@ async function emitir(invoiceId, { motivo, amount }, user, actor = null) {
     }).catch(() => {});
   }
 
+  if (supplierCompanyId) {
+    // Requerido aqui dentro (não no topo do ficheiro) para não fechar um ciclo
+    // de require: agtSandboxSubmissionService -> agtPayloadService ->
+    // creditNoteService. Um require de topo devolvia, em certas ordens de
+    // carregamento (ex.: poService carregado primeiro), uma referência
+    // incompleta a este serviço — mesma cautela já aplicada ao
+    // notificationService em contractService.js.
+    const agtSandboxSubmissionService = require('./agtSandboxSubmissionService');
+    await agtSandboxSubmissionService.submeter('NC', nota.id, supplierCompanyId);
+  }
+
   return nota;
 }
 

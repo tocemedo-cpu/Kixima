@@ -12,6 +12,7 @@ const platformFeeService = require('./platformFeeService');
 const storageService = require('./storageService');
 const auditService = require('./auditService');
 const faturacaoService = require('./faturacaoService');
+const agtSandboxSubmissionService = require('./agtSandboxSubmissionService');
 
 async function listPendingInvoices(buyerCompanyId) {
   return prisma.invoice.findMany({
@@ -153,6 +154,10 @@ async function processPayment(invoiceId, processedById, buyerCompanyId, proofFil
     eventId: `payment-completed:${payment.id}`,
     tenantId: invoice.purchaseOrder?.buyerCompanyId ?? invoice.contract?.clientCompanyId ?? null,
   });
+
+  if (supplierCompanyId) {
+    await agtSandboxSubmissionService.submeter('RC', payment.id, supplierCompanyId);
+  }
 
   return payment;
 }

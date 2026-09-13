@@ -27,6 +27,7 @@ const planService = require('./planService');
 const erpConfigService = require('./erpConfigService');
 const platformFeeService = require('./platformFeeService');
 const auditService = require('./auditService');
+const agtSandboxSubmissionService = require('./agtSandboxSubmissionService');
 
 // Ator sintético para o trilho de auditoria quando a ação chega do ERP e não
 // de um utilizador — mesma forma de actorFrom(req), sem sessão nenhuma.
@@ -97,28 +98,65 @@ async function createPurchaseOrder({ buyerCompanyId, supplierCompanyId, createdB
   }
   const erpApprovalRequestedAt = erpManaged ? new Date() : null;
 
-  const po = await prisma.purchaseOrder.create({
-    data: {
-      reference,
-      buyerCompanyId,
-      supplierCompanyId,
-      createdById,
-      totalAmount,
-      netAmount: impostos.net,
-      taxAmount: impostos.tax,
-      withholdingAmount: impostos.withheld,
-      isCallOff,
-      contractId: contract?.id ?? null,
-      // Call-off: a aprovação de negócio já aconteceu na assinatura do contrato.
-      status: isCallOff ? 'APROVADA' : 'AGUARDANDO_APROVACAO',
-      approvedAt: isCallOff ? new Date() : null,
-      erpManaged,
-      erpApprovalRequestedAt,
-      createdBySource,
-      items: { create: lineItems },
-    },
-    include: { items: true },
+  // Stock e criação da PO na MESMA transação: produtos com stockQuantity
+  // definido (não-null) têm o stock verificado E decrementado atomicamente
+  // por item — `updateMany` com a quantidade na cláusula WHERE fecha a
+  // janela de concorrência (duas POs a pedir mais do que o stock permite não
+  // podem as duas ter sucesso). Produtos com stockQuantity null continuam
+  // sem limite — esse campo já significa "não rastreado" em catalogService
+  // (o mesmo "null = ilimitado" usado no aviso de estoque baixo).
+  // Aviso de stock baixo só na TRANSIÇÃO (mesmo critério de
+  // catalogService.createStockMovement) — preenchido dentro da transação,
+  // disparado só depois de ela comitar.
+  const avisosEstoqueBaixo = [];
+
+  const po = await prisma.$transaction(async (tx) => {
+    for (const li of lineItems) {
+      const produto = products.find((p) => p.id === li.productId);
+      if (produto.stockQuantity == null) continue;
+      const reservado = await tx.product.updateMany({
+        where: { id: produto.id, stockQuantity: { gte: li.quantity } },
+        data: { stockQuantity: { decrement: li.quantity } },
+      });
+      if (reservado.count === 0) {
+        const atual = await tx.product.findUnique({ where: { id: produto.id }, select: { stockQuantity: true } });
+        throw new BusinessRuleError(
+          `Stock insuficiente para "${produto.name}": pediu ${li.quantity}, há ${atual?.stockQuantity ?? 0} em stock.`,
+        );
+      }
+      const restante = produto.stockQuantity - li.quantity;
+      if (produto.minStock != null && produto.stockQuantity > produto.minStock && restante <= produto.minStock) {
+        avisosEstoqueBaixo.push({ ...produto, stockQuantity: restante });
+      }
+    }
+
+    return tx.purchaseOrder.create({
+      data: {
+        reference,
+        buyerCompanyId,
+        supplierCompanyId,
+        createdById,
+        totalAmount,
+        netAmount: impostos.net,
+        taxAmount: impostos.tax,
+        withholdingAmount: impostos.withheld,
+        isCallOff,
+        contractId: contract?.id ?? null,
+        // Call-off: a aprovação de negócio já aconteceu na assinatura do contrato.
+        status: isCallOff ? 'APROVADA' : 'AGUARDANDO_APROVACAO',
+        approvedAt: isCallOff ? new Date() : null,
+        erpManaged,
+        erpApprovalRequestedAt,
+        createdBySource,
+        items: { create: lineItems },
+      },
+      include: { items: true },
+    });
   });
+
+  for (const produto of avisosEstoqueBaixo) {
+    await notificationService.events.estoqueBaixo(produto);
+  }
 
   if (isCallOff) {
     await prisma.contract.update({
@@ -299,6 +337,14 @@ async function rejectPurchaseOrder(id, approverId, reason) {
  * Idempotente por ESTADO, mesmo molde de assinaturaService.confirmarViaGateway:
  * um callback duplicado (reenvio do ERP, retry de rede) encontra a PO já fora
  * de AGUARDANDO_APROVACAO e devolve-a tal como está, sem reaplicar a decisão.
+ *
+ * A verificação de estado sozinha (leitura solta antes da transação) não
+ * chega: dois callbacks quase simultâneos passavam ambos por ela antes de
+ * qualquer um comitar, e o segundo UPDATE sobrepunha o primeiro sem erro
+ * (ex.: REJEITADA depois de já ter ficado APROVADA), duplicando ainda
+ * ErpSyncLog/auditoria/notificações. Por isso a decisão é "reivindicada"
+ * atomicamente por um `updateMany` filtrado também por status — só quem
+ * ainda encontrar a PO em AGUARDANDO_APROVACAO consegue aplicá-la.
  */
 async function aplicarDecisaoErp(poId, { aprovado, erpExternalId, motivo } = {}) {
   const po = await prisma.purchaseOrder.findUnique({ where: { id: poId } });
@@ -316,8 +362,14 @@ async function aplicarDecisaoErp(poId, { aprovado, erpExternalId, motivo } = {})
       erpExternalId: erpExternalId || po.erpExternalId,
     };
 
-  const [updated] = await prisma.$transaction(async (tx) => {
-    const upd = await tx.purchaseOrder.update({ where: { id: poId }, data });
+  const updated = await prisma.$transaction(async (tx) => {
+    const reivindicada = await tx.purchaseOrder.updateMany({
+      where: { id: poId, status: 'AGUARDANDO_APROVACAO' },
+      data,
+    });
+    if (reivindicada.count === 0) return null; // outro callback já decidiu entretanto
+
+    const upd = await tx.purchaseOrder.findUnique({ where: { id: poId } });
     await tx.erpSyncLog.create({
       data: {
         purchaseOrderId: poId,
@@ -335,8 +387,14 @@ async function aplicarDecisaoErp(poId, { aprovado, erpExternalId, motivo } = {})
       entityRef: po.reference,
       detail: { erpExternalId: erpExternalId || null, motivo: motivo || null },
     });
-    return [upd];
+    return upd;
   });
+
+  if (!updated) {
+    // Idempotente por estado: devolve o que está lá agora, sem reaplicar a
+    // decisão nem duplicar ErpSyncLog/auditoria/notificações.
+    return prisma.purchaseOrder.findUnique({ where: { id: poId } });
+  }
 
   await notificationService.events.poAprovadaOuRejeitada(updated);
   if (aprovado) await notificationService.events.poRecebidaPeloFornecedor(updated);
@@ -439,6 +497,8 @@ async function aplicarPagamentoErp(poId, { erpExternalId, valorPago, pagoEm } = 
 
   const updated = await prisma.purchaseOrder.findUnique({ where: { id: poId } });
   await notificationService.events.pagamentoProcessado(payment, updated);
+  // Submissão à Sandbox AGT (não-bloqueante, silenciosa sem credenciais).
+  await agtSandboxSubmissionService.submeter('RC', payment.id, po.supplierCompanyId);
   return updated;
 }
 
@@ -530,6 +590,8 @@ async function acceptPurchaseOrder(id, supplierCompanyId) {
     eventId: `invoice-issued:${invoice.id}`,
     tenantId: po.buyerCompanyId,
   });
+  // Submissão à Sandbox AGT (não-bloqueante, silenciosa sem credenciais).
+  await agtSandboxSubmissionService.submeter('FT', invoice.id, po.supplierCompanyId);
   return updated;
 }
 

@@ -29,10 +29,32 @@ export class SyncService {
   ) {}
 
   async ingest(envelope: EventEnvelope): Promise<IngestResult> {
-    // 1) Idempotência — tenta reservar a chave; se já existir, é duplicado.
+    // Idempotência + persistência do evento na MESMA transação — sem isto, um
+    // crash entre gravar a chave de idempotência e persistir o evento (ou o
+    // syncQueue.add() abaixo falhar) fazia uma reentrega do RabbitMQ ver a
+    // chave já lá, tratar como "duplicado legítimo" e dar ack — a mensagem
+    // era perdida para sempre, sem nunca chegar a nenhum ERP nem à Dead
+    // Letter. Com as duas escritas atómicas, um crash a meio reverte AMBAS:
+    // a reentrega volta a encontrar a chave livre e reprocessa do zero.
+    let event: { id: string } | null;
     try {
-      await this.prisma.idempotencyKey.create({
-        data: { key: envelope.eventId, eventType: envelope.eventType },
+      event = await this.prisma.$transaction(async (tx) => {
+        await tx.idempotencyKey.create({
+          data: { key: envelope.eventId, eventType: envelope.eventType },
+        });
+
+        return tx.integrationEvent.create({
+          data: {
+            eventId: envelope.eventId,
+            eventType: envelope.eventType,
+            routingKey: envelope.routingKey,
+            tenantId: envelope.tenantId ?? null,
+            source: envelope.source,
+            payload: envelope.payload as Prisma.InputJsonValue,
+            headers: envelope.headers ? (envelope.headers as Prisma.InputJsonValue) : Prisma.JsonNull,
+            status: EventStatus.RECEIVED,
+          },
+        });
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -43,20 +65,6 @@ export class SyncService {
       }
       throw err;
     }
-
-    // 2) Persiste o evento.
-    const event = await this.prisma.integrationEvent.create({
-      data: {
-        eventId: envelope.eventId,
-        eventType: envelope.eventType,
-        routingKey: envelope.routingKey,
-        tenantId: envelope.tenantId ?? null,
-        source: envelope.source,
-        payload: envelope.payload as Prisma.InputJsonValue,
-        headers: envelope.headers ? (envelope.headers as Prisma.InputJsonValue) : Prisma.JsonNull,
-        status: EventStatus.RECEIVED,
-      },
-    });
 
     await this.audit.info('event.received', `Evento recebido: ${envelope.routingKey}`, {
       integrationEventId: event.id,

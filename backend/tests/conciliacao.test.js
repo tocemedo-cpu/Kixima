@@ -200,6 +200,48 @@ describe('Importar o mesmo extrato duas vezes', () => {
   });
 });
 
+describe('Duas linhas de extrato concorrentes para a MESMA fatura', () => {
+  test('só uma concilia; a outra fica DIVERGENTE sem abortar o resto do lote nem lançar', async () => {
+    // Duas linhas distintas (idNoBanco diferentes) referenciando a MESMA
+    // fatura, importadas por dois pedidos concorrentes (ex.: dois
+    // administradores a importar extratos sobrepostos ao mesmo tempo). Antes
+    // da correção, a verificação de `fatura.payment` era uma leitura solta
+    // ANTES da transação: as duas passavam, e a segunda escrita rebentava
+    // com o erro cru do Prisma (P2002), abortando o resto do LOTE dessa
+    // chamada a meio — a terceira linha (fatura2, sem nenhuma relação com a
+    // corrida) nunca chegava a ser processada.
+    fatura = await novaFatura(1000);
+    const l1 = linha({ montante: 1000, descricao: fatura.referenciaPagamento });
+    const l2 = linha({ montante: 1000, descricao: fatura.referenciaPagamento });
+
+    const fatura2 = await novaFatura(500);
+    const l3 = linha({ montante: 500, descricao: fatura2.referenciaPagamento });
+
+    const [rA, rB] = await Promise.all([
+      conciliacao.importarExtrato([l1]),
+      conciliacao.importarExtrato([l2, l3]),
+    ]);
+
+    // Nenhuma chamada lança — nem a que perde a corrida.
+    expect(rA.importadas).toBe(1);
+    expect(rB.importadas).toBe(2);
+
+    // A fatura da corrida ficou paga exatamente uma vez.
+    const pagamentos = await prisma.payment.count({ where: { invoiceId: fatura.id } });
+    expect(pagamentos).toBe(1);
+
+    const linhasDaCorrida = await prisma.linhaExtrato.findMany({
+      where: { idNoBanco: { in: [l1.idNoBanco, l2.idNoBanco] } },
+    });
+    expect(linhasDaCorrida.map((l) => l.estado).sort()).toEqual(['CONCILIADA', 'DIVERGENTE']);
+
+    // A terceira linha, sem relação com a corrida mas no MESMO lote de rB,
+    // continua a ser processada normalmente — o resto do lote não abortou.
+    const pagamentosFatura2 = await prisma.payment.count({ where: { invoiceId: fatura2.id } });
+    expect(pagamentosFatura2).toBe(1);
+  });
+});
+
 describe('O que sobra para uma pessoa', () => {
   test('as linhas por resolver são listadas com a fatura, quando há', async () => {
     fatura = await novaFatura(1000);

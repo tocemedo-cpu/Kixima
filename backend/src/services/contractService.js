@@ -8,6 +8,7 @@ const taxService = require('./taxService');
 const planService = require('./planService');
 const faturacaoService = require('./faturacaoService');
 const conciliacaoService = require('./conciliacaoService');
+const agtSandboxSubmissionService = require('./agtSandboxSubmissionService');
 
 /**
  * O contrato-quadro está no plano Pro — mas de QUEM?
@@ -233,6 +234,8 @@ async function consolidateContractBilling(contractId, actorUser = null) {
     relatedEntityType: 'Invoice',
     relatedEntityId: invoice.id,
   });
+
+  await agtSandboxSubmissionService.submeter('FT', invoice.id, contract.supplierCompanyId);
 
   return invoice;
 }
