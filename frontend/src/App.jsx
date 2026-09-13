@@ -110,6 +110,7 @@ const Cobrancas = lazy(() => import('./pages/adminSistema/Cobrancas'));
 const SecurityAlerts = lazy(() => import('./pages/adminSistema/SecurityAlerts'));
 const Avaliacoes = lazy(() => import('./pages/adminSistema/Avaliacoes'));
 const DescontosEconomiaEscala = lazy(() => import('./pages/adminSistema/DescontosEconomiaEscala'));
+const SolicitarSerie = lazy(() => import('./pages/adminSistema/SolicitarSerie'));
 
 // Ecrã de recurso enquanto o chunk de uma rota é carregado.
 function PageLoading() {
@@ -288,6 +289,7 @@ export default function App() {
             <Route path="/sistema/alertas-seguranca" element={<SecurityAlerts />} />
             <Route path="/sistema/avaliacoes" element={<Avaliacoes />} />
             <Route path="/sistema/economia-de-escala" element={<DescontosEconomiaEscala />} />
+            <Route path="/sistema/solicitar-serie" element={<SolicitarSerie />} />
           </Route>
         </Route>
       </Route>

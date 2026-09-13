@@ -11,12 +11,16 @@
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
 const { requireRole, requirePermission } = require('../middleware/rbac');
-const { ValidationError } = require('../utils/errors');
+const { ValidationError, NotFoundError } = require('../utils/errors');
 const { FATURACAO } = require('../utils/adminAreas');
+const prisma = require('../config/database');
 const faturacaoService = require('../services/faturacaoService');
 const saftService = require('../services/saftService');
 const metricasService = require('../services/metricasService');
 const agtPayloadService = require('../services/agtPayloadService');
+const agtSeriesService = require('../services/agtSeriesService');
+
+const INDICADORES_CONTINGENCIA = ['N', 'C'];
 
 const router = express.Router();
 router.use(authenticate);
@@ -85,6 +89,39 @@ router.get(
     res.json(await agtPayloadService.construirPayload(req.params.tipo.toUpperCase(), req.params.id, supplierCompanyId));
   },
 );
+
+// Pedido de série de numeração à AGT ("Solicitar Série", DS.120, 4.5) — só o
+// Admin do Sistema, área Faturação: é um passo de configuração/pré-requisito
+// (a empresa precisa de uma série atribuída pela AGT antes de poder emitir
+// documentos fiscais com ela), não uma ação do dia a dia de uma empresa
+// fornecedora. Mesmo princípio do /agt-payload: só gera e assina o pedido —
+// não há cliente de rede aqui, quem submete é quem tem acesso à conta de
+// homologação/produção da AGT.
+router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), async (req, res) => {
+  const { supplierCompanyId, ano, tipoDocumento, numeroEstabelecimento } = req.query;
+  const indicadorContingencia = req.query.indicadorContingencia || 'N';
+
+  if (!supplierCompanyId) throw new ValidationError('Indique a empresa fornecedora (supplierCompanyId).');
+  if (!ano || !Number.isInteger(Number(ano))) throw new ValidationError('Indique o ano da série (ano).');
+  if (!tipoDocumento || !String(tipoDocumento).trim()) throw new ValidationError('Indique o tipo de documento (tipoDocumento).');
+  if (!numeroEstabelecimento || !String(numeroEstabelecimento).trim()) {
+    throw new ValidationError('Indique o número do estabelecimento (numeroEstabelecimento).');
+  }
+  if (!INDICADORES_CONTINGENCIA.includes(indicadorContingencia)) {
+    throw new ValidationError('indicadorContingencia tem de ser "N" (regime normal) ou "C" (contingência).');
+  }
+
+  const empresa = await prisma.company.findUnique({ where: { id: supplierCompanyId }, select: { taxId: true } });
+  if (!empresa) throw new NotFoundError('Empresa fornecedora');
+
+  res.json(agtSeriesService.construirPedidoSerie({
+    taxRegistrationNumber: empresa.taxId,
+    seriesYear: Number(ano),
+    documentType: String(tipoDocumento).trim().toUpperCase(),
+    establishmentNumber: String(numeroEstabelecimento).trim(),
+    seriesContingencyIndicator: indicadorContingencia,
+  }));
+});
 
 // Métricas de negócio da plataforma inteira — só Admin do Sistema.
 router.get('/metricas', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), async (req, res) => {

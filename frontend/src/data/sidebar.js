@@ -221,6 +221,7 @@ const ADMIN_SISTEMA = [
       { label: 'Gestão de Atividades', to: '/sistema/atividades', area: 'operacoes' },
       { label: 'Auditoria', to: '/sistema/auditoria' },
       { label: 'Prontidão para produção', to: '/sistema/prontidao', area: 'operacoes' },
+      { label: 'Solicitar Série', to: '/sistema/solicitar-serie', area: 'faturacao' },
       { label: 'Ajuda', to: '/ajuda' },
     ],
   },
