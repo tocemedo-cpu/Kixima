@@ -36,7 +36,7 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
   });
 
   return {
-    schemaVersion: '1.2',
+    schemaVersion: '2.0',
     submissionUUID: crypto.randomUUID(),
     taxRegistrationNumber,
     submissionTimeStamp: new Date().toISOString(),
