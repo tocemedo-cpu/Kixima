@@ -20,7 +20,6 @@ export default function SolicitarSerie() {
   const { t } = useI18n();
   const [companies, setCompanies] = useState(null);
   const [companyId, setCompanyId] = useState('');
-  const [ano, setAno] = useState(String(ANO_ATUAL));
   const [tipoDocumento, setTipoDocumento] = useState('FT');
   const [numeroEstabelecimento, setNumeroEstabelecimento] = useState('');
   const [indicadorContingencia, setIndicadorContingencia] = useState('N');
@@ -39,7 +38,7 @@ export default function SolicitarSerie() {
     try {
       const data = await api.get('/api/faturacao/agt-serie-payload', {
         supplierCompanyId: companyId,
-        ano,
+        ano: ANO_ATUAL,
         tipoDocumento,
         numeroEstabelecimento,
         indicadorContingencia,
@@ -85,10 +84,9 @@ export default function SolicitarSerie() {
           )}
         </Field>
 
-        <Field label="Ano da série" obrigatorio>
+        <Field label="Ano da série" hint="Sempre o ano em curso — uma série pedida para um ano diferente não corresponde ao que se está mesmo a emitir.">
           {(id) => (
-            <input id={id} className="input" type="number" min="2000" step="1" required style={{ width: 110 }}
-              value={ano} onChange={(e) => setAno(e.target.value)} />
+            <input id={id} className="input" type="number" disabled style={{ width: 110 }} value={ANO_ATUAL} readOnly />
           )}
         </Field>
 

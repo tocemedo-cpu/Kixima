@@ -9,6 +9,8 @@ export const EN17 = {
   'Empresa fornecedora': 'Supplier company',
   'Selecione…': 'Select…',
   'Ano da série': 'Series year',
+  'Sempre o ano em curso — uma série pedida para um ano diferente não corresponde ao que se está mesmo a emitir.':
+    "Always the current year — a series requested for a different year wouldn't match what is actually being issued.",
   'Tipo de documento': 'Document type',
   'Nº do estabelecimento': 'Establishment number',
   'Indicador de contingência': 'Contingency indicator',
@@ -30,6 +32,8 @@ export const FR17 = {
   'Empresa fornecedora': 'Entreprise fournisseur',
   'Selecione…': 'Sélectionner…',
   'Ano da série': 'Année de la série',
+  'Sempre o ano em curso — uma série pedida para um ano diferente não corresponde ao que se está mesmo a emitir.':
+    "Toujours l'année en cours — une série demandée pour une année différente ne correspondrait pas à ce qui est réellement émis.",
   'Tipo de documento': 'Type de document',
   'Nº do estabelecimento': "N° d'établissement",
   'Indicador de contingência': 'Indicateur de contingence',
