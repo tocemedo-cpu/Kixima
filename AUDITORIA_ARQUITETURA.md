@@ -29,13 +29,13 @@ Os quatro itens "ainda aberto" **mantêm a descrição completa da v1** (não re
 
 | # | Severidade | Achado | Onde |
 |---|---|---|---|
-| N1 | **Crítico** | `consolidateContractBilling` gera fatura certificada, depois rebenta com `ReferenceError` — e nada impede re-faturar as mesmas call-offs num pedido repetido | `backend/src/services/contractService.js:130-219` |
-| N2 | **Alto** | `POST /api/contracts` sem verificar que o `COMPANY_ADMIN` pertence a uma das duas empresas — cria contratos entre empresas alheias | `backend/src/controllers/contractController.js:3-6`, `backend/src/routes/contractRoutes.js:13` |
-| N3 | **Alto** | `POST /api/contracts/:id/consolidate-billing` sem verificar posse do contrato — qualquer empresa força faturação de qualquer contrato | `backend/src/controllers/contractController.js:22-25` |
-| N4 | **Alto** | Add-on PO Robot nunca expira automaticamente — paga-se um mês, fica ativo para sempre | `backend/src/services/addonService.js` + `prisma/schema.prisma:164-176` (`CompanyAddon`) |
-| N5 | **Alto** | Segredo de webhook por-tenant (correção #9) não liga o tenant autenticado ao `poId` afetado — decisão/pagamento pode ser aplicado à PO de outra empresa | `kixima-integration-service/src/webhooks/webhook.controller.ts:60-96`, `webhook.producer.ts:52-56` |
-| N6 | **Alto** | Retry de sincronização multi-ERP reenvia a adapters que já tinham tido sucesso | `kixima-integration-service/src/sync/sync.processor.ts:76-140` |
-| N7 | **Alto** | Adapter SAP com `CompanyCode`/`PurchasingOrganization` fixos em `'1000'` para todos os tenants | `kixima-integration-service/src/adapters/mappers/erp.mappers.ts:23-24,41,55-56` |
+| N1 | **Crítico** | `consolidateContractBilling` gera fatura certificada, depois rebenta com `ReferenceError` — e nada impede re-faturar as mesmas call-offs num pedido repetido | ✅ **Corrigido** (`7e4cec9`) |
+| N2 | **Alto** | `POST /api/contracts` sem verificar que o `COMPANY_ADMIN` pertence a uma das duas empresas — cria contratos entre empresas alheias | ✅ **Corrigido** (`7e4cec9`) |
+| N3 | **Alto** | `POST /api/contracts/:id/consolidate-billing` sem verificar posse do contrato — qualquer empresa força faturação de qualquer contrato | ✅ **Corrigido** (`7e4cec9`) |
+| N4 | **Alto** | Add-on PO Robot nunca expira automaticamente — paga-se um mês, fica ativo para sempre | ✅ **Corrigido** (`7e4cec9`) |
+| N5 | **Alto** | Segredo de webhook por-tenant (correção #9) não liga o tenant autenticado ao `poId` afetado — decisão/pagamento pode ser aplicado à PO de outra empresa | ✅ **Corrigido** (`7e4cec9`) |
+| N6 | **Alto** | Retry de sincronização multi-ERP reenvia a adapters que já tinham tido sucesso | ✅ **Corrigido** (`7e4cec9`) |
+| N7 | **Alto** | Adapter SAP com `CompanyCode`/`PurchasingOrganization` fixos em `'1000'` para todos os tenants | ✅ **Corrigido** (`7e4cec9`) |
 | N8 | Médio | Conciliação bancária: TOCTOU sem tratamento de `P2002`, aborta o resto do lote | `backend/src/services/conciliacaoService.js:154-229` |
 | N9 | Médio | Sem validação nem decremento de stock ligado ao ciclo de compra (pode ser intencional — ver nota) | `backend/src/services/poService.js` (ausência confirmada) |
 | N10 | Baixo/Informativo | `agtSandboxClient.js` implementado e testado, mas nunca invocado por nenhuma rota/serviço | `backend/src/services/agtSandboxClient.js` |
