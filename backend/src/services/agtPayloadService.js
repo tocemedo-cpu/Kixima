@@ -245,7 +245,7 @@ async function carregarFornecedor(supplierCompanyId) {
 
 function envelope(taxRegistrationNumber, documento) {
   return {
-    schemaVersion: '1.2',
+    schemaVersion: '2.0',
     submissionUUID: crypto.randomUUID(),
     taxRegistrationNumber,
     submissionTimeStamp: new Date().toISOString(),
