@@ -31,6 +31,29 @@ describe('ERP mappers — Purchase Order', () => {
     expect((b.to_PurchaseOrderItem as { results: unknown[] }).results).toHaveLength(1);
   });
 
+  // N7 da auditoria: CompanyCode/PurchasingOrganization eram fixos em '1000'
+  // para TODOS os tenants — qualquer cliente com outro código de empresa no
+  // seu SAP real via as suas POs submetidas ao código errado.
+  it('SAP usa "1000" por omissão quando o tenant não configura companyCode/purchasingOrganization', () => {
+    const b = SapMapper.purchaseOrder(PO) as Record<string, unknown>;
+    expect(b.CompanyCode).toBe('1000');
+    expect(b.PurchasingOrganization).toBe('1000');
+  });
+
+  it('SAP usa o companyCode/purchasingOrganization do tenant quando configurados', () => {
+    const b = SapMapper.purchaseOrder(PO, { companyCode: '2000', purchasingOrganization: '2100' }) as Record<string, unknown>;
+    expect(b.CompanyCode).toBe('2000');
+    expect(b.PurchasingOrganization).toBe('2100');
+  });
+
+  it('SAP (fatura de fornecedor) usa o companyCode do tenant quando configurado', () => {
+    const b = SapMapper.supplierInvoice(
+      { invoiceId: 'inv-1', reference: 'FAT-1', supplier: PO.supplier, currency: 'AOA', amount: 100, issuedAt: '2026-07-29T00:00:00.000Z' } as any,
+      { companyCode: '3000' },
+    ) as Record<string, unknown>;
+    expect(b.CompanyCode).toBe('3000');
+  });
+
   it('Oracle mapeia para OrderNumber/lines', () => {
     const b = OracleMapper.purchaseOrder(PO) as Record<string, unknown>;
     expect(b.OrderNumber).toBe('PO-2026-00002');
@@ -60,6 +83,12 @@ describe('ERP mappers — pedido de aprovação (DOA)', () => {
     expect(b.Supplier).toBe('AO-FOR-0001');
     expect(b.PurchaseOrderReference).toBe('PO-2026-00003');
     expect((b.to_PurchaseOrderItem as { results: unknown[] }).results).toHaveLength(1);
+  });
+
+  it('SAP (pedido de aprovação) usa o companyCode/purchasingOrganization do tenant quando configurados', () => {
+    const b = SapMapper.approvalRequest(PO_APPROVAL_REQUEST, { companyCode: '2000', purchasingOrganization: '2100' }) as Record<string, unknown>;
+    expect(b.CompanyCode).toBe('2000');
+    expect(b.PurchasingOrganization).toBe('2100');
   });
 
   it('Oracle mapeia com RequestApproval=true', () => {

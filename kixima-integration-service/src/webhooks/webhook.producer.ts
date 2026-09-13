@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import { WebhookStatus, Prisma } from '@prisma/client';
+import { WebhookStatus, Prisma, EventType } from '@prisma/client';
 import { PrismaService } from '@app/common/prisma/prisma.service';
 import { CryptoService } from '@app/crypto/crypto.service';
 
@@ -47,6 +47,32 @@ export class WebhookProducer {
       select: { id: true },
     });
     return Boolean(existente);
+  }
+
+  /**
+   * A que tenant pertence esta PO — resolvido a partir do PRÓPRIO evento
+   * `purchase_order.approval_requested` que a KIXIMA publicou quando a PO
+   * nasceu erpManaged (é o único sítio em que este microserviço alguma vez
+   * associa um `poId` a um `tenantId`, de forma fidedigna: o tenantId desse
+   * evento vem do backend, não de nada que um ERP possa forjar).
+   *
+   * Usado para detetar um webhook de entrada corretamente assinado por um
+   * tenant, mas com um `poId` que não é dele — o segredo por-tenant (ver
+   * WebhookController.resolveSecret) só prova QUEM assinou, nunca prova que
+   * essa PO é sua. `null` quando não há registo (PO sem esse evento, ou
+   * histórico já expurgado) — nesse caso não há como confirmar OU negar, por
+   * isso quem chama decide não bloquear, só assinalar.
+   */
+  async tenantIdParaPo(poId: string): Promise<string | null> {
+    const evento = await this.prisma.integrationEvent.findFirst({
+      where: {
+        eventType: EventType.PURCHASE_ORDER_APPROVAL_REQUESTED,
+        payload: { path: ['poId'], equals: poId },
+      },
+      select: { tenantId: true },
+      orderBy: { receivedAt: 'desc' },
+    });
+    return evento?.tenantId ?? null;
   }
 
   async notifyKixima(

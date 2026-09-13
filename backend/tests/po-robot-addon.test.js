@@ -183,6 +183,83 @@ describe('Fluxo completo: pedir → comprovativo → confirmar → add-on ativo'
   });
 });
 
+// N4 da auditoria: CompanyAddon não tinha nenhum campo de validade — uma
+// empresa pagava um único mês e ficava com o robot ATIVO para sempre, porque
+// nada voltava a comparar a validade já paga (AddonCobranca.validoAte) com a
+// data de hoje. Testado sem esperar um mês real: o registo é colocado
+// diretamente no estado "vencido" (status ATIVO na BD, validoAte no passado)
+// — exatamente o estado em que um add-on ficava preso antes desta correção.
+describe('Validade do add-on — vencimento (N4)', () => {
+  let product;
+
+  beforeAll(async () => {
+    const catalog = await auth(tokens.comprador).get('/api/catalog');
+    product = catalog.body[0];
+  });
+
+  async function tornarVencido(diasNoPassado) {
+    await prisma.company.update({ where: { id: compradora.id }, data: { plan: 'PRO', searchRank: 2 } });
+    await prisma.companyAddon.upsert({
+      where: { companyId_addonKey: { companyId: compradora.id, addonKey: ADDON_KEY } },
+      create: {
+        companyId: compradora.id, addonKey: ADDON_KEY, status: 'ATIVO', activatedAt: new Date(),
+        validoAte: new Date(Date.now() - diasNoPassado * 24 * 60 * 60 * 1000),
+      },
+      update: {
+        status: 'ATIVO', activatedAt: new Date(),
+        validoAte: new Date(Date.now() - diasNoPassado * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  test('estado() reporta ativo:false quando validoAte já passou, mesmo com status ATIVO na BD', async () => {
+    await tornarVencido(1);
+    const addonNaBd = await prisma.companyAddon.findUnique({
+      where: { companyId_addonKey: { companyId: compradora.id, addonKey: ADDON_KEY } },
+    });
+    expect(addonNaBd.status).toBe('ATIVO'); // continua ATIVO na BD — nada o muda sozinho
+
+    const estado = await auth(tokens.companyAdmin).get(`/api/addons/${ADDON_KEY}/estado`);
+    expect(estado.body.ativo).toBe(false);
+    expect(estado.body.validoAte).toBeTruthy();
+  });
+
+  test('um add-on vencido bloqueia o robot (assertAddon), com mensagem de vencimento', async () => {
+    await tornarVencido(5);
+    const res = await auth(tokens.companyAdmin).post('/api/po-robot/regras').send({
+      productId: product.id, mediaOrigem: 'MANUAL', mediaMensal: 10, periodicidade: 'MENSAL',
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toMatch(/venceu/i);
+  });
+
+  test('um add-on vencido PODE ser pedido de novo — não fica bloqueado para sempre em "já está ativo"', async () => {
+    await tornarVencido(10);
+    const res = await auth(tokens.companyAdmin).post(`/api/addons/${ADDON_KEY}/pedir`);
+    expect(res.status).toBe(201);
+  });
+
+  test('renovar um add-on vencido conta a validade nova a partir de HOJE, não estende o período já vencido', async () => {
+    await tornarVencido(100); // muito para trás — se estendesse daqui, a validade nova ficaria no passado
+    const pedido = await auth(tokens.companyAdmin).post(`/api/addons/${ADDON_KEY}/pedir`);
+    expect(pedido.status).toBe(201);
+
+    await request(app)
+      .post(`/api/addons/${pedido.body.id}/comprovativo`)
+      .set('Authorization', `Bearer ${tokens.companyAdmin}`)
+      .attach('comprovativo', COMPROVATIVO, 'transferencia.pdf');
+    const confirmar = await auth(tokens.adminSistema).post(`/api/addons/${pedido.body.id}/confirmar`).send({});
+    expect(confirmar.status).toBe(200);
+
+    const addon = await prisma.companyAddon.findUnique({
+      where: { companyId_addonKey: { companyId: compradora.id, addonKey: ADDON_KEY } },
+    });
+    const emDiasApartirDeHoje = (new Date(addon.validoAte).getTime() - Date.now()) / (24 * 60 * 60 * 1000);
+    expect(emDiasApartirDeHoje).toBeGreaterThan(20); // ~1 mês a partir de agora
+    expect(emDiasApartirDeHoje).toBeLessThan(40);
+  });
+});
+
 describe('Cancelar cobrança', () => {
   beforeAll(async () => {
     await prisma.company.update({ where: { id: compradora.id }, data: { plan: 'PRO', searchRank: 2 } });

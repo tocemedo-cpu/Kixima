@@ -13,15 +13,31 @@ import {
 
 const iso = (d: string): string => d;
 
+/**
+ * Código de empresa/organização de compras SAP — configurável POR TENANT
+ * (`companyCode`/`purchasingOrganization` na config cifrada do ERP), nunca
+ * fixo: '1000' é só o valor por omissão do SAP de demonstração, e qualquer
+ * tenant cujo SAP real use outro código via este valor fixo submetia POs,
+ * aprovações e faturas ao código de empresa ERRADO — na melhor hipótese a
+ * chamada falha (código inexistente), na pior mistura dados financeiros
+ * entre unidades de negócio do mesmo cliente.
+ */
+export interface SapOrgConfig {
+  companyCode?: string;
+  purchasingOrganization?: string;
+}
+const SAP_DEFAULT_COMPANY_CODE = '1000';
+const SAP_DEFAULT_PURCHASING_ORG = '1000';
+
 // ---------------------------------------------------------------------
 // SAP S/4HANA — entidades OData (A_PurchaseOrder, A_SupplierInvoice, …).
 // ---------------------------------------------------------------------
 export const SapMapper = {
-  purchaseOrder(p: PurchaseOrderApprovedPayload): Record<string, unknown> {
+  purchaseOrder(p: PurchaseOrderApprovedPayload, org: SapOrgConfig = {}): Record<string, unknown> {
     return {
       PurchaseOrderType: 'NB',
-      CompanyCode: '1000',
-      PurchasingOrganization: '1000',
+      CompanyCode: org.companyCode || SAP_DEFAULT_COMPANY_CODE,
+      PurchasingOrganization: org.purchasingOrganization || SAP_DEFAULT_PURCHASING_ORG,
       Supplier: p.supplier.taxId,
       DocumentCurrency: p.currency,
       PurchaseOrderReference: p.reference,
@@ -36,9 +52,9 @@ export const SapMapper = {
       },
     };
   },
-  supplierInvoice(p: InvoiceIssuedPayload): Record<string, unknown> {
+  supplierInvoice(p: InvoiceIssuedPayload, org: SapOrgConfig = {}): Record<string, unknown> {
     return {
-      CompanyCode: '1000',
+      CompanyCode: org.companyCode || SAP_DEFAULT_COMPANY_CODE,
       DocumentDate: iso(p.issuedAt),
       InvoicingParty: p.supplier.taxId,
       DocumentCurrency: p.currency,
@@ -49,11 +65,11 @@ export const SapMapper = {
   // Cria a PO sob estratégia de liberação (Release Strategy) — em SAP, isto é
   // o que efetivamente dispara o workflow de aprovação (DOA) próprio do
   // cliente; a instância fica identificável pelo próprio número do documento.
-  approvalRequest(p: PurchaseOrderApprovalRequestedPayload): Record<string, unknown> {
+  approvalRequest(p: PurchaseOrderApprovalRequestedPayload, org: SapOrgConfig = {}): Record<string, unknown> {
     return {
       PurchaseOrderType: 'NB',
-      CompanyCode: '1000',
-      PurchasingOrganization: '1000',
+      CompanyCode: org.companyCode || SAP_DEFAULT_COMPANY_CODE,
+      PurchasingOrganization: org.purchasingOrganization || SAP_DEFAULT_PURCHASING_ORG,
       Supplier: p.supplier.taxId,
       DocumentCurrency: p.currency,
       PurchaseOrderReference: p.reference,

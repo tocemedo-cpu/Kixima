@@ -1,7 +1,7 @@
 const contractService = require('../services/contractService');
 
 async function create(req, res) {
-  const contract = await contractService.createContract(req.body);
+  const contract = await contractService.createContract(req.body, req.user);
   res.status(201).json(contract);
 }
 
@@ -20,7 +20,7 @@ async function getOne(req, res) {
 }
 
 async function consolidateBilling(req, res) {
-  const invoice = await contractService.consolidateContractBilling(req.params.id);
+  const invoice = await contractService.consolidateContractBilling(req.params.id, req.user);
   res.status(201).json(invoice);
 }
 

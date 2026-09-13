@@ -74,6 +74,18 @@ export class SyncProcessor extends WorkerHost {
     const isApprovalRequest = event.eventType === EventType.PURCHASE_ORDER_APPROVAL_REQUESTED;
 
     for (const { adapter } of resolved) {
+      // Um retry (por outro adapter ter falhado) não deve reenviar a um ERP
+      // que já teve sucesso — os métodos de push não são idempotentes do
+      // lado do ERP (POSTs de criação): reenviar duplicava a PO/fatura/
+      // pagamento já criados com sucesso na tentativa anterior, só porque
+      // OUTRO ERP do mesmo evento falhou.
+      const jaSincronizado = await this.prisma.erpSyncRecord.findUnique({
+        where: { integrationEventId_erp_entityType: { integrationEventId: event.id, erp: adapter.system, entityType } },
+      });
+      if (jaSincronizado?.status === SyncStatus.SUCCESS) {
+        continue;
+      }
+
       const started = Date.now();
       try {
         const result = isApprovalRequest

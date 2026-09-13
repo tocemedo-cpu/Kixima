@@ -121,7 +121,7 @@ Gestão via API protegida por `Authorization: Bearer $INTEGRATION_ADMIN_TOKEN`:
 
 `erp` ∈ `SAP_S4HANA | PRIMAVERA | ORACLE_ERP_CLOUD | SAP_ARIBA`. Campos de `config`:
 
-- **SAP_S4HANA**: `baseUrl, username, password, client`
+- **SAP_S4HANA**: `baseUrl, username, password, client, companyCode?, purchasingOrganization?` — os dois últimos caem para `'1000'` (o valor de omissão do SAP de demonstração) se não forem definidos, mas qualquer tenant cujo SAP real use outro código de empresa/organização de compras TEM de os definir explicitamente.
 - **PRIMAVERA**: `baseUrl, apiKey, company`
 - **ORACLE_ERP_CLOUD**: `baseUrl, username, password`
 - **SAP_ARIBA**: `baseUrl, sharedSecret, networkId`

@@ -40,6 +40,13 @@ const RELAYABLE_TYPES = new Set(['purchase_order.approval_decided', 'payment.con
  * IDEMPOTÊNCIA DO RELAY: a mesma decisão/confirmação de pagamento não é
  * reencaminhada duas vezes ao Kixima — ver WebhookProducer.jaEncaminhadoComSucesso.
  *
+ * CORRELAÇÃO TENANT↔PO: o segredo por-tenant só prova QUEM assinou o webhook,
+ * nunca que a PO no corpo é dele — sem isto, um segredo válido para o tenant A
+ * (ex.: uma credencial de A comprometida) podia assinar uma decisão/pagamento
+ * para uma PO de QUALQUER OUTRA empresa. Antes de reencaminhar, confirma-se
+ * contra o próprio evento `purchase_order.approval_requested` que a KIXIMA
+ * publicou para essa PO — ver WebhookProducer.tenantIdParaPo.
+ *
  * ERP DOA Approval: a decisão (aprovado/rejeitado) e a confirmação de
  * pagamento do workflow do ERP chegam aqui — não há especificação pública do
  * formato nativo de cada ERP para isto (nunca fingir que há), por isso este
@@ -78,6 +85,25 @@ export class WebhookController {
 
     if (type && RELAYABLE_TYPES.has(type) && body.poId) {
       const poId = String(body.poId);
+
+      // O segredo por-tenant (resolveSecret) só prova QUEM assinou este
+      // webhook — nunca prova que a PO no corpo é dele. Sem esta verificação,
+      // um segredo válido para o tenant A (o próprio ERP de A, ou uma
+      // credencial de A comprometida) podia assinar uma decisão/pagamento
+      // para uma PO de QUALQUER outra empresa, e este endpoint reencaminhava-a
+      // como legítima. `tenantDaPo` só bloqueia numa DISCREPÂNCIA confirmada
+      // — quando não há registo nenhum (null), não há como provar nem negar,
+      // por isso não se bloqueia (falso positivo custaria mais do que vale).
+      const tenantDaPo = await this.webhooks.tenantIdParaPo(poId);
+      if (tenantDaPo && tenantDaPo !== tenantId) {
+        await this.audit.warn(
+          'webhook.tenant_mismatch',
+          `Webhook de ${erp} (tenant "${tenantId}") recusado — a PO pertence ao tenant "${tenantDaPo}".`,
+          { erp: system ?? undefined, metadata: { type, poId } },
+        );
+        throw new UnauthorizedException('Esta PO não pertence ao tenant que assinou este webhook.');
+      }
+
       if (await this.webhooks.jaEncaminhadoComSucesso(type, poId)) {
         await this.audit.info('webhook.duplicate', `Resultado de ${erp} ignorado — já reencaminhado (${type})`, {
           erp: system ?? undefined,

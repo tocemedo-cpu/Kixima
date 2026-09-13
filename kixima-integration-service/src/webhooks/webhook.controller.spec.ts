@@ -7,8 +7,12 @@ function makeController(overrides: {
   webhookSecretFor?: (tenantId: string, erp: ErpSystem) => Promise<string | null>;
   envSecret?: string;
   jaEncaminhadoComSucesso?: (type: string, poId: string) => Promise<boolean>;
+  tenantIdParaPo?: (poId: string) => Promise<string | null>;
 } = {}) {
-  const audit = { info: jest.fn(async () => undefined) } as unknown as ConstructorParameters<typeof WebhookController>[0];
+  const audit = {
+    info: jest.fn(async () => undefined),
+    warn: jest.fn(async () => undefined),
+  } as unknown as ConstructorParameters<typeof WebhookController>[0];
 
   const config = {
     get: (key: string) => (key === 'webhookSecret' ? overrides.envSecret : undefined),
@@ -21,6 +25,9 @@ function makeController(overrides: {
   const notifyKixima = jest.fn(async () => undefined);
   const webhooks = {
     jaEncaminhadoComSucesso: overrides.jaEncaminhadoComSucesso ?? (async () => false),
+    // Por omissão, "sem registo" (null) — não bloqueia, mesmo comportamento
+    // dos testes já existentes de antes desta verificação existir.
+    tenantIdParaPo: overrides.tenantIdParaPo ?? (async () => null),
     notifyKixima,
   } as unknown as ConstructorParameters<typeof WebhookController>[3];
 
@@ -140,5 +147,51 @@ describe('WebhookController — idempotência do relay (jaEncaminhadoComSucesso)
 
     expect(jaEncaminhadoSpy).not.toHaveBeenCalled();
     expect(notifyKixima).not.toHaveBeenCalled();
+  });
+});
+
+// N5 da auditoria: o segredo por-tenant só prova quem assinou o webhook,
+// nunca que a PO no corpo é dele — sem esta verificação, um segredo válido
+// para um tenant permitia aplicar uma decisão/pagamento à PO de OUTRA
+// empresa qualquer.
+describe('WebhookController — correlação tenant↔PO (tenantIdParaPo)', () => {
+  it('recusa com UnauthorizedException quando a PO pertence a outro tenant', async () => {
+    const { controller, notifyKixima } = makeController({
+      webhookSecretFor: async (tenantId) => (tenantId === 'empresa-atacante' ? 'segredo-atacante' : null),
+      tenantIdParaPo: async () => 'empresa-vitima',
+    });
+    const body = { type: 'payment.confirmed', poId: 'po-da-vitima', valorPago: 999 };
+    const { raw, signature } = assinar('segredo-atacante', body);
+
+    await expect(
+      controller.receive('empresa-atacante', 'sap', signature, fakeReq(raw), body),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(notifyKixima).not.toHaveBeenCalled();
+  });
+
+  it('reencaminha normalmente quando a PO pertence mesmo ao tenant que assinou', async () => {
+    const { controller, notifyKixima } = makeController({
+      webhookSecretFor: async (tenantId) => (tenantId === 'empresa-1' ? 'segredo-tenant' : null),
+      tenantIdParaPo: async () => 'empresa-1',
+    });
+    const body = { type: 'payment.confirmed', poId: 'po-1' };
+    const { raw, signature } = assinar('segredo-tenant', body);
+
+    await controller.receive('empresa-1', 'sap', signature, fakeReq(raw), body);
+
+    expect(notifyKixima).toHaveBeenCalled();
+  });
+
+  it('reencaminha (não bloqueia) quando não há registo de dono nenhum — não há como provar nem negar', async () => {
+    const { controller, notifyKixima } = makeController({
+      webhookSecretFor: async (tenantId) => (tenantId === 'empresa-1' ? 'segredo-tenant' : null),
+      tenantIdParaPo: async () => null,
+    });
+    const body = { type: 'payment.confirmed', poId: 'po-sem-registo' };
+    const { raw, signature } = assinar('segredo-tenant', body);
+
+    await controller.receive('empresa-1', 'sap', signature, fakeReq(raw), body);
+
+    expect(notifyKixima).toHaveBeenCalled();
   });
 });

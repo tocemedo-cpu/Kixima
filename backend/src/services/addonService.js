@@ -53,6 +53,16 @@ function catalogo() {
   return Object.entries(ADDONS).map(([addonKey, def]) => ({ addonKey, label: def.label, requerPlano: def.requerPlano, preco: precoDe(addonKey) }));
 }
 
+// Ativo de verdade: status ATIVO E ainda dentro da validade paga. Mesmo
+// princípio de planService.estadoSubscricao — a validade NUNCA muda o
+// `status` sozinha (nenhum job a fazer isso), é verificada a cada leitura,
+// para nunca depender de um job ter corrido a horas.
+function aindaValido(addon, agora = new Date()) {
+  if (addon?.status !== 'ATIVO') return false;
+  if (!addon.validoAte) return true; // add-ons ativados antes desta correção, sem validade guardada
+  return new Date(addon.validoAte) >= agora;
+}
+
 async function estado(companyId, addonKey) {
   const def = definicao(addonKey);
   const [addon, emAberto] = await Promise.all([
@@ -66,24 +76,29 @@ async function estado(companyId, addonKey) {
     addonKey,
     label: def.label,
     preco: precoDe(addonKey),
-    ativo: addon?.status === 'ATIVO',
+    ativo: aindaValido(addon),
     activatedAt: addon?.activatedAt || null,
+    validoAte: addon?.validoAte || null,
     emAberto,
   };
 }
 
 /**
- * Guarda: lança se o add-on não estiver ATIVO para esta empresa. Mesmo
- * molde de planService.assertFeature — usada por poRoboRoutes.js antes de
- * qualquer operação do robot.
+ * Guarda: lança se o add-on não estiver ATIVO (e dentro da validade paga)
+ * para esta empresa. Mesmo molde de planService.assertFeature — usada por
+ * poRoboRoutes.js antes de qualquer operação do robot.
  */
 async function assertAddon(companyId, addonKey, label) {
   const def = definicao(addonKey);
   const addon = await prisma.companyAddon.findUnique({ where: { companyId_addonKey: { companyId, addonKey } } });
-  if (addon?.status !== 'ATIVO') {
+  if (!aindaValido(addon)) {
+    const venceu = addon?.status === 'ATIVO' && addon.validoAte;
     throw new BusinessRuleError(
-      `"${label || def.label}" é um add-on pago (${def.valorUsd} USD/${def.periodo.toLowerCase()}) `
-      + 'e ainda não está ativo para esta empresa.',
+      venceu
+        ? `"${label || def.label}" venceu em ${new Date(addon.validoAte).toISOString().slice(0, 10)} — `
+          + 'peça a renovação para continuar a usar.'
+        : `"${label || def.label}" é um add-on pago (${def.valorUsd} USD/${def.periodo.toLowerCase()}) `
+          + 'e ainda não está ativo para esta empresa.',
     );
   }
 }
@@ -99,8 +114,12 @@ async function pedir(companyId, addonKey, userId, actor = null) {
     throw new BusinessRuleError(`"${def.label}" exige o plano ${def.requerPlano} ou superior.`);
   }
 
+  // Usa aindaValido (não só status === 'ATIVO'): um add-on VENCIDO continua
+  // com status ATIVO na base de dados (não há job a mudá-lo — ver assertAddon),
+  // mas tem de poder ser renovado, não ficar bloqueado para sempre em "já
+  // está ativo" só porque o registo antigo nunca é limpo.
   const jaAtivo = await prisma.companyAddon.findUnique({ where: { companyId_addonKey: { companyId, addonKey } } });
-  if (jaAtivo?.status === 'ATIVO') {
+  if (aindaValido(jaAtivo)) {
     throw new ConflictError(`O add-on "${def.label}" já está ativo para esta empresa.`);
   }
 
@@ -224,7 +243,12 @@ async function aplicarConfirmacao(cobranca, { dadosExtra = {}, actor, mensagemNo
   const existente = await prisma.companyAddon.findUnique({
     where: { companyId_addonKey: { companyId: cobranca.companyId, addonKey: cobranca.addonKey } },
   });
-  const validoAte = novoValidoAte(existente?.status === 'ATIVO' ? cobranca.validoAte : null, cobranca.meses);
+  // A partir de CompanyAddon.validoAte (a validade JÁ paga), não de
+  // cobranca.validoAte — esse campo só é preenchido MAIS ABAIXO, nesta mesma
+  // confirmação, por isso lê-lo aqui era sempre null e uma renovação nunca
+  // estendia a validade anterior, recomeçava sempre a contar a partir de
+  // agora. Mesmo padrão de assinaturaService (Company.planoValidoAte).
+  const validoAte = novoValidoAte(aindaValido(existente) ? existente.validoAte : null, cobranca.meses);
 
   const atualizada = await prisma.$transaction(async (tx) => {
     const c = await tx.addonCobranca.update({
@@ -234,8 +258,8 @@ async function aplicarConfirmacao(cobranca, { dadosExtra = {}, actor, mensagemNo
 
     await tx.companyAddon.upsert({
       where: { companyId_addonKey: { companyId: cobranca.companyId, addonKey: cobranca.addonKey } },
-      create: { companyId: cobranca.companyId, addonKey: cobranca.addonKey, status: 'ATIVO', activatedAt: new Date() },
-      update: { status: 'ATIVO', activatedAt: existente?.activatedAt || new Date() },
+      create: { companyId: cobranca.companyId, addonKey: cobranca.addonKey, status: 'ATIVO', activatedAt: new Date(), validoAte },
+      update: { status: 'ATIVO', activatedAt: existente?.activatedAt || new Date(), validoAte },
     });
 
     await auditService.record(tx, {

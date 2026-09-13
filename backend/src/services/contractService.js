@@ -2,7 +2,7 @@
 // Contratos-quadro e Call-offs (secção 5 da especificação).
 
 const prisma = require('../config/database');
-const { NotFoundError, BusinessRuleError } = require('../utils/errors');
+const { NotFoundError, BusinessRuleError, ForbiddenError } = require('../utils/errors');
 const { nextReference } = require('../utils/reference');
 const taxService = require('./taxService');
 const planService = require('./planService');
@@ -41,7 +41,15 @@ async function createContract({
   paymentTermDays,
   validFrom,
   validUntil,
-}) {
+}, actorUser = null) {
+  // Um COMPANY_ADMIN só pode criar um contrato-quadro EM NOME DA SUA PRÓPRIA
+  // empresa-cliente — sem isto, qualquer empresa podia declarar um contrato
+  // (e o desconto de aprovação automática de call-offs que vem com ele) entre
+  // DUAS empresas terceiras. Só o Admin do Sistema fica isento.
+  if (actorUser && actorUser.role !== 'ADMIN_SISTEMA' && actorUser.companyId !== clientCompanyId) {
+    throw new ForbiddenError('Só pode criar um contrato-quadro em nome da sua própria empresa (como cliente).');
+  }
+
   await exigirPlanoParaContrato(clientCompanyId);
 
   const reference = await nextReference('CTR', 'contract');
@@ -127,16 +135,29 @@ async function findActiveContractForOrder({ clientCompanyId, supplierCompanyId, 
  * Faturamento consolidado periódico: soma as call-offs "por faturar" de um
  * contrato e gera uma única fatura com o prazo de pagamento do contrato.
  */
-async function consolidateContractBilling(contractId) {
+async function consolidateContractBilling(contractId, actorUser = null) {
   const contract = await prisma.contract.findUnique({ where: { id: contractId } });
   if (!contract) throw new NotFoundError('Contrato');
+  // Mesmo controlo de posse de getContract: só as duas empresas do contrato
+  // (ou o Admin do Sistema) podem forçar a sua faturação — sem isto, qualquer
+  // empresa da plataforma conseguia consolidar a faturação de um contrato
+  // alheio só por conhecer o seu id. 404 em vez de 403 para não revelar a
+  // existência do contrato a quem não é parte dele.
+  if (actorUser && actorUser.role !== 'ADMIN_SISTEMA') {
+    const own = contract.clientCompanyId === actorUser.companyId || contract.supplierCompanyId === actorUser.companyId;
+    if (!own) throw new NotFoundError('Contrato');
+  }
 
   const pendingCallOffs = await prisma.purchaseOrder.findMany({
     where: {
       contractId,
       isCallOff: true,
       status: { in: ['ENTREGUE', 'RECEBIDA_CONFORME', 'EM_EXECUCAO', 'APROVADA'] },
-      invoice: null,
+      // NÃO "invoice: null" — esse campo (Invoice.purchaseOrderId) fica
+      // sempre null numa fatura consolidada (estrutural: cobre várias PO),
+      // por isso nunca detetava uma consolidação já feita. O campo próprio
+      // abaixo é que sabe mesmo se esta call-off já foi faturada.
+      consolidatedInvoiceId: null,
     },
     include: { items: { include: { product: { select: { kind: true, sku: true, unspscCode: true, name: true } } } } },
   });
@@ -194,7 +215,7 @@ async function consolidateContractBilling(contractId) {
 
     await tx.purchaseOrder.updateMany({
       where: { id: { in: pendingCallOffs.map((po) => po.id) } },
-      data: { paymentDueAt: dueAt },
+      data: { paymentDueAt: dueAt, consolidatedInvoiceId: criada.id },
     });
 
     await conciliacaoService.atribuirReferencia(criada.id, tx);
@@ -207,7 +228,7 @@ async function consolidateContractBilling(contractId) {
     roles: ['FINANCEIRO'],
     type: 'FATURA_GERADA',
     title: 'Fatura consolidada de call-offs',
-    message: `Fatura consolidada ${invoice.reference} gerada para o contrato ${contract.reference}, no valor de ${amount} ${contract.currency}.`,
+    message: `Fatura consolidada ${invoice.reference} gerada para o contrato ${contract.reference}, no valor de ${invoice.amount} ${contract.currency}.`,
     channel: 'IN_APP_EMAIL',
     relatedEntityType: 'Invoice',
     relatedEntityId: invoice.id,

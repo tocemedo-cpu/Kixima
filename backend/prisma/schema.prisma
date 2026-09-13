@@ -168,6 +168,12 @@ model CompanyAddon {
   addonKey    String             @map("addon_key") // ex.: "PO_ROBOT"
   status      CompanyAddonStatus @default(INATIVO)
   activatedAt DateTime?          @map("activated_at")
+  // Cópia de AddonCobranca.validoAte da última confirmação — sem isto, o
+  // add-on ficava ATIVO para sempre depois de uma única mensalidade paga
+  // (nada voltava a ler a validade da cobrança). NUNCA PERSISTIDO como
+  // status: verificado a cada leitura em assertAddon()/estado(), mesmo
+  // princípio de planService.estadoSubscricao (Company.planoValidoAte).
+  validoAte   DateTime?          @map("valido_ate")
   createdAt   DateTime           @default(now()) @map("created_at")
   updatedAt   DateTime           @updatedAt @map("updated_at")
 
@@ -911,6 +917,15 @@ model PurchaseOrder {
   contractId String?   @map("contract_id")
   contract   Contract? @relation(fields: [contractId], references: [id])
 
+  // Marca esta call-off como já incluída numa fatura consolidada — sem isto,
+  // `Invoice.purchaseOrderId` fica sempre null em faturas consolidadas (é
+  // estrutural: uma fatura consolidada cobre VÁRIAS PO, não pode usar a FK
+  // 1:1 normal), e uma query de "call-offs pendentes de faturar" baseada só
+  // nessa relação nunca consegue ver uma consolidação já feita — reprocessa
+  // as mesmas call-offs a cada nova chamada. Ver contractService.consolidateContractBilling.
+  consolidatedInvoiceId String?  @map("consolidated_invoice_id")
+  consolidatedInvoice   Invoice? @relation("ConsolidatedCallOffs", fields: [consolidatedInvoiceId], references: [id])
+
   // Relógio dos 7 dias (ou prazo do contrato, se call-off)
   acceptedAt   DateTime? @map("accepted_at") // gatilho do prazo de pagamento
   paymentDueAt DateTime? @map("payment_due_at") // acceptedAt + PAYMENT_SLA_DAYS (ou prazo do contrato)
@@ -968,6 +983,7 @@ model PurchaseOrder {
   @@index([approvedById])
   @@index([contractId])
   @@index([createdById])
+  @@index([consolidatedInvoiceId])
   @@map("purchase_orders")
 }
 
@@ -1093,6 +1109,7 @@ model Invoice {
   contractId        String?   @map("contract_id")
   contract          Contract? @relation(fields: [contractId], references: [id])
   consolidatedPoIds String[]  @default([]) @map("consolidated_po_ids")
+  consolidatedCallOffs PurchaseOrder[] @relation("ConsolidatedCallOffs")
 
   amount            Decimal       @db.Decimal(14, 2) // total a pagar pelo comprador (com IVA)
   netAmount         Decimal?      @map("net_amount") @db.Decimal(14, 2) // subtotal sem IVA
