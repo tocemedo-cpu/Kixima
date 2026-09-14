@@ -84,3 +84,28 @@ services:
         sync: false
       - key: INTEGRATION_ADMIN_TOKEN
         sync: false
+      # --- AGT (e-Fatura) — assinatura JWS + Sandbox de homologação --------
+      # Sem AGT_JWS_PRIVATE_KEY_BASE64 e AGT_SOFTWARE_VALIDATION_NUMBER, o
+      # backend recusa-se a assinar qualquer documento AGT (ver
+      # agtSigningService.js) — RECUSA-SE A FINGIR, nunca uma assinatura
+      # simulada. AGT_NIF é o NIF da conta de homologação/produção, usado em
+      # "Solicitar Série" (GET /api/faturacao/agt-serie-payload).
+      # AGT_JWS_PRIVATE_KEY_BASE64: a chave privada RSA (PEM), em Base64 — um
+      #   PEM tem quebras de linha que o painel de variáveis do Render não
+      #   preserva; o Base64 evita isso.
+      - key: AGT_JWS_PRIVATE_KEY_BASE64
+        sync: false
+      - key: AGT_SOFTWARE_VALIDATION_NUMBER
+        sync: false
+      - key: AGT_SOFTWARE_ID
+        sync: false
+      - key: AGT_SOFTWARE_VERSION
+        sync: false
+      - key: AGT_NIF
+        sync: false
+      - key: AGT_ENV
+        sync: false
+      - key: AGT_SANDBOX_USERNAME
+        sync: false
+      - key: AGT_SANDBOX_PASSWORD
+        sync: false
