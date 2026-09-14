@@ -40,6 +40,19 @@ class ConflictError extends AppError {
   }
 }
 
+/**
+ * Uma integração externa (ex.: assinatura AGT, Sandbox) ainda não tem as
+ * credenciais reais configuradas neste ambiente — "recusa-se a fingir": nunca
+ * se simula uma resposta, mas o pedido também não pode desaparecer atrás de
+ * um 500 genérico sem explicação. Quem está a testar/configurar o ambiente
+ * precisa de saber exatamente o que falta, não só que "algo correu mal".
+ */
+class ServiceUnavailableError extends AppError {
+  constructor(message = 'Este serviço ainda não está configurado.') {
+    super(message, 503, 'SERVICO_INDISPONIVEL');
+  }
+}
+
 class BusinessRuleError extends AppError {
   constructor(message) {
     super(message, 400, 'BUSINESS_RULE_VIOLATION');
@@ -72,4 +85,5 @@ module.exports = {
   ConflictError,
   PlanRequiredError,
   BusinessRuleError,
+  ServiceUnavailableError,
 };

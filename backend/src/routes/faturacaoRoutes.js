@@ -11,7 +11,7 @@
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
 const { requireRole, requirePermission } = require('../middleware/rbac');
-const { ValidationError, NotFoundError } = require('../utils/errors');
+const { ValidationError, NotFoundError, ServiceUnavailableError } = require('../utils/errors');
 const { FATURACAO } = require('../utils/adminAreas');
 const prisma = require('../config/database');
 const faturacaoService = require('../services/faturacaoService');
@@ -19,6 +19,22 @@ const saftService = require('../services/saftService');
 const metricasService = require('../services/metricasService');
 const agtPayloadService = require('../services/agtPayloadService');
 const agtSeriesService = require('../services/agtSeriesService');
+const agtSigningService = require('../services/agtSigningService');
+
+// agtPayloadService e agtSeriesService recusam-se a assinar sem a chave e o
+// número de validação REAIS da AGT configurados (ver agtSigningService.js) —
+// certo, mas sem este aviso explícito o pedido rebentava lá dentro com um
+// Error genérico, que o errorHandler transformava num 500 sem contexto
+// nenhum. Quem está a configurar o ambiente precisa de saber exatamente que
+// falta isto, não só que "algo correu mal".
+function exigirAssinaturaAgtConfigurada() {
+  if (!agtSigningService.disponivel()) {
+    throw new ServiceUnavailableError(
+      'A assinatura AGT ainda não está configurada neste ambiente (falta a chave privada e/ou o número de '
+      + 'validação). Sem isso, nenhum documento pode ser assinado — contacte quem administra o ambiente.',
+    );
+  }
+}
 
 const INDICADORES_CONTINGENCIA = ['N', 'C'];
 
@@ -85,6 +101,7 @@ router.get(
   requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'ADMIN_SISTEMA'),
   requirePermission(FATURACAO),
   async (req, res) => {
+    exigirAssinaturaAgtConfigurada();
     const supplierCompanyId = resolverEmpresaFornecedora(req);
     res.json(await agtPayloadService.construirPayload(req.params.tipo.toUpperCase(), req.params.id, supplierCompanyId));
   },
@@ -98,6 +115,7 @@ router.get(
 // não há cliente de rede aqui, quem submete é quem tem acesso à conta de
 // homologação/produção da AGT.
 router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), async (req, res) => {
+  exigirAssinaturaAgtConfigurada();
   const { supplierCompanyId, ano, tipoDocumento, numeroEstabelecimento } = req.query;
   const indicadorContingencia = req.query.indicadorContingencia || 'N';
 
