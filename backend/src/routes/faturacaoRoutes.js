@@ -14,6 +14,7 @@ const { requireRole, requirePermission } = require('../middleware/rbac');
 const { ValidationError, ServiceUnavailableError } = require('../utils/errors');
 const { FATURACAO } = require('../utils/adminAreas');
 const config = require('../config/env');
+const logger = require('../config/logger');
 const faturacaoService = require('../services/faturacaoService');
 const saftService = require('../services/saftService');
 const metricasService = require('../services/metricasService');
@@ -127,6 +128,8 @@ router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission
   const { ano, tipoDocumento } = req.query;
   if (!ano || !Number.isInteger(Number(ano))) throw new ValidationError('Indique o ano da série (ano).');
   if (!tipoDocumento || !String(tipoDocumento).trim()) throw new ValidationError('Indique o tipo de documento (tipoDocumento).');
+
+  logger.info('Solicitar Série: pedido recebido', { adminSistemaId: req.user.id, ano, tipoDocumento });
 
   res.json(agtSeriesService.construirPedidoSerie({
     taxRegistrationNumber: config.agt.taxRegistrationNumber,

@@ -23,6 +23,7 @@
 // próprio documento, não de outro) — ajustar aqui, e só aqui, se a AGT
 // devolver erro especificamente sobre esta assinatura.
 const crypto = require('crypto');
+const logger = require('../config/logger');
 const agtSigningService = require('./agtSigningService');
 
 /**
@@ -31,11 +32,15 @@ const agtSigningService = require('./agtSigningService');
  * "C" (contingência) — "N" por omissão, é o caso comum.
  */
 function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType, establishmentNumber, seriesContingencyIndicator = 'N' }) {
+  logger.info('Solicitar Série: a construir pedido', {
+    taxRegistrationNumber, seriesYear, documentType, establishmentNumber, seriesContingencyIndicator,
+  });
+
   const jwsSignature = agtSigningService.assinarJWS({
     taxRegistrationNumber, seriesYear, documentType, establishmentNumber, seriesContingencyIndicator,
   });
 
-  return {
+  const pedido = {
     schemaVersion: '2.0',
     submissionUUID: crypto.randomUUID(),
     taxRegistrationNumber,
@@ -47,6 +52,14 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
     establishmentNumber,
     seriesContingencyIndicator,
   };
+
+  // Nada aqui é segredo — jwsSignature é o que já sai na resposta da rota, a
+  // chave privada nunca passa por este log. Ver o pedido completo tal como
+  // vai para a AGT ajuda a diagnosticar sem ter de reproduzir o pedido à
+  // parte.
+  logger.info('Solicitar Série: pedido construído e assinado', pedido);
+
+  return pedido;
 }
 
 module.exports = { construirPedidoSerie };
