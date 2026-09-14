@@ -9,3 +9,8 @@ build/
 coverage/
 uploads/
 .DS_Store
+
+# Chaves privadas locais (AGT) — nunca comitadas, ver src/config/env.js.
+# O .gitkeep fica, para a pasta continuar a existir no repositório vazia.
+src/chave/*
+!src/chave/.gitkeep

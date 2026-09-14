@@ -2,7 +2,32 @@
 // Ponto único de leitura do ambiente. Todo o resto do código deve importar
 // a config a partir daqui, nunca ler process.env diretamente noutro sítio.
 
+const fs = require('fs');
+const path = require('path');
+
 const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Chave privada RSA (PEM) da AGT — lida de um ficheiro local em vez de uma
+// variável de ambiente em Base64, quando esse ficheiro existe. src/chave/ está
+// no .gitignore (nunca é comitado); o ficheiro em si tem sempre de ser posto
+// aqui manualmente, nunca gerado nem inventado por código. Um ficheiro real
+// evita o problema que levou ao Base64 nas outras variáveis AGT (painéis de
+// variáveis de ambiente não preservam quebras de linha de forma fiável) —
+// aqui lê-se o ficheiro tal como está, sem essa conversão.
+const CAMINHO_CHAVE_PRIVADA_AGT = path.join(__dirname, '../chave/chavePrivada.pem');
+
+function lerChavePrivadaAgt() {
+  if (process.env.AGT_JWS_PRIVATE_KEY_BASE64) {
+    return Buffer.from(process.env.AGT_JWS_PRIVATE_KEY_BASE64, 'base64').toString('utf8');
+  }
+  try {
+    return fs.readFileSync(CAMINHO_CHAVE_PRIVADA_AGT, 'utf8');
+  } catch {
+    // Nem variável de ambiente nem ficheiro — fica vazio, tratado como "por
+    // configurar" pelo agtSigningService (RECUSA-SE A FINGIR).
+    return '';
+  }
+}
 
 /**
  * Limpa um valor colado no painel do Render.
@@ -186,12 +211,10 @@ const config = {
   // agtSigningService recusa-se a assinar — ver a nota "RECUSA-SE A FINGIR"
   // em multicaixaService.js, o mesmo princípio aplicado aqui.
   agt: {
-    // A chave privada vive em Base64 na variável de ambiente (um PEM tem
-    // quebras de linha, que a maioria dos painéis de variáveis de ambiente
-    // não preserva de forma fiável) — decodificada uma única vez aqui.
-    jwsPrivateKeyPem: process.env.AGT_JWS_PRIVATE_KEY_BASE64
-      ? Buffer.from(process.env.AGT_JWS_PRIVATE_KEY_BASE64, 'base64').toString('utf8')
-      : '',
+    // Ver lerChavePrivadaAgt() acima: AGT_JWS_PRIVATE_KEY_BASE64 (produção,
+    // painéis de variáveis de ambiente) ou src/chave/chavePrivada.pem
+    // (desenvolvimento local, ficheiro real, nunca comitado).
+    jwsPrivateKeyPem: lerChavePrivadaAgt(),
     softwareId: process.env.AGT_SOFTWARE_ID || 'KIXIMA',
     softwareVersion: process.env.AGT_SOFTWARE_VERSION || process.env.npm_package_version || '1.0',
     // Atribuído pela AGT ao software, no fim da certificação (formato

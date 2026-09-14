@@ -48,7 +48,7 @@ const CONFIG = {
 };
 
 const NOME_VARIAVEL = {
-  jwsPrivateKeyPem: 'AGT_JWS_PRIVATE_KEY_BASE64',
+  jwsPrivateKeyPem: 'AGT_JWS_PRIVATE_KEY_BASE64 (ou src/chave/chavePrivada.pem)',
   softwareValidationNumber: 'AGT_SOFTWARE_VALIDATION_NUMBER',
   sandboxUsername: 'AGT_SANDBOX_USERNAME',
   sandboxPassword: 'AGT_SANDBOX_PASSWORD',
