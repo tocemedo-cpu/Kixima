@@ -11,9 +11,9 @@
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
 const { requireRole, requirePermission } = require('../middleware/rbac');
-const { ValidationError, NotFoundError, ServiceUnavailableError } = require('../utils/errors');
+const { ValidationError, ServiceUnavailableError } = require('../utils/errors');
 const { FATURACAO } = require('../utils/adminAreas');
-const prisma = require('../config/database');
+const config = require('../config/env');
 const faturacaoService = require('../services/faturacaoService');
 const saftService = require('../services/saftService');
 const metricasService = require('../services/metricasService');
@@ -35,8 +35,6 @@ function exigirAssinaturaAgtConfigurada() {
     );
   }
 }
-
-const INDICADORES_CONTINGENCIA = ['N', 'C'];
 
 const router = express.Router();
 router.use(authenticate);
@@ -109,35 +107,33 @@ router.get(
 
 // Pedido de série de numeração à AGT ("Solicitar Série", DS.120, 4.5) — só o
 // Admin do Sistema, área Faturação: é um passo de configuração/pré-requisito
-// (a empresa precisa de uma série atribuída pela AGT antes de poder emitir
-// documentos fiscais com ela), não uma ação do dia a dia de uma empresa
-// fornecedora. Mesmo princípio do /agt-payload: só gera e assina o pedido —
-// não há cliente de rede aqui, quem submete é quem tem acesso à conta de
-// homologação/produção da AGT.
+// para a conta de homologação/produção da AGT (o mesmo NIF de
+// AGT_SANDBOX_USERNAME/PASSWORD, ver config/env.js), não uma ação por empresa
+// fornecedora à escolha. Mesmo princípio do /agt-payload: só gera e assina o
+// pedido — não há cliente de rede aqui, quem submete é quem tem acesso à
+// conta da AGT. Estabelecimento único (1) e regime normal (N) — os únicos
+// valores usados neste ambiente; sem seletor porque não há outra opção real.
+const ESTABELECIMENTO_UNICO = '1';
+
 router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), async (req, res) => {
   exigirAssinaturaAgtConfigurada();
-  const { supplierCompanyId, ano, tipoDocumento, numeroEstabelecimento } = req.query;
-  const indicadorContingencia = req.query.indicadorContingencia || 'N';
+  if (!config.agt.taxRegistrationNumber) {
+    throw new ServiceUnavailableError(
+      'O NIF da conta AGT (AGT_NIF) ainda não está configurado neste ambiente — sem ele não se pode gerar um '
+      + 'pedido de série. Contacte quem administra o ambiente.',
+    );
+  }
 
-  if (!supplierCompanyId) throw new ValidationError('Indique a empresa fornecedora (supplierCompanyId).');
+  const { ano, tipoDocumento } = req.query;
   if (!ano || !Number.isInteger(Number(ano))) throw new ValidationError('Indique o ano da série (ano).');
   if (!tipoDocumento || !String(tipoDocumento).trim()) throw new ValidationError('Indique o tipo de documento (tipoDocumento).');
-  if (!numeroEstabelecimento || !String(numeroEstabelecimento).trim()) {
-    throw new ValidationError('Indique o número do estabelecimento (numeroEstabelecimento).');
-  }
-  if (!INDICADORES_CONTINGENCIA.includes(indicadorContingencia)) {
-    throw new ValidationError('indicadorContingencia tem de ser "N" (regime normal) ou "C" (contingência).');
-  }
-
-  const empresa = await prisma.company.findUnique({ where: { id: supplierCompanyId }, select: { taxId: true } });
-  if (!empresa) throw new NotFoundError('Empresa fornecedora');
 
   res.json(agtSeriesService.construirPedidoSerie({
-    taxRegistrationNumber: empresa.taxId,
+    taxRegistrationNumber: config.agt.taxRegistrationNumber,
     seriesYear: Number(ano),
     documentType: String(tipoDocumento).trim().toUpperCase(),
-    establishmentNumber: String(numeroEstabelecimento).trim(),
-    seriesContingencyIndicator: indicadorContingencia,
+    establishmentNumber: ESTABELECIMENTO_UNICO,
+    seriesContingencyIndicator: 'N',
   }));
 });
 

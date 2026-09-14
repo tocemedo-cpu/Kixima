@@ -221,6 +221,12 @@ const config = {
     // "FE/NN/AAAA/AGT"). Sem ele não há payload assinado — nunca um valor
     // inventado num documento que se apresenta como fiscalmente válido.
     softwareValidationNumber: process.env.AGT_SOFTWARE_VALIDATION_NUMBER || '',
+    // NIF do titular da conta de homologação/produção da AGT (a mesma
+    // identidade fiscal de AGT_SANDBOX_USERNAME/PASSWORD abaixo) — usado em
+    // "Solicitar Série" (agt-serie-payload), que pede uma série de numeração
+    // para essa conta, não para uma empresa fornecedora à escolha. Nunca um
+    // valor por omissão: sem ele, a rota recusa-se a gerar o pedido.
+    taxRegistrationNumber: process.env.AGT_NIF || '',
 
     // Ligação REST à Sandbox/homologação e produção da AGT
     // (agtSandboxClient.js) — autenticação por HTTP Basic (utilizador/senha),

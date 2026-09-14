@@ -19,12 +19,9 @@ const chaveEstavaPresente = oculta();
 const { auth, prisma, loginAll } = require('./helpers');
 
 let tokens;
-let fornecedorId;
 
 beforeAll(async () => {
   tokens = await loginAll();
-  const forn = await prisma.user.findUnique({ where: { email: 'fornecedor@kianda.co.ao' } });
-  fornecedorId = forn.companyId;
 });
 
 afterAll(async () => {
@@ -43,9 +40,7 @@ describe('GET /api/faturacao/agt-payload/:tipo/:id sem assinatura AGT configurad
 
 describe('GET /api/faturacao/agt-serie-payload sem assinatura AGT configurada', () => {
   test('devolve 503 com mensagem clara, não um 500 genérico', async () => {
-    const res = await auth(tokens.adminSistema).get('/api/faturacao/agt-serie-payload').query({
-      supplierCompanyId: fornecedorId, ano: '2026', tipoDocumento: 'FT', numeroEstabelecimento: '1',
-    });
+    const res = await auth(tokens.adminSistema).get('/api/faturacao/agt-serie-payload').query({ ano: '2026', tipoDocumento: 'FT' });
     expect(res.status).toBe(503);
     expect(res.body.error.code).toBe('SERVICO_INDISPONIVEL');
     expect(res.body.error.message).toMatch(/assinatura AGT ainda não está configurada/);
