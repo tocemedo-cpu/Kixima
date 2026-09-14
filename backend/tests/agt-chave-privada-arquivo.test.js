@@ -6,23 +6,41 @@
 // posto ali manualmente, nunca gerado por código.
 //
 // CUIDADO: este teste escreve mesmo o ficheiro real em disco (é o único jeito
-// de testar fs.readFileSync do caminho real) — por isso cria-o e apaga-o
-// dentro do MESMO teste, num try/finally, para nunca deixar rasto que
-// contamine os testes "sem configuração" de outros ficheiros (esses assumem
-// que nem a variável nem o ficheiro existem).
+// de testar fs.readFileSync do caminho real). O ficheiro pode legitimamente já
+// existir (vazio) como placeholder à espera da chave real — por isso o
+// beforeAll só recusa continuar se encontrar conteúdo a sério ali (sinal de um
+// cleanup falhado de outra execução), e cada teste restaura o conteúdo
+// original (ou apaga, se não existia) em vez de apagar sempre.
 const fs = require('fs');
 const path = require('path');
 
 const CAMINHO = path.join(__dirname, '../src/chave/chavePrivada.pem');
 const CONTEUDO_FALSO = '-----BEGIN PRIVATE KEY-----\nCONTEUDO-DE-TESTE-NAO-E-UMA-CHAVE-REAL\n-----END PRIVATE KEY-----\n';
 
+let conteudoOriginal = null; // null = ficheiro não existia antes do teste
+
 beforeAll(() => {
-  // Confirma que não há nada gravado ali de uma execução anterior falhada —
-  // se houver, o teste para em vez de mascarar um cleanup que falhou antes.
   if (fs.existsSync(CAMINHO)) {
-    throw new Error(`${CAMINHO} já existe antes do teste começar — apague-o manualmente antes de correr este teste.`);
+    conteudoOriginal = fs.readFileSync(CAMINHO, 'utf8');
+    if (conteudoOriginal.trim() !== '') {
+      throw new Error(
+        `${CAMINHO} já tem conteúdo antes do teste começar (não está vazio) — não é seguro `
+        + 'sobrescrever. Verifique se não é a chave real e, se for apenas lixo de um cleanup '
+        + 'falhado, apague-o manualmente antes de correr este teste.',
+      );
+    }
   }
 });
+
+afterAll(() => {
+  if (conteudoOriginal === null) fs.rmSync(CAMINHO, { force: true });
+  else fs.writeFileSync(CAMINHO, conteudoOriginal, 'utf8');
+});
+
+function restaurar() {
+  if (conteudoOriginal === null) fs.rmSync(CAMINHO, { force: true });
+  else fs.writeFileSync(CAMINHO, conteudoOriginal, 'utf8');
+}
 
 describe('config/env.js — chave privada AGT a partir de ficheiro', () => {
   test('sem AGT_JWS_PRIVATE_KEY_BASE64, lê src/chave/chavePrivada.pem quando existe', () => {
@@ -36,7 +54,7 @@ describe('config/env.js — chave privada AGT a partir de ficheiro', () => {
       const config = require('../src/config/env');
       expect(config.agt.jwsPrivateKeyPem).toBe(CONTEUDO_FALSO);
     } finally {
-      fs.rmSync(CAMINHO, { force: true });
+      restaurar();
       if (original === undefined) delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
       else process.env.AGT_JWS_PRIVATE_KEY_BASE64 = original;
       jest.resetModules();
@@ -55,19 +73,22 @@ describe('config/env.js — chave privada AGT a partir de ficheiro', () => {
       const config = require('../src/config/env');
       expect(config.agt.jwsPrivateKeyPem).toBe(chaveDaVariavel);
     } finally {
-      fs.rmSync(CAMINHO, { force: true });
+      restaurar();
       if (original === undefined) delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
       else process.env.AGT_JWS_PRIVATE_KEY_BASE64 = original;
       jest.resetModules();
     }
   });
 
-  test('sem variável e sem ficheiro, fica vazia (RECUSA-SE A FINGIR — nunca um valor inventado)', () => {
+  test('sem variável e sem ficheiro (ou ficheiro vazio), fica vazia (RECUSA-SE A FINGIR — nunca um valor inventado)', () => {
     const original = process.env.AGT_JWS_PRIVATE_KEY_BASE64;
     delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
 
     try {
-      expect(fs.existsSync(CAMINHO)).toBe(false);
+      restaurar();
+      if (fs.existsSync(CAMINHO)) {
+        expect(fs.readFileSync(CAMINHO, 'utf8').trim()).toBe('');
+      }
       jest.resetModules();
       // eslint-disable-next-line global-require
       const config = require('../src/config/env');
