@@ -18,7 +18,6 @@ process.env.AGT_JWS_PRIVATE_KEY_BASE64 = Buffer.from(privateKey).toString('base6
 process.env.AGT_SOFTWARE_VALIDATION_NUMBER = 'FE/00/2026/AGT-TESTE';
 process.env.AGT_SOFTWARE_ID = 'KIXIMA-TESTE';
 process.env.AGT_SOFTWARE_VERSION = '9.9.9';
-process.env.AGT_SANDBOX_BASE_URL = 'https://sifphml.minfin.gov.ao/sigt/fe/v1';
 process.env.AGT_SANDBOX_USERNAME = 'ws.hml.kixima';
 process.env.AGT_SANDBOX_PASSWORD = 'segredo-teste';
 

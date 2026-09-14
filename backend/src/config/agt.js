@@ -1,20 +1,18 @@
-// Requer: npm install dotenv
-require('dotenv').config();
-
+// src/config/agt.js
+// URLs dos endpoints da Sandbox/homologação e de produção da AGT — a ÚNICA
+// coisa que este ficheiro resolve. As credenciais (utilizador/senha da
+// Sandbox, chave privada JWS, número de validação do software) NÃO vivem
+// aqui: continuam a vir de config/env.js (config.agt.*), que já as lê das
+// variáveis AGT_SANDBOX_USERNAME/AGT_SANDBOX_PASSWORD/
+// AGT_JWS_PRIVATE_KEY_BASE64/AGT_SOFTWARE_VALIDATION_NUMBER/AGT_SOFTWARE_ID/
+// AGT_SOFTWARE_VERSION — uma só fonte para não haver duas leituras
+// divergentes da mesma chave. Este ficheiro chegou a ter campos próprios
+// (nif, username, password, companyName, software.*) que duplicavam essas
+// leituras com nomes de variável diferentes (ex.: AGT_USERNAME em vez de
+// AGT_SANDBOX_USERNAME) — nenhum deles chegou a ser lido por código nenhum,
+// por isso foram removidos.
 const AGT_CONFIG = {
     environment: process.env.AGT_ENV || 'hml',
-    nif: process.env.AGT_NIF,
-    username: process.env.AGT_USERNAME,
-    password: process.env.AGT_PASSWORD,
-    companyName: process.env.AGT_COMPANY_NAME,
-
-    software: {
-        productId: process.env.AGT_PRODUCT_ID,
-        version: process.env.AGT_SOFTWARE_VERSION,
-        validationNumber: process.env.AGT_VALIDATION_NUMBER,
-    },
-
-    // environment: process.env.AGT_ENVIRONMENT || 'sandbox',
 
     endpoints: {
         hml: {

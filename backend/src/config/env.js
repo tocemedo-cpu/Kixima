@@ -199,12 +199,14 @@ const config = {
     // inventado num documento que se apresenta como fiscalmente válido.
     softwareValidationNumber: process.env.AGT_SOFTWARE_VALIDATION_NUMBER || '',
 
-    // Ligação REST à Sandbox/homologação da AGT (agtSandboxClient.js) —
-    // autenticação por HTTP Basic (utilizador/senha), sem OAuth2. Distinta do
-    // envelope schema v1.2 acima: são os 4 endpoints de registo/consulta em
-    // tempo real, não a submissão em lote. Nunca um valor por omissão aqui —
-    // sem os 3 preenchidos, o cliente recusa-se a chamar a AGT.
-    sandboxBaseUrl: process.env.AGT_SANDBOX_BASE_URL || '',
+    // Ligação REST à Sandbox/homologação e produção da AGT
+    // (agtSandboxClient.js) — autenticação por HTTP Basic (utilizador/senha),
+    // sem OAuth2. Distinta do envelope schema v1.2 acima: são os 6 endpoints
+    // de registo/consulta em tempo real, não a submissão em lote. Nunca um
+    // valor por omissão aqui — sem os 2 preenchidos, o cliente recusa-se a
+    // chamar a AGT. Os URLs em si (por ambiente hml/prd) vêm de
+    // config/agt.js, escolhidos por AGT_ENV — não há aqui uma base
+    // configurável por variável de ambiente.
     sandboxUsername: process.env.AGT_SANDBOX_USERNAME || '',
     sandboxPassword: process.env.AGT_SANDBOX_PASSWORD || '',
   },
