@@ -15,8 +15,8 @@
 // (não uma suposição). As credenciais (chave privada, id/versão do software,
 // número de validação) continuam a vir de config/env.js — uma só fonte,
 // para não haver duas leituras divergentes da mesma chave. Os URLs dos
-// endpoints (hml/prd) vêm agora de config/agt.config.js — mesma lógica: uma
-// só fonte para o URL, resolvida automaticamente conforme AGT_ENV.
+// endpoints (hml/prd) vêm agora de config/agt.js — mesma lógica: uma só
+// fonte para o URL, resolvida automaticamente conforme AGT_ENV.
 //
 // ASSUNÇÕES A CONFIRMAR CONTRA A DOCUMENTAÇÃO DA SANDBOX ANTES DE PRODUÇÃO
 // (marcadas onde se aplicam, para não fingir uma certeza que não existe):
@@ -178,7 +178,7 @@ function cabecalhosAutenticacao() {
 }
 
 /**
- * Resolve o URL completo de um endpoint a partir de agt.config.js — que já
+ * Resolve o URL completo de um endpoint a partir de config/agt.js — que já
  * decide hml/prd conforme AGT_ENV — e acrescenta a query string, se houver.
  * Deixou de existir sandboxBaseUrl aqui: o URL final já vem pronto do
  * getEndpoint(), uma só fonte de verdade partilhada com o resto da app.
