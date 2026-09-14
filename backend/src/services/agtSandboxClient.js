@@ -14,7 +14,9 @@
 // assinatura diferente. Confirmado pela documentação oficial da Sandbox
 // (não uma suposição). As credenciais (chave privada, id/versão do software,
 // número de validação) continuam a vir de config/env.js — uma só fonte,
-// para não haver duas leituras divergentes da mesma chave.
+// para não haver duas leituras divergentes da mesma chave. Os URLs dos
+// endpoints (hml/prd) vêm agora de config/agt.config.js — mesma lógica: uma
+// só fonte para o URL, resolvida automaticamente conforme AGT_ENV.
 //
 // ASSUNÇÕES A CONFIRMAR CONTRA A DOCUMENTAÇÃO DA SANDBOX ANTES DE PRODUÇÃO
 // (marcadas onde se aplicam, para não fingir uma certeza que não existe):
@@ -36,19 +38,11 @@
 // devolve uma resposta simulada — lança, a dizer exatamente o que falta.
 const crypto = require('crypto');
 const config = require('../config/env');
-
-const ENDPOINTS = {
-  registarFactura: 'registarFactura',
-  solicitarSerie: 'solicitarSerie',
-  obterEstado: 'obterEstado',
-  consultarFactura: 'consultarFactura',
-  listarFacturas: 'listarFacturas',
-};
+const { getEndpoint } = require('../config/agt');
 
 const CONFIG = {
   jwsPrivateKeyPem: config.agt.jwsPrivateKeyPem,
   softwareValidationNumber: config.agt.softwareValidationNumber,
-  sandboxBaseUrl: config.agt.sandboxBaseUrl,
   sandboxUsername: config.agt.sandboxUsername,
   sandboxPassword: config.agt.sandboxPassword,
 };
@@ -56,7 +50,6 @@ const CONFIG = {
 const NOME_VARIAVEL = {
   jwsPrivateKeyPem: 'AGT_JWS_PRIVATE_KEY_BASE64',
   softwareValidationNumber: 'AGT_SOFTWARE_VALIDATION_NUMBER',
-  sandboxBaseUrl: 'AGT_SANDBOX_BASE_URL',
   sandboxUsername: 'AGT_SANDBOX_USERNAME',
   sandboxPassword: 'AGT_SANDBOX_PASSWORD',
 };
@@ -177,15 +170,21 @@ function assinarSolicitacao({ taxRegistrationNumber, submissionUUID }) {
 // --- Comunicação HTTP ---------------------------------------------------------
 
 function cabecalhosAutenticacao() {
-  const credenciais = Buffer.from(`${config.agt.sandboxUsername}:${config.agt.sandboxPassword}`, 'utf8').toString('base64');
+  const credenciais = Buffer.from(`${CONFIG.sandboxUsername}:${CONFIG.sandboxPassword}`, 'utf8').toString('base64');
   return {
     'Content-Type': 'application/json',
     Authorization: `Basic ${credenciais}`,
   };
 }
 
-function urlDe(endpoint, query) {
-  const url = new URL(`${config.agt.sandboxBaseUrl.replace(/\/+$/, '')}/${endpoint}`);
+/**
+ * Resolve o URL completo de um endpoint a partir de agt.config.js — que já
+ * decide hml/prd conforme AGT_ENV — e acrescenta a query string, se houver.
+ * Deixou de existir sandboxBaseUrl aqui: o URL final já vem pronto do
+ * getEndpoint(), uma só fonte de verdade partilhada com o resto da app.
+ */
+function urlDe(nomeEndpoint, query) {
+  const url = new URL(getEndpoint(nomeEndpoint));
   if (query) {
     for (const [chave, valor] of Object.entries(query)) {
       if (valor != null && valor !== '') url.searchParams.set(chave, valor);
@@ -198,9 +197,9 @@ function urlDe(endpoint, query) {
  * Ponto único de chamada aos 4 endpoints — trata `resultCode`/`errorList`
  * uma só vez, para os 4 métodos abaixo não repetirem essa lógica.
  */
-async function pedido(endpoint, { method = 'GET', body, query } = {}) {
+async function pedido(nomeEndpoint, { method = 'GET', body, query } = {}) {
   exigirConfiguracao();
-  const url = urlDe(endpoint, query);
+  const url = urlDe(nomeEndpoint, query);
 
   const resposta = await fetch(url, {
     method,
@@ -217,10 +216,10 @@ async function pedido(endpoint, { method = 'GET', body, query } = {}) {
   }
 
   if (!resposta.ok) {
-    throw new AgtApiError(endpoint, dados?.resultCode ?? String(resposta.status), dados?.errorList);
+    throw new AgtApiError(nomeEndpoint, dados?.resultCode ?? String(resposta.status), dados?.errorList);
   }
   if (dados && String(dados.resultCode) !== '0') {
-    throw new AgtApiError(endpoint, dados.resultCode, dados.errorList);
+    throw new AgtApiError(nomeEndpoint, dados.resultCode, dados.errorList);
   }
   return dados;
 }
@@ -232,7 +231,7 @@ async function pedido(endpoint, { method = 'GET', body, query } = {}) {
  * envelope — só transporta.
  */
 async function registarFactura(documento) {
-  return pedido(ENDPOINTS.registarFactura, { method: 'POST', body: documento });
+  return pedido('registarFactura', { method: 'POST', body: documento });
 }
 
 /**
@@ -241,22 +240,22 @@ async function registarFactura(documento) {
  * cliente só transporta, não decide a forma do envelope).
  */
 async function solicitarSerie(documento) {
-  return pedido(ENDPOINTS.solicitarSerie, { method: 'POST', body: documento });
+  return pedido('solicitarSerie', { method: 'POST', body: documento });
 }
 
 /** GET /obterEstado — estado do processamento de uma submissão. */
 async function obterEstado({ submissionUUID, documentNo } = {}) {
-  return pedido(ENDPOINTS.obterEstado, { query: { submissionUUID, documentNo } });
+  return pedido('obterEstado', { query: { submissionUUID, documentNo } });
 }
 
 /** GET /consultarFactura — detalhe de uma fatura já registada. */
 async function consultarFactura({ documentNo, taxRegistrationNumber } = {}) {
-  return pedido(ENDPOINTS.consultarFactura, { query: { documentNo, taxRegistrationNumber } });
+  return pedido('consultarFactura', { query: { documentNo, taxRegistrationNumber } });
 }
 
 /** GET /listarFacturas — listagem paginada, filtrável por período. */
 async function listarFacturas({ taxRegistrationNumber, dataInicio, dataFim, pagina, tamanhoPagina } = {}) {
-  return pedido(ENDPOINTS.listarFacturas, {
+  return pedido('listarFacturas', {
     query: { taxRegistrationNumber, dataInicio, dataFim, pagina, tamanhoPagina },
   });
 }
