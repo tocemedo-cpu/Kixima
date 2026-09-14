@@ -30,9 +30,11 @@ const agtSigningService = require('../services/agtSigningService');
 // falta isto, não só que "algo correu mal".
 function exigirAssinaturaAgtConfigurada() {
   if (!agtSigningService.disponivel()) {
+    const emFalta = agtSigningService.emFalta();
     throw new ServiceUnavailableError(
-      'A assinatura AGT ainda não está configurada neste ambiente (falta a chave privada e/ou o número de '
-      + 'validação). Sem isso, nenhum documento pode ser assinado — contacte quem administra o ambiente.',
+      'A assinatura AGT ainda não está configurada neste ambiente. Em falta: '
+      + emFalta.join(', ')
+      + '. Sem isso, nenhum documento pode ser assinado — contacte quem administra o ambiente.',
     );
   }
 }
