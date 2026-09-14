@@ -6,12 +6,15 @@
 const agtSandboxClient = require('../src/services/agtSandboxClient');
 
 describe('agtSandboxClient sem configuração', () => {
-  test('emFalta() lista as cinco variáveis em falta pelo nome', () => {
+  test('emFalta() lista as quatro variáveis em falta pelo nome', () => {
+    // AGT_SANDBOX_BASE_URL deixou de fazer parte desta lista: o URL de cada
+    // endpoint já não vem de uma única base configurável, vem de
+    // config/agt.js (hml/prd, resolvido por AGT_ENV) — uma só fonte para o
+    // URL, à parte das credenciais.
     expect(agtSandboxClient.emFalta().sort()).toEqual(
       [
         'AGT_JWS_PRIVATE_KEY_BASE64',
         'AGT_SOFTWARE_VALIDATION_NUMBER',
-        'AGT_SANDBOX_BASE_URL',
         'AGT_SANDBOX_USERNAME',
         'AGT_SANDBOX_PASSWORD',
       ].sort(),
@@ -59,6 +62,6 @@ describe('agtSandboxClient sem configuração', () => {
   test('estado() reporta indisponível, para o painel de Prontidão', () => {
     const estado = agtSandboxClient.estado();
     expect(estado).toMatchObject({ canal: 'AGT_SANDBOX', disponivel: false });
-    expect(estado.emFalta.length).toBe(5);
+    expect(estado.emFalta.length).toBe(4);
   });
 });
