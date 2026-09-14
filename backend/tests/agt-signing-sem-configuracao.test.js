@@ -31,7 +31,7 @@ afterAll(async () => {
 describe('agtSigningService sem configuração', () => {
   test('emFalta() lista as duas variáveis em falta pelo nome', () => {
     expect(agtSigningService.emFalta().sort()).toEqual(
-      ['AGT_JWS_PRIVATE_KEY_BASE64 (ou src/chave/chavePrivada.pem)', 'AGT_SOFTWARE_VALIDATION_NUMBER'].sort(),
+      ['AGT_JWS_PRIVATE_KEY_BASE64 (ou /etc/secrets/chavePrivada.pem, ou src/chave/chavePrivada.pem)', 'AGT_SOFTWARE_VALIDATION_NUMBER'].sort(),
     );
   });
 

@@ -81,6 +81,32 @@ describe('config/env.js — chave privada AGT a partir de ficheiro', () => {
     }
   });
 
+  test('AGT_JWS_PRIVATE_KEY_BASE64 cortado/corrompido (não decodifica para um PEM) cai para o ficheiro, em vez de produzir lixo', () => {
+    // Caso real: um painel de variáveis de ambiente (confirmado no Render)
+    // corta valores deste tamanho (~2300 caracteres) sem avisar — o Base64
+    // fica presente mas decodifica para algo que não é um PEM. Antes desta
+    // validação, esse valor cortado passava direto para crypto.sign() e
+    // rebentava lá dentro com um erro OpenSSL sem contexto nenhum
+    // ("DECODER routines::unsupported"). Reproduzido localmente truncando o
+    // Base64 — mesmo erro exato.
+    const original = process.env.AGT_JWS_PRIVATE_KEY_BASE64;
+    const base64Completo = Buffer.from(CONTEUDO_FALSO).toString('base64');
+    process.env.AGT_JWS_PRIVATE_KEY_BASE64 = base64Completo.slice(0, -20); // cortado
+
+    try {
+      fs.writeFileSync(CAMINHO, CONTEUDO_FALSO, 'utf8');
+      jest.resetModules();
+      // eslint-disable-next-line global-require
+      const config = require('../src/config/env');
+      expect(config.agt.jwsPrivateKeyPem).toBe(CONTEUDO_FALSO);
+    } finally {
+      restaurar();
+      if (original === undefined) delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
+      else process.env.AGT_JWS_PRIVATE_KEY_BASE64 = original;
+      jest.resetModules();
+    }
+  });
+
   test('sem variável e sem ficheiro, fica vazia (RECUSA-SE A FINGIR — nunca um valor inventado)', () => {
     const original = process.env.AGT_JWS_PRIVATE_KEY_BASE64;
     delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;

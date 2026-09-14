@@ -10,23 +10,49 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // Chave privada RSA (PEM) da AGT — lida de um ficheiro local em vez de uma
 // variável de ambiente em Base64, quando esse ficheiro existe. src/chave/ está
 // no .gitignore (nunca é comitado); o ficheiro em si tem sempre de ser posto
-// aqui manualmente, nunca gerado nem inventado por código. Um ficheiro real
-// evita o problema que levou ao Base64 nas outras variáveis AGT (painéis de
-// variáveis de ambiente não preservam quebras de linha de forma fiável) —
-// aqui lê-se o ficheiro tal como está, sem essa conversão.
+// aqui manualmente, nunca gerado nem inventado por código.
 const CAMINHO_CHAVE_PRIVADA_AGT = path.join(__dirname, '../chave/chavePrivada.pem');
 
-function lerChavePrivadaAgt() {
-  if (process.env.AGT_JWS_PRIVATE_KEY_BASE64) {
-    return Buffer.from(process.env.AGT_JWS_PRIVATE_KEY_BASE64, 'base64').toString('utf8');
-  }
+// Render "Secret Files" monta o ficheiro em /etc/secrets/<nome> — o caminho
+// RECOMENDADO em produção. AGT_JWS_PRIVATE_KEY_BASE64 tem ~2300 caracteres, e
+// já se confirmou na prática (erro OpenSSL "DECODER routines::unsupported",
+// que é exatamente o que dá com um PEM cortado a meio) que pelo menos um
+// painel de variáveis corta valores desse tamanho sem avisar. Um Secret File
+// não tem esse limite — o PEM vai tal e qual, sem Base64 nenhum.
+const CAMINHO_SECRET_FILE_RENDER = '/etc/secrets/chavePrivada.pem';
+
+function lerFicheiroChave(caminho) {
   try {
-    return fs.readFileSync(CAMINHO_CHAVE_PRIVADA_AGT, 'utf8');
+    return fs.readFileSync(caminho, 'utf8');
   } catch {
-    // Nem variável de ambiente nem ficheiro — fica vazio, tratado como "por
-    // configurar" pelo agtSigningService (RECUSA-SE A FINGIR).
     return '';
   }
+}
+
+// Um PEM válido tem sempre uma linha de abertura E uma linha de fecho
+// completas (as 5 marcações "-----" nos dois lados) — verificar isto é o
+// mínimo para distinguir "chave real" de "valor cortado/corrompido". Um
+// truncamento que corta só os últimos bytes deixa o "-----END" a aparecer
+// (é `includes('-----END')` sozinho que falha em apanhar isto — o texto
+// "-----END PRI" já contém esse substring, sem ser um PEM válido); exigir
+// o fecho completo "-----END ...-----" apanha esse caso. Não confirma que a
+// chave é criptograficamente válida (só o crypto.sign faz isso), só que não
+// é lixo óbvio de um Base64 truncado.
+function pareceUmPem(texto) {
+  return /-----BEGIN [A-Z ]+-----/.test(texto) && /-----END [A-Z ]+-----/.test(texto);
+}
+
+function lerChavePrivadaAgt() {
+  const base64 = String(process.env.AGT_JWS_PRIVATE_KEY_BASE64 || '').trim();
+  if (base64) {
+    const decodificado = Buffer.from(base64, 'base64').toString('utf8');
+    if (pareceUmPem(decodificado)) return decodificado;
+    // Presente mas não é um PEM válido — o painel de variáveis cortou o
+    // valor (caso confirmado) ou colou-se outra coisa. Nunca passar isto ao
+    // crypto.sign (produz um erro OpenSSL sem contexto nenhum) — cai para o
+    // ficheiro, se existir, em vez de usar um valor conhecido como inválido.
+  }
+  return lerFicheiroChave(CAMINHO_SECRET_FILE_RENDER) || lerFicheiroChave(CAMINHO_CHAVE_PRIVADA_AGT);
 }
 
 /**

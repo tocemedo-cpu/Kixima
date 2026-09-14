@@ -35,7 +35,7 @@ const CONFIG = {
 // Nome da variável de ambiente correspondente, para a mensagem de erro dizer
 // exatamente o que falta preencher.
 const NOME_VARIAVEL = {
-  jwsPrivateKeyPem: 'AGT_JWS_PRIVATE_KEY_BASE64 (ou src/chave/chavePrivada.pem)',
+  jwsPrivateKeyPem: 'AGT_JWS_PRIVATE_KEY_BASE64 (ou /etc/secrets/chavePrivada.pem, ou src/chave/chavePrivada.pem)',
   softwareValidationNumber: 'AGT_SOFTWARE_VALIDATION_NUMBER',
 };
 

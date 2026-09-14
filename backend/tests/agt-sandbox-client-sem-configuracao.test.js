@@ -24,7 +24,7 @@ describe('agtSandboxClient sem configuração', () => {
     // URL, à parte das credenciais.
     expect(agtSandboxClient.emFalta().sort()).toEqual(
       [
-        'AGT_JWS_PRIVATE_KEY_BASE64 (ou src/chave/chavePrivada.pem)',
+        'AGT_JWS_PRIVATE_KEY_BASE64 (ou /etc/secrets/chavePrivada.pem, ou src/chave/chavePrivada.pem)',
         'AGT_SOFTWARE_VALIDATION_NUMBER',
         'AGT_SANDBOX_USERNAME',
         'AGT_SANDBOX_PASSWORD',

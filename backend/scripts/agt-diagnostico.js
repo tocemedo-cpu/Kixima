@@ -14,6 +14,7 @@ const agtSigningService = require('../src/services/agtSigningService');
 const agtSandboxClient = require('../src/services/agtSandboxClient');
 
 const CAMINHO_CHAVE_ARQUIVO = path.join(__dirname, '../src/chave/chavePrivada.pem');
+const CAMINHO_SECRET_FILE_RENDER = '/etc/secrets/chavePrivada.pem';
 const ENDPOINTS = ['registarFactura', 'solicitarSerie', 'obterEstado', 'consultarFactura', 'listarFacturas', 'listarSeries'];
 
 function mascarado(valor) {
@@ -25,13 +26,32 @@ function visivel(valor) {
   return valor ? valor : '(não definido)';
 }
 
+function pareceUmPem(texto) {
+  return /-----BEGIN [A-Z ]+-----/.test(texto) && /-----END [A-Z ]+-----/.test(texto);
+}
+
+// Diz de onde VEIO a chave que config.agt.jwsPrivateKeyPem acabou por ter —
+// nem sempre é a fonte com maior prioridade: AGT_JWS_PRIVATE_KEY_BASE64 pode
+// estar definida mas corrompida (caso real confirmado: cortada por um painel
+// de variáveis, ~2300 caracteres, decodifica para algo que não é um PEM) —
+// nesse caso env.js ignora-a e cai para o ficheiro, e é isso que este
+// diagnóstico tem de mostrar, não a prioridade "em teoria".
 function fonteDaChavePrivada() {
-  if (process.env.AGT_JWS_PRIVATE_KEY_BASE64) return 'variável de ambiente (AGT_JWS_PRIVATE_KEY_BASE64)';
-  if (fs.existsSync(CAMINHO_CHAVE_ARQUIVO) && fs.readFileSync(CAMINHO_CHAVE_ARQUIVO, 'utf8').trim()) {
-    return `ficheiro (${CAMINHO_CHAVE_ARQUIVO})`;
+  const base64 = String(process.env.AGT_JWS_PRIVATE_KEY_BASE64 || '').trim();
+  if (base64) {
+    const decodificado = Buffer.from(base64, 'base64').toString('utf8');
+    if (pareceUmPem(decodificado)) return 'variável de ambiente (AGT_JWS_PRIVATE_KEY_BASE64)';
+    return `AGT_JWS_PRIVATE_KEY_BASE64 está definida (${base64.length} caracteres) MAS NÃO DECODIFICA PARA UM PEM VÁLIDO — `
+      + 'provável corte pelo painel de variáveis (visto no Render com valores deste tamanho); ignorada, a procurar '
+      + 'um ficheiro a seguir';
   }
-  if (fs.existsSync(CAMINHO_CHAVE_ARQUIVO)) return 'ficheiro existe mas está vazio — conta como não configurado';
-  return 'nenhuma (nem variável, nem ficheiro)';
+  if (fs.existsSync(CAMINHO_SECRET_FILE_RENDER) && fs.readFileSync(CAMINHO_SECRET_FILE_RENDER, 'utf8').trim()) {
+    return `Secret File do Render (${CAMINHO_SECRET_FILE_RENDER})`;
+  }
+  if (fs.existsSync(CAMINHO_CHAVE_ARQUIVO) && fs.readFileSync(CAMINHO_CHAVE_ARQUIVO, 'utf8').trim()) {
+    return `ficheiro local (${CAMINHO_CHAVE_ARQUIVO})`;
+  }
+  return 'nenhuma (nem variável válida, nem ficheiro)';
 }
 
 console.log('=== Diagnóstico AGT ===\n');

@@ -92,7 +92,14 @@ services:
       # "Solicitar Série" (GET /api/faturacao/agt-serie-payload).
       # AGT_JWS_PRIVATE_KEY_BASE64: a chave privada RSA (PEM), em Base64 — um
       #   PEM tem quebras de linha que o painel de variáveis do Render não
-      #   preserva; o Base64 evita isso.
+      #   preserva; o Base64 evita isso. CONFIRMADO EM PRODUÇÃO: um valor deste
+      #   tamanho (~2300 caracteres) pode ser cortado pelo próprio campo de
+      #   variável de ambiente do Render sem aviso nenhum — nesse caso o
+      #   backend deteta que não é um PEM válido e ignora-o. PREFERE em vez
+      #   disto um Secret File: Service → Environment → Secret Files → "Add
+      #   Secret File", nome do ficheiro "chavePrivada.pem", conteúdo = o PEM
+      #   tal e qual (sem Base64). O backend lê-o automaticamente de
+      #   /etc/secrets/chavePrivada.pem quando esta variável não resolver.
       - key: AGT_JWS_PRIVATE_KEY_BASE64
         sync: false
       - key: AGT_SOFTWARE_VALIDATION_NUMBER
