@@ -8,6 +8,14 @@
 //
 // Deliberadamente NÃO injeta AGT_JWS_PRIVATE_KEY_BASE64/AGT_SOFTWARE_VALIDATION_NUMBER
 // em process.env — é o estado por omissão dos testes (ver tests/env.js).
+// Também esconde src/chave/chavePrivada.pem enquanto corre (ver
+// ./_ocultarChavePrivadaAgt) — sem isso, uma chave real posta ali
+// manualmente tornaria este ficheiro incapaz de testar o estado "sem
+// configuração".
+const { oculta, restaurar } = require('./_ocultarChavePrivadaAgt');
+
+const chaveEstavaPresente = oculta();
+
 const { auth, prisma, loginAll } = require('./helpers');
 
 let tokens;
@@ -20,6 +28,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  restaurar(chaveEstavaPresente);
   await prisma.$disconnect();
 });
 

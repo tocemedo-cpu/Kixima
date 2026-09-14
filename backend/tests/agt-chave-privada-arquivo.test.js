@@ -7,10 +7,11 @@
 //
 // CUIDADO: este teste escreve mesmo o ficheiro real em disco (é o único jeito
 // de testar fs.readFileSync do caminho real). O ficheiro pode legitimamente já
-// existir (vazio) como placeholder à espera da chave real — por isso o
-// beforeAll só recusa continuar se encontrar conteúdo a sério ali (sinal de um
-// cleanup falhado de outra execução), e cada teste restaura o conteúdo
-// original (ou apaga, se não existia) em vez de apagar sempre.
+// ter a chave privada real (posta ali manualmente) — por isso o beforeAll
+// guarda qualquer conteúdo que lá esteja e cada teste restaura-o (ou apaga o
+// ficheiro, se não existia) em vez de apagar sempre. Só recusa continuar se
+// encontrar CONTEUDO_FALSO já lá (sinal de um cleanup falhado de outra
+// execução deste mesmo ficheiro de teste).
 const fs = require('fs');
 const path = require('path');
 
@@ -22,11 +23,11 @@ let conteudoOriginal = null; // null = ficheiro não existia antes do teste
 beforeAll(() => {
   if (fs.existsSync(CAMINHO)) {
     conteudoOriginal = fs.readFileSync(CAMINHO, 'utf8');
-    if (conteudoOriginal.trim() !== '') {
+    if (conteudoOriginal === CONTEUDO_FALSO) {
       throw new Error(
-        `${CAMINHO} já tem conteúdo antes do teste começar (não está vazio) — não é seguro `
-        + 'sobrescrever. Verifique se não é a chave real e, se for apenas lixo de um cleanup '
-        + 'falhado, apague-o manualmente antes de correr este teste.',
+        `${CAMINHO} contém o conteúdo de teste (CONTEUDO_FALSO) — sinal de um cleanup falhado de `
+        + 'uma execução anterior deste ficheiro de teste; restaure o conteúdo real (ou apague o '
+        + 'ficheiro) manualmente antes de correr este teste.',
       );
     }
   }
@@ -80,20 +81,20 @@ describe('config/env.js — chave privada AGT a partir de ficheiro', () => {
     }
   });
 
-  test('sem variável e sem ficheiro (ou ficheiro vazio), fica vazia (RECUSA-SE A FINGIR — nunca um valor inventado)', () => {
+  test('sem variável e sem ficheiro, fica vazia (RECUSA-SE A FINGIR — nunca um valor inventado)', () => {
     const original = process.env.AGT_JWS_PRIVATE_KEY_BASE64;
     delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
 
     try {
-      restaurar();
-      if (fs.existsSync(CAMINHO)) {
-        expect(fs.readFileSync(CAMINHO, 'utf8').trim()).toBe('');
-      }
+      // Remove mesmo o ficheiro (pode haver uma chave real guardada, restaurada
+      // no finally abaixo) para testar a ausência total de configuração a sério.
+      fs.rmSync(CAMINHO, { force: true });
       jest.resetModules();
       // eslint-disable-next-line global-require
       const config = require('../src/config/env');
       expect(config.agt.jwsPrivateKeyPem).toBe('');
     } finally {
+      restaurar();
       if (original === undefined) delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
       else process.env.AGT_JWS_PRIVATE_KEY_BASE64 = original;
       jest.resetModules();

@@ -2,8 +2,19 @@
 // Caminho de recusa do agtSandboxClient quando a chave privada AGT e/ou as
 // credenciais da Sandbox NÃO estão configuradas — o estado real desta
 // plataforma hoje (por ligar, ver agtSandboxClient.js). Mesmo molde de
-// agt-signing-sem-configuracao.test.js.
+// agt-signing-sem-configuracao.test.js, incluindo esconder
+// src/chave/chavePrivada.pem (ver ./_ocultarChavePrivadaAgt) — sem isso, uma
+// chave real posta ali manualmente tornaria este ficheiro incapaz de testar
+// o estado "sem configuração".
+const { oculta, restaurar } = require('./_ocultarChavePrivadaAgt');
+
+const chaveEstavaPresente = oculta();
+
 const agtSandboxClient = require('../src/services/agtSandboxClient');
+
+afterAll(() => {
+  restaurar(chaveEstavaPresente);
+});
 
 describe('agtSandboxClient sem configuração', () => {
   test('emFalta() lista as quatro variáveis em falta pelo nome', () => {

@@ -7,8 +7,15 @@
 // UMA VEZ, ao carregar o módulo (CONFIG capturado no primeiro require), por
 // isso não há como alternar "configurado"/"não configurado" dentro do mesmo
 // ficheiro de teste — este ficheiro nunca define
-// AGT_JWS_PRIVATE_KEY_BASE64/AGT_SOFTWARE_VALIDATION_NUMBER, antes de
-// nenhum require.
+// AGT_JWS_PRIVATE_KEY_BASE64/AGT_SOFTWARE_VALIDATION_NUMBER antes de nenhum
+// require, e também esconde src/chave/chavePrivada.pem enquanto corre (ver
+// ./_ocultarChavePrivadaAgt) — sem isso, uma chave real posta ali
+// manualmente tornaria este ficheiro incapaz de testar o estado "sem
+// configuração".
+const { oculta, restaurar } = require('./_ocultarChavePrivadaAgt');
+
+const chaveEstavaPresente = oculta();
+
 delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
 delete process.env.AGT_SOFTWARE_VALIDATION_NUMBER;
 
@@ -17,6 +24,7 @@ const agtPayloadService = require('../src/services/agtPayloadService');
 const { prisma } = require('./helpers');
 
 afterAll(async () => {
+  restaurar(chaveEstavaPresente);
   await prisma.$disconnect();
 });
 
