@@ -40,21 +40,17 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
     taxRegistrationNumber, seriesYear, documentType, establishmentNumber, seriesContingencyIndicator,
   });
 
+  // dadosAssinatura: exatamente os campos que entram na assinatura JWS deste
+  // pedido — nomeado à parte para ficar claro que é este o conjunto que
+  // importa conferir (ver o resumo "Dados assinados" no frontend,
+  // SolicitarSerie.jsx, e o logger.info completo abaixo — nenhum dos dois
+  // precisa de um console.log à parte para se ver isto).
   const dadosAssinatura = {
-  taxRegistrationNumber,
-  seriesYear,
-  documentType,
-  establishmentNumber,
-  seriesContingencyIndicator,
-};
-
-console.log('cheguei aqui:'+dadosAssinatura);
-  
-
-  const jwsSignature = agtSigningService.assinarJWS({
     taxRegistrationNumber, seriesYear, documentType, establishmentNumber, seriesContingencyIndicator,
-  });
-  
+  };
+
+  const jwsSignature = agtSigningService.assinarJWS(dadosAssinatura);
+
   const pedido = {
     schemaVersion: '2.0',
     submissionUUID: crypto.randomUUID(),
@@ -64,7 +60,7 @@ console.log('cheguei aqui:'+dadosAssinatura);
     jwsSignature,
     seriesYear,
     documentType,
-    establishmentNumber:'SEDE',
+    establishmentNumber,
     seriesContingencyIndicator,
   };
 
@@ -72,9 +68,8 @@ console.log('cheguei aqui:'+dadosAssinatura);
   // chave privada nunca passa por este log. Ver o pedido completo tal como
   // vai para a AGT ajuda a diagnosticar sem ter de reproduzir o pedido à
   // parte.
-
   logger.info('Solicitar Série: pedido construído e assinado', pedido);
- 
+
   return pedido;
 }
 
