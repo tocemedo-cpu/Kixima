@@ -74,6 +74,7 @@ function base64url(bufferOuTexto) {
  * constrói o objeto, sem nenhuma serialização canónica à parte.
  */
 function assinarJWS(payloadObj) {
+  console.log(payloadObj);
   exigirConfiguracao();
   const headerB64 = base64url(JSON.stringify({ typ: 'JOSE', alg: 'RS256' }));
   const payloadB64 = base64url(JSON.stringify(payloadObj));
@@ -112,11 +113,16 @@ function assinarDocumento({ documentNo, taxRegistrationNumber, documentType, doc
 }
 
 // Estado para o painel de Prontidão — mesmo formato de multicaixaService.estado().
+// Inclui de onde a chave privada está a vir (ou o motivo de não servir),
+// para diagnosticar sem precisar de Shell no hosting (planos gratuitos não
+// têm) — ver diagnosticoChavePrivadaAgt() em config/env.js. Nunca expõe a
+// chave em si.
 function estado() {
   return {
     canal: 'AGT_ASSINATURA',
     disponivel: disponivel(),
     emFalta: emFalta(),
+    chavePrivada: config.diagnosticoChavePrivadaAgt(),
     nota: disponivel()
       ? 'Configurado.'
       : 'Implementado contra o formato observado em amostras da AGT, por ligar. Requer certificação e chave privada reais.',

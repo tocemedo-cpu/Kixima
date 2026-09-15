@@ -6,15 +6,11 @@
 // confirmar que ficou como se queria sem ter de arrancar o servidor todo.
 //
 // Correr:  npm run agt:diagnostico
-const fs = require('fs');
-const path = require('path');
 const config = require('../src/config/env');
 const { getEndpoint } = require('../src/config/agt');
 const agtSigningService = require('../src/services/agtSigningService');
 const agtSandboxClient = require('../src/services/agtSandboxClient');
 
-const CAMINHO_CHAVE_ARQUIVO = path.join(__dirname, '../src/chave/chavePrivada.pem');
-const CAMINHO_SECRET_FILE_RENDER = '/etc/secrets/chavePrivada.pem';
 const ENDPOINTS = ['registarFactura', 'solicitarSerie', 'obterEstado', 'consultarFactura', 'listarFacturas', 'listarSeries'];
 
 function mascarado(valor) {
@@ -24,34 +20,6 @@ function mascarado(valor) {
 
 function visivel(valor) {
   return valor ? valor : '(não definido)';
-}
-
-function pareceUmPem(texto) {
-  return /-----BEGIN [A-Z ]+-----/.test(texto) && /-----END [A-Z ]+-----/.test(texto);
-}
-
-// Diz de onde VEIO a chave que config.agt.jwsPrivateKeyPem acabou por ter —
-// nem sempre é a fonte com maior prioridade: AGT_JWS_PRIVATE_KEY_BASE64 pode
-// estar definida mas corrompida (caso real confirmado: cortada por um painel
-// de variáveis, ~2300 caracteres, decodifica para algo que não é um PEM) —
-// nesse caso env.js ignora-a e cai para o ficheiro, e é isso que este
-// diagnóstico tem de mostrar, não a prioridade "em teoria".
-function fonteDaChavePrivada() {
-  const base64 = String(process.env.AGT_JWS_PRIVATE_KEY_BASE64 || '').trim();
-  if (base64) {
-    const decodificado = Buffer.from(base64, 'base64').toString('utf8');
-    if (pareceUmPem(decodificado)) return 'variável de ambiente (AGT_JWS_PRIVATE_KEY_BASE64)';
-    return `AGT_JWS_PRIVATE_KEY_BASE64 está definida (${base64.length} caracteres) MAS NÃO DECODIFICA PARA UM PEM VÁLIDO — `
-      + 'provável corte pelo painel de variáveis (visto no Render com valores deste tamanho); ignorada, a procurar '
-      + 'um ficheiro a seguir';
-  }
-  if (fs.existsSync(CAMINHO_SECRET_FILE_RENDER) && fs.readFileSync(CAMINHO_SECRET_FILE_RENDER, 'utf8').trim()) {
-    return `Secret File do Render (${CAMINHO_SECRET_FILE_RENDER})`;
-  }
-  if (fs.existsSync(CAMINHO_CHAVE_ARQUIVO) && fs.readFileSync(CAMINHO_CHAVE_ARQUIVO, 'utf8').trim()) {
-    return `ficheiro local (${CAMINHO_CHAVE_ARQUIVO})`;
-  }
-  return 'nenhuma (nem variável válida, nem ficheiro)';
 }
 
 console.log('=== Diagnóstico AGT ===\n');
@@ -68,12 +36,15 @@ console.log(`  softwareVersion          = ${visivel(config.agt.softwareVersion)}
 console.log(`  softwareValidationNumber = ${visivel(config.agt.softwareValidationNumber)}`);
 
 console.log('\nChave privada JWS (RS256) — nunca impressa em claro:');
-console.log(`  fonte  = ${fonteDaChavePrivada()}`);
+console.log(`  fonte  = ${config.diagnosticoChavePrivadaAgt().fonte}`);
 console.log(`  estado = ${config.agt.jwsPrivateKeyPem ? `definida (${config.agt.jwsPrivateKeyPem.length} caracteres)` : '(não definida)'}`);
 
 console.log('\nCredenciais da Sandbox REST (HTTP Basic) — senha nunca impressa em claro:');
 console.log(`  AGT_SANDBOX_USERNAME = ${visivel(config.agt.sandboxUsername)}`);
 console.log(`  AGT_SANDBOX_PASSWORD = ${mascarado(config.agt.sandboxPassword)}`);
+
+console.log('\nNIF da conta AGT (Solicitar Série) — não é segredo:');
+console.log(`  AGT_NIF = ${visivel(config.agt.taxRegistrationNumber)}`);
 
 console.log('\n--- agtSigningService (assina o envelope schema v1.2 — /agt-payload, /agt-serie-payload) ---');
 const estadoAssinatura = agtSigningService.estado();

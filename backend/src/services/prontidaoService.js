@@ -587,9 +587,10 @@ async function verFaturacao() {
   const agtSigningService = require('./agtSigningService');
   const assinatura = agtSigningService.estado();
   checks.push(assinatura.disponivel
-    ? { id: 'agt-assinatura', titulo: 'Assinatura JWS do payload de submissão (AGT)', estado: OK, detalhe: 'Configurada.' }
+    ? { id: 'agt-assinatura', titulo: 'Assinatura JWS do payload de submissão (AGT)', estado: OK,
+      detalhe: `Configurada. Chave privada: ${assinatura.chavePrivada.fonte}.` }
     : { id: 'agt-assinatura', titulo: 'Assinatura JWS do payload de submissão (AGT)', estado: AVISO,
-      detalhe: assinatura.nota,
+      detalhe: `${assinatura.nota} Chave privada: ${assinatura.chavePrivada.fonte}.`,
       acao: `Requer certificação e chave privada reais da AGT. Em falta: ${assinatura.emFalta.join(', ')}. Sem isto o payload não é assinado — nunca uma assinatura simulada.` });
 
   return checks;

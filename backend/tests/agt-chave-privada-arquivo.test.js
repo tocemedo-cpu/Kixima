@@ -5,27 +5,43 @@
 // src/chave/ está no .gitignore (nunca é comitado); o ficheiro é sempre
 // posto ali manualmente, nunca gerado por código.
 //
+// As chaves usadas aqui têm de ser RSA A SÉRIO (geradas só para o teste,
+// nunca a chave real): desde que env.js passou a validar com
+// crypto.createPrivateKey (não só as marcações -----BEGIN/END-----), texto
+// placeholder já não passa em nenhuma das 3 fontes — é exatamente o
+// comportamento que se quer confirmar.
+//
 // CUIDADO: este teste escreve mesmo o ficheiro real em disco (é o único jeito
 // de testar fs.readFileSync do caminho real). O ficheiro pode legitimamente já
 // ter a chave privada real (posta ali manualmente) — por isso o beforeAll
 // guarda qualquer conteúdo que lá esteja e cada teste restaura-o (ou apaga o
 // ficheiro, se não existia) em vez de apagar sempre. Só recusa continuar se
-// encontrar CONTEUDO_FALSO já lá (sinal de um cleanup falhado de outra
+// encontrar CHAVE_FICHEIRO já lá (sinal de um cleanup falhado de outra
 // execução deste mesmo ficheiro de teste).
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+
+function gerarChaveTeste() {
+  return crypto.generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+  }).privateKey;
+}
 
 const CAMINHO = path.join(__dirname, '../src/chave/chavePrivada.pem');
-const CONTEUDO_FALSO = '-----BEGIN PRIVATE KEY-----\nCONTEUDO-DE-TESTE-NAO-E-UMA-CHAVE-REAL\n-----END PRIVATE KEY-----\n';
+const CHAVE_FICHEIRO = gerarChaveTeste();
+const CHAVE_VARIAVEL = gerarChaveTeste();
 
 let conteudoOriginal = null; // null = ficheiro não existia antes do teste
 
 beforeAll(() => {
   if (fs.existsSync(CAMINHO)) {
     conteudoOriginal = fs.readFileSync(CAMINHO, 'utf8');
-    if (conteudoOriginal === CONTEUDO_FALSO) {
+    if (conteudoOriginal === CHAVE_FICHEIRO) {
       throw new Error(
-        `${CAMINHO} contém o conteúdo de teste (CONTEUDO_FALSO) — sinal de um cleanup falhado de `
+        `${CAMINHO} contém o conteúdo de teste (CHAVE_FICHEIRO) — sinal de um cleanup falhado de `
         + 'uma execução anterior deste ficheiro de teste; restaure o conteúdo real (ou apague o '
         + 'ficheiro) manualmente antes de correr este teste.',
       );
@@ -49,11 +65,11 @@ describe('config/env.js — chave privada AGT a partir de ficheiro', () => {
     delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
 
     try {
-      fs.writeFileSync(CAMINHO, CONTEUDO_FALSO, 'utf8');
+      fs.writeFileSync(CAMINHO, CHAVE_FICHEIRO, 'utf8');
       jest.resetModules();
       // eslint-disable-next-line global-require
       const config = require('../src/config/env');
-      expect(config.agt.jwsPrivateKeyPem).toBe(CONTEUDO_FALSO);
+      expect(config.agt.jwsPrivateKeyPem).toBe(CHAVE_FICHEIRO);
     } finally {
       restaurar();
       if (original === undefined) delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
@@ -62,17 +78,16 @@ describe('config/env.js — chave privada AGT a partir de ficheiro', () => {
     }
   });
 
-  test('a variável de ambiente tem prioridade sobre o ficheiro, quando ambos existem', () => {
+  test('a variável de ambiente tem prioridade sobre o ficheiro, quando ambos existem (e ambos são válidos)', () => {
     const original = process.env.AGT_JWS_PRIVATE_KEY_BASE64;
-    const chaveDaVariavel = '-----BEGIN PRIVATE KEY-----\nVEM-DA-VARIAVEL\n-----END PRIVATE KEY-----';
-    process.env.AGT_JWS_PRIVATE_KEY_BASE64 = Buffer.from(chaveDaVariavel).toString('base64');
+    process.env.AGT_JWS_PRIVATE_KEY_BASE64 = Buffer.from(CHAVE_VARIAVEL).toString('base64');
 
     try {
-      fs.writeFileSync(CAMINHO, CONTEUDO_FALSO, 'utf8');
+      fs.writeFileSync(CAMINHO, CHAVE_FICHEIRO, 'utf8');
       jest.resetModules();
       // eslint-disable-next-line global-require
       const config = require('../src/config/env');
-      expect(config.agt.jwsPrivateKeyPem).toBe(chaveDaVariavel);
+      expect(config.agt.jwsPrivateKeyPem).toBe(CHAVE_VARIAVEL);
     } finally {
       restaurar();
       if (original === undefined) delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
@@ -81,24 +96,72 @@ describe('config/env.js — chave privada AGT a partir de ficheiro', () => {
     }
   });
 
-  test('AGT_JWS_PRIVATE_KEY_BASE64 cortado/corrompido (não decodifica para um PEM) cai para o ficheiro, em vez de produzir lixo', () => {
+  test('AGT_JWS_PRIVATE_KEY_BASE64 cortado/corrompido (não decodifica para uma chave real) cai para o ficheiro, em vez de produzir lixo', () => {
     // Caso real: um painel de variáveis de ambiente (confirmado no Render)
     // corta valores deste tamanho (~2300 caracteres) sem avisar — o Base64
-    // fica presente mas decodifica para algo que não é um PEM. Antes desta
-    // validação, esse valor cortado passava direto para crypto.sign() e
-    // rebentava lá dentro com um erro OpenSSL sem contexto nenhum
-    // ("DECODER routines::unsupported"). Reproduzido localmente truncando o
-    // Base64 — mesmo erro exato.
+    // fica presente mas decodifica para algo que não é uma chave válida.
+    // Antes desta validação, esse valor cortado passava direto para
+    // crypto.sign() e rebentava lá dentro com um erro OpenSSL sem contexto
+    // nenhum ("DECODER routines::unsupported"). Reproduzido localmente
+    // truncando o Base64 de uma chave real — mesmo erro exato.
     const original = process.env.AGT_JWS_PRIVATE_KEY_BASE64;
-    const base64Completo = Buffer.from(CONTEUDO_FALSO).toString('base64');
-    process.env.AGT_JWS_PRIVATE_KEY_BASE64 = base64Completo.slice(0, -20); // cortado
+    const base64Completo = Buffer.from(CHAVE_VARIAVEL).toString('base64');
+    process.env.AGT_JWS_PRIVATE_KEY_BASE64 = base64Completo.slice(0, -50); // cortado
 
     try {
-      fs.writeFileSync(CAMINHO, CONTEUDO_FALSO, 'utf8');
+      fs.writeFileSync(CAMINHO, CHAVE_FICHEIRO, 'utf8');
       jest.resetModules();
       // eslint-disable-next-line global-require
       const config = require('../src/config/env');
-      expect(config.agt.jwsPrivateKeyPem).toBe(CONTEUDO_FALSO);
+      expect(config.agt.jwsPrivateKeyPem).toBe(CHAVE_FICHEIRO);
+    } finally {
+      restaurar();
+      if (original === undefined) delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
+      else process.env.AGT_JWS_PRIVATE_KEY_BASE64 = original;
+      jest.resetModules();
+    }
+  });
+
+  test('texto com as marcações -----BEGIN/END----- mas que não é uma chave real é rejeitado, mesmo sem estar cortado', () => {
+    // Diferente do teste de corte: aqui o Base64 é válido e completo, mas o
+    // que decodifica tem as fences certas e lixo no meio — pareceUmPem()
+    // sozinho deixaria passar; crypto.createPrivateKey() é que apanha isto.
+    const original = process.env.AGT_JWS_PRIVATE_KEY_BASE64;
+    const textoComFencesMasInvalido = '-----BEGIN PRIVATE KEY-----\nCONTEUDO-QUE-NAO-E-UMA-CHAVE-REAL\n-----END PRIVATE KEY-----\n';
+    process.env.AGT_JWS_PRIVATE_KEY_BASE64 = Buffer.from(textoComFencesMasInvalido).toString('base64');
+
+    try {
+      fs.writeFileSync(CAMINHO, CHAVE_FICHEIRO, 'utf8');
+      jest.resetModules();
+      // eslint-disable-next-line global-require
+      const config = require('../src/config/env');
+      expect(config.agt.jwsPrivateKeyPem).toBe(CHAVE_FICHEIRO);
+    } finally {
+      restaurar();
+      if (original === undefined) delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
+      else process.env.AGT_JWS_PRIVATE_KEY_BASE64 = original;
+      jest.resetModules();
+    }
+  });
+
+  test('ficheiro (Secret File ou local) com o Base64 como CONTEÚDO em vez do PEM em claro é interpretado na mesma', () => {
+    // Caso real confirmado num deployment: um Secret File do Render chamado
+    // "AGT_JWS_PRIVATE_KEY_BASE64" continha o valor Base64 como conteúdo do
+    // ficheiro, não o PEM diretamente — nome do ficheiro sugere que foi
+    // pensado ainda como "a variável", só posta como ficheiro por engano.
+    // interpretarConteudoFicheiro() tenta as duas leituras (PEM em claro,
+    // depois Base64); este teste confirma-o através do ficheiro local
+    // (a mesma função aplica-se aos Secret Files em /etc/secrets/).
+    const original = process.env.AGT_JWS_PRIVATE_KEY_BASE64;
+    delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
+    const conteudoBase64 = Buffer.from(CHAVE_FICHEIRO).toString('base64');
+
+    try {
+      fs.writeFileSync(CAMINHO, conteudoBase64, 'utf8');
+      jest.resetModules();
+      // eslint-disable-next-line global-require
+      const config = require('../src/config/env');
+      expect(config.agt.jwsPrivateKeyPem).toBe(CHAVE_FICHEIRO);
     } finally {
       restaurar();
       if (original === undefined) delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
@@ -120,7 +183,6 @@ describe('config/env.js — chave privada AGT a partir de ficheiro', () => {
       const config = require('../src/config/env');
       expect(config.agt.jwsPrivateKeyPem).toBe('');
     } finally {
-      restaurar();
       if (original === undefined) delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
       else process.env.AGT_JWS_PRIVATE_KEY_BASE64 = original;
       jest.resetModules();

@@ -60,6 +60,20 @@ class BusinessRuleError extends AppError {
 }
 
 /**
+ * A AGT recebeu o pedido mas recusou-o (resultCode != "0") — ver
+ * agtSandboxClient.AgtApiError, a origem real deste erro. 502 (Bad Gateway):
+ * não é um erro nosso, é um serviço externo que respondeu com uma recusa —
+ * distinto de 4xx (erro nosso no pedido) e de 503 (nem configurado ainda).
+ * errorList da AGT viaja tal e qual em `details`, sem se resumir/traduzir.
+ */
+class AgtRecusadoError extends AppError {
+  constructor(agtApiError) {
+    super(agtApiError.message, 502, 'AGT_RECUSOU');
+    this.details = { endpoint: agtApiError.endpoint, resultCode: agtApiError.resultCode, errorList: agtApiError.errorList };
+  }
+}
+
+/**
  * Bateu-se num limite ou numa funcionalidade que o plano não inclui.
  *
  * Tem código próprio para a interface poder oferecer o caminho para a página de
@@ -86,4 +100,5 @@ module.exports = {
   PlanRequiredError,
   BusinessRuleError,
   ServiceUnavailableError,
+  AgtRecusadoError,
 };

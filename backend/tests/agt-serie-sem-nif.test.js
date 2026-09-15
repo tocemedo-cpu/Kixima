@@ -14,6 +14,12 @@ const { privateKey } = crypto.generateKeyPairSync('rsa', {
 });
 process.env.AGT_JWS_PRIVATE_KEY_BASE64 = Buffer.from(privateKey).toString('base64');
 process.env.AGT_SOFTWARE_VALIDATION_NUMBER = 'FE/00/2025/AGT-TESTE';
+// A rota agora exige a configuração da Sandbox (agtSandboxClient.js, superset
+// da assinatura — ver exigirSandboxAgtConfigurada() em faturacaoRoutes.js)
+// antes mesmo de chegar à verificação do NIF. Sem isto, o teste apanhava o
+// 503 errado (Sandbox em falta) em vez do 503 sobre o AGT_NIF que quer testar.
+process.env.AGT_SANDBOX_USERNAME = 'ws.hml.teste';
+process.env.AGT_SANDBOX_PASSWORD = 'senha-teste';
 delete process.env.AGT_NIF;
 
 const { auth, prisma, loginAll } = require('./helpers');
