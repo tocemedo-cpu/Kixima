@@ -40,6 +40,17 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
     taxRegistrationNumber, seriesYear, documentType, establishmentNumber, seriesContingencyIndicator,
   });
 
+  const dadosAssinatura = {
+  taxRegistrationNumber,
+  seriesYear,
+  documentType,
+  establishmentNumber,
+  seriesContingencyIndicator,
+};
+
+console.log('DADOS ANTES DE ASSINAR:');
+console.log(dadosAssinatura);
+  
 
   const jwsSignature = agtSigningService.assinarJWS({
     taxRegistrationNumber, seriesYear, documentType, establishmentNumber, seriesContingencyIndicator,
@@ -65,7 +76,7 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
 
   logger.info('Solicitar Série: pedido construído e assinado', pedido);
  
- // return pedido;
+  return pedido;
 }
 
 /**
