@@ -48,8 +48,7 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
   seriesContingencyIndicator,
 };
 
-console.log('DADOS ANTES DE ASSINAR:');
-console.log(dadosAssinatura);
+console.log('cheguei aqui:'+dadosAssinatura);
   
 
   const jwsSignature = agtSigningService.assinarJWS({
