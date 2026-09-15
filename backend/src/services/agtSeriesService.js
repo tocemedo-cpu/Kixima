@@ -61,7 +61,7 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
   // chave privada nunca passa por este log. Ver o pedido completo tal como
   // vai para a AGT ajuda a diagnosticar sem ter de reproduzir o pedido à
   // parte.
-  logger.info('Software signatura: pedido construído e assinado', softwareInfo);
+  logger.info('Software signatura: pedido construído e assinado', jwsSignature);
   logger.info('Solicitar Série: pedido construído e assinado', pedido);
  
   return pedido;
