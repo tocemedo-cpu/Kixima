@@ -21,6 +21,7 @@ const metricasService = require('../services/metricasService');
 const agtPayloadService = require('../services/agtPayloadService');
 const agtSeriesService = require('../services/agtSeriesService');
 const agtSigningService = require('../services/agtSigningService');
+const agtSandboxClient = require('../services/agtSandboxClient');
 
 // agtPayloadService e agtSeriesService recusam-se a assinar sem a chave e o
 // número de validação REAIS da AGT configurados (ver agtSigningService.js) —
@@ -35,6 +36,23 @@ function exigirAssinaturaAgtConfigurada() {
       'A assinatura AGT ainda não está configurada neste ambiente. Em falta: '
       + emFalta.join(', ')
       + '. Sem isso, nenhum documento pode ser assinado — contacte quem administra o ambiente.',
+    );
+  }
+}
+
+// Mesmo princípio, para a Sandbox REST (agtSandboxClient.js) — superset da
+// assinatura (exige também AGT_SANDBOX_USERNAME/PASSWORD): usa-se em vez de
+// exigirAssinaturaAgtConfigurada() nas rotas que SUBMETEM à AGT (não só
+// assinam). agtSandboxClient.exigirConfiguracao() lança um Error genérico
+// (cai num 500 sem contexto no errorHandler) — aqui dá-se o mesmo 503 com a
+// lista do que falta, como nas outras rotas AGT desta ficheiro.
+function exigirSandboxAgtConfigurada() {
+  if (!agtSandboxClient.disponivel()) {
+    const emFalta = agtSandboxClient.emFalta();
+    throw new ServiceUnavailableError(
+      'A ligação à Sandbox da AGT ainda não está configurada neste ambiente. Em falta: '
+      + emFalta.join(', ')
+      + '. Sem isso, nenhum pedido é submetido à AGT — contacte quem administra o ambiente.',
     );
   }
 }
@@ -112,14 +130,16 @@ router.get(
 // Admin do Sistema, área Faturação: é um passo de configuração/pré-requisito
 // para a conta de homologação/produção da AGT (o mesmo NIF de
 // AGT_SANDBOX_USERNAME/PASSWORD, ver config/env.js), não uma ação por empresa
-// fornecedora à escolha. Mesmo princípio do /agt-payload: só gera e assina o
-// pedido — não há cliente de rede aqui, quem submete é quem tem acesso à
-// conta da AGT. Estabelecimento único (1) e regime normal (N) — os únicos
-// valores usados neste ambiente; sem seletor porque não há outra opção real.
+// fornecedora à escolha. Diferente do /agt-payload: esta rota SUBMETE mesmo o
+// pedido à AGT (agtSeriesService.solicitarSerie(), que reaproveita
+// agtSandboxClient.js) — por isso exige a configuração da Sandbox (superset
+// da assinatura), não só a assinatura. Estabelecimento único (1) e regime
+// normal (N) — os únicos valores usados neste ambiente; sem seletor porque
+// não há outra opção real.
 const ESTABELECIMENTO_UNICO = '1';
 
 router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), async (req, res) => {
-  exigirAssinaturaAgtConfigurada();
+  exigirSandboxAgtConfigurada();
   if (!config.agt.taxRegistrationNumber) {
     throw new ServiceUnavailableError(
       'O NIF da conta AGT (AGT_NIF) ainda não está configurado neste ambiente — sem ele não se pode gerar um '
@@ -133,7 +153,7 @@ router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission
 
   logger.info('Solicitar Série: pedido recebido', { adminSistemaId: req.user.id, ano, tipoDocumento });
 
-  res.json(agtSeriesService.construirPedidoSerie({
+  res.json(await agtSeriesService.solicitarSerie({
     taxRegistrationNumber: config.agt.taxRegistrationNumber,
     seriesYear: Number(ano),
     documentType: String(tipoDocumento).trim().toUpperCase(),

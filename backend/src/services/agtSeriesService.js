@@ -7,9 +7,11 @@
 // nunca pedida à AGT — provável causa adicional (a par das credenciais de
 // software) do erro 500 na primeira submissão do caso C1.
 //
-// SÓ GERA E ASSINA O PEDIDO — tal como agtPayloadService.js, não há cliente
-// de rede aqui; quem submete ao endpoint da AGT é quem tem acesso à conta
-// de homologação/produção.
+// construirPedidoSerie() só gera e assina — tal como agtPayloadService.js,
+// sem cliente de rede. solicitarSerie() (abaixo) é que submete mesmo,
+// reaproveitando agtSandboxClient.js (cliente REST já testado, só
+// transporte — não decide a forma do pedido, só o envia) em vez de
+// duplicar aqui lógica de URL/autenticação/tratamento de resposta.
 //
 // DECISÃO NÃO CONFIRMADA: os campos assinados em `jwsSignature` para este
 // pedido específico. A tabela da spec (4.5.27) descreve-os literalmente
@@ -25,6 +27,8 @@
 const crypto = require('crypto');
 const logger = require('../config/logger');
 const agtSigningService = require('./agtSigningService');
+const agtSandboxClient = require('./agtSandboxClient');
+const { AgtRecusadoError } = require('../utils/errors');
 
 /**
  * `documentType` ∈ os mesmos valores de agtPayloadService/DS.120 (FT, FR,
@@ -62,4 +66,37 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
   return pedido;
 }
 
-module.exports = { construirPedidoSerie };
+/**
+ * Constrói o pedido (construirPedidoSerie, acima) e SUBMETE-O mesmo ao
+ * endpoint solicitarSerie da AGT — agtSandboxClient.solicitarSerie() é só
+ * transporte (resolve o URL por AGT_ENV, HTTP Basic, trata resultCode/
+ * errorList da resposta); não decide a forma do pedido, só o envia tal como
+ * construirPedidoSerie o construiu.
+ *
+ * Lança AgtRecusadoError (502) se a AGT recusar (resultCode != "0") — nunca
+ * deixa o AgtApiError original (um Error simples) propagar sem contexto de
+ * HTTP, mesmo princípio de ServiceUnavailableError para configuração em
+ * falta.
+ */
+async function solicitarSerie(params) {
+  const pedido = construirPedidoSerie(params);
+
+  logger.info('Solicitar Série: a submeter à AGT (solicitarSerie)', { submissionUUID: pedido.submissionUUID });
+  let resposta;
+  try {
+    resposta = await agtSandboxClient.solicitarSerie(pedido);
+  } catch (erro) {
+    if (erro instanceof agtSandboxClient.AgtApiError) {
+      logger.warn('Solicitar Série: a AGT recusou o pedido', {
+        submissionUUID: pedido.submissionUUID, resultCode: erro.resultCode, errorList: erro.errorList,
+      });
+      throw new AgtRecusadoError(erro);
+    }
+    throw erro;
+  }
+  logger.info('Solicitar Série: resposta da AGT', { submissionUUID: pedido.submissionUUID, resposta });
+
+  return { pedido, resposta };
+}
+
+module.exports = { construirPedidoSerie, solicitarSerie };
