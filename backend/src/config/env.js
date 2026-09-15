@@ -350,6 +350,17 @@ const config = {
     // para essa conta, não para uma empresa fornecedora à escolha. Nunca um
     // valor por omissão: sem ele, a rota recusa-se a gerar o pedido.
     taxRegistrationNumber: process.env.AGT_NIF || '',
+    // Código do estabelecimento atribuído pelo contribuinte NA AGT — não um
+    // valor arbitrário nem um índice inventado no código. Erro real já visto
+    // com um valor fixo ("1") que nunca tinha sido confirmado junto da AGT:
+    // "E99 — O estabelecimento com o código 1 não se encontra registado para
+    // o contribuinte identificado pelo NIF ...". Fica vazio até alguém com
+    // acesso ao portal da AGT confirmar o código correto para o NIF de
+    // AGT_NIF acima — RECUSA-SE A FINGIR, nunca um valor adivinhado por
+    // tentativa. Única fonte usada por TODAS as requisições AGT que
+    // precisam dele (hoje só "Solicitar Série" — ver ESTABELECIMENTO em
+    // faturacaoRoutes.js e scripts/agt-solicitar-serie.js).
+    establishmentNumber: process.env.AGT_ESTABLISHMENT_NUMBER || '',
 
     // Ligação REST à Sandbox/homologação e produção da AGT
     // (agtSandboxClient.js) — autenticação por HTTP Basic (utilizador/senha),

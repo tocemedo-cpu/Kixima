@@ -46,6 +46,10 @@ console.log(`  AGT_SANDBOX_PASSWORD = ${mascarado(config.agt.sandboxPassword)}`)
 console.log('\nNIF da conta AGT (Solicitar Série) — não é segredo:');
 console.log(`  AGT_NIF = ${visivel(config.agt.taxRegistrationNumber)}`);
 
+console.log('\nCódigo do estabelecimento (Solicitar Série) — não é segredo, mas TEM de ser');
+console.log('o código real registado na AGT para o NIF acima, nunca um valor adivinhado:');
+console.log(`  AGT_ESTABLISHMENT_NUMBER = ${visivel(config.agt.establishmentNumber)}`);
+
 console.log('\n--- agtSigningService (assina o envelope schema v1.2 — /agt-payload, /agt-serie-payload) ---');
 const estadoAssinatura = agtSigningService.estado();
 console.log(`  disponível = ${estadoAssinatura.disponivel}`);

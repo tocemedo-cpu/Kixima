@@ -8,8 +8,12 @@
 // Pedido simplificado a pedido do utilizador: só ano + tipoDocumento entram
 // pelo ecrã — o NIF vem de AGT_NIF (a mesma identidade fiscal da conta de
 // homologação/produção usada em AGT_SANDBOX_USERNAME/PASSWORD, ver
-// config/env.js), e o estabelecimento/indicador de contingência são sempre
-// "1"/"N" (únicos valores usados neste ambiente).
+// config/env.js), o estabelecimento vem de AGT_ESTABLISHMENT_NUMBER (nunca um
+// valor fixo no código — ver o comentário em faturacaoRoutes.js sobre o erro
+// real "E99" que um "1" adivinhado causou), e o indicador de contingência é
+// sempre "N" (único valor usado neste ambiente). "1" aqui em baixo é só o
+// valor de TESTE atribuído a AGT_ESTABLISHMENT_NUMBER, não um valor fixo no
+// código de produção.
 //
 // Mesmo cuidado de agt-payload.test.js: a configuração (chave privada RSA,
 // AGT_NIF) é lida UMA VEZ ao carregar os módulos, por isso é injetada em
@@ -24,6 +28,7 @@ const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
 process.env.AGT_JWS_PRIVATE_KEY_BASE64 = Buffer.from(privateKey).toString('base64');
 process.env.AGT_SOFTWARE_VALIDATION_NUMBER = 'FE/00/2025/AGT-TESTE';
 process.env.AGT_NIF = '5001636863';
+process.env.AGT_ESTABLISHMENT_NUMBER = '1';
 process.env.AGT_SANDBOX_USERNAME = 'ws.hml.teste';
 process.env.AGT_SANDBOX_PASSWORD = 'senha-teste';
 

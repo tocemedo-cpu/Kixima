@@ -110,6 +110,14 @@ services:
         sync: false
       - key: AGT_NIF
         sync: false
+      # AGT_ESTABLISHMENT_NUMBER: código do estabelecimento REGISTADO NA AGT
+      #   para o NIF acima — não um índice inventado. Um "1" fixo no código,
+      #   nunca confirmado junto da AGT, causou "E99 — O estabelecimento com
+      #   o código 1 não se encontra registado para o contribuinte
+      #   identificado pelo NIF ...". Confirme o código correto junto da AGT
+      #   antes de o definir aqui.
+      - key: AGT_ESTABLISHMENT_NUMBER
+        sync: false
       - key: AGT_ENV
         sync: false
       - key: AGT_SANDBOX_USERNAME

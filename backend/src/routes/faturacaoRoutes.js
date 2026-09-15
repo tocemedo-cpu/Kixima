@@ -133,17 +133,27 @@ router.get(
 // fornecedora à escolha. Diferente do /agt-payload: esta rota SUBMETE mesmo o
 // pedido à AGT (agtSeriesService.solicitarSerie(), que reaproveita
 // agtSandboxClient.js) — por isso exige a configuração da Sandbox (superset
-// da assinatura), não só a assinatura. Estabelecimento único (1) e regime
-// normal (N) — os únicos valores usados neste ambiente; sem seletor porque
-// não há outra opção real.
-const ESTABELECIMENTO_UNICO = '1';
-
+// da assinatura), não só a assinatura. Regime normal (N) é o único indicador
+// de contingência usado neste ambiente; sem seletor porque não há outra
+// opção real. establishmentNumber JÁ NÃO é um valor fixo no código — vem de
+// config.agt.establishmentNumber (AGT_ESTABLISHMENT_NUMBER), a única fonte
+// usada por todas as requisições AGT que precisam dele. Um "1" fixo aqui foi
+// exatamente o que causou "E99 — O estabelecimento com o código 1 não se
+// encontra registado para o contribuinte identificado pelo NIF ...": nunca
+// tinha sido confirmado junto da AGT, só herdado do código.
 router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), async (req, res) => {
   exigirSandboxAgtConfigurada();
   if (!config.agt.taxRegistrationNumber) {
     throw new ServiceUnavailableError(
       'O NIF da conta AGT (AGT_NIF) ainda não está configurado neste ambiente — sem ele não se pode gerar um '
       + 'pedido de série. Contacte quem administra o ambiente.',
+    );
+  }
+  if (!config.agt.establishmentNumber) {
+    throw new ServiceUnavailableError(
+      'O código do estabelecimento na AGT (AGT_ESTABLISHMENT_NUMBER) ainda não está configurado neste ambiente — '
+      + 'sem ele não se pode gerar um pedido de série. Confirme o código correto junto da AGT para o NIF configurado '
+      + '(AGT_NIF) antes de o definir; nunca um valor adivinhado por tentativa.',
     );
   }
 
@@ -157,7 +167,7 @@ router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission
     taxRegistrationNumber: config.agt.taxRegistrationNumber,
     seriesYear: Number(ano),
     documentType: String(tipoDocumento).trim().toUpperCase(),
-    establishmentNumber: ESTABELECIMENTO_UNICO,
+    establishmentNumber: config.agt.establishmentNumber,
     seriesContingencyIndicator: 'N',
   }));
 });
