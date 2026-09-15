@@ -43,6 +43,9 @@ console.log('\nCredenciais da Sandbox REST (HTTP Basic) — senha nunca impressa
 console.log(`  AGT_SANDBOX_USERNAME = ${visivel(config.agt.sandboxUsername)}`);
 console.log(`  AGT_SANDBOX_PASSWORD = ${mascarado(config.agt.sandboxPassword)}`);
 
+console.log('\nNIF da conta AGT (Solicitar Série) — não é segredo:');
+console.log(`  AGT_NIF = ${visivel(config.agt.taxRegistrationNumber)}`);
+
 console.log('\n--- agtSigningService (assina o envelope schema v1.2 — /agt-payload, /agt-serie-payload) ---');
 const estadoAssinatura = agtSigningService.estado();
 console.log(`  disponível = ${estadoAssinatura.disponivel}`);
