@@ -53,7 +53,7 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
     jwsSignature,
     seriesYear,
     documentType,
-    establishmentNumber,
+    establishmentNumber:'SEDE',
     seriesContingencyIndicator,
   };
 
