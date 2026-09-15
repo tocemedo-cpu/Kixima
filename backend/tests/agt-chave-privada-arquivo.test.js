@@ -144,6 +144,32 @@ describe('config/env.js — chave privada AGT a partir de ficheiro', () => {
     }
   });
 
+  test('ficheiro (Secret File ou local) com o Base64 como CONTEÚDO em vez do PEM em claro é interpretado na mesma', () => {
+    // Caso real confirmado num deployment: um Secret File do Render chamado
+    // "AGT_JWS_PRIVATE_KEY_BASE64" continha o valor Base64 como conteúdo do
+    // ficheiro, não o PEM diretamente — nome do ficheiro sugere que foi
+    // pensado ainda como "a variável", só posta como ficheiro por engano.
+    // interpretarConteudoFicheiro() tenta as duas leituras (PEM em claro,
+    // depois Base64); este teste confirma-o através do ficheiro local
+    // (a mesma função aplica-se aos Secret Files em /etc/secrets/).
+    const original = process.env.AGT_JWS_PRIVATE_KEY_BASE64;
+    delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
+    const conteudoBase64 = Buffer.from(CHAVE_FICHEIRO).toString('base64');
+
+    try {
+      fs.writeFileSync(CAMINHO, conteudoBase64, 'utf8');
+      jest.resetModules();
+      // eslint-disable-next-line global-require
+      const config = require('../src/config/env');
+      expect(config.agt.jwsPrivateKeyPem).toBe(CHAVE_FICHEIRO);
+    } finally {
+      restaurar();
+      if (original === undefined) delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;
+      else process.env.AGT_JWS_PRIVATE_KEY_BASE64 = original;
+      jest.resetModules();
+    }
+  });
+
   test('sem variável e sem ficheiro, fica vazia (RECUSA-SE A FINGIR — nunca um valor inventado)', () => {
     const original = process.env.AGT_JWS_PRIVATE_KEY_BASE64;
     delete process.env.AGT_JWS_PRIVATE_KEY_BASE64;

@@ -20,7 +20,17 @@ const CAMINHO_CHAVE_PRIVADA_AGT = path.join(__dirname, '../chave/chavePrivada.pe
 // que é exatamente o que dá com um PEM cortado a meio) que pelo menos um
 // painel de variáveis corta valores desse tamanho sem avisar. Um Secret File
 // não tem esse limite — o PEM vai tal e qual, sem Base64 nenhum.
-const CAMINHO_SECRET_FILE_RENDER = '/etc/secrets/chavePrivada.pem';
+//
+// Dois nomes aceites: "chavePrivada.pem" (o RECOMENDADO, documentado no
+// .env.example/render.yaml) e "AGT_JWS_PRIVATE_KEY_BASE64" (caso real
+// confirmado: dar ao Secret File o mesmo nome da variável de ambiente é um
+// erro fácil de cometer — o painel do Render não distingue os dois conceitos
+// visualmente). Comprido de propósito para o segundo nome não confundir com
+// a própria variável de ambiente (lida à parte, antes disto).
+const CAMINHOS_SECRET_FILE_RENDER = [
+  '/etc/secrets/chavePrivada.pem',
+  '/etc/secrets/AGT_JWS_PRIVATE_KEY_BASE64',
+];
 
 function lerFicheiroChave(caminho) {
   try {
@@ -58,11 +68,25 @@ function chaveDecodificaComoRSA(pem) {
 }
 
 // Um candidato só serve se tiver as marcações E decodificar como chave a
-// sério — aplicado às 3 fontes por igual (variável, Secret File, ficheiro
-// local), para nenhuma delas passar conteúdo corrompido ao crypto.sign em
-// silêncio.
+// sério — aplicado a todas as fontes por igual (variável, cada Secret File,
+// ficheiro local), para nenhuma delas passar conteúdo corrompido ao
+// crypto.sign em silêncio.
 function candidatoValido(texto) {
   return Boolean(texto) && pareceUmPem(texto) && chaveDecodificaComoRSA(texto);
+}
+
+// O conteúdo de um FICHEIRO (Secret File ou local) pode legitimamente ser o
+// PEM tal e qual (o caminho pretendido) OU o mesmo texto em Base64 (caso
+// real confirmado: um Secret File chamado "AGT_JWS_PRIVATE_KEY_BASE64" que
+// continha o valor Base64 como conteúdo, não o PEM diretamente — o nome do
+// ficheiro sugere que quem o criou copiou o valor pensando ainda estar a
+// preencher a variável de ambiente). Tenta as duas leituras, devolve a que
+// for válida.
+function interpretarConteudoFicheiro(conteudo) {
+  if (candidatoValido(conteudo)) return conteudo;
+  const decodificado = Buffer.from(conteudo, 'base64').toString('utf8');
+  if (candidatoValido(decodificado)) return decodificado;
+  return '';
 }
 
 function lerChavePrivadaAgt() {
@@ -73,13 +97,21 @@ function lerChavePrivadaAgt() {
     // Presente mas não é uma chave privada válida — o painel de variáveis
     // cortou o valor (caso confirmado) ou o conteúdo está corrompido. Nunca
     // passar isto ao crypto.sign (produz um erro OpenSSL sem contexto
-    // nenhum) — cai para o ficheiro, se existir, em vez de usar um valor já
+    // nenhum) — cai para as próximas fontes, em vez de usar um valor já
     // confirmado como inválido.
   }
-  const doSecretFile = lerFicheiroChave(CAMINHO_SECRET_FILE_RENDER);
-  if (candidatoValido(doSecretFile)) return doSecretFile;
+  for (const caminho of CAMINHOS_SECRET_FILE_RENDER) {
+    const conteudo = lerFicheiroChave(caminho);
+    if (conteudo) {
+      const valido = interpretarConteudoFicheiro(conteudo);
+      if (valido) return valido;
+    }
+  }
   const doFicheiroLocal = lerFicheiroChave(CAMINHO_CHAVE_PRIVADA_AGT);
-  if (candidatoValido(doFicheiroLocal)) return doFicheiroLocal;
+  if (doFicheiroLocal) {
+    const valido = interpretarConteudoFicheiro(doFicheiroLocal);
+    if (valido) return valido;
+  }
   return '';
 }
 
@@ -103,15 +135,17 @@ function diagnosticoChavePrivadaAgt() {
       invalida: true,
     };
   }
-  const doSecretFile = lerFicheiroChave(CAMINHO_SECRET_FILE_RENDER);
-  if (doSecretFile) {
-    return candidatoValido(doSecretFile)
-      ? { fonte: `Secret File (${CAMINHO_SECRET_FILE_RENDER})` }
-      : { fonte: `Secret File (${CAMINHO_SECRET_FILE_RENDER}) existe MAS não é uma chave privada válida`, invalida: true };
+  for (const caminho of CAMINHOS_SECRET_FILE_RENDER) {
+    const conteudo = lerFicheiroChave(caminho);
+    if (conteudo) {
+      return interpretarConteudoFicheiro(conteudo)
+        ? { fonte: `Secret File (${caminho})` }
+        : { fonte: `Secret File (${caminho}) existe MAS não é uma chave privada válida (nem como PEM, nem como Base64)`, invalida: true };
+    }
   }
   const doFicheiroLocal = lerFicheiroChave(CAMINHO_CHAVE_PRIVADA_AGT);
   if (doFicheiroLocal) {
-    return candidatoValido(doFicheiroLocal)
+    return interpretarConteudoFicheiro(doFicheiroLocal)
       ? { fonte: `ficheiro local (${CAMINHO_CHAVE_PRIVADA_AGT})` }
       : { fonte: `ficheiro local (${CAMINHO_CHAVE_PRIVADA_AGT}) existe MAS não é uma chave privada válida`, invalida: true };
   }
