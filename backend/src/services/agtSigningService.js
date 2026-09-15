@@ -74,6 +74,7 @@ function base64url(bufferOuTexto) {
  * constrói o objeto, sem nenhuma serialização canónica à parte.
  */
 function assinarJWS(payloadObj) {
+  console.log(payloadObj);
   exigirConfiguracao();
   const headerB64 = base64url(JSON.stringify({ typ: 'JOSE', alg: 'RS256' }));
   const payloadB64 = base64url(JSON.stringify(payloadObj));
