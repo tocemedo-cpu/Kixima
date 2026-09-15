@@ -119,7 +119,7 @@ router.get(
 const ESTABELECIMENTO_UNICO = '1';
 
 router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), async (req, res) => {
-  //exigirAssinaturaAgtConfigurada();
+  exigirAssinaturaAgtConfigurada();
   if (!config.agt.taxRegistrationNumber) {
     throw new ServiceUnavailableError(
       'O NIF da conta AGT (AGT_NIF) ainda não está configurado neste ambiente — sem ele não se pode gerar um '

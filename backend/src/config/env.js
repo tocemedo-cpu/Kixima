@@ -4,6 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
@@ -42,17 +43,79 @@ function pareceUmPem(texto) {
   return /-----BEGIN [A-Z ]+-----/.test(texto) && /-----END [A-Z ]+-----/.test(texto);
 }
 
+// crypto.createPrivateKey confirma a ESTRUTURA da chave (não só as marcações
+// -----BEGIN/END-----, que pareceUmPem já verifica) — apanha corrupção NO
+// MEIO do PEM (fences intactas, conteúdo Base64 interno danificado) que a
+// regex sozinha deixa passar. Nunca assina nada, só valida; nunca lança —
+// devolve true/false, para quem chama decidir o que fazer.
+function chaveDecodificaComoRSA(pem) {
+  try {
+    crypto.createPrivateKey(pem);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Um candidato só serve se tiver as marcações E decodificar como chave a
+// sério — aplicado às 3 fontes por igual (variável, Secret File, ficheiro
+// local), para nenhuma delas passar conteúdo corrompido ao crypto.sign em
+// silêncio.
+function candidatoValido(texto) {
+  return Boolean(texto) && pareceUmPem(texto) && chaveDecodificaComoRSA(texto);
+}
+
 function lerChavePrivadaAgt() {
   const base64 = String(process.env.AGT_JWS_PRIVATE_KEY_BASE64 || '').trim();
   if (base64) {
     const decodificado = Buffer.from(base64, 'base64').toString('utf8');
-    if (pareceUmPem(decodificado)) return decodificado;
-    // Presente mas não é um PEM válido — o painel de variáveis cortou o
-    // valor (caso confirmado) ou colou-se outra coisa. Nunca passar isto ao
-    // crypto.sign (produz um erro OpenSSL sem contexto nenhum) — cai para o
-    // ficheiro, se existir, em vez de usar um valor conhecido como inválido.
+    if (candidatoValido(decodificado)) return decodificado;
+    // Presente mas não é uma chave privada válida — o painel de variáveis
+    // cortou o valor (caso confirmado) ou o conteúdo está corrompido. Nunca
+    // passar isto ao crypto.sign (produz um erro OpenSSL sem contexto
+    // nenhum) — cai para o ficheiro, se existir, em vez de usar um valor já
+    // confirmado como inválido.
   }
-  return lerFicheiroChave(CAMINHO_SECRET_FILE_RENDER) || lerFicheiroChave(CAMINHO_CHAVE_PRIVADA_AGT);
+  const doSecretFile = lerFicheiroChave(CAMINHO_SECRET_FILE_RENDER);
+  if (candidatoValido(doSecretFile)) return doSecretFile;
+  const doFicheiroLocal = lerFicheiroChave(CAMINHO_CHAVE_PRIVADA_AGT);
+  if (candidatoValido(doFicheiroLocal)) return doFicheiroLocal;
+  return '';
+}
+
+// Mesma lógica de lerChavePrivadaAgt(), mas devolve DE ONDE veio (ou porque
+// nenhuma fonte serviu) em vez do conteúdo — para se poder ver isto no painel
+// de Prontidão (visível a qualquer Admin do Sistema, sem precisar de Shell no
+// hosting, que em planos gratuitos nem sequer existe). Nunca inclui a chave.
+function diagnosticoChavePrivadaAgt() {
+  const base64 = String(process.env.AGT_JWS_PRIVATE_KEY_BASE64 || '').trim();
+  if (base64) {
+    const decodificado = Buffer.from(base64, 'base64').toString('utf8');
+    if (candidatoValido(decodificado)) {
+      return { fonte: 'variável de ambiente (AGT_JWS_PRIVATE_KEY_BASE64)', tamanhoBase64: base64.length };
+    }
+    const motivo = !pareceUmPem(decodificado)
+      ? 'não decodifica para um PEM (faltam as linhas -----BEGIN/END-----; provável corte pelo painel de variáveis)'
+      : 'tem as linhas -----BEGIN/END----- mas o conteúdo não é uma chave privada válida (corrupção a meio do valor)';
+    return {
+      fonte: `AGT_JWS_PRIVATE_KEY_BASE64 está definida (${base64.length} caracteres) MAS INVÁLIDA — ${motivo}`,
+      tamanhoBase64: base64.length,
+      invalida: true,
+    };
+  }
+  const doSecretFile = lerFicheiroChave(CAMINHO_SECRET_FILE_RENDER);
+  if (doSecretFile) {
+    return candidatoValido(doSecretFile)
+      ? { fonte: `Secret File (${CAMINHO_SECRET_FILE_RENDER})` }
+      : { fonte: `Secret File (${CAMINHO_SECRET_FILE_RENDER}) existe MAS não é uma chave privada válida`, invalida: true };
+  }
+  const doFicheiroLocal = lerFicheiroChave(CAMINHO_CHAVE_PRIVADA_AGT);
+  if (doFicheiroLocal) {
+    return candidatoValido(doFicheiroLocal)
+      ? { fonte: `ficheiro local (${CAMINHO_CHAVE_PRIVADA_AGT})` }
+      : { fonte: `ficheiro local (${CAMINHO_CHAVE_PRIVADA_AGT}) existe MAS não é uma chave privada válida`, invalida: true };
+  }
+  return { fonte: 'nenhuma (nem variável, nem Secret File, nem ficheiro local)' };
 }
 
 /**
@@ -310,5 +373,9 @@ config.storage.missing =
 // momento do agendamento, não no arranque) poderem passar pela mesma limpeza.
 config.limparValor = limpar;
 config.precisouDeLimpeza = precisouDeLimpeza;
+// Ver diagnosticoChavePrivadaAgt() acima — chamada sob pedido (não no
+// arranque, porque decodifica Base64 e valida a chave a cada chamada; usada
+// só pelo painel de Prontidão e por scripts/agt-diagnostico.js).
+config.diagnosticoChavePrivadaAgt = diagnosticoChavePrivadaAgt;
 
 module.exports = config;
