@@ -1231,6 +1231,39 @@ model CreditNote {
   @@map("credit_notes")
 }
 
+// Histórico de pedidos "Solicitar Série" à AGT (DS.120, 4.5) — cada linha é
+// UM pedido feito através de GET /api/faturacao/agt-serie-payload, gravado
+// SÓ quando a AGT aceita (resultCode "0"; uma recusa nunca cria uma linha
+// aqui — não há série nenhuma atribuída para se registar, ver
+// agtSeriesService.solicitarSerie).
+//
+// seriesCode é o valor que a AGT atribuiu — o mesmo que depois entra no
+// `documentNo` dos documentos desse tipo/ano/estabelecimento, nunca
+// inventado (ver o comentário no topo de agtSeriesService.js). Os restantes
+// campos são os que foram assinados e submetidos, para auditoria: confirmar
+// depois, sem ir aos logs do servidor, exatamente o que foi pedido.
+model AgtSeriesFe {
+  id                    String  @id @default(uuid())
+  ano                   Int
+  tipoDocumento         String  @map("tipo_documento")
+  establishmentNumber   String  @map("establishment_number")
+  taxRegistrationNumber String  @map("tax_registration_number")
+  seriesCode            String? @map("series_code")
+  submissionUUID        String  @map("submission_uuid")
+  requestID             String? @map("request_id")
+  resultCode            String  @map("result_code")
+  // Sem relação/FK ao User (mesmo padrão de CompanyErpConfigAudit.actorUserId
+  // acima) — um pedido feito por um Admin do Sistema entretanto removido
+  // continua a aparecer no histórico, com o nome que tinha nessa altura.
+  solicitadoPorId       String? @map("solicitado_por_id")
+  solicitadoPorNome     String? @map("solicitado_por_nome")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([ano, tipoDocumento])
+  @@map("agtseriesfe")
+}
+
 // Série de faturação declarada à AGT.
 //
 // O contador vive aqui e é lido com bloqueio DENTRO da transação da fatura —

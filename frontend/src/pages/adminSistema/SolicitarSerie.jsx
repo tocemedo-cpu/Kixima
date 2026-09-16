@@ -7,11 +7,10 @@
 //
 // Desde que agtSeriesService.solicitarSerie() passou a chamar mesmo o
 // endpoint solicitarSerie da AGT (não só construir e assinar), a resposta
-// do backend é { pedido, resposta } — pedido é o JSON assinado (o mesmo de
-// antes), resposta é o que a própria AGT devolveu. "Dados assinados" abaixo
-// mostra em claro exatamente os 5 campos que entram na assinatura JWS (ver
-// dadosAssinatura em agtSeriesService.construirPedidoSerie) — é o que se
-// quer conseguir conferir de imediato, sem ter de ler o JSON completo.
+// do backend é { pedido, resposta } — pedido é o JSON assinado, resposta é
+// o que a própria AGT devolveu. "Dados assinados" abaixo mostra em claro
+// exatamente os 5 campos que entram na assinatura JWS (ver dadosAssinatura
+// em agtSeriesService.construirPedidoSerie).
 //
 // Quando a AGT RECUSA o pedido (AgtRecusadoError, 502), o backend devolve o
 // `pedido` construído dentro de error.details.pedido — sem isto, uma recusa
@@ -19,10 +18,17 @@
 // abaixo vem de resultado (sucesso) OU de error.details (recusa), para o
 // painel "Dados assinados" aparecer sempre que existir um pedido para
 // mostrar, com ou sem sucesso.
-import { useState } from 'react';
+//
+// Cada pedido ACEITE pela AGT fica gravado em agtSeriesFe (tabela
+// "agtseriesfe" — ver agtSeriesService.solicitarSerie/listarHistorico) — o
+// histórico abaixo mostra o que está mesmo na base de dados, não o JSON
+// bruto da última tentativa desta sessão do browser: Ano, Tipo de
+// documento e Série atribuída pela AGT, um pedido por linha.
+import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
-import { Crumbs, PageHead } from '../../components/BuyerUI';
-import { SuccessBanner, ErrorBanner, Field } from '../../components/Common';
+import { formatDateTime } from '../../domain';
+import { Crumbs, PageHead, EmptyRow } from '../../components/BuyerUI';
+import { ErrorBanner, Field } from '../../components/Common';
 import { useI18n } from '../../i18n';
 
 const TIPOS_DOCUMENTO = ['FT', 'FR', 'NC', 'RC', 'ND'];
@@ -32,31 +38,29 @@ export default function SolicitarSerie() {
   const { t } = useI18n();
   const [tipoDocumento, setTipoDocumento] = useState('FT');
   const [resultado, setResultado] = useState(null);
-  const [copiado, setCopiado] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [historico, setHistorico] = useState(null);
+  const [errorHistorico, setErrorHistorico] = useState(null);
+
+  function carregarHistorico() {
+    api.get('/api/faturacao/agt-series-fe')
+      .then(setHistorico)
+      .catch(setErrorHistorico);
+  }
+  useEffect(carregarHistorico, []);
 
   async function gerar(e) {
     e.preventDefault();
-    setBusy(true); setError(null); setResultado(null); setCopiado(false);
+    setBusy(true); setError(null); setResultado(null);
     try {
       const data = await api.get('/api/faturacao/agt-serie-payload', { ano: ANO_ATUAL, tipoDocumento });
       setResultado(data);
+      carregarHistorico(); // o pedido que acabou de ser aceite já está gravado — refrescar a tabela
     } catch (e2) {
       setError(e2);
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function copiar() {
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(resultado || { pedido, erroAgt: error?.details }, null, 2));
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 2500);
-    } catch {
-      // Sem acesso à área de transferência (permissão do browser) — o JSON
-      // continua visível para copiar à mão; não há nada mais a fazer aqui.
     }
   }
 
@@ -145,25 +149,42 @@ export default function SolicitarSerie() {
                 ))}
             </dl>
           </div>
-
-          <div className="bz-card" style={{ padding: 16, marginTop: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <strong style={{ fontSize: 13.5 }}>
-                {recusadoPelaAgt
-                  ? t('JSON completo (pedido assinado + recusa da AGT)')
-                  : t('JSON completo (pedido assinado + resposta da AGT)')}
-              </strong>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={copiar}>
-                {copiado ? t('Copiado!') : t('Copiar JSON')}
-              </button>
-            </div>
-            <SuccessBanner message={copiado ? t('Copiado para a área de transferência.') : ''} />
-            <pre className="bz-scroll-x" style={{ marginTop: 10, padding: 12, background: 'var(--surface-2, #fafafa)', borderRadius: 8, fontSize: 12.5, lineHeight: 1.5 }}>
-              {JSON.stringify(resultado || { pedido, erroAgt: error?.details }, null, 2)}
-            </pre>
-          </div>
         </>
       ) : null}
+
+      <div className="bz-card bz-tablewrap" style={{ marginTop: 16 }}>
+        <div style={{ padding: '12px 16px 0' }}>
+          <strong style={{ fontSize: 13.5 }}>{t('Séries já atribuídas pela AGT')}</strong>
+          <p style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
+            {t('Histórico gravado na base de dados (tabela agtseriesfe) — só entra aqui um pedido depois de a AGT o aceitar.')}
+          </p>
+        </div>
+        <ErrorBanner error={errorHistorico} />
+        <table className="bz-table">
+          <thead>
+            <tr>
+              <th>{t('Ano')}</th>
+              <th>{t('Tipo de documento')}</th>
+              <th>{t('Série atribuída')}</th>
+              <th>{t('Pedido em')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {!historico ? (
+              <tr><td colSpan={4}><EmptyRow>{t('A carregar…')}</EmptyRow></td></tr>
+            ) : historico.length === 0 ? (
+              <tr><td colSpan={4}><EmptyRow>{t('Nenhuma série pedida ainda.')}</EmptyRow></td></tr>
+            ) : historico.map((linha) => (
+              <tr key={linha.id}>
+                <td>{linha.ano}</td>
+                <td>{linha.tipoDocumento}</td>
+                <td>{linha.seriesCode || '—'}</td>
+                <td>{formatDateTime(linha.createdAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

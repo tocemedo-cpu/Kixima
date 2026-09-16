@@ -47,7 +47,7 @@ function verificarJWS(jws) {
   return { ok, payload: JSON.parse(base64urlParaBuffer(p).toString('utf8')) };
 }
 
-const RESPOSTA_AGT = { resultCode: '0', requestID: 'REQ-TESTE-123' };
+const RESPOSTA_AGT = { resultCode: '0', requestID: 'REQ-TESTE-123', seriesCode: 'FT-2026-01' };
 
 let tokens;
 
@@ -160,6 +160,32 @@ describe('GET /api/faturacao/agt-serie-payload — sucesso', () => {
   });
 });
 
+describe('GET /api/faturacao/agt-serie-payload — histórico (agtSeriesFe)', () => {
+  test('pedido aceite pela AGT fica gravado com o seriesCode/requestID devolvidos e quem pediu', async () => {
+    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS);
+    expect(res.status).toBe(200);
+
+    const linha = await prisma.agtSeriesFe.findFirst({ where: { submissionUUID: res.body.pedido.submissionUUID } });
+    expect(linha).toBeTruthy();
+    expect(linha.ano).toBe(2026);
+    expect(linha.tipoDocumento).toBe('FT');
+    expect(linha.establishmentNumber).toBe('1');
+    expect(linha.taxRegistrationNumber).toBe('5001636863');
+    expect(linha.seriesCode).toBe('FT-2026-01');
+    expect(linha.requestID).toBe('REQ-TESTE-123');
+    expect(linha.resultCode).toBe('0');
+    expect(linha.solicitadoPorId).toBeTruthy();
+  });
+
+  test('resposta da AGT sem seriesCode grava a linha na mesma, com seriesCode null (nunca inventado)', async () => {
+    agtSandboxClient.solicitarSerie.mockResolvedValue({ resultCode: '0', requestID: 'REQ-SEM-CODIGO' });
+
+    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS);
+    const linha = await prisma.agtSeriesFe.findFirst({ where: { submissionUUID: res.body.pedido.submissionUUID } });
+    expect(linha.seriesCode).toBeNull();
+  });
+});
+
 describe('GET /api/faturacao/agt-serie-payload — recusa da AGT', () => {
   test('quando a AGT recusa o pedido (resultCode != "0"), devolve 502 com o motivo (não um 500 genérico)', async () => {
     // jest.mock() automocka a classe (instanceof continua a funcionar, mas o
@@ -186,5 +212,10 @@ describe('GET /api/faturacao/agt-serie-payload — recusa da AGT', () => {
     expect(pedido.taxRegistrationNumber).toBe('5001636863');
     expect(pedido.establishmentNumber).toBe('1');
     expect(agtSandboxClient.solicitarSerie).toHaveBeenCalledWith(pedido);
+
+    // Uma recusa não atribui série nenhuma — nada fica gravado em
+    // agtSeriesFe para este pedido.
+    const linha = await prisma.agtSeriesFe.findFirst({ where: { submissionUUID: pedido.submissionUUID } });
+    expect(linha).toBeNull();
   });
 });

@@ -169,7 +169,15 @@ router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission
     documentType: String(tipoDocumento).trim().toUpperCase(),
     establishmentNumber: config.agt.establishmentNumber,
     seriesContingencyIndicator: 'N',
-  }));
+  }, { solicitadoPorId: req.user.id, solicitadoPorNome: req.user.name }));
+});
+
+// Histórico dos pedidos "Solicitar Série" já aceites pela AGT (tabela
+// agtseriesfe) — o que a página mostra em vez do JSON bruto do último
+// pedido: cada linha só existe porque a AGT respondeu resultCode "0" a um
+// pedido feito na rota acima (ver agtSeriesService.solicitarSerie).
+router.get('/agt-series-fe', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), async (req, res) => {
+  res.json(await agtSeriesService.listarHistorico());
 });
 
 // Métricas de negócio da plataforma inteira — só Admin do Sistema.

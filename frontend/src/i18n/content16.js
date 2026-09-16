@@ -23,11 +23,14 @@ export const EN17 = {
   'Resposta da AGT': 'AGT response',
   'A AGT recusou o pedido': 'The AGT rejected the request',
   'resultCode': 'resultCode',
-  'JSON completo (pedido assinado + resposta da AGT)': 'Full JSON (signed request + AGT response)',
-  'JSON completo (pedido assinado + recusa da AGT)': 'Full JSON (signed request + AGT rejection)',
-  'Copiado!': 'Copied!',
-  'Copiar JSON': 'Copy JSON',
-  'Copiado para a área de transferência.': 'Copied to clipboard.',
+  'Séries já atribuídas pela AGT': 'Series already assigned by the AGT',
+  'Histórico gravado na base de dados (tabela agtseriesfe) — só entra aqui um pedido depois de a AGT o aceitar.':
+    'History stored in the database (agtseriesfe table) — a request only lands here after the AGT accepts it.',
+  'Ano': 'Year',
+  'Série atribuída': 'Assigned series',
+  'Pedido em': 'Requested on',
+  'A carregar…': 'Loading…',
+  'Nenhuma série pedida ainda.': 'No series requested yet.',
 };
 
 export const FR17 = {
@@ -51,9 +54,12 @@ export const FR17 = {
   'Resposta da AGT': "Réponse de l'AGT",
   'A AGT recusou o pedido': "L'AGT a refusé la demande",
   'resultCode': 'resultCode',
-  'JSON completo (pedido assinado + resposta da AGT)': "JSON complet (demande signée + réponse de l'AGT)",
-  'JSON completo (pedido assinado + recusa da AGT)': "JSON complet (demande signée + refus de l'AGT)",
-  'Copiado!': 'Copié !',
-  'Copiar JSON': 'Copier le JSON',
-  'Copiado para a área de transferência.': 'Copié dans le presse-papiers.',
+  'Séries já atribuídas pela AGT': "Séries déjà attribuées par l'AGT",
+  'Histórico gravado na base de dados (tabela agtseriesfe) — só entra aqui um pedido depois de a AGT o aceitar.':
+    "Historique enregistré dans la base de données (table agtseriesfe) — une demande n'y figure qu'après acceptation par l'AGT.",
+  'Ano': 'Année',
+  'Série atribuída': 'Série attribuée',
+  'Pedido em': 'Demandée le',
+  'A carregar…': 'Chargement…',
+  'Nenhuma série pedida ainda.': 'Aucune série demandée pour le moment.',
 };

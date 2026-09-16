@@ -26,6 +26,7 @@
 // devolver erro especificamente sobre esta assinatura.
 const crypto = require('crypto');
 const logger = require('../config/logger');
+const prisma = require('../config/database');
 const agtSigningService = require('./agtSigningService');
 const agtSandboxClient = require('./agtSandboxClient');
 const { AgtRecusadoError } = require('../utils/errors');
@@ -84,8 +85,12 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
  * deixa o AgtApiError original (um Error simples) propagar sem contexto de
  * HTTP, mesmo princípio de ServiceUnavailableError para configuração em
  * falta.
+ *
+ * `contexto.solicitadoPorId`/`solicitadoPorNome` (opcionais, vêm de
+ * req.user na rota) só servem para a linha gravada em AgtSeriesFe abaixo —
+ * não entram no pedido nem na assinatura.
  */
-async function solicitarSerie(params) {
+async function solicitarSerie(params, contexto = {}) {
   const pedido = construirPedidoSerie(params);
 
   logger.info('Solicitar Série: a submeter à AGT (solicitarSerie)', { submissionUUID: pedido.submissionUUID });
@@ -103,7 +108,37 @@ async function solicitarSerie(params) {
   }
   logger.info('Solicitar Série: resposta da AGT', { submissionUUID: pedido.submissionUUID, resposta });
 
+  // Só se chega aqui quando a AGT aceitou (resultCode "0" — qualquer outro
+  // valor já teria lançado AgtRecusadoError acima). Grava-se o histórico
+  // (AgtSeriesFe) exatamente com o que foi submetido e o que a AGT devolveu
+  // — nunca um seriesCode inventado: se a AGT não o mandar na resposta, fica
+  // null, não um valor a adivinhar.
+  await prisma.agtSeriesFe.create({
+    data: {
+      ano: pedido.seriesYear,
+      tipoDocumento: pedido.documentType,
+      establishmentNumber: pedido.establishmentNumber,
+      taxRegistrationNumber: pedido.taxRegistrationNumber,
+      seriesCode: resposta?.seriesCode ?? null,
+      submissionUUID: pedido.submissionUUID,
+      requestID: resposta?.requestID ?? null,
+      resultCode: String(resposta?.resultCode ?? '0'),
+      solicitadoPorId: contexto.solicitadoPorId ?? null,
+      solicitadoPorNome: contexto.solicitadoPorNome ?? null,
+    },
+  });
+
   return { pedido, resposta };
 }
 
-module.exports = { construirPedidoSerie, solicitarSerie };
+/**
+ * Histórico de pedidos "Solicitar Série" já aceites pela AGT — o mais
+ * recente primeiro. Usado pela página SolicitarSerie.jsx em vez do JSON
+ * bruto do último pedido: mostra o que está mesmo gravado, não só o que
+ * acabou de acontecer nesta sessão do browser.
+ */
+async function listarHistorico() {
+  return prisma.agtSeriesFe.findMany({ orderBy: { createdAt: 'desc' } });
+}
+
+module.exports = { construirPedidoSerie, solicitarSerie, listarHistorico };
