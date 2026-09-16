@@ -4,11 +4,6 @@
 
 export const EN17 = {
   'Solicitar Série': 'Request Series',
-  'Gera, assina e submete à AGT o pedido de atribuição de série de numeração para a conta de homologação/produção configurada no ambiente — o passo que a spec (DS.120, 4.5) exige antes de se poder emitir documentos fiscais com série própria.':
-    'Generates, signs and submits to the AGT the request for a numbering series, for the homologation/production account configured in this environment — the step the spec (DS.120, 4.5) requires before fiscal documents with their own series can be issued.',
-  'Ano da série': 'Series year',
-  'Sempre o ano em curso — uma série pedida para um ano diferente não corresponde ao que se está mesmo a emitir.':
-    "Always the current year — a series requested for a different year wouldn't match what is actually being issued.",
   'Tipo de documento': 'Document type',
   'A submeter…': 'Submitting…',
   'Gerar e submeter pedido': 'Generate and submit request',
@@ -26,11 +21,6 @@ export const EN17 = {
 
 export const FR17 = {
   'Solicitar Série': 'Demander une série',
-  'Gera, assina e submete à AGT o pedido de atribuição de série de numeração para a conta de homologação/produção configurada no ambiente — o passo que a spec (DS.120, 4.5) exige antes de se poder emitir documentos fiscais com série própria.':
-    "Génère, signe et soumet à l'AGT la demande d'attribution d'une série de numérotation, pour le compte d'homologation/production configuré dans cet environnement — l'étape que la spec (DS.120, 4.5) exige avant de pouvoir émettre des documents fiscaux avec une série propre.",
-  'Ano da série': 'Année de la série',
-  'Sempre o ano em curso — uma série pedida para um ano diferente não corresponde ao que se está mesmo a emitir.':
-    "Toujours l'année en cours — une série demandée pour une année différente ne correspondrait pas à ce qui est réellement émis.",
   'Tipo de documento': 'Type de document',
   'A submeter…': 'Envoi en cours…',
   'Gerar e submeter pedido': 'Générer et soumettre la demande',

@@ -17,7 +17,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { formatDateTime, formatNumber } from '../../domain';
-import { Crumbs, PageHead, EmptyRow } from '../../components/BuyerUI';
+import { Crumbs, EmptyRow } from '../../components/BuyerUI';
 import { ErrorBanner, Field } from '../../components/Common';
 import { useI18n } from '../../i18n';
 
@@ -55,7 +55,6 @@ export default function SolicitarSerie() {
   return (
     <div>
       <Crumbs trail={[{ label: 'Configurações e Suporte', to: '/sistema' }, 'Solicitar Série']} />
-      
 
       <ErrorBanner error={error} />
 
@@ -68,7 +67,7 @@ export default function SolicitarSerie() {
           )}
         </Field>
 
-        <Field label="Ano" >
+        <Field label="Ano">
           {(id) => (
             <input id={id} className="input" type="number" disabled style={{ width: 110 }} value={ANO_ATUAL} readOnly />
           )}

@@ -25,6 +25,7 @@
 // próprio documento, não de outro) — ajustar aqui, e só aqui, se a AGT
 // devolver erro especificamente sobre esta assinatura.
 const crypto = require('crypto');
+const config = require('../config/env');
 const logger = require('../config/logger');
 const prisma = require('../config/database');
 const agtSigningService = require('./agtSigningService');
@@ -149,4 +150,28 @@ async function listarHistorico() {
   return prisma.agtSeriesFe.findMany({ orderBy: { createdAt: 'desc' } });
 }
 
-module.exports = { construirPedidoSerie, solicitarSerie, listarHistorico };
+/**
+ * A série ATUALMENTE atribuída pela AGT para um tipo de documento (FT, FR,
+ * NC, RC, ND, ...) — a mais recente aceite para esse tipo/ano/
+ * estabelecimento (por omissão o ano em curso e o AGT_ESTABLISHMENT_NUMBER
+ * configurado). Devolve `null` quando nunca se pediu série nenhuma desse
+ * tipo — NUNCA inventa um seriesCode; quem chama decide o que fazer com
+ * `null` (ex.: bloquear a emissão do documento, em vez de usar uma série
+ * fictícia como "CERT-FR" — ver o comentário no topo deste ficheiro, a
+ * causa documentada de um erro 500 real).
+ */
+async function obterSeriePorTipo(documentType, { ano = new Date().getFullYear(), establishmentNumber = config.agt.establishmentNumber } = {}) {
+  if (!documentType || !String(documentType).trim()) {
+    throw new Error('obterSeriePorTipo: documentType é obrigatório.');
+  }
+  return prisma.agtSeriesFe.findFirst({
+    where: {
+      tipoDocumento: String(documentType).trim().toUpperCase(),
+      ano: Number(ano),
+      establishmentNumber,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+module.exports = { construirPedidoSerie, solicitarSerie, listarHistorico, obterSeriePorTipo };
