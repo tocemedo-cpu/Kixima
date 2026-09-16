@@ -97,7 +97,7 @@ async function solicitarSerie(params) {
       logger.warn('Solicitar Série: a AGT recusou o pedido', {
         submissionUUID: pedido.submissionUUID, resultCode: erro.resultCode, errorList: erro.errorList,
       });
-      throw new AgtRecusadoError(erro);
+      throw new AgtRecusadoError(erro, pedido);
     }
     throw erro;
   }

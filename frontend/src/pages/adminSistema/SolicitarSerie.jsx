@@ -12,6 +12,13 @@
 // mostra em claro exatamente os 5 campos que entram na assinatura JWS (ver
 // dadosAssinatura em agtSeriesService.construirPedidoSerie) — é o que se
 // quer conseguir conferir de imediato, sem ter de ler o JSON completo.
+//
+// Quando a AGT RECUSA o pedido (AgtRecusadoError, 502), o backend devolve o
+// `pedido` construído dentro de error.details.pedido — sem isto, uma recusa
+// só mostrava o texto do erro, nunca os dados que o causaram. `pedido`
+// abaixo vem de resultado (sucesso) OU de error.details (recusa), para o
+// painel "Dados assinados" aparecer sempre que existir um pedido para
+// mostrar, com ou sem sucesso.
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { Crumbs, PageHead } from '../../components/BuyerUI';
@@ -44,7 +51,7 @@ export default function SolicitarSerie() {
 
   async function copiar() {
     try {
-      await navigator.clipboard.writeText(JSON.stringify(resultado, null, 2));
+      await navigator.clipboard.writeText(JSON.stringify(resultado || { pedido, erroAgt: error?.details }, null, 2));
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2500);
     } catch {
@@ -52,6 +59,13 @@ export default function SolicitarSerie() {
       // continua visível para copiar à mão; não há nada mais a fazer aqui.
     }
   }
+
+  // Sucesso: pedido vem de resultado.pedido. Recusa da AGT (AgtRecusadoError):
+  // o backend devolve o mesmo pedido construído em error.details.pedido — ver
+  // o comentário no topo do ficheiro. Nos outros erros (503 de configuração
+  // em falta, 422 de validação, ...) não há pedido nenhum para mostrar.
+  const pedido = resultado?.pedido || error?.details?.pedido || null;
+  const recusadoPelaAgt = error?.code === 'AGT_RECUSOU';
 
   return (
     <div>
@@ -83,7 +97,7 @@ export default function SolicitarSerie() {
         </button>
       </form>
 
-      {resultado ? (
+      {pedido ? (
         <>
           <div className="bz-card" style={{ padding: 16, marginTop: 16 }}>
             <strong style={{ fontSize: 13.5 }}>{t('Dados assinados')}</strong>
@@ -95,11 +109,11 @@ export default function SolicitarSerie() {
             }}
             >
               {[
-                ['NIF (taxRegistrationNumber)', resultado.pedido?.taxRegistrationNumber],
-                ['Ano da série (seriesYear)', resultado.pedido?.seriesYear],
-                ['Tipo de documento (documentType)', resultado.pedido?.documentType],
-                ['Estabelecimento (establishmentNumber)', resultado.pedido?.establishmentNumber],
-                ['Indicador de contingência (seriesContingencyIndicator)', resultado.pedido?.seriesContingencyIndicator],
+                ['NIF (taxRegistrationNumber)', pedido.taxRegistrationNumber],
+                ['Ano da série (seriesYear)', pedido.seriesYear],
+                ['Tipo de documento (documentType)', pedido.documentType],
+                ['Estabelecimento (establishmentNumber)', pedido.establishmentNumber],
+                ['Indicador de contingência (seriesContingencyIndicator)', pedido.seriesContingencyIndicator],
               ].map(([rotulo, valor]) => (
                 <div key={rotulo}>
                   <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{t(rotulo)}</dt>
@@ -110,34 +124,42 @@ export default function SolicitarSerie() {
           </div>
 
           <div className="bz-card" style={{ padding: 16, marginTop: 16 }}>
-            <strong style={{ fontSize: 13.5 }}>{t('Resposta da AGT')}</strong>
+            <strong style={{ fontSize: 13.5 }}>{recusadoPelaAgt ? t('A AGT recusou o pedido') : t('Resposta da AGT')}</strong>
             <dl style={{
               marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12,
             }}
             >
               <div>
                 <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{t('resultCode')}</dt>
-                <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{String(resultado.resposta?.resultCode ?? '—')}</dd>
+                <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+                  {String((recusadoPelaAgt ? error.details?.resultCode : resultado?.resposta?.resultCode) ?? '—')}
+                </dd>
               </div>
-              {Object.entries(resultado.resposta || {}).filter(([k]) => k !== 'resultCode').map(([k, v]) => (
-                <div key={k}>
-                  <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{k}</dt>
-                  <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</dd>
-                </div>
-              ))}
+              {Object.entries((recusadoPelaAgt ? error.details : resultado?.resposta) || {})
+                .filter(([k]) => k !== 'resultCode' && k !== 'pedido')
+                .map(([k, v]) => (
+                  <div key={k}>
+                    <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{k}</dt>
+                    <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</dd>
+                  </div>
+                ))}
             </dl>
           </div>
 
           <div className="bz-card" style={{ padding: 16, marginTop: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <strong style={{ fontSize: 13.5 }}>{t('JSON completo (pedido assinado + resposta da AGT)')}</strong>
+              <strong style={{ fontSize: 13.5 }}>
+                {recusadoPelaAgt
+                  ? t('JSON completo (pedido assinado + recusa da AGT)')
+                  : t('JSON completo (pedido assinado + resposta da AGT)')}
+              </strong>
               <button type="button" className="btn btn-ghost btn-sm" onClick={copiar}>
                 {copiado ? t('Copiado!') : t('Copiar JSON')}
               </button>
             </div>
             <SuccessBanner message={copiado ? t('Copiado para a área de transferência.') : ''} />
             <pre className="bz-scroll-x" style={{ marginTop: 10, padding: 12, background: 'var(--surface-2, #fafafa)', borderRadius: 8, fontSize: 12.5, lineHeight: 1.5 }}>
-              {JSON.stringify(resultado, null, 2)}
+              {JSON.stringify(resultado || { pedido, erroAgt: error?.details }, null, 2)}
             </pre>
           </div>
         </>

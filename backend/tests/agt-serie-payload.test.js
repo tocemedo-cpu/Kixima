@@ -177,5 +177,14 @@ describe('GET /api/faturacao/agt-serie-payload — recusa da AGT', () => {
     expect(res.body.error.code).toBe('AGT_RECUSOU');
     expect(res.body.error.details?.resultCode).toBe('1');
     expect(res.body.error.details?.errorList).toEqual([{ code: 'E001', message: 'NIF inválido para esta série.' }]);
+
+    // O pedido construído (o mesmo que agtSandboxClient.solicitarSerie foi
+    // chamado com) viaja em details.pedido — sem isto, uma recusa só dava a
+    // ver o motivo, nunca os dados que o causaram (ver SolicitarSerie.jsx,
+    // que passou a mostrar "Dados assinados" também neste caso).
+    const { pedido } = res.body.error.details;
+    expect(pedido.taxRegistrationNumber).toBe('5001636863');
+    expect(pedido.establishmentNumber).toBe('1');
+    expect(agtSandboxClient.solicitarSerie).toHaveBeenCalledWith(pedido);
   });
 });

@@ -65,11 +65,20 @@ class BusinessRuleError extends AppError {
  * não é um erro nosso, é um serviço externo que respondeu com uma recusa —
  * distinto de 4xx (erro nosso no pedido) e de 503 (nem configurado ainda).
  * errorList da AGT viaja tal e qual em `details`, sem se resumir/traduzir.
+ *
+ * `pedido` (opcional) é o próprio pedido construído e assinado — exatamente
+ * o que foi enviado à AGT antes de ser recusado. Sem isto, uma recusa não
+ * dava forma nenhuma de ver o que tinha sido submetido: só o texto do erro,
+ * nunca os dados (taxRegistrationNumber, establishmentNumber, ...) que os
+ * geraram. Ver o resumo "Dados assinados" em SolicitarSerie.jsx, que passa
+ * a mostrar isto tanto no sucesso como na recusa.
  */
 class AgtRecusadoError extends AppError {
-  constructor(agtApiError) {
+  constructor(agtApiError, pedido = null) {
     super(agtApiError.message, 502, 'AGT_RECUSOU');
-    this.details = { endpoint: agtApiError.endpoint, resultCode: agtApiError.resultCode, errorList: agtApiError.errorList };
+    this.details = {
+      endpoint: agtApiError.endpoint, resultCode: agtApiError.resultCode, errorList: agtApiError.errorList, pedido,
+    };
   }
 }
 

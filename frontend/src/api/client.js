@@ -149,6 +149,7 @@ async function request(path, { method = 'GET', body, params } = {}) {
     const err = new Error(message);
     err.rawMessage = data?.error?.message ?? null;
     err.code = data?.error?.code;
+    err.details = data?.error?.details ?? null;
     err.status = res.status;
     throw err;
   }
