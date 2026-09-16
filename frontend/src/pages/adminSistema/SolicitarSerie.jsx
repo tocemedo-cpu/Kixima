@@ -55,10 +55,7 @@ export default function SolicitarSerie() {
   return (
     <div>
       <Crumbs trail={[{ label: 'Configurações e Suporte', to: '/sistema' }, 'Solicitar Série']} />
-      <PageHead
-        title="Solicitar Série"
-        subtitle="Gera, assina e submete à AGT o pedido de atribuição de série de numeração para a conta de homologação/produção configurada no ambiente — o passo que a spec (DS.120, 4.5) exige antes de se poder emitir documentos fiscais com série própria."
-      />
+      
 
       <ErrorBanner error={error} />
 
@@ -71,7 +68,7 @@ export default function SolicitarSerie() {
           )}
         </Field>
 
-        <Field label="Ano da série" hint="Sempre o ano em curso — uma série pedida para um ano diferente não corresponde ao que se está mesmo a emitir.">
+        <Field label="Ano" >
           {(id) => (
             <input id={id} className="input" type="number" disabled style={{ width: 110 }} value={ANO_ATUAL} readOnly />
           )}
