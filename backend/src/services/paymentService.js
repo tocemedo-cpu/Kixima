@@ -13,6 +13,7 @@ const storageService = require('./storageService');
 const auditService = require('./auditService');
 const faturacaoService = require('./faturacaoService');
 const agtSandboxSubmissionService = require('./agtSandboxSubmissionService');
+const agtPayloadService = require('./agtPayloadService');
 
 async function listPendingInvoices(buyerCompanyId) {
   return prisma.invoice.findMany({
@@ -155,11 +156,32 @@ async function processPayment(invoiceId, processedById, buyerCompanyId, proofFil
     tenantId: invoice.purchaseOrder?.buyerCompanyId ?? invoice.contract?.clientCompanyId ?? null,
   });
 
+  // agtInvoiceResubmission — pedido explícito: ao confirmar o pagamento,
+  // reenviar o FT desta fatura à AGT (registarFactura), com visibilidade do
+  // payload e da resposta real (mesmo princípio de
+  // agtSeriesService.solicitarSerie) — DIFERENTE da submissão RC acima
+  // (agtSandboxSubmissionService, silenciosa, nunca lança). O FT já foi
+  // submetido uma vez na emissão da fatura (poService.js/contractService.js)
+  // — isto é um reenvio deliberado, não a primeira submissão; a AGT pode
+  // recusá-lo por documentNo repetido, e é exatamente isso que se quer ver
+  // aqui, não esconder. NUNCA bloqueia nem desfaz o pagamento já comitado
+  // acima: o dinheiro já saiu, uma recusa de paperwork não desfaz isso.
+  let agtInvoiceResubmission = null;
   if (supplierCompanyId) {
+    try {
+      const { payload, resposta } = await agtPayloadService.submeterFatura(invoiceId, supplierCompanyId);
+      agtInvoiceResubmission = { sucesso: true, payload, resposta };
+    } catch (erro) {
+      agtInvoiceResubmission = {
+        sucesso: false,
+        erro: { message: erro.message, code: erro.code || null, details: erro.details || null },
+      };
+    }
+
     await agtSandboxSubmissionService.submeter('RC', payment.id, supplierCompanyId);
   }
 
-  return payment;
+  return { ...payment, agtInvoiceResubmission };
 }
 
 // O fornecedor confirma que o valor entrou na conta — fecha o ciclo de

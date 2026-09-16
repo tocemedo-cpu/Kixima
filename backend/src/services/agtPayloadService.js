@@ -1,5 +1,5 @@
 // src/services/agtPayloadService.js
-// Payload de submissão AGT (e-Fatura, schema v1.2) — FT (fatura), NC (nota de
+// Payload de submissão AGT (e-Fatura, schema v2.0) — FT (fatura), NC (nota de
 // crédito) e RC (recibo/Payment). Uma estrutura única e reutilizável: os três
 // tipos partilham `montarDocumentoComum` (envelope, assinatura, totais) e só
 // diferem no que é mesmo específico de cada um — as linhas.
@@ -10,11 +10,18 @@
 // paymentService, conciliacaoService, todos via faturacaoService.atribuir()).
 // Este serviço monta o payload a partir do que já está gravado.
 //
-// SÓ GERA E ASSINA — não submete a nenhum endpoint da AGT. Não existe
-// URL/credenciais reais para isso (ver agtSigningService.js para a razão de
-// nunca se fingir uma assinatura); quando existir contrato/certificação, a
-// submissão em rede é uma camada nova por cima disto, não uma alteração ao
-// que está aqui.
+// construirPayload() SÓ GERA E ASSINA — não submete a nada, é o que a rota
+// GET /agt-payload/:tipo/:id devolve. submeterFatura() (abaixo) é que
+// submete mesmo o FT ao endpoint registarFactura da AGT — mesmo princípio
+// de agtSeriesService.solicitarSerie(): o envelope schema v2.0 construído
+// aqui é enviado TAL E QUAL (agtSandboxClient.registarFactura() é só
+// transporte, não decide a forma do payload), sem reassinar com o esquema
+// pipe-delimited que agtSandboxSubmissionService.js usa para a submissão
+// automática e silenciosa já feita na emissão da fatura (poService.js/
+// contractService.js). submeterFatura() existe para uma resubmissão
+// EXPLÍCITA e VISÍVEL do mesmo FT (ex.: ao confirmar o pagamento, ver
+// paymentService.processPayment) — não substitui essa submissão automática,
+// soma-se a ela.
 //
 // FR (fatura-recibo) fica preparado no `documentType` mas sem produtor
 // automático: o modelo de "pagamento garantido" do KIXIMA separa sempre a
@@ -22,11 +29,12 @@
 // há um documento único que una os dois.
 const crypto = require('crypto');
 const prisma = require('../config/database');
-const { NotFoundError, ForbiddenError, ValidationError } = require('../utils/errors');
+const { NotFoundError, ForbiddenError, ValidationError, AgtRecusadoError } = require('../utils/errors');
 const faturacaoService = require('./faturacaoService');
 const creditNoteService = require('./creditNoteService');
 const taxService = require('./taxService');
 const agtSigningService = require('./agtSigningService');
+const agtSandboxClient = require('./agtSandboxClient');
 
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
@@ -308,4 +316,30 @@ async function construirPayload(tipo, id, supplierCompanyId) {
   );
 }
 
-module.exports = { construirPayload };
+/**
+ * Constrói o payload FT (construirPayload, acima) e SUBMETE-O mesmo ao
+ * endpoint registarFactura da AGT — ver o comentário no topo do ficheiro
+ * sobre a diferença para a submissão automática/silenciosa
+ * (agtSandboxSubmissionService.js).
+ *
+ * Lança AgtRecusadoError (502) se a AGT recusar — mesmo princípio de
+ * agtSeriesService.solicitarSerie(): nunca deixa o AgtApiError original (um
+ * Error simples) propagar sem contexto de HTTP. `payload` viaja em
+ * error.details.pedido para quem chama poder mostrar o que foi enviado,
+ * mesmo numa recusa.
+ */
+async function submeterFatura(invoiceId, supplierCompanyId) {
+  const payload = await construirPayload('FT', invoiceId, supplierCompanyId);
+  let resposta;
+  try {
+    resposta = await agtSandboxClient.registarFactura(payload);
+  } catch (erro) {
+    if (erro instanceof agtSandboxClient.AgtApiError) {
+      throw new AgtRecusadoError(erro, payload);
+    }
+    throw erro;
+  }
+  return { payload, resposta };
+}
+
+module.exports = { construirPayload, submeterFatura };

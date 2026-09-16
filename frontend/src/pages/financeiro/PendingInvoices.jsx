@@ -20,6 +20,13 @@ export default function PendingInvoices() {
   const [paying, setPaying] = useState(null);
   const [payModal, setPayModal] = useState(null); // fatura escolhida para pagar
   const [proof, setProof] = useState(null);       // ficheiro do comprovativo
+  // Resultado do reenvio do FT à AGT (registarFactura) ao confirmar o
+  // pagamento — ver paymentService.processPayment. Pedido explícito: o FT já
+  // foi submetido uma vez na emissão da fatura; isto é um reenvio deliberado,
+  // com visibilidade do payload/resposta (nunca acontece em silêncio como o
+  // RC). Uma recusa aqui NUNCA significa que o pagamento falhou — o
+  // pagamento já está confirmado quando este resultado chega.
+  const [agtResultado, setAgtResultado] = useState(null);
 
   function load() { api.get('/api/financeiro/invoices').then(setData).catch((e) => setError(e.message)); }
   useEffect(load, []);
@@ -29,13 +36,14 @@ export default function PendingInvoices() {
   async function confirmPay() {
     const inv = payModal;
     if (!inv || !proof) return;
-    setPaying(inv.id); setError('');
+    setPaying(inv.id); setError(''); setAgtResultado(null);
     try {
       const fd = new FormData();
       fd.append('proof', proof);
-      await api.postForm(`/api/payments/invoices/${inv.id}/pay`, fd);
+      const res = await api.postForm(`/api/payments/invoices/${inv.id}/pay`, fd);
       setToast(t('Fatura {ref} paga — comprovativo anexado.', { ref: inv.reference }));
       setTimeout(() => setToast(''), 3500);
+      if (res.agtInvoiceResubmission) setAgtResultado({ ref: inv.reference, ...res.agtInvoiceResubmission });
       setPayModal(null); setProof(null);
       load();
     } catch (e) { setError(e.message); } finally { setPaying(null); }
@@ -60,6 +68,36 @@ export default function PendingInvoices() {
 
       <Toolbar placeholder="Pesquisar por nº da fatura ou fornecedor…" q={q} onQ={setQ} />
       {error ? <div className="empty-state" style={{ padding: 14 }}><p>{error}</p></div> : null}
+
+      {agtResultado ? (
+        <div className="bz-card" style={{ padding: 16, marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <strong style={{ fontSize: 13.5 }}>
+              {agtResultado.sucesso
+                ? t('Fatura {ref} reenviada à AGT (registarFactura)', { ref: agtResultado.ref })
+                : t('A AGT recusou o reenvio da fatura {ref}', { ref: agtResultado.ref })}
+            </strong>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAgtResultado(null)}>{t('Fechar')}</button>
+          </div>
+          {agtResultado.sucesso ? (
+            <dl style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+              <div>
+                <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{t('documentNo')}</dt>
+                <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{agtResultado.payload?.documents?.[0]?.documentNo || '—'}</dd>
+              </div>
+              <div>
+                <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{t('resultCode')}</dt>
+                <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{String(agtResultado.resposta?.resultCode ?? '—')}</dd>
+              </div>
+            </dl>
+          ) : (
+            <p style={{ marginTop: 8, fontSize: 13 }}>
+              {agtResultado.erro?.message}
+              {agtResultado.erro?.details?.errorList?.length ? ` — ${JSON.stringify(agtResultado.erro.details.errorList)}` : ''}
+            </p>
+          )}
+        </div>
+      ) : null}
 
       <div className="bz-card bz-tablewrap">
         <table className="bz-table">
