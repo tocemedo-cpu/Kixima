@@ -114,12 +114,22 @@ describe('Endpoints da Sandbox — cabeçalhos, rota e tratamento de resultCode'
     expect(opcoes.headers['Content-Type']).toBe('application/json');
   });
 
-  test('solicitarSerie(): POST com corpo JSON e Authorization Basic corretos', async () => {
-    const fetchMock = mockFetch(200, { resultCode: '0', seriesYear: 2026 });
+  test('solicitarSerie(): POST com corpo JSON e Authorization Basic corretos — sucesso real da AGT (resultCode=1 + seriesFEResult)', async () => {
+    // Resposta real confirmada em HML: resultCode=1 (NÃO "0") mesmo quando a
+    // AGT aceita — o sinal de sucesso é seriesFEResult.seriesCode, não o
+    // resultCode. Ver o comentário em agtSandboxClient.solicitarSerie().
+    const RESPOSTA_REAL_AGT = {
+      resultCode: 1,
+      errorList: [''],
+      seriesFEResult: {
+        seriesCode: 'LD6325S2042N', authorizedQuantity: '999999999999', firstDocumentNo: '1', lastDocumentNo: '999999999999',
+      },
+    };
+    const fetchMock = mockFetch(200, RESPOSTA_REAL_AGT);
     const documento = { taxRegistrationNumber: 'AO5417000000', seriesYear: 2026, documentType: 'FT' };
 
     const resposta = await agtSandboxClient.solicitarSerie(documento);
-    expect(resposta).toEqual({ resultCode: '0', seriesYear: 2026 });
+    expect(resposta).toEqual(RESPOSTA_REAL_AGT);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, opcoes] = fetchMock.mock.calls[0];
@@ -127,6 +137,19 @@ describe('Endpoints da Sandbox — cabeçalhos, rota e tratamento de resultCode'
     expect(opcoes.method).toBe('POST');
     expect(opcoes.body).toBe(JSON.stringify(documento));
     expect(opcoes.headers.Authorization).toBe(`Basic ${Buffer.from('ws.hml.kixima:segredo-teste').toString('base64')}`);
+  });
+
+  test('solicitarSerie(): sem seriesFEResult.seriesCode é recusa, mesmo com resultCode "0"', async () => {
+    // resultCode não é o sinal de sucesso para este endpoint (ver acima) —
+    // sem seriesFEResult.seriesCode, é sempre tratado como recusa, mesmo que
+    // a AGT mande um resultCode "0" que noutros endpoints seria sucesso.
+    mockFetch(200, { resultCode: '0', errorList: [{ code: 'E099', message: 'estabelecimento não registado' }] });
+
+    await expect(agtSandboxClient.solicitarSerie({})).rejects.toMatchObject({
+      name: 'AgtApiError',
+      resultCode: '0',
+      errorList: [{ code: 'E099', message: 'estabelecimento não registado' }],
+    });
   });
 
   test('obterEstado(): GET com os parâmetros na query string', async () => {

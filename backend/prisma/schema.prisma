@@ -1233,15 +1233,19 @@ model CreditNote {
 
 // Histórico de pedidos "Solicitar Série" à AGT (DS.120, 4.5) — cada linha é
 // UM pedido feito através de GET /api/faturacao/agt-serie-payload, gravado
-// SÓ quando a AGT aceita (resultCode "0"; uma recusa nunca cria uma linha
-// aqui — não há série nenhuma atribuída para se registar, ver
-// agtSeriesService.solicitarSerie).
+// SÓ quando a AGT aceita — CONFIRMADO em produção (HML): o sucesso real é
+// seriesFEResult.seriesCode existir, não resultCode === "0" (a AGT devolve
+// resultCode=1 mesmo quando aceita — ver agtSandboxClient.solicitarSerie()).
+// Uma recusa nunca cria uma linha aqui — não há série nenhuma atribuída
+// para se registar, ver agtSeriesService.solicitarSerie.
 //
-// seriesCode é o valor que a AGT atribuiu — o mesmo que depois entra no
-// `documentNo` dos documentos desse tipo/ano/estabelecimento, nunca
-// inventado (ver o comentário no topo de agtSeriesService.js). Os restantes
-// campos são os que foram assinados e submetidos, para auditoria: confirmar
-// depois, sem ir aos logs do servidor, exatamente o que foi pedido.
+// seriesCode/authorizedQuantity/firstDocumentNo/lastDocumentNo são
+// exatamente o que a AGT devolveu em seriesFEResult — o seriesCode é o
+// mesmo que depois entra no `documentNo` dos documentos desse tipo/ano/
+// estabelecimento, nunca inventado (ver o comentário no topo de
+// agtSeriesService.js). Os restantes campos são os que foram assinados e
+// submetidos, para auditoria: confirmar depois, sem ir aos logs do
+// servidor, exatamente o que foi pedido.
 model AgtSeriesFe {
   id                    String  @id @default(uuid())
   ano                   Int
@@ -1249,6 +1253,14 @@ model AgtSeriesFe {
   establishmentNumber   String  @map("establishment_number")
   taxRegistrationNumber String  @map("tax_registration_number")
   seriesCode            String? @map("series_code")
+  // O resto de seriesFEResult, tal como a AGT o devolve — String, não Int,
+  // porque são identificadores/limites de intervalo (ex. "999999999999"),
+  // não valores para somar. Confirmado em produção (HML): resultCode=1 vem
+  // sempre junto (ver solicitarSerie() em agtSandboxClient.js) — o sucesso
+  // real é seriesFEResult.seriesCode existir, não o resultCode.
+  authorizedQuantity    String? @map("authorized_quantity")
+  firstDocumentNo       String? @map("first_document_no")
+  lastDocumentNo        String? @map("last_document_no")
   submissionUUID        String  @map("submission_uuid")
   requestID             String? @map("request_id")
   resultCode            String  @map("result_code")

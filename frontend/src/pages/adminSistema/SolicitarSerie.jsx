@@ -23,10 +23,17 @@
 // "agtseriesfe" — ver agtSeriesService.solicitarSerie/listarHistorico) — o
 // histórico abaixo mostra o que está mesmo na base de dados, não o JSON
 // bruto da última tentativa desta sessão do browser: Ano, Tipo de
-// documento e Série atribuída pela AGT, um pedido por linha.
+// documento, Série atribuída e o intervalo/quantidade autorizados (tudo o
+// que vem em seriesFEResult), um pedido por linha.
+//
+// CONFIRMADO em produção (HML): a AGT devolve resultCode=1 mesmo quando
+// ACEITA o pedido — o sucesso não é resultCode "0" (ver
+// agtSandboxClient.solicitarSerie()). Por isso "resultCode" aparece aqui só
+// como mais um campo informativo da resposta, nunca como o sinal de
+// sucesso/recusa em si.
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
-import { formatDateTime } from '../../domain';
+import { formatDateTime, formatNumber } from '../../domain';
 import { Crumbs, PageHead, EmptyRow } from '../../components/BuyerUI';
 import { ErrorBanner, Field } from '../../components/Common';
 import { useI18n } from '../../i18n';
@@ -140,11 +147,20 @@ export default function SolicitarSerie() {
                 </dd>
               </div>
               {Object.entries((recusadoPelaAgt ? error.details : resultado?.resposta) || {})
-                .filter(([k]) => k !== 'resultCode' && k !== 'pedido')
+                .filter(([k]) => k !== 'resultCode' && k !== 'pedido' && k !== 'seriesFEResult')
                 .map(([k, v]) => (
                   <div key={k}>
                     <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{k}</dt>
                     <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</dd>
+                  </div>
+                ))}
+              {/* seriesFEResult mostrado campo a campo em vez de JSON.stringify — é
+                  exatamente o que fica gravado em agtSeriesFe (ver histórico abaixo). */}
+              {Object.entries((recusadoPelaAgt ? error.details : resultado?.resposta)?.seriesFEResult || {})
+                .map(([k, v]) => (
+                  <div key={`seriesFEResult.${k}`}>
+                    <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{`seriesFEResult.${k}`}</dt>
+                    <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{String(v)}</dd>
                   </div>
                 ))}
             </dl>
@@ -166,19 +182,23 @@ export default function SolicitarSerie() {
               <th>{t('Ano')}</th>
               <th>{t('Tipo de documento')}</th>
               <th>{t('Série atribuída')}</th>
+              <th>{t('Intervalo autorizado')}</th>
+              <th>{t('Qtd. autorizada')}</th>
               <th>{t('Pedido em')}</th>
             </tr>
           </thead>
           <tbody>
             {!historico ? (
-              <tr><td colSpan={4}><EmptyRow>{t('A carregar…')}</EmptyRow></td></tr>
+              <tr><td colSpan={6}><EmptyRow>{t('A carregar…')}</EmptyRow></td></tr>
             ) : historico.length === 0 ? (
-              <tr><td colSpan={4}><EmptyRow>{t('Nenhuma série pedida ainda.')}</EmptyRow></td></tr>
+              <tr><td colSpan={6}><EmptyRow>{t('Nenhuma série pedida ainda.')}</EmptyRow></td></tr>
             ) : historico.map((linha) => (
               <tr key={linha.id}>
                 <td>{linha.ano}</td>
                 <td>{linha.tipoDocumento}</td>
                 <td>{linha.seriesCode || '—'}</td>
+                <td>{linha.firstDocumentNo && linha.lastDocumentNo ? `${linha.firstDocumentNo} – ${linha.lastDocumentNo}` : '—'}</td>
+                <td>{linha.authorizedQuantity ? formatNumber(linha.authorizedQuantity) : '—'}</td>
                 <td>{formatDateTime(linha.createdAt)}</td>
               </tr>
             ))}

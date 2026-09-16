@@ -81,10 +81,13 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
  * errorList da resposta); não decide a forma do pedido, só o envia tal como
  * construirPedidoSerie o construiu.
  *
- * Lança AgtRecusadoError (502) se a AGT recusar (resultCode != "0") — nunca
- * deixa o AgtApiError original (um Error simples) propagar sem contexto de
- * HTTP, mesmo princípio de ServiceUnavailableError para configuração em
- * falta.
+ * Lança AgtRecusadoError (502) se a AGT recusar — nunca deixa o AgtApiError
+ * original (um Error simples) propagar sem contexto de HTTP, mesmo princípio
+ * de ServiceUnavailableError para configuração em falta. CONFIRMADO em
+ * produção: quem decide sucesso/recusa é agtSandboxClient.solicitarSerie()
+ * (presença de seriesFEResult.seriesCode, não resultCode "0" — a AGT devolve
+ * resultCode=1 mesmo quando aceita); esta função só reage ao que aquele
+ * decidiu, não repete a lógica.
  *
  * `contexto.solicitadoPorId`/`solicitadoPorNome` (opcionais, vêm de
  * req.user na rota) só servem para a linha gravada em AgtSeriesFe abaixo —
@@ -108,21 +111,26 @@ async function solicitarSerie(params, contexto = {}) {
   }
   logger.info('Solicitar Série: resposta da AGT', { submissionUUID: pedido.submissionUUID, resposta });
 
-  // Só se chega aqui quando a AGT aceitou (resultCode "0" — qualquer outro
-  // valor já teria lançado AgtRecusadoError acima). Grava-se o histórico
-  // (AgtSeriesFe) exatamente com o que foi submetido e o que a AGT devolveu
-  // — nunca um seriesCode inventado: se a AGT não o mandar na resposta, fica
-  // null, não um valor a adivinhar.
+  // Só se chega aqui quando a AGT aceitou (agtSandboxClient já confirmou
+  // seriesFEResult.seriesCode — qualquer outra resposta já teria lançado
+  // AgtRecusadoError acima). Grava-se o histórico (AgtSeriesFe) exatamente
+  // com o que foi submetido e o que a AGT devolveu em seriesFEResult —
+  // nunca um valor inventado: se algum destes campos não vier na resposta,
+  // fica null, não um valor a adivinhar.
+  const seriesFEResult = resposta?.seriesFEResult || {};
   await prisma.agtSeriesFe.create({
     data: {
       ano: pedido.seriesYear,
       tipoDocumento: pedido.documentType,
       establishmentNumber: pedido.establishmentNumber,
       taxRegistrationNumber: pedido.taxRegistrationNumber,
-      seriesCode: resposta?.seriesCode ?? null,
+      seriesCode: seriesFEResult.seriesCode ?? null,
+      authorizedQuantity: seriesFEResult.authorizedQuantity != null ? String(seriesFEResult.authorizedQuantity) : null,
+      firstDocumentNo: seriesFEResult.firstDocumentNo != null ? String(seriesFEResult.firstDocumentNo) : null,
+      lastDocumentNo: seriesFEResult.lastDocumentNo != null ? String(seriesFEResult.lastDocumentNo) : null,
       submissionUUID: pedido.submissionUUID,
       requestID: resposta?.requestID ?? null,
-      resultCode: String(resposta?.resultCode ?? '0'),
+      resultCode: String(resposta?.resultCode ?? ''),
       solicitadoPorId: contexto.solicitadoPorId ?? null,
       solicitadoPorNome: contexto.solicitadoPorNome ?? null,
     },

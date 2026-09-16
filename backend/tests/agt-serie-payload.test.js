@@ -47,7 +47,19 @@ function verificarJWS(jws) {
   return { ok, payload: JSON.parse(base64urlParaBuffer(p).toString('utf8')) };
 }
 
-const RESPOSTA_AGT = { resultCode: '0', requestID: 'REQ-TESTE-123', seriesCode: 'FT-2026-01' };
+// Formato REAL confirmado em produção (HML) — a AGT devolve resultCode=1
+// (não "0") mesmo quando aceita; o sucesso vem de seriesFEResult.seriesCode
+// existir (ver agtSandboxClient.solicitarSerie()). agtSandboxClient está
+// mockado neste ficheiro, por isso este RESPOSTA_AGT só precisa de refletir
+// a forma real — o predicado de sucesso em si já tem os seus próprios
+// testes em agt-sandbox-client.test.js.
+const RESPOSTA_AGT = {
+  resultCode: 1,
+  errorList: [''],
+  seriesFEResult: {
+    seriesCode: 'FT-2026-01', authorizedQuantity: '999999999999', firstDocumentNo: '1', lastDocumentNo: '999999999999',
+  },
+};
 
 let tokens;
 
@@ -161,7 +173,7 @@ describe('GET /api/faturacao/agt-serie-payload — sucesso', () => {
 });
 
 describe('GET /api/faturacao/agt-serie-payload — histórico (agtSeriesFe)', () => {
-  test('pedido aceite pela AGT fica gravado com o seriesCode/requestID devolvidos e quem pediu', async () => {
+  test('pedido aceite pela AGT fica gravado com o seriesFEResult completo e quem pediu', async () => {
     const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS);
     expect(res.status).toBe(200);
 
@@ -172,17 +184,26 @@ describe('GET /api/faturacao/agt-serie-payload — histórico (agtSeriesFe)', ()
     expect(linha.establishmentNumber).toBe('1');
     expect(linha.taxRegistrationNumber).toBe('5001636863');
     expect(linha.seriesCode).toBe('FT-2026-01');
-    expect(linha.requestID).toBe('REQ-TESTE-123');
-    expect(linha.resultCode).toBe('0');
+    expect(linha.authorizedQuantity).toBe('999999999999');
+    expect(linha.firstDocumentNo).toBe('1');
+    expect(linha.lastDocumentNo).toBe('999999999999');
+    expect(linha.requestID).toBeNull(); // não vem no formato real de solicitarSerie
+    // resultCode gravado tal como veio (1) — não é um sinal de sucesso/recusa
+    // aqui (ver comentário em agtSandboxClient.solicitarSerie()), só é
+    // guardado para auditoria de exatamente o que a AGT respondeu.
+    expect(linha.resultCode).toBe('1');
     expect(linha.solicitadoPorId).toBeTruthy();
   });
 
-  test('resposta da AGT sem seriesCode grava a linha na mesma, com seriesCode null (nunca inventado)', async () => {
-    agtSandboxClient.solicitarSerie.mockResolvedValue({ resultCode: '0', requestID: 'REQ-SEM-CODIGO' });
+  test('resposta da AGT sem seriesFEResult grava a linha na mesma, com os campos todos null (nunca inventados)', async () => {
+    agtSandboxClient.solicitarSerie.mockResolvedValue({ resultCode: 1, errorList: [''] });
 
     const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS);
     const linha = await prisma.agtSeriesFe.findFirst({ where: { submissionUUID: res.body.pedido.submissionUUID } });
     expect(linha.seriesCode).toBeNull();
+    expect(linha.authorizedQuantity).toBeNull();
+    expect(linha.firstDocumentNo).toBeNull();
+    expect(linha.lastDocumentNo).toBeNull();
   });
 });
 

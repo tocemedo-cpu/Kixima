@@ -195,9 +195,14 @@ function urlDe(nomeEndpoint, query) {
 
 /**
  * Ponto único de chamada aos 4 endpoints — trata `resultCode`/`errorList`
- * uma só vez, para os 4 métodos abaixo não repetirem essa lógica.
+ * uma só vez, para os métodos abaixo não repetirem essa lógica.
+ *
+ * `sucesso` (opcional): predicado `(dados) => boolean` para decidir se a
+ * resposta é um sucesso — por omissão, `resultCode === "0"` (o padrão dos
+ * outros endpoints). Existe porque solicitarSerie() NÃO segue esse padrão —
+ * ver o comentário nessa função.
  */
-async function pedido(nomeEndpoint, { method = 'GET', body, query } = {}) {
+async function pedido(nomeEndpoint, { method = 'GET', body, query, sucesso } = {}) {
   exigirConfiguracao();
   const url = urlDe(nomeEndpoint, query);
 
@@ -218,7 +223,8 @@ async function pedido(nomeEndpoint, { method = 'GET', body, query } = {}) {
   if (!resposta.ok) {
     throw new AgtApiError(nomeEndpoint, dados?.resultCode ?? String(resposta.status), dados?.errorList);
   }
-  if (dados && String(dados.resultCode) !== '0') {
+  const ehSucesso = dados == null || (sucesso ? sucesso(dados) : String(dados.resultCode) === '0');
+  if (!ehSucesso) {
     throw new AgtApiError(nomeEndpoint, dados.resultCode, dados.errorList);
   }
   return dados;
@@ -238,9 +244,21 @@ async function registarFactura(documento) {
  * POST /solicitarSerie — pedido de atribuição de série de numeração (DS.120,
  * 4.5), já assinado por quem chama (mesmo princípio de registarFactura: este
  * cliente só transporta, não decide a forma do envelope).
+ *
+ * CONFIRMADO em produção (HML): ao contrário dos outros endpoints, a AGT
+ * devolve resultCode=1 (não "0") mesmo quando ACEITA o pedido — o sinal real
+ * de sucesso é a presença de `seriesFEResult.seriesCode` (que vem sempre
+ * acompanhado de authorizedQuantity/firstDocumentNo/lastDocumentNo). Um
+ * "0" nunca foi confirmado a sério para este endpoint — era uma suposição
+ * herdada do padrão genérico dos outros 5, que tratava toda resposta real
+ * (resultCode=1, errorList vazio, série atribuída) como recusa.
  */
 async function solicitarSerie(documento) {
-  return pedido('solicitarSerie', { method: 'POST', body: documento });
+  return pedido('solicitarSerie', {
+    method: 'POST',
+    body: documento,
+    sucesso: (dados) => Boolean(dados?.seriesFEResult?.seriesCode),
+  });
 }
 
 /** GET /obterEstado — estado do processamento de uma submissão. */
