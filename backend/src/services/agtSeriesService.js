@@ -46,7 +46,7 @@ function construirPedidoSerie({ taxRegistrationNumber, seriesYear, documentType,
   // SolicitarSerie.jsx, e o logger.info completo abaixo — nenhum dos dois
   // precisa de um console.log à parte para se ver isto).
   const dadosAssinatura = {
-    taxRegistrationNumber, seriesYear, documentType, establishmentNumber, seriesContingencyIndicator,
+    taxRegistrationNumber, seriesYear, documentType, 'SEDE', 'N',
   };
 
   const jwsSignature = agtSigningService.assinarJWS(dadosAssinatura);
