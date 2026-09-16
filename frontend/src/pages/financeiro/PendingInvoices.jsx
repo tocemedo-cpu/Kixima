@@ -27,6 +27,7 @@ export default function PendingInvoices() {
   // RC). Uma recusa aqui NUNCA significa que o pagamento falhou — o
   // pagamento já está confirmado quando este resultado chega.
   const [agtResultado, setAgtResultado] = useState(null);
+  const [copiado, setCopiado] = useState(false);
 
   function load() { api.get('/api/financeiro/invoices').then(setData).catch((e) => setError(e.message)); }
   useEffect(load, []);
@@ -47,6 +48,17 @@ export default function PendingInvoices() {
       setPayModal(null); setProof(null);
       load();
     } catch (e) { setError(e.message); } finally { setPaying(null); }
+  }
+
+  async function copiarJson() {
+    if (!agtResultado) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(agtResultado, null, 2));
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch {
+      // Sem acesso à área de transferência — o JSON continua visível para copiar à mão.
+    }
   }
 
   const k = data?.kpis;
@@ -96,6 +108,18 @@ export default function PendingInvoices() {
               {agtResultado.erro?.details?.errorList?.length ? ` — ${JSON.stringify(agtResultado.erro.details.errorList)}` : ''}
             </p>
           )}
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 14 }}>
+            <span style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+              {t('JSON completo (payload enviado + resposta da AGT)')}
+            </span>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={copiarJson}>
+              {copiado ? t('Copiado!') : t('Copiar JSON')}
+            </button>
+          </div>
+          <pre className="bz-scroll-x" style={{ marginTop: 6, padding: 12, background: 'var(--surface-2, #fafafa)', borderRadius: 8, fontSize: 12, lineHeight: 1.5, maxHeight: 360, overflowY: 'auto' }}>
+            {JSON.stringify(agtResultado, null, 2)}
+          </pre>
         </div>
       ) : null}
 
