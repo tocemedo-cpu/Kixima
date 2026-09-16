@@ -29,12 +29,13 @@
 // há um documento único que una os dois.
 const crypto = require('crypto');
 const prisma = require('../config/database');
-const { NotFoundError, ForbiddenError, ValidationError, AgtRecusadoError } = require('../utils/errors');
+const { NotFoundError, ForbiddenError, ValidationError, BusinessRuleError, AgtRecusadoError } = require('../utils/errors');
 const faturacaoService = require('./faturacaoService');
 const creditNoteService = require('./creditNoteService');
 const taxService = require('./taxService');
 const agtSigningService = require('./agtSigningService');
 const agtSandboxClient = require('./agtSandboxClient');
+const agtSeriesService = require('./agtSeriesService');
 
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
@@ -64,16 +65,32 @@ function withholdingListDe(valor) {
   return [{ withholdingTaxType: 'IRT', withholdingTaxDescription: 'Retenção na fonte', withholdingTaxAmount: v }];
 }
 
-// `${tipo} ${numeroDocumentoAGT}` — reaproveita faturacaoService.numeroDocumentoAGT()
-// tal como já existe; sem série certificada, cai na referência interna do
-// KIXIMA (mesmo padrão que saftService.js já usa).
-function numeroDocumento(tipo, doc) {
-  const numero = faturacaoService.numeroDocumentoAGT({
-    serie: doc.serie,
-    ano: doc.assinadaEm ? new Date(doc.assinadaEm).getFullYear() : new Date().getFullYear(),
-    numeroNaSerie: doc.numeroNaSerie,
-  }) || doc.reference;
-  return `${tipo} ${numero}`;
+// `${tipo} ${seriesCode}/${numeroNaSerie}` — `seriesCode` é o REAL, atribuído
+// pela AGT (agtSeriesService.obterSeriePorTipo, gravado em AgtSeriesFe só
+// quando a AGT aceitou um pedido "Solicitar Série" para este tipo/ano — nunca
+// um valor inventado, nem a referência interna do KIXIMA como acontecia
+// antes). Foi exatamente esse fallback (`doc.reference`, ex.:
+// "FT FAT-2026-000009") que a AGT recusou numa submissão real de
+// registarFactura — a série tem de ser pedida primeiro para poder emitir
+// documentos deste tipo. `numeroNaSerie` continua a ser o contador interno
+// atómico e sem buracos de faturacaoService.atribuir() — é o "sucessivo" que
+// a AGT pede, só que agora prefixado pela série real dela, não pela interna.
+async function numeroDocumento(tipo, doc) {
+  if (!doc.numeroNaSerie) {
+    throw new BusinessRuleError(
+      `O documento "${doc.reference}" ainda não tem numeração de série interna atribuída — verifique a série `
+      + 'fiscal da empresa fornecedora (Company.serieFiscal) antes de gerar um documentNo AGT.',
+    );
+  }
+  const ano = doc.assinadaEm ? new Date(doc.assinadaEm).getFullYear() : new Date().getFullYear();
+  const serieAgt = await agtSeriesService.obterSeriePorTipo(tipo, { ano });
+  if (!serieAgt) {
+    throw new BusinessRuleError(
+      `Não existe nenhuma série atribuída pela AGT para documentos do tipo "${tipo}" no ano ${ano}. `
+      + 'Peça a série primeiro ("Solicitar Série") antes de emitir ou reenviar este documento.',
+    );
+  }
+  return `${tipo} ${serieAgt.seriesCode}/${doc.numeroNaSerie}`;
 }
 
 function clienteDe(documentoComPoOuContrato) {
@@ -87,7 +104,10 @@ function clienteDe(documentoComPoOuContrato) {
  * prontos). `paymentReceipt` só é passado pelo RC — nos outros tipos fica
  * `undefined`, o que o `JSON.stringify` (aqui e no `res.json()` da rota) omite
  * do JSON final, tal como a spec exige ("não preenchido para os demais
- * tipos", 4.1.6) — nunca `null`.
+ * tipos", 4.1.6) — nunca `null`. `withholdingTaxList` segue o mesmo
+ * tratamento quando vem vazia: uma recusa real da AGT (registarFactura)
+ * mostrou `"withholdingTaxList": []` a ser enviado sem necessidade — sem
+ * retenção, o campo fica de fora, não `[]`.
  */
 function montarDocumentoComum({ documentType, documentNo, dataDocumento, dataCriacao, taxRegistrationNumber, cliente, linhas, documentTotals, withholdingTaxList, paymentReceipt }) {
   const documentDate = new Date(dataDocumento || dataCriacao || Date.now()).toISOString().slice(0, 10);
@@ -111,11 +131,11 @@ function montarDocumentoComum({ documentType, documentNo, dataDocumento, dataCri
     lines: linhas,
     paymentReceipt,
     documentTotals,
-    withholdingTaxList,
+    withholdingTaxList: withholdingTaxList?.length ? withholdingTaxList : undefined,
   };
 }
 
-function documentoDeFatura(invoice, fornecedorTaxId) {
+async function documentoDeFatura(invoice, fornecedorTaxId) {
   const cliente = clienteDe(invoice);
   const linhas = invoice.lines.map((li) => ({
     lineNumber: li.lineNumber,
@@ -136,7 +156,7 @@ function documentoDeFatura(invoice, fornecedorTaxId) {
 
   return montarDocumentoComum({
     documentType: 'FT',
-    documentNo: numeroDocumento('FT', invoice),
+    documentNo: await numeroDocumento('FT', invoice),
     dataDocumento: invoice.assinadaEm,
     dataCriacao: invoice.createdAt,
     taxRegistrationNumber: fornecedorTaxId,
@@ -155,10 +175,10 @@ function documentoDeFatura(invoice, fornecedorTaxId) {
 // (decisão já tomada e documentada anteriormente). Para caber no schema da
 // AGT, gera-se uma única linha sintética representando o valor total
 // creditado, com `referenceInfo` a apontar para a fatura original.
-function documentoDeNotaCredito(creditNote, fornecedorTaxId) {
+async function documentoDeNotaCredito(creditNote, fornecedorTaxId) {
   const invoice = creditNote.invoice;
   const cliente = clienteDe(invoice);
-  const faturaOriginalNo = numeroDocumento('FT', invoice);
+  const faturaOriginalNo = await numeroDocumento('FT', invoice);
   const netAmount = Number(creditNote.netAmount || 0);
 
   const linhas = [{
@@ -188,7 +208,7 @@ function documentoDeNotaCredito(creditNote, fornecedorTaxId) {
 
   return montarDocumentoComum({
     documentType: 'NC',
-    documentNo: numeroDocumento('NC', creditNote),
+    documentNo: await numeroDocumento('NC', creditNote),
     dataDocumento: creditNote.assinadaEm || creditNote.issuedAt,
     dataCriacao: creditNote.createdAt,
     taxRegistrationNumber: fornecedorTaxId,
@@ -209,15 +229,15 @@ function documentoDeNotaCredito(creditNote, fornecedorTaxId) {
 // para o documento pago (`originatingON`/`documentDate` da FT, valor sem
 // impostos em `creditAmount`) — é este campo, não `lines`, que liga o recibo
 // à fatura que quita.
-function documentoDeRecibo(payment, fornecedorTaxId) {
+async function documentoDeRecibo(payment, fornecedorTaxId) {
   const invoice = payment.invoice;
   const cliente = clienteDe(invoice);
-  const faturaNo = numeroDocumento('FT', invoice);
+  const faturaNo = await numeroDocumento('FT', invoice);
   const faturaData = new Date(invoice.assinadaEm || invoice.createdAt).toISOString().slice(0, 10);
 
   return montarDocumentoComum({
     documentType: 'RC',
-    documentNo: numeroDocumento('RC', payment),
+    documentNo: await numeroDocumento('RC', payment),
     dataDocumento: payment.assinadaEm,
     dataCriacao: payment.processedAt,
     taxRegistrationNumber: fornecedorTaxId,
@@ -283,7 +303,7 @@ async function construirPayload(tipo, id, supplierCompanyId) {
     });
     if (!invoice) throw new NotFoundError('Fatura');
     verificarPosse(creditNoteService.partesDaFatura(invoice).supplierCompanyId, supplierCompanyId);
-    return envelope(fornecedor.taxId, documentoDeFatura(invoice, fornecedor.taxId));
+    return envelope(fornecedor.taxId, await documentoDeFatura(invoice, fornecedor.taxId));
   }
 
   if (tipo === 'NC') {
@@ -295,7 +315,7 @@ async function construirPayload(tipo, id, supplierCompanyId) {
     });
     if (!creditNote) throw new NotFoundError('Nota de crédito');
     verificarPosse(creditNoteService.partesDaFatura(creditNote.invoice).supplierCompanyId, supplierCompanyId);
-    return envelope(fornecedor.taxId, documentoDeNotaCredito(creditNote, fornecedor.taxId));
+    return envelope(fornecedor.taxId, await documentoDeNotaCredito(creditNote, fornecedor.taxId));
   }
 
   if (tipo === 'RC') {
@@ -307,7 +327,7 @@ async function construirPayload(tipo, id, supplierCompanyId) {
     });
     if (!payment) throw new NotFoundError('Recibo');
     verificarPosse(creditNoteService.partesDaFatura(payment.invoice).supplierCompanyId, supplierCompanyId);
-    return envelope(fornecedor.taxId, documentoDeRecibo(payment, fornecedor.taxId));
+    return envelope(fornecedor.taxId, await documentoDeRecibo(payment, fornecedor.taxId));
   }
 
   throw new ValidationError(

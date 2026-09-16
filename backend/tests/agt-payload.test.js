@@ -45,6 +45,17 @@ function verificarJWS(jws) {
   };
 }
 
+// numeroDocumento() agora exige uma série REAL, atribuída pela AGT
+// (AgtSeriesFe, ver agtSeriesService.obterSeriePorTipo) — nunca mais um
+// fallback para a referência interna do KIXIMA (foi exatamente esse fallback
+// que a AGT recusou numa submissão real). Os testes têm de semear essa série
+// como qualquer outro pré-requisito de dados.
+const ANO_TESTE = new Date().getFullYear();
+const ESTABLISHMENT_NUMBER_TESTE = '1';
+const SERIES_CODE_FT = 'AGTPAY-FT-TESTE';
+const SERIES_CODE_NC = 'AGTPAY-NC-TESTE';
+const SERIES_CODE_RC = 'AGTPAY-RC-TESTE';
+
 let fornecedorId;
 let fornecedorTaxId;
 let compradorId;
@@ -60,6 +71,17 @@ let creditNoteComRetencao;
 let paymentComRetencao;
 
 beforeAll(async () => {
+  const config = require('../src/config/env');
+  config.agt.establishmentNumber = ESTABLISHMENT_NUMBER_TESTE;
+
+  await prisma.agtSeriesFe.createMany({
+    data: [
+      { ano: ANO_TESTE, tipoDocumento: 'FT', establishmentNumber: ESTABLISHMENT_NUMBER_TESTE, taxRegistrationNumber: 'AO-FOR-0001', seriesCode: SERIES_CODE_FT, submissionUUID: crypto.randomUUID(), resultCode: '1' },
+      { ano: ANO_TESTE, tipoDocumento: 'NC', establishmentNumber: ESTABLISHMENT_NUMBER_TESTE, taxRegistrationNumber: 'AO-FOR-0001', seriesCode: SERIES_CODE_NC, submissionUUID: crypto.randomUUID(), resultCode: '1' },
+      { ano: ANO_TESTE, tipoDocumento: 'RC', establishmentNumber: ESTABLISHMENT_NUMBER_TESTE, taxRegistrationNumber: 'AO-FOR-0001', seriesCode: SERIES_CODE_RC, submissionUUID: crypto.randomUUID(), resultCode: '1' },
+    ],
+  });
+
   const fornecedor = await prisma.company.findUnique({ where: { taxId: 'AO-FOR-0001' } });
   const comprador = await prisma.company.findUnique({ where: { taxId: 'AO-CLI-0001' } });
   const compradorUser = await prisma.user.findUnique({ where: { email: 'comprador@petroangola.co.ao' } });
@@ -178,13 +200,14 @@ afterAll(async () => {
   await prisma.invoice.deleteMany({ where: { serie: { in: [SERIE, SERIE_RET] } } });
   await prisma.purchaseOrder.deleteMany({ where: { id: { in: [poId, poIdRet] } } });
   await prisma.$executeRaw`DELETE FROM "series_faturacao" WHERE "codigo" IN (${SERIE}, ${SERIE_NC}, ${SERIE_RC}, ${SERIE_RET}, ${SERIE_RET_NC}, ${SERIE_RET_RC})`;
+  await prisma.agtSeriesFe.deleteMany({ where: { seriesCode: { in: [SERIES_CODE_FT, SERIES_CODE_NC, SERIES_CODE_RC] } } });
   await prisma.$disconnect();
 });
 
 describe('construirPayload — FT (fatura)', () => {
-  test('produz o envelope com schemaVersion 1.2, NIF do fornecedor e submissionUUID', async () => {
+  test('produz o envelope com schemaVersion 2.0, NIF do fornecedor e submissionUUID', async () => {
     const payload = await agtPayloadService.construirPayload('FT', invoice.id, fornecedorId);
-    expect(payload.schemaVersion).toBe('1.2');
+    expect(payload.schemaVersion).toBe('2.0');
     expect(payload.taxRegistrationNumber).toBe(fornecedorTaxId);
     expect(payload.numberOfEntries).toBe(1);
     expect(payload.documents).toHaveLength(1);
@@ -192,19 +215,19 @@ describe('construirPayload — FT (fatura)', () => {
     expect(new Date(payload.submissionTimeStamp).toString()).not.toBe('Invalid Date');
   });
 
-  test('documentNo usa o formato "FT <numeroDocumentoAGT>", linhas e totais batem com a InvoiceLine/Invoice', async () => {
+  test('documentNo usa o formato "FT <seriesCode>/<numeroNaSerie>" com a série REAL da AGT, linhas e totais batem com a InvoiceLine/Invoice', async () => {
     const payload = await agtPayloadService.construirPayload('FT', invoice.id, fornecedorId);
     const doc = payload.documents[0];
-    const numeroEsperado = faturacaoService.numeroDocumentoAGT({
-      serie: invoice.serie, ano: invoice.assinadaEm.getFullYear(), numeroNaSerie: invoice.numeroNaSerie,
-    });
     expect(doc.documentType).toBe('FT');
-    expect(doc.documentNo).toBe(`FT ${numeroEsperado}`);
+    expect(doc.documentNo).toBe(`FT ${SERIES_CODE_FT}/${invoice.numeroNaSerie}`);
     expect(doc.lines).toHaveLength(1);
     expect(doc.lines[0]).toMatchObject({ productCode: 'SKU-AGT-1', quantity: 2, unitPrice: 500, creditAmount: 1000, debitAmount: 0 });
     expect(doc.lines[0].taxes[0]).toMatchObject({ taxType: 'IVA', taxCountryRegion: 'AO', taxCode: 'NOR', taxPercentage: 14, taxContribution: 140 });
     expect(doc.documentTotals).toEqual({ taxPayable: 140, netTotal: 1000, grossTotal: 1140 });
-    expect(doc.withholdingTaxList).toEqual([]);
+    // Sem retenção, "withholdingTaxList" fica de fora do documento — nunca
+    // "[]" (foi exatamente esse "[]" desnecessário numa recusa real da AGT
+    // que motivou esta mudança). Mesmo tratamento do paymentReceipt abaixo.
+    expect(doc.withholdingTaxList).toBeUndefined();
     // paymentReceipt "não é preenchido para os demais tipos de documentos de
     // facturação" (spec oficial 4.1.6) — fica undefined aqui (o objeto JS),
     // e a verificação de que a CHAVE desaparece do JSON final (não fica
@@ -245,15 +268,14 @@ describe('construirPayload — NC (nota de crédito)', () => {
   test('gera uma linha sintética com referenceInfo apontando para a fatura original', async () => {
     const payload = await agtPayloadService.construirPayload('NC', creditNote.id, fornecedorId);
     const doc = payload.documents[0];
-    const numeroFatura = faturacaoService.numeroDocumentoAGT({
-      serie: invoice.serie, ano: invoice.assinadaEm.getFullYear(), numeroNaSerie: invoice.numeroNaSerie,
-    });
+    const numeroFatura = `${SERIES_CODE_FT}/${invoice.numeroNaSerie}`;
     expect(doc.documentType).toBe('NC');
+    expect(doc.documentNo).toBe(`NC ${SERIES_CODE_NC}/${creditNote.numeroNaSerie}`);
     expect(doc.lines).toHaveLength(1);
     expect(doc.lines[0].referenceInfo).toEqual({ reason: 'retificacao', reference: `FT ${numeroFatura}`, referenceItemLineNo: 1 });
     expect(doc.lines[0]).toMatchObject({ debitAmount: 200, creditAmount: 0 });
     expect(doc.documentTotals).toEqual({ taxPayable: 28, netTotal: 200, grossTotal: 228 });
-    expect(doc.withholdingTaxList).toEqual([]); // fatura original sem retenção
+    expect(doc.withholdingTaxList).toBeUndefined(); // fatura original sem retenção
 
     const { ok, payload: assinado } = verificarJWS(doc.jwsDocumentSignature);
     expect(ok).toBe(true);
@@ -273,10 +295,9 @@ describe('construirPayload — RC (recibo)', () => {
   test('sem linhas, totais herdados da fatura quitada, paymentReceipt aponta para a fatura paga', async () => {
     const payload = await agtPayloadService.construirPayload('RC', payment.id, fornecedorId);
     const doc = payload.documents[0];
-    const numeroFatura = faturacaoService.numeroDocumentoAGT({
-      serie: invoice.serie, ano: invoice.assinadaEm.getFullYear(), numeroNaSerie: invoice.numeroNaSerie,
-    });
+    const numeroFatura = `${SERIES_CODE_FT}/${invoice.numeroNaSerie}`;
     expect(doc.documentType).toBe('RC');
+    expect(doc.documentNo).toBe(`RC ${SERIES_CODE_RC}/${payment.numeroNaSerie}`);
     expect(doc.lines).toEqual([]);
     expect(doc.documentTotals).toEqual({ taxPayable: 140, netTotal: 1000, grossTotal: 1140 });
     // paymentReceipt é obrigatório no RC (spec oficial 4.1.6) — liga o
