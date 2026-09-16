@@ -5,32 +5,15 @@
 // requisito documentado antes de se poder emitir documentos fiscais com
 // série própria (ver agtSeriesService.js).
 //
-// Desde que agtSeriesService.solicitarSerie() passou a chamar mesmo o
-// endpoint solicitarSerie da AGT (não só construir e assinar), a resposta
-// do backend é { pedido, resposta } — pedido é o JSON assinado, resposta é
-// o que a própria AGT devolveu. "Dados assinados" abaixo mostra em claro
-// exatamente os 5 campos que entram na assinatura JWS (ver dadosAssinatura
-// em agtSeriesService.construirPedidoSerie).
-//
-// Quando a AGT RECUSA o pedido (AgtRecusadoError, 502), o backend devolve o
-// `pedido` construído dentro de error.details.pedido — sem isto, uma recusa
-// só mostrava o texto do erro, nunca os dados que o causaram. `pedido`
-// abaixo vem de resultado (sucesso) OU de error.details (recusa), para o
-// painel "Dados assinados" aparecer sempre que existir um pedido para
-// mostrar, com ou sem sucesso.
-//
 // Cada pedido ACEITE pela AGT fica gravado em agtSeriesFe (tabela
 // "agtseriesfe" — ver agtSeriesService.solicitarSerie/listarHistorico) — o
-// histórico abaixo mostra o que está mesmo na base de dados, não o JSON
-// bruto da última tentativa desta sessão do browser: Ano, Tipo de
-// documento, Série atribuída e o intervalo/quantidade autorizados (tudo o
-// que vem em seriesFEResult), um pedido por linha.
-//
-// CONFIRMADO em produção (HML): a AGT devolve resultCode=1 mesmo quando
-// ACEITA o pedido — o sucesso não é resultCode "0" (ver
-// agtSandboxClient.solicitarSerie()). Por isso "resultCode" aparece aqui só
-// como mais um campo informativo da resposta, nunca como o sinal de
-// sucesso/recusa em si.
+// histórico abaixo é a única coisa mostrada: Ano, Tipo de documento, Série
+// atribuída e o intervalo/quantidade autorizados (tudo o que vem em
+// seriesFEResult), um pedido por linha. Os painéis "Dados assinados"/
+// "Resposta da AGT" (o JSON bruto do último pedido desta sessão do browser)
+// existiram só enquanto a gravação em agtSeriesFe estava a ser construída e
+// validada — com a implementação terminada e o histórico a funcionar,
+// deixaram de ser precisos.
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { formatDateTime, formatNumber } from '../../domain';
@@ -44,7 +27,6 @@ const ANO_ATUAL = new Date().getFullYear();
 export default function SolicitarSerie() {
   const { t } = useI18n();
   const [tipoDocumento, setTipoDocumento] = useState('FT');
-  const [resultado, setResultado] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [historico, setHistorico] = useState(null);
@@ -59,10 +41,9 @@ export default function SolicitarSerie() {
 
   async function gerar(e) {
     e.preventDefault();
-    setBusy(true); setError(null); setResultado(null);
+    setBusy(true); setError(null);
     try {
-      const data = await api.get('/api/faturacao/agt-serie-payload', { ano: ANO_ATUAL, tipoDocumento });
-      setResultado(data);
+      await api.get('/api/faturacao/agt-serie-payload', { ano: ANO_ATUAL, tipoDocumento });
       carregarHistorico(); // o pedido que acabou de ser aceite já está gravado — refrescar a tabela
     } catch (e2) {
       setError(e2);
@@ -70,13 +51,6 @@ export default function SolicitarSerie() {
       setBusy(false);
     }
   }
-
-  // Sucesso: pedido vem de resultado.pedido. Recusa da AGT (AgtRecusadoError):
-  // o backend devolve o mesmo pedido construído em error.details.pedido — ver
-  // o comentário no topo do ficheiro. Nos outros erros (503 de configuração
-  // em falta, 422 de validação, ...) não há pedido nenhum para mostrar.
-  const pedido = resultado?.pedido || error?.details?.pedido || null;
-  const recusadoPelaAgt = error?.code === 'AGT_RECUSOU';
 
   return (
     <div>
@@ -107,66 +81,6 @@ export default function SolicitarSerie() {
           {busy ? t('A submeter…') : t('Gerar e submeter pedido')}
         </button>
       </form>
-
-      {pedido ? (
-        <>
-          <div className="bz-card" style={{ padding: 16, marginTop: 16 }}>
-            <strong style={{ fontSize: 13.5 }}>{t('Dados assinados')}</strong>
-            <p style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
-              {t('Exatamente os campos que entraram na assinatura JWS deste pedido — confira-os antes de considerar a submissão válida.')}
-            </p>
-            <dl style={{
-              marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12,
-            }}
-            >
-              {[
-                ['NIF (taxRegistrationNumber)', pedido.taxRegistrationNumber],
-                ['Ano da série (seriesYear)', pedido.seriesYear],
-                ['Tipo de documento (documentType)', pedido.documentType],
-                ['Estabelecimento (establishmentNumber)', pedido.establishmentNumber],
-                ['Indicador de contingência (seriesContingencyIndicator)', pedido.seriesContingencyIndicator],
-              ].map(([rotulo, valor]) => (
-                <div key={rotulo}>
-                  <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{t(rotulo)}</dt>
-                  <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{String(valor ?? '—')}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-
-          <div className="bz-card" style={{ padding: 16, marginTop: 16 }}>
-            <strong style={{ fontSize: 13.5 }}>{recusadoPelaAgt ? t('A AGT recusou o pedido') : t('Resposta da AGT')}</strong>
-            <dl style={{
-              marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12,
-            }}
-            >
-              <div>
-                <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{t('resultCode')}</dt>
-                <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
-                  {String((recusadoPelaAgt ? error.details?.resultCode : resultado?.resposta?.resultCode) ?? '—')}
-                </dd>
-              </div>
-              {Object.entries((recusadoPelaAgt ? error.details : resultado?.resposta) || {})
-                .filter(([k]) => k !== 'resultCode' && k !== 'pedido' && k !== 'seriesFEResult')
-                .map(([k, v]) => (
-                  <div key={k}>
-                    <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{k}</dt>
-                    <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</dd>
-                  </div>
-                ))}
-              {/* seriesFEResult mostrado campo a campo em vez de JSON.stringify — é
-                  exatamente o que fica gravado em agtSeriesFe (ver histórico abaixo). */}
-              {Object.entries((recusadoPelaAgt ? error.details : resultado?.resposta)?.seriesFEResult || {})
-                .map(([k, v]) => (
-                  <div key={`seriesFEResult.${k}`}>
-                    <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{`seriesFEResult.${k}`}</dt>
-                    <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{String(v)}</dd>
-                  </div>
-                ))}
-            </dl>
-          </div>
-        </>
-      ) : null}
 
       <div className="bz-card bz-tablewrap" style={{ marginTop: 16 }}>
         <div style={{ padding: '12px 16px 0' }}>
