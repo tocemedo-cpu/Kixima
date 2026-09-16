@@ -11,7 +11,7 @@
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
 const { requireRole, requirePermission } = require('../middleware/rbac');
-const { ValidationError, ServiceUnavailableError, NotFoundError } = require('../utils/errors');
+const { ValidationError, ServiceUnavailableError } = require('../utils/errors');
 const { FATURACAO } = require('../utils/adminAreas');
 const config = require('../config/env');
 const logger = require('../config/logger');
@@ -180,24 +180,6 @@ router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission
 // aqui, a AGT devolve "1" mesmo quando aceita).
 router.get('/agt-series-fe', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), async (req, res) => {
   res.json(await agtSeriesService.listarHistorico());
-});
-
-// Série ATUALMENTE atribuída pela AGT para um tipo de documento (FT, FR, NC,
-// RC, ND, ...) — só consulta o histórico (agtSeriesFe), não gera nem
-// submete nada. Usa-se antes de emitir um documento desse tipo, para saber
-// que seriesCode entra no `documentNo` — nunca uma série fictícia inventada
-// no código (ver o comentário no topo de agtSeriesService.js sobre
-// "CERT-FR"). `ano`/`establishmentNumber` são opcionais na query — por
-// omissão, o ano em curso e o estabelecimento configurado no ambiente
-// (config.agt.establishmentNumber). 404 se nunca se pediu série nenhuma
-// desse tipo/ano/estabelecimento.
-router.get('/agt-serie/:tipo', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), async (req, res) => {
-  const opcoes = {};
-  if (req.query.ano) opcoes.ano = Number(req.query.ano);
-  if (req.query.establishmentNumber) opcoes.establishmentNumber = req.query.establishmentNumber;
-  const serie = await agtSeriesService.obterSeriePorTipo(req.params.tipo, opcoes);
-  if (!serie) throw new NotFoundError('Série');
-  res.json(serie);
 });
 
 // Métricas de negócio da plataforma inteira — só Admin do Sistema.
