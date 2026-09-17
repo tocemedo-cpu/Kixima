@@ -126,6 +126,23 @@ router.get(
   },
 );
 
+// Estado REAL do processamento da última submissão do FT desta fatura à AGT
+// (obterEstado, DS.120) — usa o requestID já gravado (Invoice.agtRequestId).
+// Existe para quando a resposta síncrona de registarFactura não chega para
+// diagnosticar uma recusa (errorList pouco informativa, ex.: `[""]`). Mesma
+// posse que /agt-payload: SUBMETE mesmo o pedido à AGT, por isso exige a
+// configuração da Sandbox, não só a assinatura.
+router.get(
+  '/agt-estado/:invoiceId',
+  requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'ADMIN_SISTEMA'),
+  requirePermission(FATURACAO),
+  async (req, res) => {
+    exigirSandboxAgtConfigurada();
+    const supplierCompanyId = resolverEmpresaFornecedora(req);
+    res.json(await agtPayloadService.consultarEstadoFatura(req.params.invoiceId, supplierCompanyId));
+  },
+);
+
 // Pedido de série de numeração à AGT ("Solicitar Série", DS.120, 4.5) — só o
 // Admin do Sistema, área Faturação: é um passo de configuração/pré-requisito
 // para a conta de homologação/produção da AGT (o mesmo NIF de

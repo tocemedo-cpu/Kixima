@@ -171,12 +171,12 @@ describe('Endpoints da Sandbox — cabeçalhos, rota e tratamento de resultCode'
     });
   });
 
-  test('obterEstado(): GET com os parâmetros na query string', async () => {
+  test('obterEstado(): GET só com requestID na query string', async () => {
     const fetchMock = mockFetch(200, { resultCode: '0', status: 'PROCESSADO' });
-    await agtSandboxClient.obterEstado({ submissionUUID: 'uuid-abc' });
+    await agtSandboxClient.obterEstado({ requestID: '202600003355688' });
 
     const [url, opcoes] = fetchMock.mock.calls[0];
-    expect(String(url)).toBe('https://sifphml.minfin.gov.ao/sigt/fe/v1/obterEstado?submissionUUID=uuid-abc');
+    expect(String(url)).toBe('https://sifphml.minfin.gov.ao/sigt/fe/v1/obterEstado?requestID=202600003355688');
     expect(opcoes.method).toBe('GET');
     expect(opcoes.body).toBeUndefined();
   });

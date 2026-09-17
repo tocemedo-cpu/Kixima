@@ -31,7 +31,7 @@
 // há um documento único que una os dois.
 const crypto = require('crypto');
 const prisma = require('../config/database');
-const { NotFoundError, ForbiddenError, ValidationError, AgtRecusadoError } = require('../utils/errors');
+const { NotFoundError, ForbiddenError, ValidationError, BusinessRuleError, AgtRecusadoError } = require('../utils/errors');
 const faturacaoService = require('./faturacaoService');
 const creditNoteService = require('./creditNoteService');
 const taxService = require('./taxService');
@@ -350,4 +350,32 @@ async function submeterFatura(invoiceId, supplierCompanyId) {
   return { payload, resposta };
 }
 
-module.exports = { construirPayload, submeterFatura };
+/**
+ * Consulta à AGT (obterEstado) o estado real do processamento da ÚLTIMA
+ * submissão do FT desta fatura — usa o `requestID` já gravado
+ * (Invoice.agtRequestId, ver paymentService.processPayment), NUNCA o
+ * submissionUUID/documentNo: a AGT identifica esta consulta só pelo
+ * requestID (ver agtSandboxClient.obterEstado()). Existe para os casos em
+ * que a resposta síncrona de registarFactura não chega para diagnosticar
+ * uma recusa (`errorList` pouco informativa, ex.: `[""]`) — obterEstado é
+ * onde se vê o motivo real.
+ */
+async function consultarEstadoFatura(invoiceId, supplierCompanyId) {
+  const invoice = await prisma.invoice.findUnique({
+    where: { id: invoiceId },
+    include: { purchaseOrder: { select: SELECT_PO }, contract: { select: SELECT_CONTRATO } },
+  });
+  if (!invoice) throw new NotFoundError('Fatura');
+  verificarPosse(creditNoteService.partesDaFatura(invoice).supplierCompanyId, supplierCompanyId);
+
+  if (!invoice.agtRequestId) {
+    throw new BusinessRuleError(
+      `A fatura "${invoice.reference}" ainda não tem nenhum requestID da AGT gravado — só é possível consultar o `
+      + 'estado depois de pelo menos uma submissão (Pagar) que tenha chegado à AGT.',
+    );
+  }
+
+  return agtSandboxClient.obterEstado({ requestID: invoice.agtRequestId });
+}
+
+module.exports = { construirPayload, submeterFatura, consultarEstadoFatura };

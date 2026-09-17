@@ -293,9 +293,16 @@ async function solicitarSerie(documento) {
   });
 }
 
-/** GET /obterEstado — estado do processamento de uma submissão. */
-async function obterEstado({ submissionUUID, documentNo } = {}) {
-  return pedido('obterEstado', { query: { submissionUUID, documentNo } });
+/**
+ * GET /obterEstado — estado do processamento de uma submissão já feita
+ * (ex.: registarFactura), incluindo o motivo real de uma recusa quando
+ * `errorList` na resposta síncrona não é suficiente (ex.: `[""]`). Só
+ * precisa do `requestID` que a AGT devolveu nessa submissão — não do
+ * `submissionUUID` nem do `documentNo`, que identificam o PEDIDO, não a
+ * consulta ao seu estado.
+ */
+async function obterEstado({ requestID } = {}) {
+  return pedido('obterEstado', { query: { requestID } });
 }
 
 /** GET /consultarFactura — detalhe de uma fatura já registada. */

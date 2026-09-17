@@ -193,7 +193,11 @@ async function processPayment(invoiceId, processedById, buyerCompanyId, proofFil
             agtErro: null,
           }
           : {
-            agtRequestId: null,
+            // A AGT pode atribuir requestID mesmo numa recusa (ex.:
+            // `errorList` preenchida mas ainda assim com requestID) —
+            // guarda-se sempre que vier, é o que permite consultar depois o
+            // motivo real via obterEstado (agtPayloadService.consultarEstadoFatura).
+            agtRequestId: agtInvoiceResubmission.erro?.details?.respostaBruta?.requestID ?? null,
             agtResultCode: agtInvoiceResubmission.erro?.details?.resultCode != null ? String(agtInvoiceResubmission.erro.details.resultCode) : null,
             agtErro: agtInvoiceResubmission.erro,
           },
