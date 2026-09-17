@@ -72,12 +72,18 @@ class BusinessRuleError extends AppError {
  * nunca os dados (taxRegistrationNumber, establishmentNumber, ...) que os
  * geraram. Ver o resumo "Dados assinados" em SolicitarSerie.jsx, que passa
  * a mostrar isto tanto no sucesso como na recusa.
+ *
+ * `respostaBruta` (de agtApiError.respostaBruta) é o corpo COMPLETO da
+ * resposta da AGT, tal como veio — não só o `resultCode`/`errorList`
+ * resumidos. Sem isto, diagnosticar uma recusa inesperada exigia adivinhar
+ * o que a AGT tinha mesmo devolvido (ex.: se vinha `requestID`).
  */
 class AgtRecusadoError extends AppError {
   constructor(agtApiError, pedido = null) {
     super(agtApiError.message, 502, 'AGT_RECUSOU');
     this.details = {
-      endpoint: agtApiError.endpoint, resultCode: agtApiError.resultCode, errorList: agtApiError.errorList, pedido,
+      endpoint: agtApiError.endpoint, resultCode: agtApiError.resultCode, errorList: agtApiError.errorList,
+      respostaBruta: agtApiError.respostaBruta ?? null, pedido,
     };
   }
 }

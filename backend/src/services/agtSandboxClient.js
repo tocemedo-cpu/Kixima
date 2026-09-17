@@ -91,18 +91,26 @@ function estado() {
 // --- Erro tipado -------------------------------------------------------------
 
 /**
- * Erro de negócio devolvido pela AGT — sempre que `resultCode` vem diferente
- * de "0", a resposta é tratada como recusa, nunca como sucesso parcial.
- * `errorList` é exposta tal como a AGT a devolveu, para quem chama decidir o
- * que fazer com cada erro (não se resume nem se traduz aqui).
+ * Erro de negócio devolvido pela AGT — sempre que a resposta não passa no
+ * critério de sucesso do endpoint, é tratada como recusa, nunca como sucesso
+ * parcial. `errorList` é exposta tal como a AGT a devolveu, para quem chama
+ * decidir o que fazer com cada erro (não se resume nem se traduz aqui).
+ *
+ * `respostaBruta` (o corpo COMPLETO da resposta, tal como veio) viaja à
+ * parte de `resultCode`/`errorList` — já se confirmou na prática (ver
+ * solicitarSerie/registarFactura) que resumir a resposta a esses dois campos
+ * esconde o sinal real de sucesso/recusa de alguns endpoints (ex.:
+ * `requestID`, `seriesFEResult`). Sem isto, diagnosticar uma recusa
+ * inesperada exigia adivinhar o que a AGT tinha mesmo devolvido.
  */
 class AgtApiError extends Error {
-  constructor(endpoint, resultCode, errorList) {
+  constructor(endpoint, resultCode, errorList, respostaBruta) {
     super(`AGT recusou o pedido a "${endpoint}" (resultCode=${resultCode}): ${JSON.stringify(errorList || [])}`);
     this.name = 'AgtApiError';
     this.endpoint = endpoint;
     this.resultCode = resultCode;
     this.errorList = errorList || [];
+    this.respostaBruta = respostaBruta ?? null;
   }
 }
 
@@ -221,13 +229,24 @@ async function pedido(nomeEndpoint, { method = 'GET', body, query, sucesso } = {
   }
 
   if (!resposta.ok) {
-    throw new AgtApiError(nomeEndpoint, dados?.resultCode ?? String(resposta.status), dados?.errorList);
+    throw new AgtApiError(nomeEndpoint, dados?.resultCode ?? String(resposta.status), dados?.errorList, dados);
   }
   const ehSucesso = dados == null || (sucesso ? sucesso(dados) : String(dados.resultCode) === '0');
   if (!ehSucesso) {
-    throw new AgtApiError(nomeEndpoint, dados.resultCode, dados.errorList);
+    throw new AgtApiError(nomeEndpoint, dados.resultCode, dados.errorList, dados);
   }
   return dados;
+}
+
+// A AGT não é consistente na forma como assinala "sem erros" em
+// `errorList`: já se confirmaram em produção tanto `[]` (vazio) como `[""]`
+// (um elemento vazio) em respostas que não são recusas reais — mesmo padrão
+// já visto em seriesFEResult (solicitarSerie). Só conta como recusa de
+// verdade uma entrada com conteúdo (ex.: `{code: "E001", message: "..."}`
+// ou uma string não vazia) — nunca um elemento vazio isolado.
+function semErrosReais(errorList) {
+  if (!errorList) return true;
+  return errorList.every((e) => !e || (typeof e === 'string' && !e.trim()));
 }
 
 /**
@@ -238,17 +257,18 @@ async function pedido(nomeEndpoint, { method = 'GET', body, query, sucesso } = {
  *
  * CONFIRMADO em produção: tal como solicitarSerie() acima, a resposta real
  * deste endpoint NÃO traz `resultCode` nenhum quando aceita — só
- * `requestID` e `errorList` vazio (ex.: `{"requestID": "202500...",
- * "errorList": []}`). O `pedido()` genérico assume por omissão
- * `resultCode === "0"`, que aqui nunca bate certo (`resultCode` vem
- * `undefined`) — tratava uma aceitação real como recusa. O sinal real de
- * sucesso é ter `requestID` E `errorList` vazio.
+ * `requestID` (ex.: `{"requestID": "202500...", "errorList": []}`). O
+ * `pedido()` genérico assume por omissão `resultCode === "0"`, que aqui
+ * nunca bate certo (`resultCode` vem `undefined`) — tratava uma aceitação
+ * real como recusa. O sinal real de sucesso é ter `requestID`; `errorList`
+ * só reforça a recusa quando tem conteúdo real (ver semErrosReais acima) —
+ * um elemento vazio isolado (`[""]`) não é, por si só, uma recusa.
  */
 async function registarFactura(documento) {
   return pedido('registarFactura', {
     method: 'POST',
     body: documento,
-    sucesso: (dados) => Boolean(dados?.requestID) && !(dados?.errorList?.length),
+    sucesso: (dados) => Boolean(dados?.requestID) && semErrosReais(dados?.errorList),
   });
 }
 

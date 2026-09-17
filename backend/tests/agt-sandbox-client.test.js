@@ -118,6 +118,21 @@ describe('Endpoints da Sandbox — cabeçalhos, rota e tratamento de resultCode'
     expect(opcoes.headers['Content-Type']).toBe('application/json');
   });
 
+  test('registarFactura(): errorList com um elemento vazio ("[\'\']") não é recusa quando há requestID — mesma inconsistência já vista em seriesFEResult', async () => {
+    const RESPOSTA_REAL_AGT = { requestID: '202500000010700', errorList: [''] };
+    mockFetch(200, RESPOSTA_REAL_AGT);
+    await expect(agtSandboxClient.registarFactura({})).resolves.toEqual(RESPOSTA_REAL_AGT);
+  });
+
+  test('registarFactura(): recusa expõe a resposta bruta completa da AGT em respostaBruta', async () => {
+    const RESPOSTA_REAL_AGT = { errorList: [{ code: 'E001', message: 'NIF inválido' }] };
+    mockFetch(200, RESPOSTA_REAL_AGT);
+    await expect(agtSandboxClient.registarFactura({})).rejects.toMatchObject({
+      name: 'AgtApiError',
+      respostaBruta: RESPOSTA_REAL_AGT,
+    });
+  });
+
   test('solicitarSerie(): POST com corpo JSON e Authorization Basic corretos — sucesso real da AGT (resultCode=1 + seriesFEResult)', async () => {
     // Resposta real confirmada em HML: resultCode=1 (NÃO "0") mesmo quando a
     // AGT aceita — o sinal de sucesso é seriesFEResult.seriesCode, não o
