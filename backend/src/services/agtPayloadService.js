@@ -4,11 +4,13 @@
 // tipos partilham `montarDocumentoComum` (envelope, assinatura, totais) e só
 // diferem no que é mesmo específico de cada um — as linhas.
 //
-// SÓ LÊ. Não toca em nenhum fluxo de criação de documento — Invoice,
+// NÃO TOCA no fluxo de criação/certificação interna do documento — Invoice,
 // CreditNote e Payment já recebem `serie`/`numeroNaSerie`/`hashDocumento`/
 // `assinadaEm` em todos os pontos de criação (poService, creditNoteService,
 // paymentService, conciliacaoService, todos via faturacaoService.atribuir()).
-// Este serviço monta o payload a partir do que já está gravado.
+// A ÚNICA escrita feita por este serviço é `agtDocumentNo` — atribuído uma
+// única vez por agtSeriesService.atribuirDocumentNo() (ver numeroDocumento()
+// abaixo), na primeira vez que o payload deste documento é construído.
 //
 // construirPayload() SÓ GERA E ASSINA — não submete a nada, é o que a rota
 // GET /agt-payload/:tipo/:id devolve. submeterFatura() (abaixo) é que
@@ -29,7 +31,7 @@
 // há um documento único que una os dois.
 const crypto = require('crypto');
 const prisma = require('../config/database');
-const { NotFoundError, ForbiddenError, ValidationError, BusinessRuleError, AgtRecusadoError } = require('../utils/errors');
+const { NotFoundError, ForbiddenError, ValidationError, AgtRecusadoError } = require('../utils/errors');
 const faturacaoService = require('./faturacaoService');
 const creditNoteService = require('./creditNoteService');
 const taxService = require('./taxService');
@@ -65,32 +67,18 @@ function withholdingListDe(valor) {
   return [{ withholdingTaxType: 'IRT', withholdingTaxDescription: 'Retenção na fonte', withholdingTaxAmount: v }];
 }
 
-// `${tipo} ${seriesCode}/${numeroNaSerie}` — `seriesCode` é o REAL, atribuído
-// pela AGT (agtSeriesService.obterSeriePorTipo, gravado em AgtSeriesFe só
-// quando a AGT aceitou um pedido "Solicitar Série" para este tipo/ano — nunca
-// um valor inventado, nem a referência interna do KIXIMA como acontecia
-// antes). Foi exatamente esse fallback (`doc.reference`, ex.:
-// "FT FAT-2026-000009") que a AGT recusou numa submissão real de
-// registarFactura — a série tem de ser pedida primeiro para poder emitir
-// documentos deste tipo. `numeroNaSerie` continua a ser o contador interno
-// atómico e sem buracos de faturacaoService.atribuir() — é o "sucessivo" que
-// a AGT pede, só que agora prefixado pela série real dela, não pela interna.
+// "<tipo> <seriesCode>/<número>" — delega em
+// agtSeriesService.atribuirDocumentNo(), que atribui o número ATOMICAMENTE a
+// partir da série REAL da AGT (nunca a série fiscal interna,
+// Invoice/CreditNote/Payment.serie — essa é a cadeia de hash própria do
+// KIXIMA, independente desta). Foi exatamente o fallback anterior
+// (`doc.reference`, ex.: "FT FAT-2026-000009") que a AGT recusou numa
+// submissão real de registarFactura. Idempotente e gravado no próprio
+// documento (`agtDocumentNo`) — chamadas repetidas do mesmo payload (preview,
+// reenvio no pagamento) devolvem sempre o mesmo número.
 async function numeroDocumento(tipo, doc) {
-  if (!doc.numeroNaSerie) {
-    throw new BusinessRuleError(
-      `O documento "${doc.reference}" ainda não tem numeração de série interna atribuída — verifique a série `
-      + 'fiscal da empresa fornecedora (Company.serieFiscal) antes de gerar um documentNo AGT.',
-    );
-  }
   const ano = doc.assinadaEm ? new Date(doc.assinadaEm).getFullYear() : new Date().getFullYear();
-  const serieAgt = await agtSeriesService.obterSeriePorTipo(tipo, { ano });
-  if (!serieAgt) {
-    throw new BusinessRuleError(
-      `Não existe nenhuma série atribuída pela AGT para documentos do tipo "${tipo}" no ano ${ano}. `
-      + 'Peça a série primeiro ("Solicitar Série") antes de emitir ou reenviar este documento.',
-    );
-  }
-  return `${tipo} ${serieAgt.seriesCode}/${doc.numeroNaSerie}`;
+  return agtSeriesService.atribuirDocumentNo(tipo, doc.id, { ano });
 }
 
 function clienteDe(documentoComPoOuContrato) {

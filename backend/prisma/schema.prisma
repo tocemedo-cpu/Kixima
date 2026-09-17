@@ -1131,6 +1131,14 @@ model Invoice {
   hashAnterior  String?   @map("hash_anterior")
   assinadaEm    DateTime? @map("assinada_em")
 
+  // documentNo REAL enviado à AGT ("FT <seriesCode>/<número>") — atribuído
+  // uma única vez por agtSeriesService.atribuirDocumentNo() (série REAL da
+  // AGT, nunca a `serie` acima, que é a cadeia de integridade INTERNA e
+  // independente). Gravado para nunca mudar depois de atribuído: pedidos
+  // repetidos do mesmo payload (preview, reenvio no pagamento) devolvem
+  // sempre o mesmo número.
+  agtDocumentNo String? @map("agt_document_no")
+
   // Referência que o pagador escreve na transferência. Única em toda a
   // plataforma — é por ela que a conciliação encontra a fatura, e duas iguais
   // tornariam a conciliação ambígua, que é o mesmo que inútil.
@@ -1222,6 +1230,9 @@ model CreditNote {
   hashAnterior  String?   @map("hash_anterior")
   assinadaEm    DateTime? @map("assinada_em")
 
+  // documentNo REAL enviado à AGT — ver o comentário em Invoice.agtDocumentNo.
+  agtDocumentNo String? @map("agt_document_no")
+
   issuedAt    DateTime @default(now()) @map("issued_at")
   createdById String?  @map("created_by_id")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -1269,6 +1280,14 @@ model AgtSeriesFe {
   // continua a aparecer no histórico, com o nome que tinha nessa altura.
   solicitadoPorId       String? @map("solicitado_por_id")
   solicitadoPorNome     String? @map("solicitado_por_nome")
+
+  // Contador ATÓMICO do último número de documento atribuído dentro desta
+  // série (ver agtSeriesService.atribuirDocumentNo) — mesmo mecanismo de
+  // "SELECT ... FOR UPDATE" que faturacaoService.atribuir() já usa para a
+  // série fiscal interna, só que aqui a série é a REAL da AGT: o `documentNo`
+  // final é "<tipo> <seriesCode>/<ultimoNumero+1>". Começa em 0 — o primeiro
+  // documento desta série fica "/1".
+  ultimoNumero Int @default(0) @map("ultimo_numero")
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -1379,6 +1398,9 @@ model Payment {
   hashDocumento String?   @map("hash_documento")
   hashAnterior  String?   @map("hash_anterior")
   assinadaEm    DateTime? @map("assinada_em")
+
+  // documentNo REAL enviado à AGT — ver o comentário em Invoice.agtDocumentNo.
+  agtDocumentNo String? @map("agt_document_no")
 
   @@index([serie, numeroNaSerie])
   @@map("payments")

@@ -215,11 +215,20 @@ describe('construirPayload — FT (fatura)', () => {
     expect(new Date(payload.submissionTimeStamp).toString()).not.toBe('Invalid Date');
   });
 
-  test('documentNo usa o formato "FT <seriesCode>/<numeroNaSerie>" com a série REAL da AGT, linhas e totais batem com a InvoiceLine/Invoice', async () => {
+  test('documentNo usa o formato "FT <seriesCode>/<número>" com a série REAL da AGT, atribuído uma única vez (idempotente), linhas e totais batem com a InvoiceLine/Invoice', async () => {
     const payload = await agtPayloadService.construirPayload('FT', invoice.id, fornecedorId);
     const doc = payload.documents[0];
     expect(doc.documentType).toBe('FT');
-    expect(doc.documentNo).toBe(`FT ${SERIES_CODE_FT}/${invoice.numeroNaSerie}`);
+    expect(doc.documentNo).toMatch(new RegExp(`^FT ${SERIES_CODE_FT}/\\d+$`));
+
+    // Idempotente: um segundo pedido do mesmo payload (preview repetido,
+    // reenvio no pagamento) tem de devolver exatamente o mesmo documentNo,
+    // gravado em Invoice.agtDocumentNo — nunca consumir outro número.
+    const outraVez = await agtPayloadService.construirPayload('FT', invoice.id, fornecedorId);
+    expect(outraVez.documents[0].documentNo).toBe(doc.documentNo);
+    const gravado = await prisma.invoice.findUnique({ where: { id: invoice.id }, select: { agtDocumentNo: true } });
+    expect(gravado.agtDocumentNo).toBe(doc.documentNo);
+
     expect(doc.lines).toHaveLength(1);
     expect(doc.lines[0]).toMatchObject({ productCode: 'SKU-AGT-1', quantity: 2, unitPrice: 500, creditAmount: 1000, debitAmount: 0 });
     expect(doc.lines[0].taxes[0]).toMatchObject({ taxType: 'IVA', taxCountryRegion: 'AO', taxCode: 'NOR', taxPercentage: 14, taxContribution: 140 });
@@ -266,13 +275,15 @@ describe('construirPayload — FT (fatura)', () => {
 
 describe('construirPayload — NC (nota de crédito)', () => {
   test('gera uma linha sintética com referenceInfo apontando para a fatura original', async () => {
+    const faturaOriginal = await agtPayloadService.construirPayload('FT', invoice.id, fornecedorId);
+    const numeroFatura = faturaOriginal.documents[0].documentNo;
+
     const payload = await agtPayloadService.construirPayload('NC', creditNote.id, fornecedorId);
     const doc = payload.documents[0];
-    const numeroFatura = `${SERIES_CODE_FT}/${invoice.numeroNaSerie}`;
     expect(doc.documentType).toBe('NC');
-    expect(doc.documentNo).toBe(`NC ${SERIES_CODE_NC}/${creditNote.numeroNaSerie}`);
+    expect(doc.documentNo).toMatch(new RegExp(`^NC ${SERIES_CODE_NC}/\\d+$`));
     expect(doc.lines).toHaveLength(1);
-    expect(doc.lines[0].referenceInfo).toEqual({ reason: 'retificacao', reference: `FT ${numeroFatura}`, referenceItemLineNo: 1 });
+    expect(doc.lines[0].referenceInfo).toEqual({ reason: 'retificacao', reference: numeroFatura, referenceItemLineNo: 1 });
     expect(doc.lines[0]).toMatchObject({ debitAmount: 200, creditAmount: 0 });
     expect(doc.documentTotals).toEqual({ taxPayable: 28, netTotal: 200, grossTotal: 228 });
     expect(doc.withholdingTaxList).toBeUndefined(); // fatura original sem retenção
@@ -293,11 +304,13 @@ describe('construirPayload — NC (nota de crédito)', () => {
 
 describe('construirPayload — RC (recibo)', () => {
   test('sem linhas, totais herdados da fatura quitada, paymentReceipt aponta para a fatura paga', async () => {
+    const faturaOriginal = await agtPayloadService.construirPayload('FT', invoice.id, fornecedorId);
+    const numeroFatura = faturaOriginal.documents[0].documentNo;
+
     const payload = await agtPayloadService.construirPayload('RC', payment.id, fornecedorId);
     const doc = payload.documents[0];
-    const numeroFatura = `${SERIES_CODE_FT}/${invoice.numeroNaSerie}`;
     expect(doc.documentType).toBe('RC');
-    expect(doc.documentNo).toBe(`RC ${SERIES_CODE_RC}/${payment.numeroNaSerie}`);
+    expect(doc.documentNo).toMatch(new RegExp(`^RC ${SERIES_CODE_RC}/\\d+$`));
     expect(doc.lines).toEqual([]);
     expect(doc.documentTotals).toEqual({ taxPayable: 140, netTotal: 1000, grossTotal: 1140 });
     // paymentReceipt é obrigatório no RC (spec oficial 4.1.6) — liga o
@@ -306,7 +319,7 @@ describe('construirPayload — RC (recibo)', () => {
       sourceDocuments: [{
         lineNo: 1,
         sourceDocumentID: {
-          originatingON: `FT ${numeroFatura}`,
+          originatingON: numeroFatura,
           documentDate: invoice.assinadaEm.toISOString().slice(0, 10),
         },
         creditAmount: 1000,

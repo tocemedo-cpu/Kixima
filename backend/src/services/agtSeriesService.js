@@ -30,7 +30,12 @@ const logger = require('../config/logger');
 const prisma = require('../config/database');
 const agtSigningService = require('./agtSigningService');
 const agtSandboxClient = require('./agtSandboxClient');
-const { AgtRecusadoError } = require('../utils/errors');
+const { AgtRecusadoError, BusinessRuleError } = require('../utils/errors');
+
+// FT -> Invoice, NC -> CreditNote, RC -> Payment — mesma correspondência que
+// agtSandboxSubmissionService.js já usa (ENTIDADE_POR_TIPO), aqui para saber
+// em qual tabela gravar o `agtDocumentNo` atribuído.
+const MODELO_POR_TIPO = { FT: 'invoice', NC: 'creditNote', RC: 'payment' };
 
 /**
  * `documentType` ∈ os mesmos valores de agtPayloadService/DS.120 (FT, FR,
@@ -174,4 +179,61 @@ async function obterSeriePorTipo(documentType, { ano = new Date().getFullYear(),
   });
 }
 
-module.exports = { construirPedidoSerie, solicitarSerie, listarHistorico, obterSeriePorTipo };
+/**
+ * Atribui, UMA ÚNICA VEZ, o `documentNo` REAL da AGT a um documento (FT/NC/
+ * RC) — "<tipo> <seriesCode>/<número>", onde `seriesCode` vem da série que a
+ * AGT concedeu (AgtSeriesFe) e `número` é um contador ATÓMICO por série
+ * (`AgtSeriesFe.ultimoNumero`), NUNCA a série fiscal interna
+ * (Invoice/CreditNote/Payment.serie — essa é a cadeia de hash própria do
+ * KIXIMA, um mecanismo à parte e opcional). Por ser independente da série
+ * interna, funciona mesmo para documentos criados antes de
+ * `Company.serieFiscal` alguma vez ter sido declarada.
+ *
+ * Idempotente: se o documento já tem `agtDocumentNo` gravado, devolve-o tal
+ * qual, sem consumir outro número — chamadas repetidas do mesmo payload
+ * (preview em GET /agt-payload, reenvio no pagamento) têm de dar sempre o
+ * mesmo resultado. `SELECT ... FOR UPDATE` bloqueia a linha da série até ao
+ * fim da transação, mesmo mecanismo de faturacaoService.atribuir() — duas
+ * atribuições simultâneas ficam em fila, nunca com o mesmo número.
+ *
+ * Lança BusinessRuleError (nunca inventa um `seriesCode`) quando ainda não
+ * existe nenhuma série aceite pela AGT para este tipo/ano/estabelecimento —
+ * quem chama tem de pedir a série primeiro ("Solicitar Série").
+ */
+async function atribuirDocumentNo(tipo, id, { ano = new Date().getFullYear(), establishmentNumber = config.agt.establishmentNumber } = {}) {
+  const modelo = MODELO_POR_TIPO[tipo];
+  if (!modelo) {
+    throw new Error(`atribuirDocumentNo: tipo "${tipo}" não suportado (use FT, NC ou RC).`);
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const existente = await tx[modelo].findUnique({ where: { id }, select: { agtDocumentNo: true } });
+    if (existente?.agtDocumentNo) return existente.agtDocumentNo;
+
+    const [linha] = await tx.$queryRaw`
+      SELECT "id", "series_code", "ultimo_numero"
+        FROM "agtseriesfe"
+       WHERE "tipo_documento" = ${String(tipo).toUpperCase()}
+         AND "ano" = ${Number(ano)}
+         AND "establishment_number" = ${establishmentNumber}
+       ORDER BY "created_at" DESC
+       LIMIT 1
+       FOR UPDATE
+    `;
+    if (!linha || !linha.series_code) {
+      throw new BusinessRuleError(
+        `Não existe nenhuma série atribuída pela AGT para documentos do tipo "${tipo}" no ano ${ano}. `
+        + 'Peça a série primeiro ("Solicitar Série") antes de emitir ou reenviar este documento.',
+      );
+    }
+
+    const numero = Number(linha.ultimo_numero) + 1;
+    await tx.$executeRaw`UPDATE "agtseriesfe" SET "ultimo_numero" = ${numero} WHERE "id" = ${linha.id}`;
+
+    const documentNo = `${tipo} ${linha.series_code}/${numero}`;
+    await tx[modelo].update({ where: { id }, data: { agtDocumentNo: documentNo } });
+    return documentNo;
+  });
+}
+
+module.exports = { construirPedidoSerie, solicitarSerie, listarHistorico, obterSeriePorTipo, atribuirDocumentNo };
