@@ -1139,6 +1139,15 @@ model Invoice {
   // sempre o mesmo número.
   agtDocumentNo String? @map("agt_document_no")
 
+  // Resultado do ÚLTIMO reenvio do FT à AGT (registarFactura, ver
+  // paymentService.processPayment) — sem isto, esse resultado só existia na
+  // resposta HTTP do momento do pagamento, perdido depois. `agtErro` fica
+  // `null` quando a última tentativa foi aceite; `agtResultCode`/
+  // `agtRequestId` refletem sempre essa última tentativa, aceite ou recusada.
+  agtRequestId  String? @map("agt_request_id")
+  agtResultCode String? @map("agt_result_code")
+  agtErro       Json?   @map("agt_erro")
+
   // Referência que o pagador escreve na transferência. Única em toda a
   // plataforma — é por ela que a conciliação encontra a fatura, e duas iguais
   // tornariam a conciliação ambígua, que é o mesmo que inútil.

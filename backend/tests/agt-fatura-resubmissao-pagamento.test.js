@@ -111,6 +111,10 @@ describe('POST /api/payments/invoices/:id/pay — reenvio do FT à AGT', () => {
     // O pagamento em si foi processado — o reenvio é à parte.
     const db = await prisma.invoice.findUnique({ where: { id: invoice.id } });
     expect(db.status).toBe('PAGA');
+    // O resultado do reenvio fica gravado na própria fatura — sem isto só
+    // existia na resposta HTTP deste pedido.
+    expect(db.agtResultCode).toBe('0');
+    expect(db.agtErro).toBeNull();
   });
 
   test('a AGT recusa o FT (documentNo repetido, por exemplo): o pagamento continua a suceder', async () => {
@@ -133,5 +137,8 @@ describe('POST /api/payments/invoices/:id/pay — reenvio do FT à AGT', () => {
 
     const db = await prisma.invoice.findUnique({ where: { id: invoice.id } });
     expect(db.status).toBe('PAGA');
+    // A recusa também fica gravada — não só na resposta HTTP deste pedido.
+    expect(db.agtResultCode).toBe('1');
+    expect(db.agtErro).toMatchObject({ code: 'AGT_RECUSOU', details: { errorList: [{ code: 'E002', message: 'documentNo já existe' }] } });
   });
 });

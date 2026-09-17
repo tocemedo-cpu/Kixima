@@ -14,6 +14,7 @@ const auditService = require('./auditService');
 const faturacaoService = require('./faturacaoService');
 const agtSandboxSubmissionService = require('./agtSandboxSubmissionService');
 const agtPayloadService = require('./agtPayloadService');
+const logger = require('../config/logger');
 
 async function listPendingInvoices(buyerCompanyId) {
   return prisma.invoice.findMany({
@@ -176,6 +177,29 @@ async function processPayment(invoiceId, processedById, buyerCompanyId, proofFil
         sucesso: false,
         erro: { message: erro.message, code: erro.code || null, details: erro.details || null },
       };
+    }
+
+    // Grava o resultado da ÚLTIMA tentativa na própria fatura — sem isto só
+    // existia na resposta HTTP deste pedido, perdida depois. Numa falha de
+    // escrita aqui (nunca esperada: a fatura já existe), só regista em log —
+    // não pode desfazer nem falhar um pagamento já confirmado.
+    try {
+      await prisma.invoice.update({
+        where: { id: invoiceId },
+        data: agtInvoiceResubmission.sucesso
+          ? {
+            agtRequestId: agtInvoiceResubmission.resposta?.requestID ?? null,
+            agtResultCode: agtInvoiceResubmission.resposta?.resultCode != null ? String(agtInvoiceResubmission.resposta.resultCode) : null,
+            agtErro: null,
+          }
+          : {
+            agtRequestId: null,
+            agtResultCode: agtInvoiceResubmission.erro?.details?.resultCode != null ? String(agtInvoiceResubmission.erro.details.resultCode) : null,
+            agtErro: agtInvoiceResubmission.erro,
+          },
+      });
+    } catch (erroGravar) {
+      logger.error('Falha ao gravar o resultado do reenvio AGT na fatura', { invoiceId, message: erroGravar.message });
     }
 
     await agtSandboxSubmissionService.submeter('RC', payment.id, supplierCompanyId);
