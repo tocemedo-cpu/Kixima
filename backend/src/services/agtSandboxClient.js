@@ -26,8 +26,9 @@
 //      X-Password) em vez do Authorization Basic padrão.
 //   2. Verbo/forma de consultarFactura e listarFacturas (aqui GET + query
 //      string) — ainda por confirmar. obterEstado JÁ FOI confirmado: um 405
-//      real numa chamada GET provou que é POST + envelope assinado, mesmo
-//      formato do registarFactura/solicitarSerie (ver
+//      real numa chamada GET provou que é POST, e identifica o PEDIDO por
+//      `requestID` (não por invoiceNo/documentNo — tentativa anterior,
+//      corrigida), sem `jwsSignature` (ver
 //      agtPayloadService.construirPedidoEstado()).
 //   3. Serialização de `documentTotals` dentro da string do jwsDocumentSignature
 //      quando é um objeto {taxPayable, netTotal, grossTotal} — aqui vai como

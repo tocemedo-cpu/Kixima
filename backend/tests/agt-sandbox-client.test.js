@@ -175,7 +175,7 @@ describe('Endpoints da Sandbox — cabeçalhos, rota e tratamento de resultCode'
     // CORRIGIDO: não é GET+query — um 405 real confirmou que é POST com um
     // envelope assinado (ver agtPayloadService.construirPedidoEstado()).
     const fetchMock = mockFetch(200, { resultCode: '0', status: 'PROCESSADO' });
-    const envelope = { schemaVersion: '2.0', taxRegistrationNumber: 'AO5417000000', invoiceNo: 'FT SERIE/1' };
+    const envelope = { schemaVersion: '2.0', taxRegistrationNumber: 'AO5417000000', requestID: '202600003355688' };
 
     await agtSandboxClient.obterEstado(envelope);
 
