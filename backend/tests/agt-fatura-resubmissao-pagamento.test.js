@@ -173,10 +173,14 @@ describe('POST /api/payments/invoices/:id/pay — reenvio do FT à AGT', () => {
     expect(agtSandboxClient.obterEstado).toHaveBeenCalledWith(expect.objectContaining({
       taxRegistrationNumber: 'AO-FOR-0001', invoiceNo: documentNo,
     }));
-    expect(res.body.agtInvoiceResubmission?.estado).toEqual(ESTADO_REAL_AGT);
+    // O payload enviado (pedido) fica visível, não só a resposta.
+    expect(res.body.agtInvoiceResubmission?.estado?.pedido).toMatchObject({
+      taxRegistrationNumber: 'AO-FOR-0001', invoiceNo: documentNo,
+    });
+    expect(res.body.agtInvoiceResubmission?.estado?.resposta).toEqual(ESTADO_REAL_AGT);
 
     const db = await prisma.invoice.findUnique({ where: { id: invoice.id } });
-    expect(db.agtEstado).toEqual(ESTADO_REAL_AGT);
+    expect(db.agtEstado?.resposta).toEqual(ESTADO_REAL_AGT);
   });
 });
 
@@ -219,7 +223,10 @@ describe('GET /api/faturacao/agt-estado/:invoiceId — consulta o estado real na
 
     const res = await auth(tokens.fornecedor).get(`/api/faturacao/agt-estado/${invoice.id}`);
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ resultCode: '0', status: 'PROCESSADO', motivo: null });
+    // Devolve { pedido, resposta } — o payload enviado fica visível, não só
+    // a resposta da AGT.
+    expect(res.body.resposta).toEqual({ resultCode: '0', status: 'PROCESSADO', motivo: null });
+    expect(res.body.pedido).toMatchObject({ taxRegistrationNumber: 'AO-FOR-0001', invoiceNo: db.agtDocumentNo });
     expect(agtSandboxClient.obterEstado).toHaveBeenCalledWith(expect.objectContaining({
       taxRegistrationNumber: 'AO-FOR-0001', invoiceNo: db.agtDocumentNo,
     }));

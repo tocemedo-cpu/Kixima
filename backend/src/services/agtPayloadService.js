@@ -353,11 +353,16 @@ function construirPedidoEstado(taxRegistrationNumber, documentNo) {
 // NUNCA lança: o documentNo já existe (atribuído antes de sequer submeter),
 // uma falha a consultar o estado não pode desfazer isso nem esconder o
 // resultado principal de registarFactura.
+// `pedido` viaja sempre no resultado (aceite, recusado, ou falha a
+// consultar) — mesmo princípio de AgtRecusadoError.details.pedido: sem
+// isto, dava para ver a resposta mas nunca o que foi mesmo enviado.
 async function consultarEstadoSePossivel(taxRegistrationNumber, documentNo) {
+  const pedido = construirPedidoEstado(taxRegistrationNumber, documentNo);
   try {
-    return await agtSandboxClient.obterEstado(construirPedidoEstado(taxRegistrationNumber, documentNo));
+    const resposta = await agtSandboxClient.obterEstado(pedido);
+    return { pedido, resposta };
   } catch (erroEstado) {
-    return { erro: erroEstado.message };
+    return { pedido, erro: erroEstado.message };
   }
 }
 
@@ -407,6 +412,11 @@ async function submeterFatura(invoiceId, supplierCompanyId) {
  * resposta síncrona de registarFactura não chega para diagnosticar uma
  * recusa (`errorList` pouco informativa, ex.: `[""]`) — obterEstado é onde
  * se vê o motivo real.
+ *
+ * Devolve `{ pedido, resposta }` — pedido explícito: o payload enviado tem
+ * de ficar visível, não só a resposta (mesmo princípio do FT/Solicitar
+ * Série). Lança AgtRecusadoError (com `pedido` em details) se a AGT recusar
+ * a própria consulta.
  */
 async function consultarEstadoFatura(invoiceId, supplierCompanyId) {
   const fornecedor = await carregarFornecedor(supplierCompanyId);
@@ -424,7 +434,16 @@ async function consultarEstadoFatura(invoiceId, supplierCompanyId) {
     );
   }
 
-  return agtSandboxClient.obterEstado(construirPedidoEstado(fornecedor.taxId, invoice.agtDocumentNo));
+  const pedido = construirPedidoEstado(fornecedor.taxId, invoice.agtDocumentNo);
+  try {
+    const resposta = await agtSandboxClient.obterEstado(pedido);
+    return { pedido, resposta };
+  } catch (erro) {
+    if (erro instanceof agtSandboxClient.AgtApiError) {
+      throw new AgtRecusadoError(erro, pedido);
+    }
+    throw erro;
+  }
 }
 
 module.exports = { construirPayload, submeterFatura, consultarEstadoFatura };
