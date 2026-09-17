@@ -213,6 +213,7 @@ function urlDe(nomeEndpoint, query) {
  * outros endpoints). Existe porque solicitarSerie() NÃO segue esse padrão —
  * ver o comentário nessa função.
  */
+
 async function pedido(nomeEndpoint, { method = 'GET', body, query, sucesso } = {}) {
   exigirConfiguracao();
   const url = urlDe(nomeEndpoint, query);
@@ -227,18 +228,27 @@ async function pedido(nomeEndpoint, { method = 'GET', body, query, sucesso } = {
   try {
     dados = await resposta.json();
   } catch {
-    // Resposta sem corpo JSON (ex.: erro de gateway) — dados fica null,
-    // tratado a seguir pelo `!resposta.ok`.
+ 
   }
 
   if (!resposta.ok) {
-    throw new AgtApiError(nomeEndpoint, dados?.resultCode ?? String(resposta.status), dados?.errorList, dados);
+    throw new AgtApiError(nomeEndpoint, dados?.resultCode ?? String(resposta.status), extrairDetalhesErro(dados), dados);
   }
   const ehSucesso = dados == null || (sucesso ? sucesso(dados) : String(dados.resultCode) === '0');
   if (!ehSucesso) {
-    throw new AgtApiError(nomeEndpoint, dados.resultCode, dados.errorList, dados);
+    throw new AgtApiError(nomeEndpoint, dados.resultCode, extrairDetalhesErro(dados), dados);
   }
   return dados;
+}
+
+
+function extrairDetalhesErro(dados) {
+  const errosDocumento = (dados?.documentStatusList || [])
+    .flatMap(doc => (doc.errorList || []).map(e => `${e.idError}: ${e.descriptionError}`));
+
+  if (errosDocumento.length) return errosDocumento;
+
+  return (dados?.errorList ?? dados?.requestErrorList ?? []).filter(Boolean);
 }
 
 // A AGT não é consistente na forma como assinala "sem erros" em
