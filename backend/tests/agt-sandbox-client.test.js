@@ -171,14 +171,18 @@ describe('Endpoints da Sandbox — cabeçalhos, rota e tratamento de resultCode'
     });
   });
 
-  test('obterEstado(): GET só com requestID na query string', async () => {
+  test('obterEstado(): POST com o envelope tal como recebido (transporte puro, não constrói nada)', async () => {
+    // CORRIGIDO: não é GET+query — um 405 real confirmou que é POST com um
+    // envelope assinado (ver agtPayloadService.construirPedidoEstado()).
     const fetchMock = mockFetch(200, { resultCode: '0', status: 'PROCESSADO' });
-    await agtSandboxClient.obterEstado({ requestID: '202600003355688' });
+    const envelope = { schemaVersion: '2.0', taxRegistrationNumber: 'AO5417000000', invoiceNo: 'FT SERIE/1' };
+
+    await agtSandboxClient.obterEstado(envelope);
 
     const [url, opcoes] = fetchMock.mock.calls[0];
-    expect(String(url)).toBe('https://sifphml.minfin.gov.ao/sigt/fe/v1/obterEstado?requestID=202600003355688');
-    expect(opcoes.method).toBe('GET');
-    expect(opcoes.body).toBeUndefined();
+    expect(String(url)).toBe('https://sifphml.minfin.gov.ao/sigt/fe/v1/obterEstado');
+    expect(opcoes.method).toBe('POST');
+    expect(opcoes.body).toBe(JSON.stringify(envelope));
   });
 
   test('consultarFactura(): GET com documentNo/taxRegistrationNumber na query', async () => {

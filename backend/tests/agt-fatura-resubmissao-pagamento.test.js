@@ -169,7 +169,10 @@ describe('POST /api/payments/invoices/:id/pay — reenvio do FT à AGT', () => {
     const { invoice } = await novaFatura();
     const res = await pagar(invoice.id);
 
-    expect(agtSandboxClient.obterEstado).toHaveBeenCalledWith({ requestID: '202600003355688' });
+    const documentNo = res.body.agtInvoiceResubmission?.payload?.documents?.[0]?.documentNo;
+    expect(agtSandboxClient.obterEstado).toHaveBeenCalledWith(expect.objectContaining({
+      taxRegistrationNumber: 'AO-FOR-0001', invoiceNo: documentNo,
+    }));
     expect(res.body.agtInvoiceResubmission?.estado).toEqual(ESTADO_REAL_AGT);
 
     const db = await prisma.invoice.findUnique({ where: { id: invoice.id } });
@@ -191,25 +194,35 @@ describe('GET /api/faturacao/agt-estado/:invoiceId — consulta o estado real na
     agtSandboxClient.obterEstado.mockClear();
   });
 
-  test('sem nenhum requestID gravado ainda, recusa com mensagem clara em vez de consultar', async () => {
+  test('sem nenhum documentNo atribuído ainda, recusa com mensagem clara em vez de consultar', async () => {
+    // Sandbox "desligada" enquanto a fatura é criada — senão a submissão
+    // silenciosa do FT na emissão (agtSandboxSubmissionService, ver
+    // poService.acceptPurchaseOrder) já atribuiria o documentNo sozinha.
+    agtSandboxClient.disponivel.mockReturnValue(false);
     const { invoice } = await novaFatura();
+
+    // A rota em si exige a Sandbox "configurada" (exigirSandboxAgtConfigurada).
+    agtSandboxClient.disponivel.mockReturnValue(true);
     const res = await auth(tokens.fornecedor).get(`/api/faturacao/agt-estado/${invoice.id}`);
     expect(res.status).toBe(400);
-    expect(res.body.error.message).toMatch(/ainda não tem nenhum requestID/);
+    expect(res.body.error.message).toMatch(/ainda não tem nenhum documentNo/);
     expect(agtSandboxClient.obterEstado).not.toHaveBeenCalled();
   });
 
-  test('com requestID gravado (fatura já paga com sucesso), consulta a AGT só com o requestID', async () => {
+  test('com documentNo atribuído (fatura já paga com sucesso), consulta a AGT com o envelope assinado', async () => {
     agtSandboxClient.registarFactura.mockResolvedValue({ requestID: '202600003355688', errorList: [] });
     agtSandboxClient.obterEstado.mockResolvedValue({ resultCode: '0', status: 'PROCESSADO', motivo: null });
 
     const { invoice } = await novaFatura();
     await pagar(invoice.id);
+    const db = await prisma.invoice.findUnique({ where: { id: invoice.id } });
 
     const res = await auth(tokens.fornecedor).get(`/api/faturacao/agt-estado/${invoice.id}`);
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ resultCode: '0', status: 'PROCESSADO', motivo: null });
-    expect(agtSandboxClient.obterEstado).toHaveBeenCalledWith({ requestID: '202600003355688' });
+    expect(agtSandboxClient.obterEstado).toHaveBeenCalledWith(expect.objectContaining({
+      taxRegistrationNumber: 'AO-FOR-0001', invoiceNo: db.agtDocumentNo,
+    }));
   });
 
   test('um fornecedor não consegue consultar o estado de uma fatura de outra empresa', async () => {

@@ -324,16 +324,38 @@ async function construirPayload(tipo, id, supplierCompanyId) {
   );
 }
 
-// Chamada a obterEstado logo a seguir a um requestID (aceite ou recusado) —
+/**
+ * Constrói o pedido "obterEstado" — POST + envelope assinado, mesmo formato
+ * do registarFactura/solicitarSerie. CONFIRMADO: uma chamada GET+query real
+ * devolveu 405 (Method Not Allowed) — não é essa a forma. Identifica o
+ * documento por `invoiceNo` (o documentNo já atribuído por
+ * agtSeriesService.atribuirDocumentNo), não por requestID: o documentNo já
+ * existe assim que o payload foi construído, mesmo antes de submeter.
+ * `jwsSignature` assina `{taxRegistrationNumber, invoiceNo}` — mesmo
+ * princípio de agtSeriesService.construirPedidoSerie() (assina os campos que
+ * definem ESTE pedido, não o envelope inteiro).
+ */
+function construirPedidoEstado(taxRegistrationNumber, documentNo) {
+  return {
+    schemaVersion: '2.0',
+    submissionUUID: crypto.randomUUID(),
+    taxRegistrationNumber,
+    submissionTimeStamp: new Date().toISOString(),
+    softwareInfo: agtSigningService.construirSoftwareInfo(),
+    jwsSignature: agtSigningService.assinarJWS({ taxRegistrationNumber, invoiceNo: documentNo }),
+    invoiceNo: documentNo,
+  };
+}
+
+// Chamada a obterEstado logo a seguir a uma submissão (aceite ou recusada) —
 // a resposta síncrona de registarFactura não diz mais do que "recebido"
-// (errorList quase sempre `[""]`, mesmo aceite ou recusado; ver
-// agtSandboxClient.registarFactura()). NUNCA lança: já se sabe que a AGT deu
-// um requestID a este pedido, uma falha a consultar o estado não pode
-// desfazer isso nem esconder o resultado principal de registarFactura.
-async function consultarEstadoSePossivel(requestID) {
-  if (!requestID) return null;
+// (errorList quase sempre `[""]`; ver agtSandboxClient.registarFactura()).
+// NUNCA lança: o documentNo já existe (atribuído antes de sequer submeter),
+// uma falha a consultar o estado não pode desfazer isso nem esconder o
+// resultado principal de registarFactura.
+async function consultarEstadoSePossivel(taxRegistrationNumber, documentNo) {
   try {
-    return await agtSandboxClient.obterEstado({ requestID });
+    return await agtSandboxClient.obterEstado(construirPedidoEstado(taxRegistrationNumber, documentNo));
   } catch (erroEstado) {
     return { erro: erroEstado.message };
   }
@@ -351,21 +373,23 @@ async function consultarEstadoSePossivel(requestID) {
  * error.details.pedido para quem chama poder mostrar o que foi enviado,
  * mesmo numa recusa.
  *
- * Assim que há requestID (aceite OU recusado — a AGT pode atribuir um nos
- * dois casos), consulta logo obterEstado() — pedido explícito: o estado real
- * do processamento (`documentStatusList`, por documento) só existe aí, não
- * na resposta síncrona. Devolvido em `estado` no sucesso, ou em
- * `error.details.estado` numa recusa.
+ * Logo a seguir (aceite OU recusado), consulta obterEstado() — pedido
+ * explícito: o estado real do processamento (`documentStatusList`, por
+ * documento) só existe aí, não na resposta síncrona. O documentNo já existe
+ * assim que o payload foi construído (não depende do resultado de
+ * registarFactura), por isso a consulta acontece sempre. Devolvido em
+ * `estado` no sucesso, ou em `error.details.estado` numa recusa.
  */
 async function submeterFatura(invoiceId, supplierCompanyId) {
   const payload = await construirPayload('FT', invoiceId, supplierCompanyId);
+  const documentNo = payload.documents[0].documentNo;
   try {
     const resposta = await agtSandboxClient.registarFactura(payload);
-    const estado = await consultarEstadoSePossivel(resposta?.requestID);
+    const estado = await consultarEstadoSePossivel(payload.taxRegistrationNumber, documentNo);
     return { payload, resposta, estado };
   } catch (erro) {
     if (erro instanceof agtSandboxClient.AgtApiError) {
-      const estado = await consultarEstadoSePossivel(erro.respostaBruta?.requestID);
+      const estado = await consultarEstadoSePossivel(payload.taxRegistrationNumber, documentNo);
       const recusado = new AgtRecusadoError(erro, payload);
       recusado.details.estado = estado;
       throw recusado;
@@ -376,15 +400,16 @@ async function submeterFatura(invoiceId, supplierCompanyId) {
 
 /**
  * Consulta à AGT (obterEstado) o estado real do processamento da ÚLTIMA
- * submissão do FT desta fatura — usa o `requestID` já gravado
- * (Invoice.agtRequestId, ver paymentService.processPayment), NUNCA o
- * submissionUUID/documentNo: a AGT identifica esta consulta só pelo
- * requestID (ver agtSandboxClient.obterEstado()). Existe para os casos em
- * que a resposta síncrona de registarFactura não chega para diagnosticar
- * uma recusa (`errorList` pouco informativa, ex.: `[""]`) — obterEstado é
- * onde se vê o motivo real.
+ * submissão do FT desta fatura — usa o `documentNo` já atribuído
+ * (Invoice.agtDocumentNo, ver agtSeriesService.atribuirDocumentNo), não o
+ * requestID: obterEstado identifica o documento por `invoiceNo` (ver
+ * agtPayloadService.construirPedidoEstado()). Existe para os casos em que a
+ * resposta síncrona de registarFactura não chega para diagnosticar uma
+ * recusa (`errorList` pouco informativa, ex.: `[""]`) — obterEstado é onde
+ * se vê o motivo real.
  */
 async function consultarEstadoFatura(invoiceId, supplierCompanyId) {
+  const fornecedor = await carregarFornecedor(supplierCompanyId);
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
     include: { purchaseOrder: { select: SELECT_PO }, contract: { select: SELECT_CONTRATO } },
@@ -392,14 +417,14 @@ async function consultarEstadoFatura(invoiceId, supplierCompanyId) {
   if (!invoice) throw new NotFoundError('Fatura');
   verificarPosse(creditNoteService.partesDaFatura(invoice).supplierCompanyId, supplierCompanyId);
 
-  if (!invoice.agtRequestId) {
+  if (!invoice.agtDocumentNo) {
     throw new BusinessRuleError(
-      `A fatura "${invoice.reference}" ainda não tem nenhum requestID da AGT gravado — só é possível consultar o `
-      + 'estado depois de pelo menos uma submissão (Pagar) que tenha chegado à AGT.',
+      `A fatura "${invoice.reference}" ainda não tem nenhum documentNo atribuído pela AGT — só é possível consultar `
+      + 'o estado depois de pelo menos um pedido de payload (Ver Payload ou Pagar).',
     );
   }
 
-  return agtSandboxClient.obterEstado({ requestID: invoice.agtRequestId });
+  return agtSandboxClient.obterEstado(construirPedidoEstado(fornecedor.taxId, invoice.agtDocumentNo));
 }
 
 module.exports = { construirPayload, submeterFatura, consultarEstadoFatura };

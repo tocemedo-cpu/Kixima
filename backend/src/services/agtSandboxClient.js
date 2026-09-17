@@ -24,9 +24,11 @@
 //      é a leitura mais direta de "autenticação por HTTP Headers, sem
 //      OAuth2", mas a AGT pode exigir headers próprios (ex.: X-Username/
 //      X-Password) em vez do Authorization Basic padrão.
-//   2. Verbo/forma de obterEstado, consultarFactura e listarFacturas (aqui
-//      GET + query string) — só registarFactura (POST, corpo JSON) foi
-//      explicitamente descrito como submissão.
+//   2. Verbo/forma de consultarFactura e listarFacturas (aqui GET + query
+//      string) — ainda por confirmar. obterEstado JÁ FOI confirmado: um 405
+//      real numa chamada GET provou que é POST + envelope assinado, mesmo
+//      formato do registarFactura/solicitarSerie (ver
+//      agtPayloadService.construirPedidoEstado()).
 //   3. Serialização de `documentTotals` dentro da string do jwsDocumentSignature
 //      quando é um objeto {taxPayable, netTotal, grossTotal} — aqui vai como
 //      JSON.stringify(documentTotals); se a AGT esperar outro achatamento
@@ -294,15 +296,20 @@ async function solicitarSerie(documento) {
 }
 
 /**
- * GET /obterEstado — estado do processamento de uma submissão já feita
+ * POST /obterEstado — estado do processamento de uma submissão já feita
  * (ex.: registarFactura), incluindo o motivo real de uma recusa quando
- * `errorList` na resposta síncrona não é suficiente (ex.: `[""]`). Só
- * precisa do `requestID` que a AGT devolveu nessa submissão — não do
- * `submissionUUID` nem do `documentNo`, que identificam o PEDIDO, não a
- * consulta ao seu estado.
+ * `errorList` na resposta síncrona não é suficiente (ex.: `[""]`).
+ *
+ * CORRIGIDO: não é GET + query string (`?requestID=...`) como a primeira
+ * versão assumia — um pedido real devolveu 405 (Method Not Allowed),
+ * confirmando que a forma estava errada. É POST com um envelope assinado,
+ * mesmo formato do registarFactura/solicitarSerie (esta função só
+ * transporta — quem constrói e assina é agtPayloadService.js, mesmo
+ * princípio dos outros dois). `envelope` já vem pronto, com `invoiceNo`
+ * (não `requestID`) a identificar o documento.
  */
-async function obterEstado({ requestID } = {}) {
-  return pedido('obterEstado', { query: { requestID } });
+async function obterEstado(envelope) {
+  return pedido('obterEstado', { method: 'POST', body: envelope });
 }
 
 /** GET /consultarFactura — detalhe de uma fatura já registada. */
