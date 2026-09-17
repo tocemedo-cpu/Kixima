@@ -324,6 +324,21 @@ async function construirPayload(tipo, id, supplierCompanyId) {
   );
 }
 
+// Chamada a obterEstado logo a seguir a um requestID (aceite ou recusado) —
+// a resposta síncrona de registarFactura não diz mais do que "recebido"
+// (errorList quase sempre `[""]`, mesmo aceite ou recusado; ver
+// agtSandboxClient.registarFactura()). NUNCA lança: já se sabe que a AGT deu
+// um requestID a este pedido, uma falha a consultar o estado não pode
+// desfazer isso nem esconder o resultado principal de registarFactura.
+async function consultarEstadoSePossivel(requestID) {
+  if (!requestID) return null;
+  try {
+    return await agtSandboxClient.obterEstado({ requestID });
+  } catch (erroEstado) {
+    return { erro: erroEstado.message };
+  }
+}
+
 /**
  * Constrói o payload FT (construirPayload, acima) e SUBMETE-O mesmo ao
  * endpoint registarFactura da AGT — ver o comentário no topo do ficheiro
@@ -335,19 +350,28 @@ async function construirPayload(tipo, id, supplierCompanyId) {
  * Error simples) propagar sem contexto de HTTP. `payload` viaja em
  * error.details.pedido para quem chama poder mostrar o que foi enviado,
  * mesmo numa recusa.
+ *
+ * Assim que há requestID (aceite OU recusado — a AGT pode atribuir um nos
+ * dois casos), consulta logo obterEstado() — pedido explícito: o estado real
+ * do processamento (`documentStatusList`, por documento) só existe aí, não
+ * na resposta síncrona. Devolvido em `estado` no sucesso, ou em
+ * `error.details.estado` numa recusa.
  */
 async function submeterFatura(invoiceId, supplierCompanyId) {
   const payload = await construirPayload('FT', invoiceId, supplierCompanyId);
-  let resposta;
   try {
-    resposta = await agtSandboxClient.registarFactura(payload);
+    const resposta = await agtSandboxClient.registarFactura(payload);
+    const estado = await consultarEstadoSePossivel(resposta?.requestID);
+    return { payload, resposta, estado };
   } catch (erro) {
     if (erro instanceof agtSandboxClient.AgtApiError) {
-      throw new AgtRecusadoError(erro, payload);
+      const estado = await consultarEstadoSePossivel(erro.respostaBruta?.requestID);
+      const recusado = new AgtRecusadoError(erro, payload);
+      recusado.details.estado = estado;
+      throw recusado;
     }
     throw erro;
   }
-  return { payload, resposta };
 }
 
 /**

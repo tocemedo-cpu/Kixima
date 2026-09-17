@@ -170,8 +170,8 @@ async function processPayment(invoiceId, processedById, buyerCompanyId, proofFil
   let agtInvoiceResubmission = null;
   if (supplierCompanyId) {
     try {
-      const { payload, resposta } = await agtPayloadService.submeterFatura(invoiceId, supplierCompanyId);
-      agtInvoiceResubmission = { sucesso: true, payload, resposta };
+      const { payload, resposta, estado } = await agtPayloadService.submeterFatura(invoiceId, supplierCompanyId);
+      agtInvoiceResubmission = { sucesso: true, payload, resposta, estado };
     } catch (erro) {
       agtInvoiceResubmission = {
         sucesso: false,
@@ -191,6 +191,10 @@ async function processPayment(invoiceId, processedById, buyerCompanyId, proofFil
             agtRequestId: agtInvoiceResubmission.resposta?.requestID ?? null,
             agtResultCode: agtInvoiceResubmission.resposta?.resultCode != null ? String(agtInvoiceResubmission.resposta.resultCode) : null,
             agtErro: null,
+            // Estado real do processamento (obterEstado), já consultado
+            // automaticamente por submeterFatura() assim que há requestID —
+            // sem isto só existia na resposta HTTP deste pedido.
+            agtEstado: agtInvoiceResubmission.estado ?? null,
           }
           : {
             // A AGT pode atribuir requestID mesmo numa recusa (ex.:
@@ -200,6 +204,7 @@ async function processPayment(invoiceId, processedById, buyerCompanyId, proofFil
             agtRequestId: agtInvoiceResubmission.erro?.details?.respostaBruta?.requestID ?? null,
             agtResultCode: agtInvoiceResubmission.erro?.details?.resultCode != null ? String(agtInvoiceResubmission.erro.details.resultCode) : null,
             agtErro: agtInvoiceResubmission.erro,
+            agtEstado: agtInvoiceResubmission.erro?.details?.estado ?? null,
           },
       });
     } catch (erroGravar) {

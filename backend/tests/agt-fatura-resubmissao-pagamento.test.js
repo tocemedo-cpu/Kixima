@@ -156,6 +156,25 @@ describe('POST /api/payments/invoices/:id/pay — reenvio do FT à AGT', () => {
     const db = await prisma.invoice.findUnique({ where: { id: invoice.id } });
     expect(db.agtRequestId).toBe('202600003399999');
   });
+
+  test('assim que há requestID, consulta logo obterEstado sozinho — sem esperar por uma ação manual', async () => {
+    agtSandboxClient.registarFactura.mockResolvedValue({ requestID: '202600003355688', errorList: [] });
+    const ESTADO_REAL_AGT = {
+      requestID: '202600003355688', resultCode: '0', taxRegistrationNumber: '5403096116',
+      documentStatusList: [{ documentNo: 'FT FT7626S11894N/1', documentStatus: 'V', errorList: [''] }],
+      requestErrorList: [''], successRequestID: '',
+    };
+    agtSandboxClient.obterEstado.mockResolvedValue(ESTADO_REAL_AGT);
+
+    const { invoice } = await novaFatura();
+    const res = await pagar(invoice.id);
+
+    expect(agtSandboxClient.obterEstado).toHaveBeenCalledWith({ requestID: '202600003355688' });
+    expect(res.body.agtInvoiceResubmission?.estado).toEqual(ESTADO_REAL_AGT);
+
+    const db = await prisma.invoice.findUnique({ where: { id: invoice.id } });
+    expect(db.agtEstado).toEqual(ESTADO_REAL_AGT);
+  });
 });
 
 describe('GET /api/faturacao/agt-estado/:invoiceId — consulta o estado real na AGT (obterEstado)', () => {
@@ -165,6 +184,11 @@ describe('GET /api/faturacao/agt-estado/:invoiceId — consulta o estado real na
     // desliga para não interferir com a submissão silenciosa do RC).
     agtSandboxClient.disponivel.mockReturnValue(true);
     agtSandboxClient.emFalta.mockReturnValue([]);
+    // Isola a contagem de chamadas: submeterFatura() já consulta
+    // obterEstado() sozinho assim que há requestID (ver describe anterior) —
+    // sem limpar aqui, essa chamada de um teste anterior contaria para a
+    // asserção "not.toHaveBeenCalled()" abaixo.
+    agtSandboxClient.obterEstado.mockClear();
   });
 
   test('sem nenhum requestID gravado ainda, recusa com mensagem clara em vez de consultar', async () => {

@@ -1147,6 +1147,12 @@ model Invoice {
   agtRequestId  String? @map("agt_request_id")
   agtResultCode String? @map("agt_result_code")
   agtErro       Json?   @map("agt_erro")
+  // Estado real do processamento (obterEstado, DS.120) — consultado
+  // automaticamente assim que há requestID (ver
+  // agtPayloadService.submeterFatura/consultarEstadoSePossivel), aceite ou
+  // recusado: a resposta síncrona de registarFactura não diz mais do que
+  // "recebido" (errorList quase sempre `[""]`).
+  agtEstado Json? @map("agt_estado")
 
   // Referência que o pagador escreve na transferência. Única em toda a
   // plataforma — é por ela que a conciliação encontra a fatura, e duas iguais
