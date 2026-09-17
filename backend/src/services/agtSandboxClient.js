@@ -235,9 +235,21 @@ async function pedido(nomeEndpoint, { method = 'GET', body, query, sucesso } = {
  * `jwsSoftwareSignature`/`jwsDocumentSignature`/`jwsSignature` incluídos, tal
  * como construído por quem chama). Este cliente não decide a forma do
  * envelope — só transporta.
+ *
+ * CONFIRMADO em produção: tal como solicitarSerie() acima, a resposta real
+ * deste endpoint NÃO traz `resultCode` nenhum quando aceita — só
+ * `requestID` e `errorList` vazio (ex.: `{"requestID": "202500...",
+ * "errorList": []}`). O `pedido()` genérico assume por omissão
+ * `resultCode === "0"`, que aqui nunca bate certo (`resultCode` vem
+ * `undefined`) — tratava uma aceitação real como recusa. O sinal real de
+ * sucesso é ter `requestID` E `errorList` vazio.
  */
 async function registarFactura(documento) {
-  return pedido('registarFactura', { method: 'POST', body: documento });
+  return pedido('registarFactura', {
+    method: 'POST',
+    body: documento,
+    sucesso: (dados) => Boolean(dados?.requestID) && !(dados?.errorList?.length),
+  });
 }
 
 /**

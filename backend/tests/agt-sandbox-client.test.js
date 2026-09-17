@@ -98,12 +98,16 @@ describe('Endpoints da Sandbox — cabeçalhos, rota e tratamento de resultCode'
     });
   }
 
-  test('registarFactura(): POST com corpo JSON e Authorization Basic corretos', async () => {
-    const fetchMock = mockFetch(200, { resultCode: '0', documentNo: 'FT 2026/1' });
+  test('registarFactura(): POST com corpo JSON e Authorization Basic corretos — sucesso real da AGT (sem resultCode, só requestID + errorList vazio)', async () => {
+    // Resposta real confirmada em produção: NÃO traz `resultCode` nenhum
+    // quando aceita — só `requestID` e `errorList` vazio. Ver o comentário em
+    // agtSandboxClient.registarFactura().
+    const RESPOSTA_REAL_AGT = { requestID: '202500000010689', errorList: [] };
+    const fetchMock = mockFetch(200, RESPOSTA_REAL_AGT);
     const documento = { documentNo: 'FT 2026/1' };
 
     const resposta = await agtSandboxClient.registarFactura(documento);
-    expect(resposta).toEqual({ resultCode: '0', documentNo: 'FT 2026/1' });
+    expect(resposta).toEqual(RESPOSTA_REAL_AGT);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, opcoes] = fetchMock.mock.calls[0];
@@ -180,8 +184,8 @@ describe('Endpoints da Sandbox — cabeçalhos, rota e tratamento de resultCode'
     expect(String(url)).toBe('https://sifphml.minfin.gov.ao/sigt/fe/v1/listarFacturas?taxRegistrationNumber=AO5417000000');
   });
 
-  test('resultCode !== "0" lança AgtApiError com a errorList exposta tal como veio', async () => {
-    mockFetch(200, { resultCode: '1', errorList: [{ code: 'E001', message: 'NIF inválido' }] });
+  test('registarFactura(): errorList preenchida é sempre recusa, mesmo com requestID presente', async () => {
+    mockFetch(200, { requestID: '202500000010690', resultCode: '1', errorList: [{ code: 'E001', message: 'NIF inválido' }] });
 
     await expect(agtSandboxClient.registarFactura({})).rejects.toMatchObject({
       name: 'AgtApiError',
@@ -190,9 +194,14 @@ describe('Endpoints da Sandbox — cabeçalhos, rota e tratamento de resultCode'
     });
   });
 
-  test('resultCode numérico 0 (não string) é tratado como sucesso', async () => {
+  test('registarFactura(): sem requestID é sempre recusa, mesmo com errorList vazio', async () => {
+    mockFetch(200, { errorList: [] });
+    await expect(agtSandboxClient.registarFactura({})).rejects.toMatchObject({ name: 'AgtApiError' });
+  });
+
+  test('resultCode numérico 0 (não string) é tratado como sucesso — endpoint sem sinal próprio (consultarFactura)', async () => {
     mockFetch(200, { resultCode: 0, documentNo: 'FT 2026/2' });
-    await expect(agtSandboxClient.registarFactura({})).resolves.toEqual({ resultCode: 0, documentNo: 'FT 2026/2' });
+    await expect(agtSandboxClient.consultarFactura({ documentNo: 'FT 2026/2' })).resolves.toEqual({ resultCode: 0, documentNo: 'FT 2026/2' });
   });
 
   test('HTTP não-2xx sem corpo JSON válido lança AgtApiError com o status como resultCode', async () => {
