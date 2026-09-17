@@ -263,7 +263,7 @@ function envelope(taxRegistrationNumber, documento) {
   return {
     schemaVersion: '2.0',
     submissionUUID: crypto.randomUUID(),
-    taxRegistrationNumber,
+    taxRegistrationNumber:'5003488276',
     submissionTimeStamp: new Date().toISOString(),
     softwareInfo: agtSigningService.construirSoftwareInfo(),
     numberOfEntries: 1,
