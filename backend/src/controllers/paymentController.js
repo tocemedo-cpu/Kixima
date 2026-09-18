@@ -42,12 +42,6 @@ async function listarNotasCredito(req, res) {
   res.json(await creditNoteService.listar(req.params.invoiceId, req.user));
 }
 
-// Reenvio explícito e visível da NC à AGT — pedido explícito, mesmo
-// tratamento do FT no "Pagar" (ver creditNoteService.reenviarAgt).
-async function reenviarNotaCreditoAgt(req, res) {
-  res.json(await creditNoteService.reenviarAgt(req.params.creditNoteId, req.user));
-}
-
 module.exports = {
-  pendingInvoices, history, pay, confirmReceived, emitirNotaCredito, listarNotasCredito, reenviarNotaCreditoAgt,
+  pendingInvoices, history, pay, confirmReceived, emitirNotaCredito, listarNotasCredito,
 };

@@ -1248,15 +1248,6 @@ model CreditNote {
   // documentNo REAL enviado à AGT — ver o comentário em Invoice.agtDocumentNo.
   agtDocumentNo String? @map("agt_document_no")
 
-  // Resultado do ÚLTIMO reenvio explícito à AGT (registarFactura NC, ver
-  // creditNoteService.reenviarAgt) — mesmo mecanismo de
-  // Invoice.agtRequestId/agtResultCode/agtErro/agtEstado. `agtErro` fica
-  // `null` quando a última tentativa foi aceite.
-  agtRequestId  String? @map("agt_request_id")
-  agtResultCode String? @map("agt_result_code")
-  agtErro       Json?   @map("agt_erro")
-  agtEstado     Json?   @map("agt_estado")
-
   issuedAt    DateTime @default(now()) @map("issued_at")
   createdById String?  @map("created_by_id")
   createdAt   DateTime @default(now()) @map("created_at")

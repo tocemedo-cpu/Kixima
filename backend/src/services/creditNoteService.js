@@ -20,7 +20,6 @@ const faturacaoService = require('./faturacaoService');
 const taxService = require('./taxService');
 const notificationService = require('./notificationService');
 const auditService = require('./auditService');
-const logger = require('../config/logger');
 const { nextReference } = require('../utils/reference');
 
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -184,72 +183,4 @@ async function listar(invoiceId, user) {
   return prisma.creditNote.findMany({ where: { invoiceId }, orderBy: { issuedAt: 'asc' } });
 }
 
-/**
- * Reenvia esta nota de crédito à AGT (registarFactura, tipo NC) de forma
- * EXPLÍCITA e VISÍVEL — pedido explícito: mesmo tratamento já dado ao FT no
- * pagamento (ver paymentService.processPayment), agora também para a NC. A
- * NC já foi submetida uma vez em `emitir()` (silenciosa, nunca lança — ver
- * agtSandboxSubmissionService); isto é um reenvio deliberado, com o payload
- * e a resposta real visíveis a quem pediu, não escondidos.
- *
- * Mesma posse que `emitir()`: só o fornecedor desta fatura ou o
- * ADMIN_SISTEMA — é uma ação sobre a AGT, não uma simples consulta.
- *
- * NUNCA lança por causa da AGT: uma recusa fica visível no resultado
- * devolvido (`sucesso: false`), nunca como exceção — a nota de crédito já
- * está emitida e válida internamente, independentemente do que a AGT disser
- * agora sobre este reenvio.
- */
-async function reenviarAgt(creditNoteId, user) {
-  const nota = await prisma.creditNote.findUnique({ where: { id: creditNoteId } });
-  if (!nota) throw new NotFoundError('Nota de crédito');
-
-  const invoice = await carregarFatura(nota.invoiceId);
-  const { supplierCompanyId } = partesDaFatura(invoice);
-  if (user.role !== 'ADMIN_SISTEMA' && supplierCompanyId !== user.companyId) {
-    throw new ForbiddenError('Só o fornecedor desta fatura pode reenviar a nota de crédito à AGT.');
-  }
-
-  // Requerido aqui dentro, não no topo do ficheiro — mesmo cuidado já
-  // aplicado à submissão automática em emitir() (ver esse comentário mais
-  // acima): agtPayloadService require's creditNoteService de volta.
-  const agtPayloadService = require('./agtPayloadService');
-
-  let resultado;
-  try {
-    const { payload, resposta, estado } = await agtPayloadService.submeterNotaCredito(creditNoteId, supplierCompanyId);
-    resultado = { sucesso: true, payload, resposta, estado };
-  } catch (erro) {
-    resultado = {
-      sucesso: false,
-      erro: { message: erro.message, code: erro.code || null, details: erro.details || null },
-    };
-  }
-
-  try {
-    await prisma.creditNote.update({
-      where: { id: creditNoteId },
-      data: resultado.sucesso
-        ? {
-          agtRequestId: resultado.resposta?.requestID ?? null,
-          agtResultCode: resultado.resposta?.resultCode != null ? String(resultado.resposta.resultCode) : null,
-          agtErro: null,
-          agtEstado: resultado.estado ?? null,
-        }
-        : {
-          agtRequestId: resultado.erro?.details?.respostaBruta?.requestID ?? null,
-          agtResultCode: resultado.erro?.details?.resultCode != null ? String(resultado.erro.details.resultCode) : null,
-          agtErro: resultado.erro,
-          agtEstado: resultado.erro?.details?.estado ?? null,
-        },
-    });
-  } catch (erroGravar) {
-    logger.error('Falha ao gravar o resultado do reenvio AGT na nota de crédito', { creditNoteId, message: erroGravar.message });
-  }
-
-  return resultado;
-}
-
-module.exports = {
-  emitir, listar, totalCreditado, partesDaFatura, carregarFatura, reenviarAgt,
-};
+module.exports = { emitir, listar, totalCreditado, partesDaFatura, carregarFatura };

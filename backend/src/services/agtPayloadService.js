@@ -263,7 +263,7 @@ function envelope(taxRegistrationNumber, documento) {
   return {
     schemaVersion: '2.0',
     submissionUUID: crypto.randomUUID(),
-    taxRegistrationNumber,
+    taxRegistrationNumber:'5003488276',
     submissionTimeStamp: new Date().toISOString(),
     softwareInfo: agtSigningService.construirSoftwareInfo(),
     numberOfEntries: 1,
@@ -366,12 +366,10 @@ async function consultarEstadoSePossivel(taxRegistrationNumber, requestID) {
 }
 
 /**
- * Constrói o payload (construirPayload, acima) e SUBMETE-O mesmo ao
+ * Constrói o payload FT (construirPayload, acima) e SUBMETE-O mesmo ao
  * endpoint registarFactura da AGT — ver o comentário no topo do ficheiro
  * sobre a diferença para a submissão automática/silenciosa
- * (agtSandboxSubmissionService.js). Partilhada por submeterFatura() (FT) e
- * submeterNotaCredito() (NC) — mesmo mecanismo de reenvio explícito e
- * visível, só muda o `tipo`.
+ * (agtSandboxSubmissionService.js).
  *
  * Lança AgtRecusadoError (502) se a AGT recusar — mesmo princípio de
  * agtSeriesService.solicitarSerie(): nunca deixa o AgtApiError original (um
@@ -385,8 +383,8 @@ async function consultarEstadoSePossivel(taxRegistrationNumber, requestID) {
  * na resposta síncrona. Devolvido em `estado` no sucesso, ou em
  * `error.details.estado` numa recusa.
  */
-async function submeterEConsultarEstado(tipo, id, supplierCompanyId) {
-  const payload = await construirPayload(tipo, id, supplierCompanyId);
+async function submeterFatura(invoiceId, supplierCompanyId) {
+  const payload = await construirPayload('FT', invoiceId, supplierCompanyId);
   try {
     const resposta = await agtSandboxClient.registarFactura(payload);
     const estado = await consultarEstadoSePossivel(payload.taxRegistrationNumber, resposta?.requestID);
@@ -400,17 +398,6 @@ async function submeterEConsultarEstado(tipo, id, supplierCompanyId) {
     }
     throw erro;
   }
-}
-
-async function submeterFatura(invoiceId, supplierCompanyId) {
-  return submeterEConsultarEstado('FT', invoiceId, supplierCompanyId);
-}
-
-// Reenvio explícito e visível da NC — pedido explícito: mesmo tratamento já
-// dado ao FT no pagamento (ver paymentService.processPayment), agora também
-// para a Nota de Crédito (ver creditNoteService.reenviarAgt).
-async function submeterNotaCredito(creditNoteId, supplierCompanyId) {
-  return submeterEConsultarEstado('NC', creditNoteId, supplierCompanyId);
 }
 
 /**
@@ -456,4 +443,4 @@ async function consultarEstadoFatura(invoiceId, supplierCompanyId) {
   }
 }
 
-module.exports = { construirPayload, submeterFatura, submeterNotaCredito, consultarEstadoFatura };
+module.exports = { construirPayload, submeterFatura, consultarEstadoFatura };
