@@ -20,7 +20,17 @@ const ACTION_LABEL = {
   DADOS_BANCARIOS_ALTERADOS: 'Dados bancários alterados',
   UTILIZADOR_BLOQUEADO: 'Utilizador bloqueado',
   UTILIZADOR_DESBLOQUEADO: 'Utilizador desbloqueado',
+  AGT_SANDBOX_SUBMETIDO: 'Documento submetido à AGT',
+  AGT_SANDBOX_FALHOU: 'Falha ao submeter à AGT',
 };
+
+// Ações cujo `detail` carrega fragmentos da resposta da AGT (documentNo,
+// resultCode, submissionUUID, texto de erro devolvido pela AGT — ver
+// agtSandboxSubmissionService.submeter()) — nunca desenhados aqui: o
+// payload/resposta da AGT não deve ficar visível a utilizadores, nem em
+// fragmentos soltos no trilho de auditoria. O registo em si continua a
+// existir na base de dados, só deixa de ser mostrado neste ecrã.
+const DETAIL_OCULTO_ACTIONS = new Set(['AGT_SANDBOX_SUBMETIDO', 'AGT_SANDBOX_FALHOU']);
 
 const ACTION_TONE = {
   PAGAMENTO_EXECUTADO: 'success',
@@ -58,7 +68,7 @@ const DETAIL_LABEL = {
  * que já vive neste campo, por isso junta-se aqui em vez de se inventar um
  * mecanismo de expansão. Nenhuma informação sai do ecrã.
  */
-function DetailCell({ detail, ip, perfil }) {
+function DetailCell({ action, detail, ip, perfil }) {
   const { t } = useI18n();
   // Perfil e IP juntam-se ao detalhe pela mesma razão: são qualificadores do
   // ATOR, e a coluna do ator já está ao lado. Percorrer a lista faz-se pela
@@ -70,11 +80,12 @@ function DetailCell({ detail, ip, perfil }) {
     return fim;
   };
   const comIp = comExtras;
-  if (!detail || typeof detail !== 'object') {
+  const detalheVisivel = DETAIL_OCULTO_ACTIONS.has(action) ? null : detail;
+  if (!detalheVisivel || typeof detalheVisivel !== 'object') {
     const so = comIp([]);
     return so.length ? <span className="bz-muted">{so.join(' · ')}</span> : <span className="bz-muted">—</span>;
   }
-  const parts = Object.entries(detail)
+  const parts = Object.entries(detalheVisivel)
     .filter(([, v]) => v !== null && v !== undefined && v !== '')
     .map(([k, v]) => `${t(DETAIL_LABEL[k] || k)}: ${v === true ? t('sim') : v === false ? t('não') : v}`);
   const todas = comIp(parts);
@@ -150,7 +161,7 @@ export default function AuditTrail() {
                       <td><Pill tone={ACTION_TONE[l.action] || 'neutral'}>{ACTION_LABEL[l.action] || l.action}</Pill></td>
                       <td className="mono">{l.entityRef || '—'}</td>
                       <td><strong>{l.actorName || '—'}</strong></td>
-                      <td><DetailCell detail={l.detail} ip={l.ip} perfil={l.actorRole ? t(ROLE_LABEL[l.actorRole] || l.actorRole) : null} /></td>
+                      <td><DetailCell action={l.action} detail={l.detail} ip={l.ip} perfil={l.actorRole ? t(ROLE_LABEL[l.actorRole] || l.actorRole) : null} /></td>
                     </tr>
                   ))}
               </tbody>
