@@ -33,6 +33,15 @@ router.get(
   requirePermission(FATURACAO),
   paymentController.listarNotasCredito,
 );
+// Reenvio explícito e visível da NC à AGT (registarFactura) — mesma posse do
+// POST acima (só o fornecedor desta fatura, ou o Admin do Sistema): é uma
+// ação sobre a AGT, não uma simples consulta.
+router.post(
+  '/notas-credito/:creditNoteId/reenviar-agt',
+  requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'ADMIN_SISTEMA'),
+  requirePermission(FATURACAO),
+  paymentController.reenviarNotaCreditoAgt,
+);
 
 router.use(requireRole('FINANCEIRO', 'COMPANY_ADMIN'));
 

@@ -40,6 +40,11 @@ export default function OrderDetail() {
   const [showCreditNote, setShowCreditNote] = useState(false);
   const [cnMotivo, setCnMotivo] = useState('');
   const [cnAmount, setCnAmount] = useState('');
+  // Reenvio explícito da NC à AGT (registarFactura) — mesmo princípio do FT
+  // no "Pagar": visibilidade do payload/resposta reais, nunca em silêncio.
+  const [reenviandoNcId, setReenviandoNcId] = useState(null);
+  const [agtNcResultado, setAgtNcResultado] = useState(null);
+  const [agtNcCopiado, setAgtNcCopiado] = useState(false);
 
   const load = useCallback(() => {
     api.get(`/api/purchase-orders/${id}`).then(setPo).catch((e) => setError(e.message));
@@ -82,6 +87,32 @@ export default function OrderDetail() {
       setError(e.message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function reenviarNotaCredito(nota) {
+    setReenviandoNcId(nota.id);
+    setError('');
+    setAgtNcResultado(null);
+    try {
+      const res = await api.post(`/api/payments/notas-credito/${nota.id}/reenviar-agt`);
+      const ref = nota.serie && nota.numeroNaSerie ? `${nota.serie}/${nota.numeroNaSerie}` : nota.reference;
+      setAgtNcResultado({ ref, ...res });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setReenviandoNcId(null);
+    }
+  }
+
+  async function copiarAgtNcJson() {
+    if (!agtNcResultado) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(agtNcResultado, null, 2));
+      setAgtNcCopiado(true);
+      setTimeout(() => setAgtNcCopiado(false), 2500);
+    } catch {
+      // Sem acesso à área de transferência — o JSON continua visível para copiar à mão.
     }
   }
 
@@ -200,15 +231,68 @@ export default function OrderDetail() {
           {(po.invoice.creditNotes || []).length ? (
             <ul style={{ marginTop: 10, paddingLeft: 18 }}>
               {po.invoice.creditNotes.map((n) => (
-                <li key={n.id} style={{ fontSize: 12.5, marginBottom: 4 }}>
-                  <span className="mono">{n.serie && n.numeroNaSerie ? `${n.serie}/${n.numeroNaSerie}` : n.reference}</span>
-                  {' — '}{formatMoney(n.amount, po.invoice.currency)} — {n.motivo} ({formatDate(n.issuedAt)})
+                <li key={n.id} style={{ fontSize: 12.5, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span>
+                    <span className="mono">{n.serie && n.numeroNaSerie ? `${n.serie}/${n.numeroNaSerie}` : n.reference}</span>
+                    {' — '}{formatMoney(n.amount, po.invoice.currency)} — {n.motivo} ({formatDate(n.issuedAt)})
+                  </span>
+                  {canCreditNote ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      disabled={reenviandoNcId === n.id}
+                      onClick={() => reenviarNotaCredito(n)}
+                    >
+                      {reenviandoNcId === n.id ? t('A reenviar…') : t('Reenviar à AGT')}
+                    </button>
+                  ) : null}
                 </li>
               ))}
             </ul>
           ) : (
             <p className="helptext" style={{ marginTop: 8 }}>{t('Sem notas de crédito emitidas para esta fatura.')}</p>
           )}
+
+          {agtNcResultado ? (
+            <div className="card" style={{ padding: 16, marginTop: 12, background: 'var(--surface-2, #fafafa)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <strong style={{ fontSize: 13.5 }}>
+                  {agtNcResultado.sucesso
+                    ? t('Nota de crédito {ref} reenviada à AGT (registarFactura)', { ref: agtNcResultado.ref })
+                    : t('A AGT recusou o reenvio da nota de crédito {ref}', { ref: agtNcResultado.ref })}
+                </strong>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAgtNcResultado(null)}>{t('Fechar')}</button>
+              </div>
+              {agtNcResultado.sucesso ? (
+                <dl style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                  <div>
+                    <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{t('documentNo')}</dt>
+                    <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{agtNcResultado.payload?.documents?.[0]?.documentNo || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{t('resultCode')}</dt>
+                    <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{String(agtNcResultado.resposta?.resultCode ?? '—')}</dd>
+                  </div>
+                </dl>
+              ) : (
+                <p style={{ marginTop: 8, fontSize: 13 }}>
+                  {agtNcResultado.erro?.message}
+                  {agtNcResultado.erro?.details?.errorList?.length ? ` — ${JSON.stringify(agtNcResultado.erro.details.errorList)}` : ''}
+                </p>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 14 }}>
+                <span style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                  {t('JSON completo (payload enviado + resposta da AGT)')}
+                </span>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={copiarAgtNcJson}>
+                  {agtNcCopiado ? t('Copiado!') : t('Copiar JSON')}
+                </button>
+              </div>
+              <pre style={{ marginTop: 6, padding: 12, background: 'var(--surface-1, #fff)', borderRadius: 8, fontSize: 12, lineHeight: 1.5, maxHeight: 360, overflowY: 'auto', overflowX: 'auto' }}>
+                {JSON.stringify(agtNcResultado, null, 2)}
+              </pre>
+            </div>
+          ) : null}
 
           {canCreditNote && porCreditar > 0 && (
             <div style={{ marginTop: 12 }}>
