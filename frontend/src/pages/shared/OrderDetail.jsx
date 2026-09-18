@@ -40,6 +40,15 @@ export default function OrderDetail() {
   const [showCreditNote, setShowCreditNote] = useState(false);
   const [cnMotivo, setCnMotivo] = useState('');
   const [cnAmount, setCnAmount] = useState('');
+  const [showAnular, setShowAnular] = useState(false);
+  const [anularMotivo, setAnularMotivo] = useState('');
+  const [anularBusy, setAnularBusy] = useState(false);
+  // Resultado da submissão da nota de crédito de anulação à AGT
+  // (registarFactura) — mesmo princípio/visual do reenvio do FT em
+  // PendingInvoices.jsx: nunca esconde uma recusa, a fatura já ficou anulada
+  // (o crédito já foi criado) independentemente do resultado desta submissão.
+  const [agtAnularResultado, setAgtAnularResultado] = useState(null);
+  const [anularCopiado, setAnularCopiado] = useState(false);
 
   const load = useCallback(() => {
     api.get(`/api/purchase-orders/${id}`).then(setPo).catch((e) => setError(e.message));
@@ -82,6 +91,35 @@ export default function OrderDetail() {
       setError(e.message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function submitAnular() {
+    setAnularBusy(true);
+    setError('');
+    setSuccess('');
+    try {
+      const resultado = await api.post(`/api/payments/invoices/${po.invoice.id}/anular`, { motivo: anularMotivo.trim() || undefined });
+      setSuccess(t('Ação registada com sucesso.'));
+      setShowAnular(false);
+      setAnularMotivo('');
+      if (resultado.agtSubmission) setAgtAnularResultado({ ref: resultado.creditNote?.reference, ...resultado.agtSubmission });
+      load();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setAnularBusy(false);
+    }
+  }
+
+  async function copiarAgtAnularJson() {
+    if (!agtAnularResultado) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(agtAnularResultado, null, 2));
+      setAnularCopiado(true);
+      setTimeout(() => setAnularCopiado(false), 2500);
+    } catch {
+      // Sem acesso à área de transferência — o JSON continua visível para copiar à mão.
     }
   }
 
@@ -212,11 +250,16 @@ export default function OrderDetail() {
 
           {canCreditNote && porCreditar > 0 && (
             <div style={{ marginTop: 12 }}>
-              {!showCreditNote ? (
-                <button className="btn btn-ghost btn-sm" onClick={() => setShowCreditNote(true)}>
-                  {t('Emitir nota de crédito')}
-                </button>
-              ) : (
+              {!showCreditNote && !showAnular ? (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setShowCreditNote(true)}>
+                    {t('Emitir nota de crédito')}
+                  </button>
+                  <button className="btn btn-danger btn-sm" onClick={() => setShowAnular(true)}>
+                    {t('Anular fatura')}
+                  </button>
+                </div>
+              ) : showCreditNote ? (
                 <div style={{ display: 'grid', gap: 10, maxWidth: 420 }}>
                   <p className="helptext">
                     {t('Corrige esta fatura sem a alterar — pode creditar até {valor}.', { valor: formatMoney(porCreditar, po.invoice.currency) })}
@@ -242,9 +285,67 @@ export default function OrderDetail() {
                     <button className="btn btn-ghost" onClick={() => setShowCreditNote(false)}>{t('Cancelar')}</button>
                   </div>
                 </div>
+              ) : (
+                <div style={{ display: 'grid', gap: 10, maxWidth: 420 }}>
+                  <p className="helptext">
+                    {t('Esta ação cria uma nota de crédito pelo valor total ainda por creditar ({valor}) e anula a fatura.', { valor: formatMoney(porCreditar, po.invoice.currency) })}
+                  </p>
+                  <Field label={t('Motivo')}>
+                    {(id) => (<>
+                      <textarea id={id} rows={2} value={anularMotivo} onChange={(e) => setAnularMotivo(e.target.value)} placeholder={t('Ex.: pedido de cancelamento do comprador…')} />
+                    </>)}
+                  </Field>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-danger" disabled={anularBusy} onClick={submitAnular}>
+                      {anularBusy ? t('A anular…') : t('Confirmar anulação')}
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => setShowAnular(false)}>{t('Cancelar')}</button>
+                  </div>
+                </div>
               )}
             </div>
           )}
+
+          {agtAnularResultado ? (
+            <div className="bz-card" style={{ padding: 16, marginTop: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <strong style={{ fontSize: 13.5 }}>
+                  {agtAnularResultado.sucesso
+                    ? t('Nota de crédito de anulação {ref} submetida à AGT (registarFactura)', { ref: agtAnularResultado.ref })
+                    : t('A AGT recusou a submissão da nota de crédito de anulação {ref}', { ref: agtAnularResultado.ref })}
+                </strong>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAgtAnularResultado(null)}>{t('Fechar')}</button>
+              </div>
+              {agtAnularResultado.sucesso ? (
+                <dl style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                  <div>
+                    <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{t('documentNo')}</dt>
+                    <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{agtAnularResultado.payload?.documents?.[0]?.documentNo || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>{t('resultCode')}</dt>
+                    <dd style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{String(agtAnularResultado.resposta?.resultCode ?? '—')}</dd>
+                  </div>
+                </dl>
+              ) : (
+                <p style={{ marginTop: 8, fontSize: 13 }}>
+                  {agtAnularResultado.erro?.message}
+                  {agtAnularResultado.erro?.details?.errorList?.length ? ` — ${JSON.stringify(agtAnularResultado.erro.details.errorList)}` : ''}
+                </p>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 14 }}>
+                <span style={{ fontSize: 11, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                  {t('JSON completo (payload enviado + resposta da AGT)')}
+                </span>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={copiarAgtAnularJson}>
+                  {anularCopiado ? t('Copiado!') : t('Copiar JSON')}
+                </button>
+              </div>
+              <pre className="bz-scroll-x" style={{ marginTop: 6, padding: 12, background: 'var(--surface-2, #fafafa)', borderRadius: 8, fontSize: 12, lineHeight: 1.5, maxHeight: 360, overflowY: 'auto' }}>
+                {JSON.stringify(agtAnularResultado, null, 2)}
+              </pre>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

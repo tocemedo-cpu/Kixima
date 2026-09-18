@@ -42,6 +42,19 @@ async function listarNotasCredito(req, res) {
   res.json(await creditNoteService.listar(req.params.invoiceId, req.user));
 }
 
+// Anula a fatura por completo — nota de crédito automática pelo valor total
+// ainda por creditar, com o payload/resposta da submissão AGT visíveis na
+// resposta (ver creditNoteService.anular()).
+async function anularFatura(req, res) {
+  const resultado = await creditNoteService.anular(
+    req.params.invoiceId,
+    { motivo: req.body?.motivo },
+    req.user,
+    auditService.actorFrom(req),
+  );
+  res.status(201).json(resultado);
+}
+
 module.exports = {
-  pendingInvoices, history, pay, confirmReceived, emitirNotaCredito, listarNotasCredito,
+  pendingInvoices, history, pay, confirmReceived, emitirNotaCredito, listarNotasCredito, anularFatura,
 };

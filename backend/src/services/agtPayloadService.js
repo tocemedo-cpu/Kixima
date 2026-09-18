@@ -366,10 +366,12 @@ async function consultarEstadoSePossivel(taxRegistrationNumber, requestID) {
 }
 
 /**
- * Constrói o payload FT (construirPayload, acima) e SUBMETE-O mesmo ao
+ * Constrói o payload de `tipo` (construirPayload, acima) e SUBMETE-O mesmo ao
  * endpoint registarFactura da AGT — ver o comentário no topo do ficheiro
  * sobre a diferença para a submissão automática/silenciosa
- * (agtSandboxSubmissionService.js).
+ * (agtSandboxSubmissionService.js). `registarFactura` não é específico de FT:
+ * é o único endpoint de submissão de documento da AGT, reutilizado tal e
+ * qual para FT e NC (ver agtSandboxClient.registarFactura()).
  *
  * Lança AgtRecusadoError (502) se a AGT recusar — mesmo princípio de
  * agtSeriesService.solicitarSerie(): nunca deixa o AgtApiError original (um
@@ -383,8 +385,8 @@ async function consultarEstadoSePossivel(taxRegistrationNumber, requestID) {
  * na resposta síncrona. Devolvido em `estado` no sucesso, ou em
  * `error.details.estado` numa recusa.
  */
-async function submeterFatura(invoiceId, supplierCompanyId) {
-  const payload = await construirPayload('FT', invoiceId, supplierCompanyId);
+async function submeterDocumento(tipo, id, supplierCompanyId) {
+  const payload = await construirPayload(tipo, id, supplierCompanyId);
   try {
     const resposta = await agtSandboxClient.registarFactura(payload);
     const estado = await consultarEstadoSePossivel(payload.taxRegistrationNumber, resposta?.requestID);
@@ -398,6 +400,20 @@ async function submeterFatura(invoiceId, supplierCompanyId) {
     }
     throw erro;
   }
+}
+
+// Reenvio explícito e visível do FT — ver paymentService.processPayment.
+async function submeterFatura(invoiceId, supplierCompanyId) {
+  return submeterDocumento('FT', invoiceId, supplierCompanyId);
+}
+
+// Submissão explícita e visível da NC — ver creditNoteService.anular(): ao
+// anular uma fatura, a nota de crédito de valor total já foi submetida uma
+// vez, em silêncio, dentro de creditNoteService.emitir() (esquema
+// pipe-delimited, agtSandboxSubmissionService); isto é a MESMA lógica de
+// "reenvio deliberado, com visibilidade" já usada para o FT, aplicada à NC.
+async function submeterNotaCredito(creditNoteId, supplierCompanyId) {
+  return submeterDocumento('NC', creditNoteId, supplierCompanyId);
 }
 
 /**
@@ -443,4 +459,4 @@ async function consultarEstadoFatura(invoiceId, supplierCompanyId) {
   }
 }
 
-module.exports = { construirPayload, submeterFatura, consultarEstadoFatura };
+module.exports = { construirPayload, submeterFatura, submeterNotaCredito, consultarEstadoFatura };

@@ -34,6 +34,15 @@ router.get(
   paymentController.listarNotasCredito,
 );
 
+// Anular fatura — ação dedicada, mesma posse/permissão da nota de crédito
+// acima (é uma nota de crédito de valor total, ver creditNoteService.anular()).
+router.post(
+  '/invoices/:invoiceId/anular',
+  requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'ADMIN_SISTEMA'),
+  requirePermission(FATURACAO),
+  paymentController.anularFatura,
+);
+
 router.use(requireRole('FINANCEIRO', 'COMPANY_ADMIN'));
 
 router.get('/invoices/pending', paymentController.pendingInvoices);

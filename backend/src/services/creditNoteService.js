@@ -20,6 +20,7 @@ const faturacaoService = require('./faturacaoService');
 const taxService = require('./taxService');
 const notificationService = require('./notificationService');
 const auditService = require('./auditService');
+const logger = require('../config/logger');
 const { nextReference } = require('../utils/reference');
 
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -168,6 +169,83 @@ async function emitir(invoiceId, { motivo, amount }, user, actor = null) {
   return nota;
 }
 
+/**
+ * Anula uma fatura por completo — a ação dedicada "Anular Fatura", distinta
+ * do formulário de nota de crédito parcial acima. Cria automaticamente uma
+ * nota de crédito pelo valor TOTAL ainda por creditar (via `emitir()`, mesma
+ * validação de posse e de saldo) e, de seguida, torna VISÍVEL o
+ * payload/resposta reais da submissão dessa NC à AGT (registarFactura) —
+ * mesmo princípio da resubmissão explícita do FT em
+ * paymentService.processPayment/agtPayloadService.submeterFatura, aqui
+ * aplicado à NC via agtPayloadService.submeterNotaCredito(). Diferente da
+ * submissão automática e silenciosa que `emitir()` já faz por baixo
+ * (agtSandboxSubmissionService, esquema pipe-delimited) — essa continua a
+ * acontecer, isto soma-se a ela.
+ *
+ * NÃO define Invoice.status = CANCELADA: o estado de "fatura anulada" já é
+ * calculado a partir do saldo creditado (ver saftService.js, `anulada()`) —
+ * escrever um segundo estado à parte, à mão, era exatamente o bug já
+ * corrigido lá (comparar contra um valor que o enum InvoiceStatus nem tem).
+ */
+async function anular(invoiceId, { motivo } = {}, user, actor = null) {
+  const invoice = await carregarFatura(invoiceId);
+  const { supplierCompanyId } = partesDaFatura(invoice);
+
+  const jaCreditado = await totalCreditado(invoiceId);
+  const porCreditar = round2(Number(invoice.amount) - jaCreditado);
+  if (porCreditar <= 0) {
+    throw new ConflictError(`A fatura "${invoice.reference}" já está totalmente creditada — não há saldo por anular.`);
+  }
+
+  const motivoFinal = motivo && String(motivo).trim() ? String(motivo).trim() : `Anulação da fatura ${invoice.reference}`;
+  const nota = await emitir(invoiceId, { motivo: motivoFinal, amount: porCreditar }, user, actor);
+
+  let agtSubmission = null;
+  if (supplierCompanyId) {
+    // Requerido aqui dentro pela mesma razão do require de
+    // agtSandboxSubmissionService em emitir(), acima: fecha um ciclo com
+    // agtPayloadService -> creditNoteService.
+    const agtPayloadService = require('./agtPayloadService');
+    try {
+      const { payload, resposta, estado } = await agtPayloadService.submeterNotaCredito(nota.id, supplierCompanyId);
+      agtSubmission = { sucesso: true, payload, resposta, estado };
+    } catch (erro) {
+      agtSubmission = {
+        sucesso: false,
+        erro: { message: erro.message, code: erro.code || null, details: erro.details || null },
+      };
+    }
+
+    // Grava o resultado desta submissão na própria NC — sem isto só existia
+    // na resposta HTTP deste pedido, perdida depois (mesmo princípio de
+    // paymentService.processPayment ao gravar em Invoice.agtRequestId/...).
+    // Numa falha de escrita aqui, só regista em log — a NC já existe e já foi
+    // submetida, uma falha a GRAVAR o resultado não pode desfazer isso.
+    try {
+      await prisma.creditNote.update({
+        where: { id: nota.id },
+        data: agtSubmission.sucesso
+          ? {
+            agtRequestId: agtSubmission.resposta?.requestID ?? null,
+            agtResultCode: agtSubmission.resposta?.resultCode != null ? String(agtSubmission.resposta.resultCode) : null,
+            agtErro: null,
+            agtEstado: agtSubmission.estado ?? null,
+          }
+          : {
+            agtRequestId: agtSubmission.erro?.details?.respostaBruta?.requestID ?? null,
+            agtResultCode: agtSubmission.erro?.details?.resultCode != null ? String(agtSubmission.erro.details.resultCode) : null,
+            agtErro: agtSubmission.erro,
+            agtEstado: agtSubmission.erro?.details?.estado ?? null,
+          },
+      });
+    } catch (erroGravar) {
+      logger.error('Falha ao gravar o resultado da submissão AGT na nota de crédito de anulação', { creditNoteId: nota.id, message: erroGravar.message });
+    }
+  }
+
+  return { creditNote: nota, agtSubmission };
+}
+
 // Vê as notas de crédito de uma fatura quem é parte nela (comprador ou
 // fornecedor) ou o ADMIN_SISTEMA — a mesma regra de posse de qualquer
 // documento fiscal desta plataforma, nunca aberta a quem não tem nada a ver
@@ -183,4 +261,6 @@ async function listar(invoiceId, user) {
   return prisma.creditNote.findMany({ where: { invoiceId }, orderBy: { issuedAt: 'asc' } });
 }
 
-module.exports = { emitir, listar, totalCreditado, partesDaFatura, carregarFatura };
+module.exports = {
+  emitir, anular, listar, totalCreditado, partesDaFatura, carregarFatura,
+};
