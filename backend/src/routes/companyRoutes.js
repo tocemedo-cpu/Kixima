@@ -16,6 +16,7 @@ const {
   bankDetailsSchema,
   companyPlanSchema,
   serieFiscalSchema,
+  taxIdSchema,
   dataAdesaoSchema,
 } = require('../utils/schemas');
 
@@ -83,6 +84,10 @@ router.get('/:id/platform-fees', requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'FIN
 // Dados bancários da empresa (para pagamentos) — geridos pela própria empresa.
 router.get('/:id/bank-details', requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'FINANCEIRO', 'ADMIN_SISTEMA'), requirePermission(FINANCEIRO), companyController.getBankDetails);
 router.put('/:id/bank-details', requireRole('FORNECEDOR', 'COMPANY_ADMIN', 'ADMIN_SISTEMA'), requirePermission(FINANCEIRO), validate(bankDetailsSchema), companyController.setBankDetails);
+
+// TEMPORÁRIO (só para teste, a reverter): normalmente o NIF só se define no
+// cadastro e nunca mais muda por autoatendimento — ver companyService.updateTaxId.
+router.put('/:id/tax-id', requireRole('COMPANY_ADMIN', 'ADMIN_SISTEMA'), requirePermission(CADASTRO), validate(taxIdSchema), companyController.setTaxId);
 
 // Ficha completa da empresa: documentos de credenciamento, apólices, limites e
 // plano. É a tela de Perfil da Empresa — só o Company Admin (a sua) e o Admin do
