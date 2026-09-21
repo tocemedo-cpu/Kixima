@@ -92,21 +92,6 @@ async function setBankDetails(req, res) {
   res.json(result);
 }
 
-// TEMPORÁRIO (só para teste, a reverter) — ver companyService.updateTaxId.
-async function setTaxId(req, res) {
-  assertOwnCompany(req);
-  const result = await companyService.updateTaxId(req.params.id, req.body.taxId);
-  await auditService.recordSafe({
-    actor: auditService.actorFrom(req),
-    action: 'NIF_ALTERADO',
-    entityType: 'Company',
-    entityId: result.id,
-    entityRef: result.name,
-    detail: { nif: result.taxId },
-  });
-  res.json(result);
-}
-
 // Série de faturação certificada da empresa (Admin do Sistema) — só depois
 // de a AGT a ter formalmente atribuído a esta empresa fornecedora.
 async function setSerieFiscal(req, res) {
@@ -298,7 +283,6 @@ module.exports = {
   setDataAdesao,
   getSubscription,
   setBankDetails,
-  setTaxId,
   createUser,
   listUsers,
   createInvite,
