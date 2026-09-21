@@ -257,6 +257,29 @@ async function setSerieFiscal(companyId, serieFiscal) {
   });
 }
 
+// TEMPORÁRIO (só para teste, a reverter): normalmente o NIF só se define uma
+// vez, no cadastro (registerCompany, abaixo) — não há autoatendimento para o
+// corrigir depois. `taxId` é @unique no schema, por isso confirma-se aqui que
+// nenhuma OUTRA empresa já o tem antes de gravar.
+async function updateTaxId(companyId, taxId) {
+  const company = await prisma.company.findUnique({ where: { id: companyId }, select: { id: true, name: true, taxId: true } });
+  if (!company) throw new NotFoundError('Empresa');
+
+  const novo = taxId.trim();
+  if (novo !== company.taxId) {
+    const emUso = await prisma.company.findUnique({ where: { taxId: novo }, select: { id: true } });
+    if (emUso && emUso.id !== companyId) {
+      throw new ConflictError('Já existe uma empresa registada com este NIF.');
+    }
+  }
+
+  return prisma.company.update({
+    where: { id: companyId },
+    data: { taxId: novo },
+    select: { id: true, name: true, taxId: true },
+  });
+}
+
 // Data de adesão da empresa (fornecedora) à faturação eletrónica — só o
 // Admin do Sistema a declara, e só depois de a AGT a ter formalizado. A
 // partir desta data, faturacaoService.atribuir() recusa certificar
@@ -695,6 +718,7 @@ module.exports = {
   getBankDetails,
   updateBankDetails,
   setSerieFiscal,
+  updateTaxId,
   setDataAdesaoFacturacaoElectronica,
   updatePlan,
   subscriptionFor,
