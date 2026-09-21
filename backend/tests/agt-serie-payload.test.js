@@ -5,20 +5,19 @@
 // agtSandboxClient.js como transporte — mockado aqui (não há rede real nos
 // testes; agtSandboxClient.js já tem os seus próprios testes de transporte).
 //
-// POR EMPRESA FORNECEDORA: o ecrã indica `supplierCompanyId`, ano e
-// tipoDocumento — o NIF vem do `Company.taxId` dessa empresa (nunca de uma
-// conta partilhada — ver o comentário em faturacaoRoutes.js sobre a recusa
-// real da AGT quando o NIF do pedido de série e o NIF do documento
-// divergiam). O estabelecimento continua a vir de AGT_ESTABLISHMENT_NUMBER
-// (nunca um valor fixo no código — ver o comentário sobre o erro real "E99"
-// que um "1" adivinhado causou), e o indicador de contingência é sempre "N"
-// (único valor usado neste ambiente). "1" aqui em baixo é só o valor de
-// TESTE atribuído a AGT_ESTABLISHMENT_NUMBER, não um valor fixo no código de
-// produção.
+// Pedido simplificado a pedido do utilizador: só ano + tipoDocumento entram
+// pelo ecrã — o NIF vem de AGT_NIF (a mesma identidade fiscal da conta de
+// homologação/produção usada em AGT_SANDBOX_USERNAME/PASSWORD, ver
+// config/env.js), o estabelecimento vem de AGT_ESTABLISHMENT_NUMBER (nunca um
+// valor fixo no código — ver o comentário em faturacaoRoutes.js sobre o erro
+// real "E99" que um "1" adivinhado causou), e o indicador de contingência é
+// sempre "N" (único valor usado neste ambiente). "1" aqui em baixo é só o
+// valor de TESTE atribuído a AGT_ESTABLISHMENT_NUMBER, não um valor fixo no
+// código de produção.
 //
-// Mesmo cuidado de agt-payload.test.js: a configuração (chave privada RSA) é
-// lida UMA VEZ ao carregar os módulos, por isso é injetada em process.env
-// ANTES de qualquer require dos serviços.
+// Mesmo cuidado de agt-payload.test.js: a configuração (chave privada RSA,
+// AGT_NIF) é lida UMA VEZ ao carregar os módulos, por isso é injetada em
+// process.env ANTES de qualquer require dos serviços.
 const crypto = require('crypto');
 
 const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
@@ -63,24 +62,12 @@ const RESPOSTA_AGT = {
 };
 
 let tokens;
-let supplierCompanyId;
-let taxIdOriginal;
 
 beforeAll(async () => {
   tokens = await loginAll();
-  // A série pertence ao NIF da empresa fornecedora — usa-se a do fixture de
-  // testes (fornecedor@kianda.co.ao), com o NIF temporariamente ajustado para
-  // o valor que este ficheiro já assertava em todo o lado ('5001636863'),
-  // restaurado no fim.
-  const user = await prisma.user.findUnique({ where: { email: 'fornecedor@kianda.co.ao' } });
-  supplierCompanyId = user.companyId;
-  const empresa = await prisma.company.findUnique({ where: { id: supplierCompanyId }, select: { taxId: true } });
-  taxIdOriginal = empresa.taxId;
-  await prisma.company.update({ where: { id: supplierCompanyId }, data: { taxId: '5001636863' } });
 });
 
 afterAll(async () => {
-  await prisma.company.update({ where: { id: supplierCompanyId }, data: { taxId: taxIdOriginal } });
   await prisma.$disconnect();
 });
 
@@ -94,52 +81,39 @@ function pedir(token, params) {
   return auth(token).get('/api/faturacao/agt-serie-payload').query(params);
 }
 
-const PARAMS_VALIDOS = () => ({ ano: '2026', tipoDocumento: 'FT', supplierCompanyId });
+const PARAMS_VALIDOS = { ano: '2026', tipoDocumento: 'FT' };
 
 describe('GET /api/faturacao/agt-serie-payload — RBAC', () => {
   test('só o Admin do Sistema pode pedir — Fornecedor é recusado', async () => {
-    const res = await pedir(tokens.fornecedor, PARAMS_VALIDOS());
+    const res = await pedir(tokens.fornecedor, PARAMS_VALIDOS);
     expect(res.status).toBe(403);
   });
 
   test('Comprador é recusado', async () => {
-    const res = await pedir(tokens.comprador, PARAMS_VALIDOS());
+    const res = await pedir(tokens.comprador, PARAMS_VALIDOS);
     expect(res.status).toBe(403);
   });
 
   test('sem sessão é recusado', async () => {
-    const res = await request(app).get('/api/faturacao/agt-serie-payload').query(PARAMS_VALIDOS());
+    const res = await request(app).get('/api/faturacao/agt-serie-payload').query(PARAMS_VALIDOS);
     expect(res.status).toBe(401);
   });
 });
 
 describe('GET /api/faturacao/agt-serie-payload — validação', () => {
   test('sem ano', async () => {
-    const res = await pedir(tokens.adminSistema, { ...PARAMS_VALIDOS(), ano: undefined });
+    const res = await pedir(tokens.adminSistema, { ...PARAMS_VALIDOS, ano: undefined });
     expect(res.status).toBe(422);
   });
 
   test('ano não numérico', async () => {
-    const res = await pedir(tokens.adminSistema, { ...PARAMS_VALIDOS(), ano: 'abc' });
+    const res = await pedir(tokens.adminSistema, { ...PARAMS_VALIDOS, ano: 'abc' });
     expect(res.status).toBe(422);
   });
 
   test('sem tipoDocumento', async () => {
-    const res = await pedir(tokens.adminSistema, { ...PARAMS_VALIDOS(), tipoDocumento: undefined });
+    const res = await pedir(tokens.adminSistema, { ...PARAMS_VALIDOS, tipoDocumento: undefined });
     expect(res.status).toBe(422);
-  });
-
-  test('sem supplierCompanyId — a série pertence a um NIF específico, não a uma conta partilhada', async () => {
-    const res = await pedir(tokens.adminSistema, { ...PARAMS_VALIDOS(), supplierCompanyId: undefined });
-    expect(res.status).toBe(422);
-    expect(res.body.error.message).toMatch(/empresa fornecedora/);
-    expect(agtSandboxClient.solicitarSerie).not.toHaveBeenCalled();
-  });
-
-  test('empresa fornecedora inexistente', async () => {
-    const res = await pedir(tokens.adminSistema, { ...PARAMS_VALIDOS(), supplierCompanyId: '00000000-0000-0000-0000-000000000000' });
-    expect(res.status).toBe(404);
-    expect(agtSandboxClient.solicitarSerie).not.toHaveBeenCalled();
   });
 });
 
@@ -148,7 +122,7 @@ describe('GET /api/faturacao/agt-serie-payload — configuração da Sandbox em 
     agtSandboxClient.disponivel.mockReturnValue(false);
     agtSandboxClient.emFalta.mockReturnValue(['AGT_SANDBOX_USERNAME', 'AGT_SANDBOX_PASSWORD']);
 
-    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS());
+    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS);
     expect(res.status).toBe(503);
     expect(res.body.error.code).toBe('SERVICO_INDISPONIVEL');
     expect(agtSandboxClient.solicitarSerie).not.toHaveBeenCalled();
@@ -156,8 +130,8 @@ describe('GET /api/faturacao/agt-serie-payload — configuração da Sandbox em 
 });
 
 describe('GET /api/faturacao/agt-serie-payload — sucesso', () => {
-  test('constrói o pedido com o NIF real do fornecedor, assinado, estabelecimento "1" e indicador "N", e submete-o à AGT', async () => {
-    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS());
+  test('constrói o pedido com o NIF do ambiente (AGT_NIF), assinado, estabelecimento "1" e indicador "N", e submete-o à AGT', async () => {
+    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS);
     expect(res.status).toBe(200);
 
     const { pedido, resposta } = res.body;
@@ -186,21 +160,21 @@ describe('GET /api/faturacao/agt-serie-payload — sucesso', () => {
   });
 
   test('tipoDocumento em minúsculas é normalizado para maiúsculas', async () => {
-    const res = await pedir(tokens.adminSistema, { ...PARAMS_VALIDOS(), tipoDocumento: 'nc' });
+    const res = await pedir(tokens.adminSistema, { ...PARAMS_VALIDOS, tipoDocumento: 'nc' });
     expect(res.status).toBe(200);
     expect(res.body.pedido.documentType).toBe('NC');
   });
 
   test('duas chamadas seguidas geram submissionUUID diferentes (não há reaproveitamento acidental)', async () => {
-    const r1 = await pedir(tokens.adminSistema, PARAMS_VALIDOS());
-    const r2 = await pedir(tokens.adminSistema, PARAMS_VALIDOS());
+    const r1 = await pedir(tokens.adminSistema, PARAMS_VALIDOS);
+    const r2 = await pedir(tokens.adminSistema, PARAMS_VALIDOS);
     expect(r1.body.pedido.submissionUUID).not.toBe(r2.body.pedido.submissionUUID);
   });
 });
 
 describe('GET /api/faturacao/agt-serie-payload — histórico (agtSeriesFe)', () => {
   test('pedido aceite pela AGT fica gravado com o seriesFEResult completo e quem pediu', async () => {
-    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS());
+    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS);
     expect(res.status).toBe(200);
 
     const linha = await prisma.agtSeriesFe.findFirst({ where: { submissionUUID: res.body.pedido.submissionUUID } });
@@ -224,7 +198,7 @@ describe('GET /api/faturacao/agt-serie-payload — histórico (agtSeriesFe)', ()
   test('resposta da AGT sem seriesFEResult grava a linha na mesma, com os campos todos null (nunca inventados)', async () => {
     agtSandboxClient.solicitarSerie.mockResolvedValue({ resultCode: 1, errorList: [''] });
 
-    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS());
+    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS);
     const linha = await prisma.agtSeriesFe.findFirst({ where: { submissionUUID: res.body.pedido.submissionUUID } });
     expect(linha.seriesCode).toBeNull();
     expect(linha.authorizedQuantity).toBeNull();
@@ -245,7 +219,7 @@ describe('GET /api/faturacao/agt-serie-payload — recusa da AGT', () => {
     erro.message = 'A AGT recusou o pedido de série.';
     agtSandboxClient.solicitarSerie.mockRejectedValue(erro);
 
-    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS());
+    const res = await pedir(tokens.adminSistema, PARAMS_VALIDOS);
     expect(res.status).toBe(502);
     expect(res.body.error.code).toBe('AGT_RECUSOU');
     expect(res.body.error.details?.resultCode).toBe('1');

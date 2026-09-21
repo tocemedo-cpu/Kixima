@@ -78,33 +78,12 @@ export default function Organization() {
   const { user } = useAuth();
   const [d, setD] = useState(null);
   const [error, setError] = useState('');
-  // TEMPORÁRIO (só para teste, a reverter): normalmente o NIF não é editável
-  // por autoatendimento — ver companyService.updateTaxId.
-  const [editingTaxId, setEditingTaxId] = useState(false);
-  const [taxIdInput, setTaxIdInput] = useState('');
-  const [savingTaxId, setSavingTaxId] = useState(false);
-  const [taxIdError, setTaxIdError] = useState('');
   useEffect(() => { api.get('/api/company-admin/organizacao').then(setD).catch((e) => setError(e.message)); }, []);
-
-  async function saveTaxId() {
-    setSavingTaxId(true);
-    setTaxIdError('');
-    try {
-      const updated = await api.put(`/api/companies/${user.companyId}/tax-id`, { taxId: taxIdInput });
-      setD((prev) => ({ ...prev, company: { ...prev.company, taxId: updated.taxId } }));
-      setEditingTaxId(false);
-    } catch (e) {
-      setTaxIdError(e.message);
-    } finally {
-      setSavingTaxId(false);
-    }
-  }
 
   if (error) return <div className="empty-state"><h3>{t('Não foi possível carregar')}</h3><p>{error}</p></div>;
   if (!d) return <div className="bz-empty">{t('A carregar…')}</div>;
   const c = d.company;
   const typeLabel = c.type === 'FORNECEDOR' ? t('Prestadora de Serviços') : t('Empresa Cliente');
-  const podeEditarNif = user.role === 'COMPANY_ADMIN';
 
   return (
     <div>
@@ -118,37 +97,7 @@ export default function Organization() {
           <table className="bz-table">
             <tbody>
               {[
-                [t('Nome da Empresa'), c.name], [t('Tipo de Atuação'), typeLabel],
-              ].map(([k, v]) => (
-                <tr key={k}><td className="bz-muted" style={{ width: 200 }}>{k}</td><td><strong>{v}</strong></td></tr>
-              ))}
-              <tr>
-                <td className="bz-muted" style={{ width: 200 }}>{t('NIF')}</td>
-                <td>
-                  {editingTaxId ? (
-                    <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                      <input value={taxIdInput} onChange={(e) => setTaxIdInput(e.target.value)} style={{ width: 160 }} autoFocus />
-                      <button className="btn btn-accent btn-sm" disabled={savingTaxId || !taxIdInput.trim()} onClick={saveTaxId}>
-                        {savingTaxId ? t('A guardar…') : t('Guardar')}
-                      </button>
-                      <button className="btn btn-ghost btn-sm" disabled={savingTaxId} onClick={() => setEditingTaxId(false)}>
-                        {t('Cancelar')}
-                      </button>
-                      {taxIdError ? <span className="error-text">{taxIdError}</span> : null}
-                    </span>
-                  ) : (
-                    <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-                      <strong>{c.taxId}</strong>
-                      {podeEditarNif ? (
-                        <button className="btn btn-ghost btn-sm" onClick={() => { setTaxIdInput(c.taxId || ''); setTaxIdError(''); setEditingTaxId(true); }}>
-                          {t('Editar')}
-                        </button>
-                      ) : null}
-                    </span>
-                  )}
-                </td>
-              </tr>
-              {[
+                [t('Nome da Empresa'), c.name], [t('Tipo de Atuação'), typeLabel], [t('NIF'), c.taxId],
                 [t('Telefone'), c.contactPhone || '—'], [t('E-mail Corporativo'), c.contactEmail],
                 [t('Endereço'), c.address || '—'], [t('Localização'), [c.city, c.province, c.country].filter(Boolean).join(', ') || 'Angola'],
                 [t('Data de Registo'), formatDate(c.createdAt)],

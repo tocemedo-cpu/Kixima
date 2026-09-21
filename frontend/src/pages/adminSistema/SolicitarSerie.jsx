@@ -1,18 +1,14 @@
 // src/pages/adminSistema/SolicitarSerie.jsx
 // Admin do Sistema → gera, assina e SUBMETE o pedido de atribuição de série
-// de numeração à AGT ("Solicitar Série", spec SETIC-FP DS.120, 4.5) — POR
-// EMPRESA FORNECEDORA, cada uma com o seu próprio NIF real: a AGT concede
-// uma série a um NIF específico, nunca a uma conta partilhada. Pedir sempre
-// sob o NIF da conta de homologação (AGT_NIF) enquanto o documento em si era
-// assinado com o NIF real do fornecedor causava uma recusa da AGT (503, sem
-// detalhe) sempre que os dois não coincidiam — ver o comentário em
-// agtSeriesService.atribuirDocumentNo(). Pré-requisito documentado antes de
-// se poder emitir documentos fiscais com série própria para essa empresa.
+// de numeração à AGT ("Solicitar Série", spec SETIC-FP DS.120, 4.5) para a
+// conta de homologação/produção configurada no ambiente (AGT_NIF) — pré-
+// requisito documentado antes de se poder emitir documentos fiscais com
+// série própria (ver agtSeriesService.js).
 //
 // Cada pedido ACEITE pela AGT fica gravado em agtSeriesFe (tabela
 // "agtseriesfe" — ver agtSeriesService.solicitarSerie/listarHistorico) — o
-// histórico abaixo é a única coisa mostrada: NIF, Ano, Tipo de documento,
-// Série atribuída e o intervalo/quantidade autorizados (tudo o que vem em
+// histórico abaixo é a única coisa mostrada: Ano, Tipo de documento, Série
+// atribuída e o intervalo/quantidade autorizados (tudo o que vem em
 // seriesFEResult), um pedido por linha. Os painéis "Dados assinados"/
 // "Resposta da AGT" (o JSON bruto do último pedido desta sessão do browser)
 // existiram só enquanto a gravação em agtSeriesFe estava a ser construída e
@@ -30,20 +26,11 @@ const ANO_ATUAL = new Date().getFullYear();
 
 export default function SolicitarSerie() {
   const { t } = useI18n();
-  const [fornecedores, setFornecedores] = useState(null);
-  const [errorFornecedores, setErrorFornecedores] = useState(null);
-  const [supplierCompanyId, setSupplierCompanyId] = useState('');
   const [tipoDocumento, setTipoDocumento] = useState('FT');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [historico, setHistorico] = useState(null);
   const [errorHistorico, setErrorHistorico] = useState(null);
-
-  useEffect(() => {
-    api.get('/api/companies', { type: 'FORNECEDOR', status: 'APROVADA' })
-      .then(setFornecedores)
-      .catch(setErrorFornecedores);
-  }, []);
 
   function carregarHistorico() {
     api.get('/api/faturacao/agt-series-fe')
@@ -56,7 +43,7 @@ export default function SolicitarSerie() {
     e.preventDefault();
     setBusy(true); setError(null);
     try {
-      await api.get('/api/faturacao/agt-serie-payload', { supplierCompanyId, ano: ANO_ATUAL, tipoDocumento });
+      await api.get('/api/faturacao/agt-serie-payload', { ano: ANO_ATUAL, tipoDocumento });
       carregarHistorico(); // o pedido que acabou de ser aceite já está gravado — refrescar a tabela
     } catch (e2) {
       setError(e2);
@@ -70,20 +57,8 @@ export default function SolicitarSerie() {
       <Crumbs trail={[{ label: 'Configurações e Suporte', to: '/sistema' }, 'Solicitar Série']} />
 
       <ErrorBanner error={error} />
-      <ErrorBanner error={errorFornecedores} />
 
       <form className="bz-card" style={{ padding: 16, display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }} onSubmit={gerar}>
-        <Field label={t('Empresa fornecedora')} obrigatorio>
-          {(id) => (
-            <select id={id} className="input" required style={{ minWidth: 240 }} value={supplierCompanyId} onChange={(e) => setSupplierCompanyId(e.target.value)}>
-              <option value="">{t('Selecione…')}</option>
-              {(fornecedores || []).map((f) => (
-                <option key={f.id} value={f.id}>{f.name} {f.taxId ? `— ${f.taxId}` : `(${t('sem NIF')})`}</option>
-              ))}
-            </select>
-          )}
-        </Field>
-
         <Field label="Tipo de documento" obrigatorio>
           {(id) => (
             <select id={id} className="input" required value={tipoDocumento} onChange={(e) => setTipoDocumento(e.target.value)}>
@@ -98,7 +73,7 @@ export default function SolicitarSerie() {
           )}
         </Field>
 
-        <button type="submit" className="btn btn-accent" disabled={busy || !supplierCompanyId}>
+        <button type="submit" className="btn btn-accent" disabled={busy}>
           {busy ? t('A submeter…') : t('Gerar e submeter pedido')}
         </button>
       </form>
@@ -114,7 +89,6 @@ export default function SolicitarSerie() {
         <table className="bz-table">
           <thead>
             <tr>
-              <th>{t('NIF')}</th>
               <th>{t('Ano')}</th>
               <th>{t('Tipo de documento')}</th>
               <th>{t('Série atribuída')}</th>
@@ -125,12 +99,11 @@ export default function SolicitarSerie() {
           </thead>
           <tbody>
             {!historico ? (
-              <tr><td colSpan={7}><EmptyRow>{t('A carregar…')}</EmptyRow></td></tr>
+              <tr><td colSpan={6}><EmptyRow>{t('A carregar…')}</EmptyRow></td></tr>
             ) : historico.length === 0 ? (
-              <tr><td colSpan={7}><EmptyRow>{t('Nenhuma série pedida ainda.')}</EmptyRow></td></tr>
+              <tr><td colSpan={6}><EmptyRow>{t('Nenhuma série pedida ainda.')}</EmptyRow></td></tr>
             ) : historico.map((linha) => (
               <tr key={linha.id}>
-                <td className="mono">{linha.taxRegistrationNumber || '—'}</td>
                 <td>{linha.ano}</td>
                 <td>{linha.tipoDocumento}</td>
                 <td>{linha.seriesCode || '—'}</td>

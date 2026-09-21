@@ -86,13 +86,6 @@ const serieFiscalSchema = z.object({
   serieFiscal: z.string().trim().max(20).regex(/^[A-Za-z0-9-]*$/, 'Use só letras, números e hífen.').nullable(),
 });
 
-// TEMPORÁRIO (só para teste, a reverter): permite ao Company Admin corrigir o
-// NIF da própria empresa. Normalmente o NIF só se define no cadastro
-// (companyService.registerCompany) e nunca mais muda por autoatendimento.
-const taxIdSchema = z.object({
-  taxId: z.string().trim().min(3, 'NIF demasiado curto.').max(30),
-});
-
 // Admin do Sistema: data em que a empresa (fornecedora) aderiu formalmente à
 // faturação eletrónica da AGT. `null` desliga a validação de volta.
 const dataAdesaoSchema = z.object({
@@ -439,7 +432,6 @@ module.exports = {
   decideCompanySchema,
   companyPlanSchema,
   serieFiscalSchema,
-  taxIdSchema,
   dataAdesaoSchema,
   supplierDevSchema,
   supplierDevUpdateSchema,
