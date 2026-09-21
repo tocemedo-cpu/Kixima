@@ -10,7 +10,7 @@ const agtSeriesService = require('../src/services/agtSeriesService');
 const { prisma } = require('./helpers');
 
 const ANO_ATUAL = new Date().getFullYear();
-const OPCOES = { establishmentNumber: '1' };
+const OPCOES = { establishmentNumber: '1', taxRegistrationNumber: '5001636863' };
 
 afterAll(async () => {
   await prisma.$disconnect();

@@ -76,9 +76,9 @@ function withholdingListDe(valor) {
 // submissão real de registarFactura. Idempotente e gravado no próprio
 // documento (`agtDocumentNo`) — chamadas repetidas do mesmo payload (preview,
 // reenvio no pagamento) devolvem sempre o mesmo número.
-async function numeroDocumento(tipo, doc) {
+async function numeroDocumento(tipo, doc, taxRegistrationNumber) {
   const ano = doc.assinadaEm ? new Date(doc.assinadaEm).getFullYear() : new Date().getFullYear();
-  return agtSeriesService.atribuirDocumentNo(tipo, doc.id, { ano });
+  return agtSeriesService.atribuirDocumentNo(tipo, doc.id, { ano, taxRegistrationNumber });
 }
 
 function clienteDe(documentoComPoOuContrato) {
@@ -144,7 +144,7 @@ async function documentoDeFatura(invoice, fornecedorTaxId) {
 
   return montarDocumentoComum({
     documentType: 'FT',
-    documentNo: await numeroDocumento('FT', invoice),
+    documentNo: await numeroDocumento('FT', invoice, fornecedorTaxId),
     dataDocumento: invoice.assinadaEm,
     dataCriacao: invoice.createdAt,
     taxRegistrationNumber: fornecedorTaxId,
@@ -166,7 +166,7 @@ async function documentoDeFatura(invoice, fornecedorTaxId) {
 async function documentoDeNotaCredito(creditNote, fornecedorTaxId) {
   const invoice = creditNote.invoice;
   const cliente = clienteDe(invoice);
-  const faturaOriginalNo = await numeroDocumento('FT', invoice);
+  const faturaOriginalNo = await numeroDocumento('FT', invoice, fornecedorTaxId);
   const netAmount = Number(creditNote.netAmount || 0);
 
   const linhas = [{
@@ -196,7 +196,7 @@ async function documentoDeNotaCredito(creditNote, fornecedorTaxId) {
 
   return montarDocumentoComum({
     documentType: 'NC',
-    documentNo: await numeroDocumento('NC', creditNote),
+    documentNo: await numeroDocumento('NC', creditNote, fornecedorTaxId),
     dataDocumento: creditNote.assinadaEm || creditNote.issuedAt,
     dataCriacao: creditNote.createdAt,
     taxRegistrationNumber: fornecedorTaxId,
@@ -220,12 +220,12 @@ async function documentoDeNotaCredito(creditNote, fornecedorTaxId) {
 async function documentoDeRecibo(payment, fornecedorTaxId) {
   const invoice = payment.invoice;
   const cliente = clienteDe(invoice);
-  const faturaNo = await numeroDocumento('FT', invoice);
+  const faturaNo = await numeroDocumento('FT', invoice, fornecedorTaxId);
   const faturaData = new Date(invoice.assinadaEm || invoice.createdAt).toISOString().slice(0, 10);
 
   return montarDocumentoComum({
     documentType: 'RC',
-    documentNo: await numeroDocumento('RC', payment),
+    documentNo: await numeroDocumento('RC', payment, fornecedorTaxId),
     dataDocumento: payment.assinadaEm,
     dataCriacao: payment.processedAt,
     taxRegistrationNumber: fornecedorTaxId,

@@ -189,6 +189,16 @@ async function obterSeriePorTipo(documentType, { ano = new Date().getFullYear(),
  * interna, funciona mesmo para documentos criados antes de
  * `Company.serieFiscal` alguma vez ter sido declarada.
  *
+ * `taxRegistrationNumber` é OBRIGATÓRIO e faz parte da procura: uma série é
+ * concedida pela AGT a um NIF específico (ver "Solicitar Série" em
+ * agtSeriesRoutes/faturacaoRoutes — agora por fornecedor, cada um com o seu
+ * próprio NIF real), nunca "a mais recente para este tipo/ano" às cegas. Sem
+ * este filtro, um documento podia ser assinado com o NIF do fornecedor A mas
+ * numerado com uma série que a AGT atribuiu ao fornecedor B — a AGT recusa
+ * essa combinação (confirmado em produção: 503 sem detalhe, ao contrário de
+ * um erro de validação normal), porque a série não pertence a quem a está a
+ * usar.
+ *
  * Idempotente: se o documento já tem `agtDocumentNo` gravado, devolve-o tal
  * qual, sem consumir outro número — chamadas repetidas do mesmo payload
  * (preview em GET /agt-payload, reenvio no pagamento) têm de dar sempre o
@@ -197,13 +207,17 @@ async function obterSeriePorTipo(documentType, { ano = new Date().getFullYear(),
  * atribuições simultâneas ficam em fila, nunca com o mesmo número.
  *
  * Lança BusinessRuleError (nunca inventa um `seriesCode`) quando ainda não
- * existe nenhuma série aceite pela AGT para este tipo/ano/estabelecimento —
- * quem chama tem de pedir a série primeiro ("Solicitar Série").
+ * existe nenhuma série aceite pela AGT para este NIF/tipo/ano/estabelecimento
+ * — quem chama tem de pedir a série primeiro ("Solicitar Série"), para esta
+ * empresa especificamente.
  */
-async function atribuirDocumentNo(tipo, id, { ano = new Date().getFullYear(), establishmentNumber = config.agt.establishmentNumber } = {}) {
+async function atribuirDocumentNo(tipo, id, { ano = new Date().getFullYear(), establishmentNumber = config.agt.establishmentNumber, taxRegistrationNumber } = {}) {
   const modelo = MODELO_POR_TIPO[tipo];
   if (!modelo) {
     throw new Error(`atribuirDocumentNo: tipo "${tipo}" não suportado (use FT, NC ou RC).`);
+  }
+  if (!taxRegistrationNumber) {
+    throw new Error('atribuirDocumentNo: taxRegistrationNumber é obrigatório — a série pertence a um NIF específico.');
   }
 
   return prisma.$transaction(async (tx) => {
@@ -216,14 +230,15 @@ async function atribuirDocumentNo(tipo, id, { ano = new Date().getFullYear(), es
        WHERE "tipo_documento" = ${String(tipo).toUpperCase()}
          AND "ano" = ${Number(ano)}
          AND "establishment_number" = ${establishmentNumber}
+         AND "tax_registration_number" = ${taxRegistrationNumber}
        ORDER BY "created_at" DESC
        LIMIT 1
        FOR UPDATE
     `;
     if (!linha || !linha.series_code) {
       throw new BusinessRuleError(
-        `Não existe nenhuma série atribuída pela AGT para documentos do tipo "${tipo}" no ano ${ano}. `
-        + 'Peça a série primeiro ("Solicitar Série") antes de emitir ou reenviar este documento.',
+        `Não existe nenhuma série atribuída pela AGT ao NIF "${taxRegistrationNumber}" para documentos do tipo "${tipo}" no ano ${ano}. `
+        + 'Peça a série primeiro ("Solicitar Série", para esta empresa) antes de emitir ou reenviar este documento.',
       );
     }
 

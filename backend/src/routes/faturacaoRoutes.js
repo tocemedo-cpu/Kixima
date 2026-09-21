@@ -11,10 +11,11 @@
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
 const { requireRole, requirePermission } = require('../middleware/rbac');
-const { ValidationError, ServiceUnavailableError } = require('../utils/errors');
+const { ValidationError, ServiceUnavailableError, NotFoundError } = require('../utils/errors');
 const { FATURACAO } = require('../utils/adminAreas');
 const config = require('../config/env');
 const logger = require('../config/logger');
+const prisma = require('../config/database');
 const faturacaoService = require('../services/faturacaoService');
 const saftService = require('../services/saftService');
 const metricasService = require('../services/metricasService');
@@ -144,33 +145,41 @@ router.get(
 );
 
 // Pedido de série de numeração à AGT ("Solicitar Série", DS.120, 4.5) — só o
-// Admin do Sistema, área Faturação: é um passo de configuração/pré-requisito
-// para a conta de homologação/produção da AGT (o mesmo NIF de
-// AGT_SANDBOX_USERNAME/PASSWORD, ver config/env.js), não uma ação por empresa
-// fornecedora à escolha. Diferente do /agt-payload: esta rota SUBMETE mesmo o
-// pedido à AGT (agtSeriesService.solicitarSerie(), que reaproveita
-// agtSandboxClient.js) — por isso exige a configuração da Sandbox (superset
-// da assinatura), não só a assinatura. Regime normal (N) é o único indicador
-// de contingência usado neste ambiente; sem seletor porque não há outra
-// opção real. establishmentNumber JÁ NÃO é um valor fixo no código — vem de
-// config.agt.establishmentNumber (AGT_ESTABLISHMENT_NUMBER), a única fonte
-// usada por todas as requisições AGT que precisam dele. Um "1" fixo aqui foi
-// exatamente o que causou "E99 — O estabelecimento com o código 1 não se
-// encontra registado para o contribuinte identificado pelo NIF ...": nunca
-// tinha sido confirmado junto da AGT, só herdado do código.
+// Admin do Sistema, área Faturação: é um passo de configuração/pré-requisito,
+// mas AGORA por empresa fornecedora — cada fornecedor é o emitente fiscal
+// das suas próprias faturas (ver faturacaoService.js) e a AGT concede uma
+// série a um NIF específico, nunca a uma conta partilhada. Pedir sempre a
+// série sob AGT_NIF (a conta de homologação da KIXIMA) enquanto o documento
+// era depois assinado com o NIF real do fornecedor causava exatamente a
+// recusa que motivou esta mudança: a AGT recusa (503, sem detalhe — ao
+// contrário de um erro de validação normal) um documento que se apresenta
+// como sendo de um NIF a usar uma série que pertence a outro NIF.
+//
+// Diferente do /agt-payload: esta rota SUBMETE mesmo o pedido à AGT
+// (agtSeriesService.solicitarSerie(), que reaproveita agtSandboxClient.js)
+// — por isso exige a configuração da Sandbox (superset da assinatura), não
+// só a assinatura. Regime normal (N) é o único indicador de contingência
+// usado neste ambiente; sem seletor porque não há outra opção real.
+// establishmentNumber continua a vir de config.agt.establishmentNumber
+// (AGT_ESTABLISHMENT_NUMBER) — não há ainda evidência de que a AGT atribua
+// códigos de estabelecimento diferentes por fornecedor nesta conta de
+// homologação; nunca um valor adivinhado por tentativa (ver o "E99" já
+// visto com um "1" fixo no código, antes desta variável existir).
 router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission(FATURACAO), async (req, res) => {
   exigirSandboxAgtConfigurada();
-  if (!config.agt.taxRegistrationNumber) {
-    throw new ServiceUnavailableError(
-      'O NIF da conta AGT (AGT_NIF) ainda não está configurado neste ambiente — sem ele não se pode gerar um '
-      + 'pedido de série. Contacte quem administra o ambiente.',
-    );
+  if (!req.query.supplierCompanyId) {
+    throw new ValidationError('Indique a empresa fornecedora (supplierCompanyId) — a série pertence ao NIF dessa empresa, não a uma conta partilhada.');
   }
+  const fornecedor = await prisma.company.findUnique({
+    where: { id: req.query.supplierCompanyId },
+    select: { id: true, taxId: true },
+  });
+  if (!fornecedor) throw new NotFoundError('Empresa fornecedora');
   if (!config.agt.establishmentNumber) {
     throw new ServiceUnavailableError(
       'O código do estabelecimento na AGT (AGT_ESTABLISHMENT_NUMBER) ainda não está configurado neste ambiente — '
-      + 'sem ele não se pode gerar um pedido de série. Confirme o código correto junto da AGT para o NIF configurado '
-      + '(AGT_NIF) antes de o definir; nunca um valor adivinhado por tentativa.',
+      + 'sem ele não se pode gerar um pedido de série. Confirme o código correto junto da AGT antes de o definir; '
+      + 'nunca um valor adivinhado por tentativa.',
     );
   }
 
@@ -178,10 +187,10 @@ router.get('/agt-serie-payload', requireRole('ADMIN_SISTEMA'), requirePermission
   if (!ano || !Number.isInteger(Number(ano))) throw new ValidationError('Indique o ano da série (ano).');
   if (!tipoDocumento || !String(tipoDocumento).trim()) throw new ValidationError('Indique o tipo de documento (tipoDocumento).');
 
-  logger.info('Solicitar Série: pedido recebido', { adminSistemaId: req.user.id, ano, tipoDocumento });
+  logger.info('Solicitar Série: pedido recebido', { adminSistemaId: req.user.id, supplierCompanyId: fornecedor.id, ano, tipoDocumento });
 
   res.json(await agtSeriesService.solicitarSerie({
-    taxRegistrationNumber: config.agt.taxRegistrationNumber,
+    taxRegistrationNumber: fornecedor.taxId,
     seriesYear: Number(ano),
     documentType: String(tipoDocumento).trim().toUpperCase(),
     establishmentNumber: config.agt.establishmentNumber,

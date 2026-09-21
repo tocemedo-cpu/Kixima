@@ -1,7 +1,7 @@
 // tests/agt-serie-sem-estabelecimento.test.js
-// GET /api/faturacao/agt-serie-payload quando a Sandbox e o AGT_NIF estão
-// configurados mas falta AGT_ESTABLISHMENT_NUMBER — o código do
-// estabelecimento registado na AGT para esse NIF (ver config/env.js).
+// GET /api/faturacao/agt-serie-payload quando a Sandbox está configurada e a
+// empresa fornecedora indicada tem NIF, mas falta AGT_ESTABLISHMENT_NUMBER —
+// o código do estabelecimento registado na AGT (ver config/env.js).
 //
 // Existe porque um valor fixo no código ("1", nunca confirmado junto da
 // AGT) causou em produção: "E99 — O estabelecimento com o código 1 não se
@@ -24,15 +24,17 @@ process.env.AGT_JWS_PRIVATE_KEY_BASE64 = Buffer.from(privateKey).toString('base6
 process.env.AGT_SOFTWARE_VALIDATION_NUMBER = 'FE/00/2025/AGT-TESTE';
 process.env.AGT_SANDBOX_USERNAME = 'ws.hml.teste';
 process.env.AGT_SANDBOX_PASSWORD = 'senha-teste';
-process.env.AGT_NIF = '5001636863';
 delete process.env.AGT_ESTABLISHMENT_NUMBER;
 
 const { auth, prisma, loginAll } = require('./helpers');
 
 let tokens;
+let supplierCompanyId;
 
 beforeAll(async () => {
   tokens = await loginAll();
+  const user = await prisma.user.findUnique({ where: { email: 'fornecedor@kianda.co.ao' } });
+  supplierCompanyId = user.companyId;
 });
 
 afterAll(async () => {
@@ -41,7 +43,7 @@ afterAll(async () => {
 
 describe('GET /api/faturacao/agt-serie-payload sem AGT_ESTABLISHMENT_NUMBER configurado', () => {
   test('devolve 503 com mensagem clara sobre o estabelecimento, não um pedido com um código adivinhado', async () => {
-    const res = await auth(tokens.adminSistema).get('/api/faturacao/agt-serie-payload').query({ ano: '2026', tipoDocumento: 'FT' });
+    const res = await auth(tokens.adminSistema).get('/api/faturacao/agt-serie-payload').query({ ano: '2026', tipoDocumento: 'FT', supplierCompanyId });
     expect(res.status).toBe(503);
     expect(res.body.error.code).toBe('SERVICO_INDISPONIVEL');
     expect(res.body.error.message).toMatch(/AGT_ESTABLISHMENT_NUMBER/);
