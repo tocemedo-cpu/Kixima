@@ -17,7 +17,7 @@ const config = require('./config/env');
 const prisma = require('./config/database');
 const logger = require('./config/logger');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
-const { apiLimiter, authLimiter, sensitiveLimiter } = require('./middleware/rateLimit');
+const { apiLimiter, authLimiter, forgotPasswordLimiter, sensitiveLimiter } = require('./middleware/rateLimit');
 
 const authRoutes = require('./routes/authRoutes');
 const companyRoutes = require('./routes/companyRoutes');
@@ -152,9 +152,13 @@ app.use('/api/', apiLimiter);
 // A lista é explícita: quem acrescentar um endpoint que verifica credenciais
 // tem de o pôr aqui, e isso é melhor do que um prefixo que apanha demais em
 // silêncio.
-for (const caminho of ['/api/auth/login', '/api/auth/2fa/verify', '/api/auth/forgot-password', '/api/auth/reset-password']) {
+for (const caminho of ['/api/auth/login', '/api/auth/2fa/verify', '/api/auth/reset-password']) {
   app.use(caminho, authLimiter);
 }
+// Limitador próprio (não o authLimiter): esta rota devolve sempre 200 por
+// desenho (anti-enumeração), então skipSuccessfulRequests do authLimiter
+// fazia com que nenhum pedido aqui contasse — ver rateLimit.js.
+app.use('/api/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/companies/register', sensitiveLimiter);
 app.use('/api/companies/invite', sensitiveLimiter);
 app.use('/api/admin/invite', sensitiveLimiter);

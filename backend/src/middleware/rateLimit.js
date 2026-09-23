@@ -75,11 +75,30 @@ const apiLimiter = make({
 // escritório todo deixar de conseguir sequer TENTAR entrar — incluindo quem
 // tinha a senha certa. O ataque continuava a ter 5 tentativas por conta; os
 // prejudicados eram os trinta funcionários.
-const authLimiter = make({
+const AUTH_LIMITER_OPTIONS = {
   windowMs: 15 * 60 * 1000,
   max: Number(process.env.AUTH_RATE_LIMIT) || 60,
   skipSuccessfulRequests: true, // quem acerta não gasta orçamento nenhum
-});
+};
+const authLimiter = make(AUTH_LIMITER_OPTIONS);
+
+// Pedido de recuperação de senha ("Esqueci a senha") — limitador PRÓPRIO,
+// nunca o authLimiter acima.
+//
+// PORQUÊ NÃO PARTILHAR O authLimiter. Esta rota devolve SEMPRE 200, exista ou
+// não a conta (anti-enumeração — ver authController.forgotPassword) — nunca
+// há "pedido falhado" do ponto de vista HTTP. Com skipSuccessfulRequests:true
+// (correto para login, onde um erro de dedo não deve gastar orçamento),
+// NENHUM pedido a esta rota contava alguma vez para o limite: um atacante sem
+// sessão conseguia disparar pedidos sem travão nenhum contra o mesmo email,
+// inundando a caixa de correio de uma vítima com links de reposição de senha.
+const FORGOT_PASSWORD_LIMITER_OPTIONS = {
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.FORGOT_PASSWORD_RATE_LIMIT) || 10,
+  // skipSuccessfulRequests NÃO se define aqui (fica no valor por omissão,
+  // false) — é exatamente o que falta acima: todo pedido conta, mesmo o 200.
+};
+const forgotPasswordLimiter = make(FORGOT_PASSWORD_LIMITER_OPTIONS);
 
 // Limite para fluxos públicos sensíveis (registo de empresa, aceitação de
 // convite) — evita abuso/enumeração.
@@ -96,4 +115,10 @@ const chatMessageLimiter = make({
   keyGenerator: porUtilizadorOuIp,
 });
 
-module.exports = { make, apiLimiter, authLimiter, sensitiveLimiter, chatMessageLimiter, porUtilizadorOuIp };
+module.exports = {
+  make, apiLimiter, authLimiter, forgotPasswordLimiter, sensitiveLimiter, chatMessageLimiter, porUtilizadorOuIp,
+  // Opções de construção expostas só para teste (rateLimit.js desliga-se por
+  // completo em NODE_ENV=test — sem isto não haveria como verificar a
+  // configuração real sem simular produção).
+  _options: { auth: AUTH_LIMITER_OPTIONS, forgotPassword: FORGOT_PASSWORD_LIMITER_OPTIONS },
+};
