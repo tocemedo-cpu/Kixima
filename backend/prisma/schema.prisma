@@ -394,6 +394,8 @@ model PlatformFee {
   createdAt  DateTime          @default(now()) @map("created_at")
 
   @@index([companyId])
+  // Dashboards de cobrança ("quais taxas estão pendentes") filtram por status.
+  @@index([status])
   @@map("platform_fees")
 }
 
@@ -1170,6 +1172,14 @@ model Invoice {
 
   @@index([contractId])
   @@index([serie, numeroNaSerie])
+  // issuedAt: filtro principal do SAF-T (saftService.gerar, um intervalo de
+  // datas sobre a tabela inteira, que só cresce — é dado fiscal, nunca se
+  // apaga). dueAt/status: relatórios de faturas vencidas/por estado nos
+  // dashboards financeiros. Sem estes três, todas essas queries eram
+  // sequential scan.
+  @@index([issuedAt])
+  @@index([dueAt])
+  @@index([status])
   @@map("invoices")
 }
 
@@ -1842,6 +1852,12 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([actorId])
   @@index([createdAt])
+  // Ecrãs de auditoria/compliance filtrados por empresa (esta tabela regista
+  // TODA a atividade de negócio — cresce indefinidamente, nunca é podada)
+  // forçavam sequential scan sem este índice. Composto com createdAt porque
+  // o padrão de consulta é sempre "atividade desta empresa, mais recente
+  // primeiro".
+  @@index([companyId, createdAt])
   @@map("audit_logs")
 }
 
