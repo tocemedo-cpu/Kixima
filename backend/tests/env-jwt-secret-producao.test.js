@@ -28,6 +28,10 @@ function tentaCarregar(env) {
       ...process.env,
       NODE_ENV: 'production',
       DATABASE_URL: 'postgresql://user:pass@localhost:5432/db',
+      // Storage também é obrigatório em produção (ver
+      // env-storage-s3-producao.test.js) — presente aqui só para isolar o
+      // que este ficheiro testa (JWT_SECRET) do guardião de storage.
+      STORAGE_PROVIDER: 's3', STORAGE_BUCKET: 'kixima', STORAGE_ACCESS_KEY: 'ak', STORAGE_SECRET_KEY: 'sk',
       ...env,
     },
     encoding: 'utf8',

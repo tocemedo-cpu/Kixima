@@ -439,6 +439,26 @@ config.storage.missing =
     ? Object.entries(STORAGE_REQUIRED).filter(([, v]) => !String(v || '').trim()).map(([k]) => k)
     : [];
 
+// Em modo 'local' (disco do contentor), os ficheiros carregados — documentos
+// de credenciamento, comprovativos de pagamento, e até as CÓPIAS DE
+// SEGURANÇA da própria base (ver backupJob.js) — desaparecem a cada
+// reinício/deploy do Render, sem aviso a quem carregou. Isto já aconteceu em
+// produção sem ninguém dar por isso, porque storageService.js só regista um
+// erro e continua a servir do disco em vez de recusar o upload — falhar o
+// ARRANQUE é a única forma de uma má configuração de storage não voltar a
+// passar despercebida.
+if (NODE_ENV === 'production' && (config.storage.provider !== 's3' || config.storage.missing.length)) {
+  const motivo = config.storage.provider !== 's3'
+    ? 'STORAGE_PROVIDER não está definido como "s3"'
+    : `STORAGE_PROVIDER=s3 mas faltam credenciais: ${config.storage.missing.join(', ')}`;
+  throw new Error(
+    `Armazenamento inseguro para produção — ${motivo}. Configure o Supabase Storage (ou outro `
+    + 'S3-compatível) e defina STORAGE_PROVIDER=s3, STORAGE_BUCKET, STORAGE_ACCESS_KEY, '
+    + 'STORAGE_SECRET_KEY. Verifique em Admin do Sistema → Configurações e Suporte → Prontidão '
+    + 'para produção.',
+  );
+}
+
 // Exportado para as poucas definições lidas fora daqui (BACKUP_CRON é lida no
 // momento do agendamento, não no arranque) poderem passar pela mesma limpeza.
 config.limparValor = limpar;
