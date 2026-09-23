@@ -198,11 +198,36 @@ function dataInvalida(valor) {
 
 const required = ['DATABASE_URL', 'JWT_SECRET'];
 
+// Valores de exemplo que vivem em ficheiros VERSIONADOS (.env.example) —
+// nunca segredos reais. 'CHANGE_ME' já era recusado; um deploy real já
+// aconteceu a copiar o .env.example inteiro para produção e esquecer só de
+// trocar ESTE valor, porque nenhuma das outras variáveis aí é tão fácil de
+// deixar passar (as outras, sem valor, falham logo a ligar a algo). Se isso
+// acontecer, a app arranca normalmente com um segredo público no
+// repositório — dá para forjar um JWT de qualquer utilizador, incluindo
+// Admin do Sistema, sem senha nem 2FA (ver middleware/auth.js).
+const JWT_SECRET_PLACEHOLDERS = new Set(['change_me', 'troque-este-valor', 'changeme', 'change-me']);
+const JWT_SECRET_MIN_LENGTH = 32; // ~256 bits em base64/hex — o mínimo razoável para HS256
+
+function jwtSecretFraco(valor) {
+  if (!valor) return null; // vazio já cai em `missing`, não se repete aqui
+  if (JWT_SECRET_PLACEHOLDERS.has(valor.toLowerCase())) {
+    return 'ainda tem o valor de exemplo do .env.example — troque por um segredo real';
+  }
+  if (valor.length < JWT_SECRET_MIN_LENGTH) {
+    return `tem só ${valor.length} caracteres — use pelo menos ${JWT_SECRET_MIN_LENGTH}, gerados aleatoriamente`;
+  }
+  return null;
+}
+
 if (NODE_ENV === 'production') {
   const missing = required.filter((key) => !process.env[key] || process.env[key] === 'CHANGE_ME');
-  if (missing.length) {
+  const motivoFraco = !missing.includes('JWT_SECRET') ? jwtSecretFraco(process.env.JWT_SECRET) : null;
+  if (missing.length || motivoFraco) {
+    const motivos = [...missing];
+    if (motivoFraco) motivos.push(`JWT_SECRET (${motivoFraco})`);
     throw new Error(
-      `Configuração em falta para produção: ${missing.join(', ')}. Verifique .env.production.`
+      `Configuração em falta ou insegura para produção: ${motivos.join(', ')}. Verifique .env.production.`
     );
   }
 }
