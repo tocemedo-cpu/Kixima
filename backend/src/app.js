@@ -97,28 +97,14 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
-// Imagens de produtos no modo de armazenamento 'local' (em S3 são servidas
-// diretamente pelo URL público do bucket).
-const { uploadsDir } = require('./services/storageService');
-app.use('/api/uploads', express.static(uploadsDir));
-// Um pedido a /api/uploads/<nome> que chega aqui é um ficheiro que o
-// express.static não encontrou — a ROTA existe, só o FICHEIRO não. Sem isto,
-// caía no notFoundHandler genérico lá em baixo e respondia "ROUTE_NOT_FOUND:
-// Rota GET /api/uploads/... não existe", que parece um erro de programação a
-// quem só está a tentar ver um documento. A causa mais comum é esta: em modo
-// 'local' (ver storageService.js) o ficheiro vive no disco do contentor, que
-// o Render apaga a cada reinício/deploy — o registo na base sobrevive, o
-// ficheiro não. A solução real é configurar STORAGE_PROVIDER=s3 (e as
-// credenciais) no Render; ver Admin do Sistema → Configurações e Suporte →
-// Prontidão para produção para confirmar o estado atual.
-app.use('/api/uploads', (req, res) => {
-  res.status(404).json({
-    error: {
-      code: 'FILE_NOT_FOUND',
-      message: 'Este ficheiro já não está disponível. Peça para o documento ser enviado novamente.',
-    },
-  });
-});
+// Ficheiros carregados no modo de armazenamento 'local' (em S3 são servidos
+// diretamente pelo URL público do bucket — este router nunca é tocado nesse
+// modo). Cada pedido passa por uma verificação de posse — ver
+// uploadsRoutes.js e uploadAccessService.js para o porquê: esta pasta guarda,
+// lado a lado, tanto fotos de catálogo (públicas) como documentos de
+// credenciamento e comprovativos de pagamento (privados), e só o registo na
+// base de dados diz qual é qual.
+app.use('/api/uploads', require('./routes/uploadsRoutes'));
 if (!config.isTest) {
   app.use(morgan(config.isDevelopment ? 'dev' : 'combined'));
 }
