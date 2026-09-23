@@ -51,6 +51,26 @@ function slugify(s) {
     .replace(/^-+|-+$/g, '').slice(0, 70);
 }
 
+// Executa `fn` para cada item de `items`, com no máximo `limite` chamadas em
+// voo ao mesmo tempo — em vez de um `for` sequencial (uma linha de cada vez,
+// à espera de cada round-trip à base/storage antes de começar a seguinte) ou
+// de um `Promise.all` sem limite (um catálogo de 48.000 linhas a abrir
+// 48.000 ligações de uma vez esgotaria o pool do Postgres). `limite`
+// "trabalhadores" partilham um cursor e vão puxando o item seguinte assim
+// que terminam o anterior.
+async function comLimite(items, limite, fn) {
+  const resultados = new Array(items.length);
+  let cursor = 0;
+  async function trabalhador() {
+    while (cursor < items.length) {
+      const i = cursor++;
+      resultados[i] = await fn(items[i], i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limite, items.length) || 0 }, trabalhador));
+  return resultados;
+}
+
 function defaultPrice(categoria, code) {
   const base = BASE_PRICE[norm(categoria)] || 250000;
   const digits = Number(String(code || '').replace(/\D/g, '').slice(-3)) || 0;
@@ -154,9 +174,13 @@ async function importCatalog(buffer, supplierId) {
     );
   }
 
-  let created = 0; let updated = 0; let withImages = 0;
   let precosEstimados = 0; let stockPorOmissao = 0; let localizacaoPorOmissao = 0;
   const errors = [];
+
+  // 1.ª passagem: só CPU (parsing das colunas) — continua sequencial porque
+  // não há I/O nenhum aqui para paralelizar, e monta o `slug`/`data` de cada
+  // linha válida para as passagens seguintes usarem.
+  const linhas = [];
   for (let i = 0; i < dataRows.length; i++) {
     const r = dataRows[i];
     const excelRow = i + 2; // linha real no Excel (cabeçalho = 1)
@@ -191,20 +215,6 @@ async function importCatalog(buffer, supplierId) {
       const cidade = cidadeDaFolha || 'Luanda';
       if (!cidadeDaFolha) localizacaoPorOmissao++;
 
-      let imageUrl;
-      const im = images[i];
-      if (im) {
-        const ext = im.ext === 'jpeg' ? 'jpg' : im.ext;
-        imageUrl = await storageService.saveFile({
-          buffer: im.buffer,
-          originalname: `${code || slugify(nome)}.${ext}`,
-          mimetype: `image/${im.ext === 'jpg' ? 'jpeg' : im.ext}`,
-          keyHint: `cat-${supplierId.slice(0, 8)}-${code || i}`,
-          folder: 'catalog',
-        });
-        withImages++;
-      }
-
       const slug = `${slugify(nome)}-${code || i}-${supplierId.slice(0, 8)}`;
       const data = {
         supplierId,
@@ -227,16 +237,69 @@ async function importCatalog(buffer, supplierId) {
         stockQuantity,
         city: cidade, province: cidade, country: 'Angola',
         active: true,
-        ...(imageUrl ? { imageUrl } : {}),
       };
 
-      const found = await prisma.product.findUnique({ where: { slug } });
-      if (found) { await prisma.product.update({ where: { slug }, data }); updated++; }
-      else { await prisma.product.create({ data: { ...data, slug } }); created++; }
+      linhas.push({ i, excelRow, nome, code, slug, data, im: images[i] });
     } catch (e) {
       errors.push({ row: excelRow, error: e.message });
     }
   }
+
+  // 2.ª passagem: upload das imagens embebidas em paralelo, em lotes
+  // controlados — antes, cada upload esperava pelo anterior mesmo não
+  // havendo relação nenhuma entre eles.
+  const CONCORRENCIA_IMAGENS = 8;
+  await comLimite(linhas, CONCORRENCIA_IMAGENS, async (linha) => {
+    if (!linha.im) return;
+    try {
+      const ext = linha.im.ext === 'jpeg' ? 'jpg' : linha.im.ext;
+      linha.data.imageUrl = await storageService.saveFile({
+        buffer: linha.im.buffer,
+        originalname: `${linha.code || slugify(linha.nome)}.${ext}`,
+        mimetype: `image/${linha.im.ext === 'jpg' ? 'jpeg' : linha.im.ext}`,
+        keyHint: `cat-${supplierId.slice(0, 8)}-${linha.code || linha.i}`,
+        folder: 'catalog',
+      });
+      linha.comImagem = true;
+    } catch (e) {
+      // Mesmo comportamento de antes: uma falha no upload derruba só ESTA
+      // linha (o produto não chega a ser criado/atualizado), não as outras.
+      linha.erro = e.message;
+    }
+  });
+
+  const linhasComErro = linhas.filter((l) => l.erro);
+  for (const l of linhasComErro) errors.push({ row: l.excelRow, error: l.erro });
+  const linhasValidas = linhas.filter((l) => !l.erro);
+
+  // 3.ª passagem: UMA query para saber que slugs já existem, em vez de um
+  // findUnique por linha — decide create/update em memória.
+  const slugs = linhasValidas.map((l) => l.slug);
+  const existentes = slugs.length
+    ? new Set((await prisma.product.findMany({ where: { slug: { in: slugs } }, select: { slug: true } })).map((p) => p.slug))
+    : new Set();
+
+  // 4.ª passagem: create/update em paralelo, em lotes controlados — cada
+  // linha continua a poder falhar sozinha (ex.: violação de constraint) sem
+  // derrubar as outras, mesma garantia que o `for` sequencial já dava.
+  let created = 0; let updated = 0; let withImages = 0;
+  const CONCORRENCIA_BD = 20;
+  await comLimite(linhasValidas, CONCORRENCIA_BD, async (linha) => {
+    try {
+      if (existentes.has(linha.slug)) {
+        await prisma.product.update({ where: { slug: linha.slug }, data: linha.data });
+        updated++;
+      } else {
+        await prisma.product.create({ data: { ...linha.data, slug: linha.slug } });
+        created++;
+      }
+      if (linha.comImagem) withImages++;
+    } catch (e) {
+      errors.push({ row: linha.excelRow, error: e.message });
+    }
+  });
+
+  errors.sort((a, b) => a.row - b.row);
 
   return {
     total: dataRows.length, created, updated, withImages, errors, warnings,

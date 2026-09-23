@@ -203,4 +203,40 @@ describe('importCatalog (dados)', () => {
     expect(res.warnings).toHaveLength(0);
     expect(res.withImages).toBe(1);
   });
+
+  test('processa muitas linhas independentes em paralelo, sem se atropelarem', async () => {
+    const N = 150;
+    const rows = [HEADER];
+    for (let n = 0; n < N; n++) {
+      rows.push(['Ferramentas e Equipamento de Oficina', `Item em massa ${n}`, 'x', 'Produto', 'un', `MASSA-${n}`, '', '', '', '', String(100000 + n)]);
+    }
+    const buf = buildXlsxBuffer(rows);
+    try {
+      const res = await importService.importCatalog(buf, supplierId);
+      expect(res.total).toBe(N);
+      expect(res.created).toBe(N);
+      expect(res.errors).toHaveLength(0);
+      const count = await prisma.product.count({ where: { supplierId, name: { startsWith: 'Item em massa ' } } });
+      expect(count).toBe(N);
+    } finally {
+      await prisma.product.deleteMany({ where: { supplierId, name: { startsWith: 'Item em massa ' } } });
+    }
+  });
+
+  test('duas linhas com o mesmo produto (mesmo código) no mesmo ficheiro: a primeira cria, a segunda fica como erro em vez de sobrescrever em silêncio', async () => {
+    const buf = buildXlsxBuffer([
+      HEADER,
+      ['Ferramentas e Equipamento de Oficina', 'Item duplicado no ficheiro', 'x', 'Produto', 'un', 'DUP-001', '', '', '', '', '111111'],
+      ['Ferramentas e Equipamento de Oficina', 'Item duplicado no ficheiro', 'x', 'Produto', 'un', 'DUP-001', '', '', '', '', '222222'],
+    ]);
+    try {
+      const res = await importService.importCatalog(buf, supplierId);
+      expect(res.created).toBe(1);
+      expect(res.errors).toHaveLength(1);
+      const count = await prisma.product.count({ where: { supplierId, name: 'Item duplicado no ficheiro' } });
+      expect(count).toBe(1);
+    } finally {
+      await prisma.product.deleteMany({ where: { supplierId, name: 'Item duplicado no ficheiro' } });
+    }
+  });
 });
