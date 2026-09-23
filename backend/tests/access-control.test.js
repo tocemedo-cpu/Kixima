@@ -75,4 +75,59 @@ describe('Controlo de acesso multi-tenant (IDOR)', () => {
     const res = await auth(adminSistema).get(`/api/companies/${clientCompanyId}`);
     expect(res.status).toBe(200);
   });
+
+  test('um Company Admin de OUTRA empresa não pode alterar o limite de orçamento (403)', async () => {
+    const res = await auth(outsiderToken)
+      .put(`/api/companies/${clientCompanyId}/budget-limit`)
+      .send({ periodMonthly: 1, currency: 'AOA' });
+    expect(res.status).toBe(403);
+  });
+
+  test('o próprio Company Admin continua a poder definir o limite de orçamento da sua empresa (200)', async () => {
+    const donoToken = await login('admin@petroangola.co.ao');
+    const res = await auth(donoToken)
+      .put(`/api/companies/${clientCompanyId}/budget-limit`)
+      .send({ periodMonthly: 500000, currency: 'AOA' });
+    expect(res.status).toBe(200);
+    expect(Number(res.body.periodMonthly)).toBe(500000);
+  });
+
+  describe('aprovação/rejeição de PO', () => {
+    let poAguardandoAprovacao;
+
+    beforeEach(async () => {
+      const compradorToken = await login('comprador@petroangola.co.ao');
+      const catalog = await auth(compradorToken).get('/api/catalog');
+      const produto = catalog.body[0];
+      const criada = await auth(compradorToken).post('/api/purchase-orders').send({
+        supplierCompanyId: produto.supplierId,
+        items: [{ productId: produto.id, quantity: 1 }],
+      });
+      expect(criada.status).toBeLessThan(300);
+      poAguardandoAprovacao = criada.body;
+    });
+
+    test('um Company Admin de OUTRA empresa não pode aprovar a PO', async () => {
+      const res = await auth(outsiderToken).patch(`/api/purchase-orders/${poAguardandoAprovacao.id}/approve`);
+      expect(res.status).toBe(403);
+      const po = await prisma.purchaseOrder.findUnique({ where: { id: poAguardandoAprovacao.id } });
+      expect(po.status).toBe('AGUARDANDO_APROVACAO'); // nada mudou
+    });
+
+    test('um Company Admin de OUTRA empresa não pode rejeitar a PO', async () => {
+      const res = await auth(outsiderToken)
+        .patch(`/api/purchase-orders/${poAguardandoAprovacao.id}/reject`)
+        .send({ reason: 'teste' });
+      expect(res.status).toBe(403);
+      const po = await prisma.purchaseOrder.findUnique({ where: { id: poAguardandoAprovacao.id } });
+      expect(po.status).toBe('AGUARDANDO_APROVACAO');
+    });
+
+    test('o Company Admin da empresa COMPRADORA continua a poder aprovar', async () => {
+      const donoToken = await login('admin@petroangola.co.ao');
+      const res = await auth(donoToken).patch(`/api/purchase-orders/${poAguardandoAprovacao.id}/approve`);
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('APROVADA');
+    });
+  });
 });

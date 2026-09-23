@@ -42,7 +42,7 @@ async function history(req, res) {
 }
 
 async function approve(req, res) {
-  const po = await poService.approvePurchaseOrder(req.params.id, req.user.id);
+  const po = await poService.approvePurchaseOrder(req.params.id, req.user.id, req.user.companyId);
   await auditService.recordSafe({
     actor: auditService.actorFrom(req),
     action: 'PO_APROVADA',
@@ -55,7 +55,7 @@ async function approve(req, res) {
 }
 
 async function reject(req, res) {
-  const po = await poService.rejectPurchaseOrder(req.params.id, req.user.id, req.body.reason);
+  const po = await poService.rejectPurchaseOrder(req.params.id, req.user.id, req.body.reason, req.user.companyId);
   await auditService.recordSafe({
     actor: auditService.actorFrom(req),
     action: 'PO_REJEITADA',

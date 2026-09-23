@@ -54,16 +54,17 @@ async function decide(req, res) {
   res.json(company);
 }
 
-async function setBudgetLimit(req, res) {
-  const limit = await companyService.setBudgetLimit(req.params.id, req.body);
-  res.json(limit);
-}
-
 // Dados bancários — cada empresa só acede aos seus (o Admin do Sistema vê todos).
 function assertOwnCompany(req) {
   if (req.user.role !== 'ADMIN_SISTEMA' && req.params.id !== req.user.companyId) {
     throw new ForbiddenError('Não pode aceder aos dados de outra empresa.');
   }
+}
+
+async function setBudgetLimit(req, res) {
+  assertOwnCompany(req);
+  const limit = await companyService.setBudgetLimit(req.params.id, req.body);
+  res.json(limit);
 }
 
 async function getBankDetails(req, res) {

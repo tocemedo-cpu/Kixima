@@ -271,8 +271,14 @@ async function listPurchaseOrders({ companyId, role, status, invoiced, page, lim
 
 // --- 2. Aprovação (Company Admin — ponto único) -----------------------------
 
-async function approvePurchaseOrder(id, approverId) {
+async function approvePurchaseOrder(id, approverId, approverCompanyId) {
   const po = await getPurchaseOrder(id);
+  // Só o Company Admin da empresa COMPRADORA (a que criou a PO) pode
+  // aprová-la — sem isto, qualquer Company Admin de qualquer empresa
+  // aprovava/rejeitava POs de terceiros só por conhecer o id.
+  if (po.buyerCompanyId !== approverCompanyId) {
+    throw new ForbiddenError('Só o Company Admin da empresa compradora pode aprovar esta PO.');
+  }
   if (po.isCallOff) {
     throw new BusinessRuleError('Call-offs não passam por aprovação individual.');
   }
@@ -301,8 +307,12 @@ async function approvePurchaseOrder(id, approverId) {
   return updated;
 }
 
-async function rejectPurchaseOrder(id, approverId, reason) {
+async function rejectPurchaseOrder(id, approverId, reason, approverCompanyId) {
   const po = await getPurchaseOrder(id);
+  // Mesma verificação de posse de approvePurchaseOrder — ver o comentário lá.
+  if (po.buyerCompanyId !== approverCompanyId) {
+    throw new ForbiddenError('Só o Company Admin da empresa compradora pode rejeitar esta PO.');
+  }
   if (po.isCallOff) {
     throw new BusinessRuleError('Call-offs não passam por aprovação individual.');
   }
