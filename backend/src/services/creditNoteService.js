@@ -49,9 +49,13 @@ function partesDaFatura(invoice) {
  * por creditar é `invoice.amount - totalCreditado`. Exportado para o gerador
  * SAF-T poder decidir se uma fatura está efetivamente anulada (ver
  * saftService.js) sem duplicar esta conta.
+ *
+ * `client` recebe `prisma` (leitura solta, fora de transação) ou `tx` (dentro
+ * de uma transação, depois de bloquear a fatura — ver emitir()) — é o que
+ * torna esta mesma função segura para os dois usos.
  */
-async function totalCreditado(invoiceId) {
-  const notas = await prisma.creditNote.findMany({ where: { invoiceId }, select: { amount: true } });
+async function totalCreditado(invoiceId, client = prisma) {
+  const notas = await client.creditNote.findMany({ where: { invoiceId }, select: { amount: true } });
   return round2(notas.reduce((s, n) => s + Number(n.amount), 0));
 }
 
@@ -79,15 +83,6 @@ async function emitir(invoiceId, { motivo, amount }, user, actor = null) {
     throw new ForbiddenError('Só o fornecedor desta fatura pode pedir uma nota de crédito.');
   }
 
-  const jaCreditado = await totalCreditado(invoiceId);
-  const porCreditar = round2(Number(invoice.amount) - jaCreditado);
-  if (valor > porCreditar) {
-    throw new ConflictError(
-      `Esta fatura já tem ${jaCreditado} ${invoice.currency} creditados. `
-      + `Só pode creditar até ${porCreditar} ${invoice.currency} — o que pediu excede o saldo da fatura.`,
-    );
-  }
-
   // Net/imposto derivados proporcionalmente pela mesma taxa fixa que gerou a
   // fatura (ver taxService.js) — a nota de crédito reduz a mesma base, não
   // introduz uma taxa nova.
@@ -106,6 +101,23 @@ async function emitir(invoiceId, { motivo, amount }, user, actor = null) {
     : null;
 
   const nota = await prisma.$transaction(async (tx) => {
+    // Bloqueia a linha da fatura até esta transação terminar — sem isto, duas
+    // notas de crédito pedidas em paralelo para a MESMA fatura líam o mesmo
+    // saldo desatualizado (a verificação corria FORA da transação) e as duas
+    // passavam na validação, somando mais do que a fatura permite. Com o
+    // lock, a segunda transação espera aqui e só depois recalcula o saldo —
+    // já com a primeira nota de crédito contabilizada.
+    await tx.$queryRaw`SELECT id FROM invoices WHERE id = ${invoiceId} FOR UPDATE`;
+
+    const jaCreditado = await totalCreditado(invoiceId, tx);
+    const porCreditar = round2(Number(invoice.amount) - jaCreditado);
+    if (valor > porCreditar) {
+      throw new ConflictError(
+        `Esta fatura já tem ${jaCreditado} ${invoice.currency} creditados. `
+        + `Só pode creditar até ${porCreditar} ${invoice.currency} — o que pediu excede o saldo da fatura.`,
+      );
+    }
+
     const certificacao = await faturacaoService.atribuir(tx, {
       emitidaEm: new Date(),
       total: valor,

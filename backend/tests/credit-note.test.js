@@ -114,6 +114,26 @@ describe('Emissão de nota de crédito', () => {
     expect(comoAdmin.status).toBe(201);
   });
 
+  test('duas notas de crédito pedidas em paralelo nunca somam mais do que a fatura', async () => {
+    const { invoice } = await novaFatura();
+    // Cada pedido sozinho cabe (60% do valor); os dois juntos excedem 100% —
+    // só um pode passar. Sem o lock em creditNoteService.emitir(), as duas
+    // transações liam o mesmo saldo (zero creditado) e ambas passavam.
+    const parcela = Math.round(Number(invoice.amount) * 0.6 * 100) / 100;
+
+    const pedir = () => auth(tokens.fornecedor)
+      .post(`/api/payments/invoices/${invoice.id}/notas-credito`)
+      .send({ motivo: 'Concorrência', amount: parcela });
+
+    const [a, b] = await Promise.all([pedir(), pedir()]);
+    const statuses = [a.status, b.status].sort();
+    expect(statuses).toEqual([201, 409]);
+
+    const notas = await prisma.creditNote.findMany({ where: { invoiceId: invoice.id } });
+    const total = notas.reduce((s, n) => s + Number(n.amount), 0);
+    expect(total).toBeLessThanOrEqual(Number(invoice.amount) + 0.001);
+  });
+
   test('lista as notas de crédito de uma fatura às partes envolvidas', async () => {
     const { invoice } = await novaFatura();
     await auth(tokens.fornecedor)
