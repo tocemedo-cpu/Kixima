@@ -80,4 +80,21 @@ describe('Recuperação de senha', () => {
     const res = await request(app).post('/api/auth/reset-password').send({ token: 'abc.def.ghi', password: '123' });
     expect(res.status).toBe(422);
   });
+
+  test('perfil sensível (COMPANY_ADMIN): 11 caracteres chega para o mínimo geral mas não para o da própria conta (422)', async () => {
+    const ADMIN_EMAIL = 'admin@petroangola.co.ao';
+    await request(app).post('/api/auth/forgot-password').send({ email: ADMIN_EMAIL });
+    const token = tokenFromEmail();
+    expect(token).toBeTruthy();
+
+    // 11 caracteres: passa no schema (mínimo genérico 10) mas COMPANY_ADMIN
+    // exige 12 — só a validação a nível de serviço (que conhece o role da
+    // conta do token) apanha isto.
+    const res = await request(app).post('/api/auth/reset-password').send({ token, password: 'Curta12345#' });
+    expect(res.status).toBe(422);
+
+    // A senha do admin não mudou.
+    const login = await request(app).post('/api/auth/login').send({ email: ADMIN_EMAIL, password: 'Kixima@123' });
+    expect(login.status).toBe(200);
+  });
 });

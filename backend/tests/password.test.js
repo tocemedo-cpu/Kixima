@@ -36,4 +36,18 @@ describe('Segurança — alteração de senha', () => {
     const res = await request(app).patch('/api/auth/password').send({ currentPassword: 'x', newPassword: NEW });
     expect(res.status).toBe(401);
   });
+
+  test('perfil sensível (FINANCEIRO): recusa uma senha nova com menos de 12 caracteres (422)', async () => {
+    // Corre depois do teste anterior, que já trocou a senha para NEW — o
+    // helper login() usa sempre PASSWORD, por isso a sessão vem de um login
+    // direto com a senha atual desta conta.
+    const sessao = await request(app).post('/api/auth/login').send({ email, password: NEW });
+    expect(sessao.status).toBe(200);
+    const token = sessao.body.token;
+    const res = await auth(token).patch('/api/auth/password').send({ currentPassword: NEW, newPassword: 'Curta1234' }); // 9 caracteres
+    expect(res.status).toBe(422);
+    // A senha NÃO mudou — continua a entrar com a atual (NEW).
+    const relogin = await request(app).post('/api/auth/login').send({ email, password: NEW });
+    expect(relogin.status).toBe(200);
+  });
 });

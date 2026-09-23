@@ -7,7 +7,9 @@ const { request, app, prisma, auth, login } = require('./helpers');
 
 const EMAIL = 'sessao.teste@terceira.co.ao';
 const PW = 'Kixima@123';
-const NEW_PW = 'NovaSenha@1';
+// COMPANY_ADMIN é perfil sensível — mínimo de 12 caracteres (ver
+// passwordPolicy.js), agora também aplicado na troca de senha.
+const NEW_PW = 'NovaSenha@12';
 let companyId;
 
 beforeAll(async () => {

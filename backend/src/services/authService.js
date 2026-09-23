@@ -6,7 +6,8 @@ const prisma = require('../config/database');
 const loginAttempts = require('./loginAttemptService');
 const config = require('../config/env');
 const mfaPolicy = require('./mfaPolicy');
-const { UnauthorizedError, ForbiddenError, ConflictError } = require('../utils/errors');
+const passwordPolicy = require('../utils/passwordPolicy');
+const { UnauthorizedError, ForbiddenError, ConflictError, ValidationError } = require('../utils/errors');
 
 // Custo do bcrypt. 12 é o mínimo recomendado atualmente (mais lento = mais
 // resistente a força bruta). Hashes antigos (custo 10) continuam válidos.
@@ -316,6 +317,14 @@ async function changePassword(userId, currentPassword, newPassword) {
   if (!user) throw new UnauthorizedError('Sessão inválida.');
   const valid = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!valid) throw new UnauthorizedError('A senha atual está incorreta.');
+  // O schema Zod da rota não conhece o PERFIL do utilizador (só o corpo do
+  // pedido) — sem esta validação aqui, um COMPANY_ADMIN/FINANCEIRO/
+  // ADMIN_SISTEMA só precisava de 10 caracteres para trocar a senha, em vez
+  // dos 12 exigidos na criação da conta. É exatamente nos fluxos de troca/
+  // recuperação — os mais visados depois de um email comprometido — que a
+  // proteção extra não podia falhar.
+  const erroSenha = passwordPolicy.validar(newPassword, { role: user.role, email: user.email });
+  if (erroSenha) throw new ValidationError(erroSenha);
   const passwordHash = await hashPassword(newPassword);
   // Ao trocar a senha, revoga as sessões antigas (todos os JWT anteriores).
   await prisma.user.update({
@@ -402,6 +411,10 @@ async function requestPasswordReset(email, baseUrl = null) {
 // estava emitido (sessões antigas + o próprio token de recuperação).
 async function resetPassword(token, newPassword) {
   const user = await verifyPasswordReset(token);
+  // Mesma razão de changePassword acima: o schema da rota não conhece o
+  // perfil da conta que o token identifica.
+  const erroSenha = passwordPolicy.validar(newPassword, { role: user.role, email: user.email });
+  if (erroSenha) throw new ValidationError(erroSenha);
   const passwordHash = await hashPassword(newPassword);
   await prisma.user.update({
     where: { id: user.id },
