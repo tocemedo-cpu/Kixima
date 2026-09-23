@@ -80,6 +80,58 @@ describe('storageService — configuração incompleta', () => {
   });
 });
 
+describe('storageService — modo local não bloqueia o event loop', () => {
+  // fs.writeFileSync/readFileSync bloqueavam TODO o event loop durante o
+  // upload/download — não só este pedido, todos os pedidos concorrentes de
+  // qualquer utilizador. Em vez de medir tempo (frágil: um ficheiro pequeno
+  // em disco de teste pode não bloquear o suficiente para se notar), espia-se
+  // diretamente que as versões *Sync nunca são chamadas.
+  const fs = require('fs');
+  const original = { ...config.storage };
+  let filename;
+
+  afterEach(async () => {
+    Object.assign(config.storage, original);
+    if (filename) {
+      await fs.promises.rm(require('path').join(storageService.uploadsDir, filename), { force: true });
+      filename = null;
+    }
+    jest.restoreAllMocks();
+  });
+
+  test('saveFile em modo local nunca chama fs.writeFileSync/mkdirSync', async () => {
+    Object.assign(config.storage, { provider: 'local' });
+    const espiaSync = jest.spyOn(fs, 'writeFileSync');
+    const espiaMkdirSync = jest.spyOn(fs, 'mkdirSync');
+    const espiaAsync = jest.spyOn(fs.promises, 'writeFile');
+
+    const url = await storageService.saveFile({
+      buffer: IMG, originalname: 'x.png', mimetype: 'image/png', keyHint: 'evento-loop', folder: 'catalog',
+    });
+    filename = url.split('/').pop();
+
+    expect(espiaSync).not.toHaveBeenCalled();
+    expect(espiaMkdirSync).not.toHaveBeenCalled();
+    expect(espiaAsync).toHaveBeenCalled();
+  });
+
+  test('lerFicheiro em modo local nunca chama fs.readFileSync', async () => {
+    Object.assign(config.storage, { provider: 'local' });
+    const url = await storageService.saveFile({
+      buffer: PDF, originalname: 'd.pdf', mimetype: 'application/pdf', keyHint: 'evento-loop-leitura', folder: 'documents',
+    });
+    filename = url.split('/').pop();
+
+    const espiaSync = jest.spyOn(fs, 'readFileSync');
+    const espiaAsync = jest.spyOn(fs.promises, 'readFile');
+
+    const lido = await storageService.lerFicheiro(filename);
+    expect(lido.equals(PDF)).toBe(true);
+    expect(espiaSync).not.toHaveBeenCalled();
+    expect(espiaAsync).toHaveBeenCalled();
+  });
+});
+
 describe('storageService — falhas do S3 em execução', () => {
   const original = { ...config.storage };
   afterEach(() => { Object.assign(config.storage, original); sent.length = 0; });

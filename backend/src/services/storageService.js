@@ -22,9 +22,16 @@ function buildFilename(keyHint, originalname) {
 }
 
 // --- Provider: local (disco) -----------------------------------------------
-function saveLocal(filename, buffer) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  fs.writeFileSync(path.join(uploadsDir, filename), buffer);
+// Assíncrono de propósito: a versão *Sync bloqueava o event loop INTEIRO
+// enquanto escrevia — não só o pedido deste upload, TODOS os pedidos
+// concorrentes de TODOS os utilizadores ficavam à espera do disco. Em modo
+// 'local' isto acontece sempre que o S3 está mal configurado (ver
+// s3MalConfigurado() abaixo), o que já aconteceu em produção sem ninguém dar
+// por isso — uma má configuração de storage não devia também degradar a
+// performance de toda a plataforma.
+async function saveLocal(filename, buffer) {
+  await fs.promises.mkdir(uploadsDir, { recursive: true });
+  await fs.promises.writeFile(path.join(uploadsDir, filename), buffer);
   return `/api/uploads/${filename}`;
 }
 
@@ -151,7 +158,7 @@ async function saveFile({ buffer, originalname, mimetype, keyHint, folder = 'pro
     const url = await saveS3(key, buffer, mimetype, alvo);
     return comChave ? { url, key } : url;
   }
-  const url = saveLocal(filename, buffer);
+  const url = await saveLocal(filename, buffer);
   return comChave ? { url, key: filename } : url;
 }
 
@@ -184,7 +191,7 @@ async function lerBody(body) {
 
 async function lerFicheiro(key, bucket) {
   if (providerAtivo() !== 's3') {
-    return fs.readFileSync(path.join(uploadsDir, path.basename(key)));
+    return fs.promises.readFile(path.join(uploadsDir, path.basename(key)));
   }
   const { GetObjectCommand } = require('@aws-sdk/client-s3');
   try {
