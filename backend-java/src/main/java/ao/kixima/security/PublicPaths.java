@@ -66,6 +66,7 @@ public class PublicPaths {
         adicionar("GET", "/api/supplier-development/requests/*/track");
         // publicRoutes.js — a parede pública de avaliações, só leitura.
         adicionar("GET", "/api/public/feedback");
+        adicionar("GET", "/api/public/stats");
         // app.js — rota pública direta (fora de qualquer router com `authenticate`).
         adicionar("GET", "/api/retencao");
         // realtimeService.js — o upgrade HTTP do WebSocket passa sem token: a

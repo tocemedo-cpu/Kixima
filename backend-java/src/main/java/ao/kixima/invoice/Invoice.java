@@ -294,4 +294,8 @@ public class Invoice extends AbstractPersistableEntity<String> {
     public void setAgtEstado(String agtEstado) {
         this.agtEstado = agtEstado;
     }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
 }

@@ -26,4 +26,6 @@ public interface PurchaseOrderItemRepository extends JpaRepository<PurchaseOrder
     List<Object[]> historicoDeCompra(@Param("companyId") String companyId, @Param("productId") String productId,
                                      @Param("status") List<PoStatus> status, @Param("de") java.time.Instant de,
                                      @Param("ate") java.time.Instant ate);
+
+    List<PurchaseOrderItem> findByPurchaseOrderIdIn(java.util.Collection<String> purchaseOrderIds);
 }

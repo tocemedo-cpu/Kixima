@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface CompanyDocumentRepository extends JpaRepository<CompanyDocument, String> {
     List<CompanyDocument> findByCompanyIdOrderByTypeAsc(String companyId);
+
+    long countByCompanyId(String companyId);
 }

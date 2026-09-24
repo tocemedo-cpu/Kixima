@@ -61,4 +61,8 @@ public interface UserRepository extends JpaRepository<User, String> {
     /** Espelha o `groupBy({ by: ['companyId'], where: { active: true }, _count })` de companyService.subscriptionsFor — UMA consulta para N empresas. */
     @Query("SELECT u.companyId, COUNT(u) FROM User u WHERE u.companyId IN :ids AND u.active = true GROUP BY u.companyId")
     List<Object[]> contagemAtivosPorEmpresa(@Param("ids") List<String> ids);
+
+    long countByCompanyId(String companyId);
+
+    List<User> findByCompanyId(String companyId);
 }

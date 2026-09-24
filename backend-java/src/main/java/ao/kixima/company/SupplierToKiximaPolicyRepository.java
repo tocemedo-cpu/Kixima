@@ -7,4 +7,6 @@ import java.util.List;
 public interface SupplierToKiximaPolicyRepository extends JpaRepository<SupplierToKiximaPolicy, String> {
 
     List<SupplierToKiximaPolicy> findByCompanyId(String companyId);
+
+    long countByCompanyId(String companyId);
 }

@@ -41,4 +41,28 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, St
     List<PurchaseOrder> findByBuyerCompanyIdOrderByUpdatedAtDesc(String buyerCompanyId);
 
     List<PurchaseOrder> findBySupplierCompanyIdOrderByUpdatedAtDesc(String supplierCompanyId);
+
+    // --- painéis (companyAdminService / buyerService / dashboardService / publicStatsService) ---
+
+    /** POs que envolvem a empresa (compradora ou fornecedora), sem paginação. */
+    @Query("SELECT po FROM PurchaseOrder po WHERE po.buyerCompanyId = :companyId OR po.supplierCompanyId = :companyId ORDER BY po.updatedAt DESC")
+    List<PurchaseOrder> findEnvolvendoEmpresaOrderByUpdatedAtDesc(@Param("companyId") String companyId);
+
+    List<PurchaseOrder> findByBuyerCompanyIdOrderByCreatedAtDesc(String buyerCompanyId);
+
+    List<PurchaseOrder> findByBuyerCompanyIdAndStatusInOrderByCreatedAtDesc(String buyerCompanyId, Collection<PoStatus> statuses);
+
+    List<PurchaseOrder> findByBuyerCompanyIdAndStatusInOrderByUpdatedAtDesc(String buyerCompanyId, Collection<PoStatus> statuses);
+
+    List<PurchaseOrder> findFirstBySupplierCompanyIdAndBuyerCompanyIdOrderByCreatedAtDesc(String supplierCompanyId, String buyerCompanyId, Pageable pageable);
+
+    long countByStatus(PoStatus status);
+
+    /** conteudoLocalService.gerar — compras com compromisso real, num período. */
+    List<PurchaseOrder> findByBuyerCompanyIdAndStatusInAndCreatedAtBetweenOrderByCreatedAtAsc(String buyerCompanyId, Collection<PoStatus> statuses,
+                                                                                              java.time.Instant de, java.time.Instant ate);
+
+    /** reportsService.supplierStats — ordens do fornecedor desde uma data (null = sem janela). */
+    @Query("SELECT po FROM PurchaseOrder po WHERE po.supplierCompanyId = :supplierId AND (:desde IS NULL OR po.createdAt >= :desde)")
+    List<PurchaseOrder> findDoFornecedorDesde(@Param("supplierId") String supplierId, @Param("desde") java.time.Instant desde);
 }

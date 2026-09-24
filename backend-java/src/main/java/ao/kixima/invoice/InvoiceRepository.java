@@ -23,4 +23,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
 
     /** A fatura individual de uma PO (null nas call-offs, cujas faturas são consolidadas). */
     Optional<Invoice> findByPurchaseOrderId(String purchaseOrderId);
+
+    /** financeiroService.invoiceWhere — faturas da empresa compradora (via PO ou contrato), por vencimento. */
+    @org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i LEFT JOIN PurchaseOrder po ON po.id = i.purchaseOrderId "
+            + "LEFT JOIN ao.kixima.contract.Contract c ON c.id = i.contractId "
+            + "WHERE po.buyerCompanyId = :companyId OR c.clientCompanyId = :companyId ORDER BY i.dueAt ASC")
+    java.util.List<Invoice> findDaEmpresaCompradora(@org.springframework.data.repository.query.Param("companyId") String companyId);
 }

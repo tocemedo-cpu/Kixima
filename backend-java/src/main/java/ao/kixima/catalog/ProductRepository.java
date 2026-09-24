@@ -1,6 +1,8 @@
 package ao.kixima.catalog;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -41,4 +43,7 @@ public interface ProductRepository extends JpaRepository<Product, String>, JpaSp
     @Modifying
     @Query("UPDATE Product p SET p.stockQuantity = p.stockQuantity - :quantity WHERE p.id = :id AND p.stockQuantity >= :quantity")
     int decrementStockIfAvailable(@Param("id") String id, @Param("quantity") int quantity);
+
+    /** buyerService.suppliers / reportsService.supplierStats — o catálogo de um fornecedor. */
+    List<Product> findBySupplierId(String supplierId);
 }
