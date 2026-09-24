@@ -8,12 +8,17 @@ import ao.kixima.apikey.dto.RevokedApiKeyDto;
 import ao.kixima.audit.Actor;
 import ao.kixima.audit.AuditService;
 import ao.kixima.catalog.dto.AddReviewRequest;
+import ao.kixima.catalog.dto.CreateStockMovementRequest;
 import ao.kixima.catalog.dto.ProductDto;
 import ao.kixima.catalog.dto.ReviewDto;
 import ao.kixima.catalog.dto.ReviewSummaryDto;
+import ao.kixima.catalog.dto.StockMovementDto;
+import ao.kixima.catalog.dto.StockMovementListItemDto;
 import ao.kixima.catalog.dto.SupplierDocumentsResponse;
+import ao.kixima.catalog.dto.UpdateStockRequest;
 import ao.kixima.common.error.NotFoundException;
 import ao.kixima.common.error.ValidationException;
+import ao.kixima.common.pagination.PaginaResposta;
 import ao.kixima.company.Company;
 import ao.kixima.company.CompanyRepository;
 import ao.kixima.security.CurrentUser;
@@ -23,6 +28,7 @@ import ao.kixima.security.RequireRole;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -114,6 +120,63 @@ public class CatalogController {
         Actor actor = auditService.actorFrom(user, req);
         auditService.recordSafe(new AuditService.Entry(actor, "CHAVE_API_REVOGADA", "ApiKey", id, null, null));
         return r;
+    }
+
+    // --- Stock (inventário) -------------------------------------------------
+    // Ambas ANTES de /:id, tal como no Node: `/:id` apanharia `/movements`.
+
+    @GetMapping("/movements")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public PaginaResposta<StockMovementListItemDto> listarMovimentos(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer limit) {
+        StockMovementType tipo = type == null || type.isBlank() ? null : tipoValido(type);
+        return catalogService.listStockMovements(CurrentUserHolder.get().companyId(), tipo, page, limit);
+    }
+
+    @PostMapping("/movements")
+    @ResponseStatus(CREATED)
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public StockMovementDto criarMovimento(@RequestBody CreateStockMovementRequest body, HttpServletRequest req) {
+        if (body.productId() == null || body.productId().isBlank()) throw new ValidationException("Indique o produto.");
+        StockMovementType tipo = tipoValido(body.type());
+        if (body.quantity() == null || body.quantity() <= 0) throw new ValidationException("A quantidade tem de ser um número inteiro positivo.");
+        CurrentUser user = CurrentUserHolder.get();
+        StockMovementDto movimento = catalogService.createStockMovement(user.companyId(), user.id(), body.productId(),
+                tipo, body.quantity(), body.note());
+        Actor actor = auditService.actorFrom(user, req);
+        auditService.recordSafe(new AuditService.Entry(actor, "CATALOGO_MOVIMENTO_CRIADO", "StockMovement", movimento.id(),
+                null, Map.of("produtoId", body.productId(), "tipo", tipo.name(), "quantidade", body.quantity())));
+        return movimento;
+    }
+
+    private StockMovementType tipoValido(String tipo) {
+        try {
+            return StockMovementType.valueOf(tipo);
+        } catch (Exception e) {
+            throw new ValidationException("Tipo de movimento inválido — use ENTRADA ou SAIDA.");
+        }
+    }
+
+    @PatchMapping("/{id}/stock")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public ProductDto atualizarStock(@PathVariable String id, @RequestBody UpdateStockRequest body, HttpServletRequest req) {
+        CurrentUser user = CurrentUserHolder.get();
+        ProductDto produto = catalogService.updateStock(id, user.companyId(), body);
+        Actor actor = auditService.actorFrom(user, req);
+        auditService.recordSafe(new AuditService.Entry(actor, "CATALOGO_STOCK_ATUALIZADO", "Product", produto.id(),
+                produto.name(), Map.of("camposAlterados", camposAlterados(body))));
+        return produto;
+    }
+
+    private List<String> camposAlterados(UpdateStockRequest body) {
+        List<String> campos = new java.util.ArrayList<>();
+        if (body.stockQuantity() != null) campos.add("stockQuantity");
+        if (body.minStock() != null) campos.add("minStock");
+        if (body.warehouse() != null) campos.add("warehouse");
+        if (body.availability() != null) campos.add("availability");
+        return campos;
     }
 
     @GetMapping("/slug/{slug}")

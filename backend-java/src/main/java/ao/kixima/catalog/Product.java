@@ -353,8 +353,16 @@ public class Product extends AbstractPersistableEntity<String> {
         return stockQuantity;
     }
 
+    public void setStockQuantity(Integer stockQuantity) {
+        this.stockQuantity = stockQuantity;
+    }
+
     public String getWarehouse() {
         return warehouse;
+    }
+
+    public void setWarehouse(String warehouse) {
+        this.warehouse = warehouse;
     }
 
     public Integer getLeadTimeDays() {
@@ -365,8 +373,16 @@ public class Product extends AbstractPersistableEntity<String> {
         return availability;
     }
 
+    public void setAvailability(String availability) {
+        this.availability = availability;
+    }
+
     public Integer getMinStock() {
         return minStock;
+    }
+
+    public void setMinStock(Integer minStock) {
+        this.minStock = minStock;
     }
 
     public String getSlug() {
