@@ -10,4 +10,6 @@ public interface PlatformFeeRepository extends JpaRepository<PlatformFee, String
     Optional<PlatformFee> findByInvoiceId(String invoiceId);
 
     List<PlatformFee> findByCompanyIdOrderByCreatedAtDesc(String companyId);
+
+    List<PlatformFee> findAllByOrderByCreatedAtDesc();
 }

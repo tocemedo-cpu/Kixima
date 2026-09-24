@@ -232,6 +232,18 @@ public class Company extends AbstractPersistableEntity<String> {
         return logoUrl;
     }
 
+    public String getAddress() {
+        return address;
+    }
+
+    public String getProvince() {
+        return province;
+    }
+
+    public BigDecimal getSeatPriceUsd() {
+        return seatPriceUsd;
+    }
+
     public String getCity() {
         return city;
     }
