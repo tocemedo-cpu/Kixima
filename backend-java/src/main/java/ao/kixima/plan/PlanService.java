@@ -54,6 +54,18 @@ public class PlanService {
         return seatPriceCapUsd;
     }
 
+    public record SupplierDevAccessFee(BigDecimal amountUsd, String currency, boolean dueOnSubmission, boolean remainderCustom) {
+    }
+
+    /**
+     * Taxa de acesso ao programa Supplier Development — a mesma taxa de
+     * acesso das pequenas empresas, cobrada logo na submissão da
+     * candidatura (o resto do programa é orçamentado depois, caso a caso).
+     */
+    public SupplierDevAccessFee supplierDevAccessFee() {
+        return new SupplierDevAccessFee(seatPriceCapUsd, "USD", true, true);
+    }
+
     public int gracePeriodDays() {
         return gracePeriodDays;
     }

@@ -63,7 +63,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
-        boolean publico = publicPaths.ePublico(path);
+        boolean publico = publicPaths.ePublico(request.getMethod(), path);
         String token = tokenDoPedido(request);
 
         if (token == null) {

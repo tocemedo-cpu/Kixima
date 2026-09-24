@@ -133,6 +133,7 @@ public class Company extends AbstractPersistableEntity<String> {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @org.hibernate.annotations.UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -147,6 +148,26 @@ public class Company extends AbstractPersistableEntity<String> {
 
     protected Company() {
         // JPA
+    }
+
+    /**
+     * Criação de uma empresa nova — hoje só usado por
+     * {@code ao.kixima.supplierdev.SupplierDevService#approve} (nasce
+     * sempre FORNECEDOR/PENDENTE, tal como o Node; ver
+     * companyService.registerCompany, ainda não portado, para o cadastro
+     * público completo).
+     */
+    public Company(String id, String name, String taxId, CompanyType type, String contactEmail, String contactPhone,
+                    String province, Integer employees, Instant createdAt) {
+        this.id = id;
+        this.name = name;
+        this.taxId = taxId;
+        this.type = type;
+        this.contactEmail = contactEmail;
+        this.contactPhone = contactPhone;
+        this.province = province;
+        this.employees = employees;
+        this.createdAt = createdAt;
     }
 
     // --- getters/setters -----------------------------------------------

@@ -15,40 +15,65 @@ import java.util.concurrent.ConcurrentHashMap;
  * contrário: por omissão, um caminho novo é PROTEGIDO, tal como no Node um
  * router novo exige `authenticate` a menos que se decida o oposto
  * explicitamente.
+ *
+ * Entradas são MÉTODO+caminho, tal como o Node ({@code router.get}/
+ * {@code router.post} num mesmo caminho podem ter exigências diferentes de
+ * `authenticate`) — {@link #adicionar(String)} (sem método) regista para
+ * TODOS os métodos, para os casos (a maioria) em que isso não importa.
  */
 @Component
 public class PublicPaths {
 
-    private final Set<String> exatos = ConcurrentHashMap.newKeySet();
+    private static final String QUALQUER_METODO = "*";
+
+    private record Entrada(String metodo, String pathPattern) {
+    }
+
+    private final Set<Entrada> entradas = ConcurrentHashMap.newKeySet();
     private final AntPathMatcher matcher = new AntPathMatcher();
 
     public PublicPaths() {
         // authRoutes.js — só estas cinco rotas não têm `authenticate`.
-        exatos.add("/api/auth/login");
-        exatos.add("/api/auth/forgot-password");
-        exatos.add("/api/auth/reset-password");
-        exatos.add("/api/auth/2fa/verify");
-        exatos.add("/api/auth/2fa/reenviar");
-        exatos.add("/actuator/health");
+        adicionar("/api/auth/login");
+        adicionar("/api/auth/forgot-password");
+        adicionar("/api/auth/reset-password");
+        adicionar("/api/auth/2fa/verify");
+        adicionar("/api/auth/2fa/reenviar");
+        adicionar("/actuator/health");
         // uploadsRoutes.js — `optionalAuthenticate`, não `authenticate`: o mesmo
         // filtro que decide "público" também popula CurrentUserHolder quando um
         // token válido vem no pedido (só os ramos de token AUSENTE/INVÁLIDO é que
         // seguem sem utilizador) — por isso marcar como público aqui já reproduz
         // "autenticação opcional", sem precisar de um segundo modo no filtro.
-        exatos.add("/api/uploads/*");
+        adicionar("/api/uploads/*");
         // companyRoutes.js — resolução/aceitação de convite são públicas: o
         // token assinado (ver InviteController/InviteService) é a própria
         // autorização, tal como authenticate não está composto nestas duas
         // rotas no Node.
-        exatos.add("/api/companies/invite/*");
-        exatos.add("/api/companies/invite/*/accept");
+        adicionar("/api/companies/invite/*");
+        adicionar("/api/companies/invite/*/accept");
+        // supplierDevRoutes.js — candidatura e a sua consulta pública são
+        // abertas; GET /requests (listagem do Admin do Sistema) partilha o
+        // MESMO caminho de POST /requests (candidatar) mas fica de fora —
+        // por isso os métodos são registados em separado aqui, não o
+        // caminho inteiro.
+        adicionar("GET", "/api/supplier-development/fee");
+        adicionar("POST", "/api/supplier-development/requests");
+        adicionar("GET", "/api/supplier-development/requests/*/track");
     }
 
+    /** Regista um caminho como público para TODOS os métodos HTTP. */
     public void adicionar(String pathPattern) {
-        exatos.add(pathPattern);
+        adicionar(QUALQUER_METODO, pathPattern);
     }
 
-    public boolean ePublico(String path) {
-        return exatos.stream().anyMatch(p -> matcher.match(p, path));
+    /** Regista um caminho como público só para o método indicado (ex.: {@code "GET"}, {@code "POST"}). */
+    public void adicionar(String metodo, String pathPattern) {
+        entradas.add(new Entrada(metodo, pathPattern));
+    }
+
+    public boolean ePublico(String metodo, String path) {
+        return entradas.stream().anyMatch(e ->
+                (e.metodo().equals(QUALQUER_METODO) || e.metodo().equalsIgnoreCase(metodo)) && matcher.match(e.pathPattern(), path));
     }
 }

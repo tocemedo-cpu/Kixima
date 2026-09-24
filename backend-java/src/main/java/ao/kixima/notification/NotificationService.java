@@ -6,6 +6,7 @@ import ao.kixima.invoice.Invoice;
 import ao.kixima.po.PoStatus;
 import ao.kixima.po.PurchaseOrder;
 import ao.kixima.security.PersonaRole;
+import ao.kixima.supplierdev.SupplierDevRequest;
 import ao.kixima.user.User;
 import ao.kixima.user.UserRepository;
 import org.springframework.stereotype.Service;
@@ -196,5 +197,14 @@ public class NotificationService {
                 "O produto \"" + productName + "\" está com " + (stockQuantity == null ? 0 : stockQuantity)
                         + " unidades em stock, abaixo do mínimo definido (" + minStock + "). Considere repor.",
                 NotificationChannel.IN_APP, "Product", productId);
+    }
+
+    public void supplierDevRecebida(SupplierDevRequest r) {
+        notifyUsersByRole(null, List.of(PersonaRole.ADMIN_SISTEMA), NotificationType.SUPPLIER_DEV_RECEBIDA,
+                "Nova candidatura ao Supplier Development",
+                r.getCompanyName() + " candidatou-se ao programa (" + r.getReference() + "). Percurso: " + r.getTrack()
+                        + ". Contacto: " + r.getContactName() + " — " + r.getContactEmail() + ". Taxa de acesso de "
+                        + r.getAccessFeeUsd() + " USD emitida na submissão — por receber.",
+                NotificationChannel.IN_APP_EMAIL, "SupplierDevRequest", r.getId());
     }
 }

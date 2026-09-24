@@ -42,11 +42,9 @@ import java.util.UUID;
  * — convite self-service com aprovação do Company Admin, e a gestão da
  * equipa que o acompanha (activar/bloquear/remover).
  *
- * NÃO PORTADO (fora do âmbito deste lote): {@code createFoundingInvite}
- * (só chamado por supplierDevService.approve — "desenvolvimento de
- * fornecedores" é o item seguinte do plano, ainda por portar) e o fluxo de
- * convite de assessor ADMIN_SISTEMA (adminService.js: createAdminInvite/...
- * — mesma tabela, controller próprio, não portado).
+ * NÃO PORTADO (fora do âmbito deste lote): o fluxo de convite de
+ * assessor ADMIN_SISTEMA (adminService.js: createAdminInvite/... — mesma
+ * tabela, controller próprio, não portado).
  */
 @Service
 public class InviteService {
@@ -107,6 +105,36 @@ public class InviteService {
         created.setToken(token);
 
         enviarEmailDeConvite(created, company, baseUrl);
+        return new InviteCreatedDto(created.getId(), created.getName(), created.getEmail(), created.getRole().name(),
+                created.getStatus().name(), created.getExpiresAt(), created.getAcceptedAt(), created.getCreatedAt(),
+                company.getName());
+    }
+
+    /**
+     * Convite de FUNDAÇÃO: o único caso em que o convidado é o próprio
+     * primeiro Company Admin — a empresa acaba de nascer (ver
+     * ao.kixima.supplierdev.SupplierDevService#approve) e ainda não tem
+     * ninguém para o convidar de dentro da plataforma, ao contrário do
+     * convite normal (sempre enviado por um Company Admin já existente).
+     * Sem INVITABLE_ROLES a validar (é sempre COMPANY_ADMIN) nem lugares
+     * de plano a verificar (o primeiro lugar de uma empresa nova nunca
+     * está esgotado).
+     */
+    @Transactional
+    public InviteCreatedDto criarConviteDeFundacao(Company company, String name, String email, String createdById, String baseUrl) {
+        String normEmail = normalizar(email);
+        if (userRepository.findByEmail(normEmail).isPresent()) {
+            throw new ConflictException("Já existe uma conta com este email.");
+        }
+        Instant agora = Instant.now();
+        Instant expiresAt = agora.plus(Duration.ofDays(INVITE_TTL_DAYS));
+        EmployeeInvite created = new EmployeeInvite(UUID.randomUUID().toString(), company.getId(), name.trim(),
+                normEmail, PersonaRole.COMPANY_ADMIN, "pending", expiresAt, createdById, agora);
+        inviteRepository.save(created);
+        String token = jwtService.signInvite(company.getId(), PersonaRole.COMPANY_ADMIN.name(), created.getId());
+        created.setToken(token);
+
+        enviarEmailDeConviteDeFundacao(created, company, baseUrl);
         return new InviteCreatedDto(created.getId(), created.getName(), created.getEmail(), created.getRole().name(),
                 created.getStatus().name(), created.getExpiresAt(), created.getAcceptedAt(), created.getCreatedAt(),
                 company.getName());
@@ -307,6 +335,19 @@ public class InviteService {
                 + "Este link é válido por " + INVITE_TTL_DAYS + " dias.\n\n"
                 + "Equipe Kixima.";
         emailDispatchService.dispatch(invite.getEmail(), "Convite para acessar a plataforma Kixima", texto);
+    }
+
+    private void enviarEmailDeConviteDeFundacao(EmployeeInvite invite, Company company, String baseUrlDoPedido) {
+        String base = !appUrl.isBlank() ? appUrl
+                : (baseUrlDoPedido != null && !baseUrlDoPedido.isBlank() ? baseUrlDoPedido : "http://localhost:4000");
+        String link = base.replaceAll("/$", "") + "/convite/" + invite.getToken();
+        String texto = "Olá " + invite.getName() + ",\n\n"
+                + "A candidatura de " + company.getName() + " ao programa Supplier Development foi aprovada.\n"
+                + "Falta um passo para começar a usar a plataforma: defina a senha da sua conta de administrador.\n\n"
+                + "Clique no link abaixo:\n" + link + "\n\n"
+                + "Este link é válido por " + INVITE_TTL_DAYS + " dias.\n\n"
+                + "Equipe Kixima.";
+        emailDispatchService.dispatch(invite.getEmail(), "A sua empresa foi aprovada na KIXIMA — crie a sua conta", texto);
     }
 
     // --- Auxiliares ---------------------------------------------------
