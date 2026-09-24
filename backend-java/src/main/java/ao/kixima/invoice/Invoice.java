@@ -29,8 +29,9 @@ import java.util.List;
  * `agtErro`/`agtEstado` são `jsonb` na base — mapeadas como texto JSON
  * bruto, mesmo padrão de Company.settings (M0/M1): um @Convert dedicado só
  * entra quando algum domínio precisar de os ler/escrever estruturadamente.
- * `contract`/`consolidatedCallOffs` (call-off) ficam para quando o domínio
- * Contract for portado.
+ * `contractId`/`consolidatedPoIds` são a fatura consolidada de call-offs
+ * (ContractService.consolidateContractBilling) — `purchaseOrderId` fica
+ * null nessas, estruturalmente: cobre várias POs.
  */
 @Entity
 @Table(name = "invoices")
@@ -91,6 +92,14 @@ public class Invoice extends AbstractPersistableEntity<String> {
 
     @Column(name = "referencia_pagamento", unique = true)
     private String referenciaPagamento;
+
+    @Column(name = "contract_id")
+    private String contractId;
+
+    /** ids das call-offs cobertas por esta fatura consolidada — `text[]`. */
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "consolidated_po_ids")
+    private List<String> consolidatedPoIds = new ArrayList<>();
 
     @Column(name = "agt_document_no")
     private String agtDocumentNo;
@@ -154,6 +163,20 @@ public class Invoice extends AbstractPersistableEntity<String> {
 
     public String getReference() {
         return reference;
+    }
+
+    public String getContractId() {
+        return contractId;
+    }
+
+    public List<String> getConsolidatedPoIds() {
+        return consolidatedPoIds;
+    }
+
+    /** Fatura consolidada: liga-a ao contrato e às call-offs que cobre (só na criação). */
+    public void consolidarCallOffs(String contractId, List<String> poIds) {
+        this.contractId = contractId;
+        this.consolidatedPoIds = new ArrayList<>(poIds);
     }
 
     public String getPurchaseOrderId() {

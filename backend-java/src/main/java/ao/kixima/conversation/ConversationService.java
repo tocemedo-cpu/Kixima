@@ -5,11 +5,12 @@ import ao.kixima.catalog.Product;
 import ao.kixima.catalog.ProductRepository;
 import ao.kixima.common.error.ConflictException;
 import ao.kixima.common.error.NotFoundException;
-import ao.kixima.common.error.ServiceUnavailableException;
 import ao.kixima.common.error.ValidationException;
 import ao.kixima.company.Company;
 import ao.kixima.company.CompanyRepository;
 import ao.kixima.company.CompanyType;
+import ao.kixima.contract.Contract;
+import ao.kixima.contract.ContractRepository;
 import ao.kixima.notification.NotificationChannel;
 import ao.kixima.notification.NotificationService;
 import ao.kixima.notification.NotificationType;
@@ -44,9 +45,8 @@ import java.util.UUID;
  * falar com quem — {@link #conversationComAcesso} é chamada no TOPO de
  * toda a operação sobre uma conversa já existente.
  *
- * Contextos "product", "purchase_order" e "quote" resolvem-se contra os
- * domínios já portados. "contract" (Contract) recusa-se explicitamente
- * (503) em vez de fingir suporte — o domínio ainda não existe em Java.
+ * Os quatro contextos ("product", "purchase_order", "quote", "contract")
+ * resolvem-se contra os domínios portados — RESOLVEDORES_DE_CONTEXTO do Node.
  *
  * Tempo real (M6): {@code realtimeService.emitToConversation} é
  * {@link RealtimeService#emitToConversation} (STOMP, depois do commit) e o
@@ -67,6 +67,7 @@ public class ConversationService {
     private final ProductRepository productRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final QuoteRequestRepository quoteRequestRepository;
+    private final ContractRepository contractRepository;
     private final AuditService auditService;
     private final NotificationService notificationService;
     private final RiskAnalysisService riskAnalysisService;
@@ -77,7 +78,7 @@ public class ConversationService {
     public ConversationService(ConversationRepository conversationRepository, ConversationMessageRepository messageRepository,
                                 CompanyRepository companyRepository, ProductRepository productRepository,
                                 PurchaseOrderRepository purchaseOrderRepository, QuoteRequestRepository quoteRequestRepository,
-                                AuditService auditService,
+                                ContractRepository contractRepository, AuditService auditService,
                                 NotificationService notificationService, RiskAnalysisService riskAnalysisService,
                                 RiskAlertRepository riskAlertRepository, ObjectMapper objectMapper,
                                 RealtimeService realtimeService) {
@@ -88,6 +89,7 @@ public class ConversationService {
         this.productRepository = productRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.quoteRequestRepository = quoteRequestRepository;
+        this.contractRepository = contractRepository;
         this.auditService = auditService;
         this.notificationService = notificationService;
         this.riskAnalysisService = riskAnalysisService;
@@ -112,9 +114,10 @@ public class ConversationService {
                 QuoteRequest q = quoteRequestRepository.findById(contextId).orElseThrow(() -> new NotFoundException("Cotação"));
                 yield new ParDeEmpresas(q.getBuyerCompanyId(), q.getSupplierCompanyId());
             }
-            case "contract" -> throw new ServiceUnavailableException(
-                    "Conversas associadas a \"contract\" ainda não estão disponíveis neste backend (Java) — "
-                            + "dependem do domínio Contract, ainda não portado. Use o backend Node por agora.");
+            case "contract" -> {
+                Contract c = contractRepository.findById(contextId).orElseThrow(() -> new NotFoundException("Contrato"));
+                yield new ParDeEmpresas(c.getClientCompanyId(), c.getSupplierCompanyId());
+            }
             default -> throw new ValidationException("Contexto inválido.");
         };
     }

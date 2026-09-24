@@ -170,18 +170,6 @@ public class PoController {
     }
 
     private PurchaseOrderDto toDto(PurchaseOrder po) {
-        List<PurchaseOrderItemDto> items = po.getItems().stream()
-                .map(i -> new PurchaseOrderItemDto(i.getId(), i.getProductId(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal()))
-                .toList();
-        return new PurchaseOrderDto(
-                po.getId(), po.getReference(), po.getBuyerCompanyId(), po.getSupplierCompanyId(),
-                po.getCreatedById(), po.getApprovedById(), po.getStatus().name(),
-                po.getTotalAmount(), po.getNetAmount(), po.getTaxAmount(), po.getWithholdingAmount(),
-                po.getCurrency(), po.isCallOff(), po.isErpManaged(),
-                po.getAcceptedAt(), po.getPaymentDueAt(), po.getDispatchedAt(), po.getDeliveredAt(), po.getReceivedAt(),
-                po.getReceptionStatus(), po.getDivergenceResolution(), po.getDivergenceResolutionNotes(),
-                po.getApprovedAt(), po.getRejectedAt(), po.getRejectionReason(), po.getRefusedAt(), po.getRefusalReason(),
-                po.getCreatedBySource(), po.getCreatedAt(),
-                items);
+        return PurchaseOrderDto.de(po);
     }
 }

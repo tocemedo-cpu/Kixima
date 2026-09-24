@@ -27,13 +27,12 @@ import java.util.List;
  * Espelha o modelo Prisma `PurchaseOrder` (schema.prisma:891-982, tabela
  * `purchase_orders`) — a máquina de estados central (sec. 3 do manual).
  *
- * ÂMBITO NESTE MARCO (M3b): o fluxo humano completo (checkout → aprovação →
- * aceitação → despacho → entrega → receção → fecho). NÃO incluído ainda
- * (colunas existem na tabela mas ficam de fora do mapeamento, não bloqueiam
- * `ddl-auto=validate`): `contract`/`contractId` e `consolidatedInvoice`
- * (call-off, depende do domínio Contract, ainda não portado) e
- * `erpSyncLogs` (aplicarDecisaoErp/aplicarPagamentoErp, M5+). Ver
- * PoService para os TODOs equivalentes na lógica de negócio.
+ * Cobre o fluxo humano completo (checkout → aprovação → aceitação → despacho
+ * → entrega → receção → fecho) e, desde o fecho de lacunas A.5, a call-off
+ * (`contractId`/`consolidatedInvoiceId`, domínio Contract). NÃO incluído
+ * ainda (colunas existem na tabela mas ficam de fora do mapeamento, não
+ * bloqueiam `ddl-auto=validate`): `erpSyncLogs` (aplicarDecisaoErp/
+ * aplicarPagamentoErp — callback ERP, lacuna A.7).
  */
 @Entity
 @Table(name = "purchase_orders")
@@ -87,6 +86,14 @@ public class PurchaseOrder extends AbstractPersistableEntity<String> {
 
     @Column(name = "is_call_off", nullable = false)
     private boolean isCallOff = false;
+
+    /** Contrato-quadro ao abrigo do qual esta PO nasceu como call-off (null nas POs normais). */
+    @Column(name = "contract_id")
+    private String contractId;
+
+    /** Fatura consolidada que já cobriu esta call-off — é ESTE campo que sabe se ela já foi faturada. */
+    @Column(name = "consolidated_invoice_id")
+    private String consolidatedInvoiceId;
 
     @Column(name = "accepted_at")
     private Instant acceptedAt;
@@ -253,6 +260,26 @@ public class PurchaseOrder extends AbstractPersistableEntity<String> {
 
     public boolean isCallOff() {
         return isCallOff;
+    }
+
+    public String getContractId() {
+        return contractId;
+    }
+
+    /** Checkout dentro da cobertura de um contrato-quadro: a PO nasce call-off, já APROVADA. */
+    public void nascerComoCallOff(String contractId, Instant approvedAt) {
+        this.isCallOff = true;
+        this.contractId = contractId;
+        this.status = PoStatus.APROVADA;
+        this.approvedAt = approvedAt;
+    }
+
+    public String getConsolidatedInvoiceId() {
+        return consolidatedInvoiceId;
+    }
+
+    public void setConsolidatedInvoiceId(String consolidatedInvoiceId) {
+        this.consolidatedInvoiceId = consolidatedInvoiceId;
     }
 
     public boolean isErpManaged() {

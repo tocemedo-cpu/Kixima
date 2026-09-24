@@ -9,6 +9,8 @@ import ao.kixima.common.error.ForbiddenException;
 import ao.kixima.common.error.NotFoundException;
 import ao.kixima.common.reference.ReferenceCounterService;
 import ao.kixima.company.Company;
+import ao.kixima.contract.Contract;
+import ao.kixima.contract.ContractService;
 import ao.kixima.faturacao.FaturacaoService;
 import ao.kixima.conciliacao.ConciliacaoService;
 import ao.kixima.messaging.EventBus;
@@ -77,6 +79,7 @@ public class PoService {
     private final AgtSandboxSubmissionService agtSandboxSubmissionService;
     private final NotificationService notificationService;
     private final EventBus eventBus;
+    private final ContractService contractService;
     private final int paymentSlaDays;
 
     public PoService(PurchaseOrderRepository purchaseOrderRepository, PurchaseOrderItemRepository purchaseOrderItemRepository,
@@ -84,7 +87,7 @@ public class PoService {
                       InvoiceLineRepository invoiceLineRepository, TaxService taxService, FaturacaoService faturacaoService,
                       ConciliacaoService conciliacaoService, ReferenceCounterService referenceCounterService,
                       AgtSandboxSubmissionService agtSandboxSubmissionService, NotificationService notificationService,
-                      EventBus eventBus,
+                      EventBus eventBus, ContractService contractService,
                       @Value("${kixima.business.payment-sla-days:7}") int paymentSlaDays) {
         this.eventBus = eventBus;
         this.purchaseOrderRepository = purchaseOrderRepository;
@@ -98,6 +101,7 @@ public class PoService {
         this.referenceCounterService = referenceCounterService;
         this.agtSandboxSubmissionService = agtSandboxSubmissionService;
         this.notificationService = notificationService;
+        this.contractService = contractService;
         this.paymentSlaDays = paymentSlaDays;
     }
 
@@ -173,12 +177,19 @@ public class PoService {
             }
         }
 
+        // Deteção automática de Call-off (secção 5): se o fornecedor tem contrato-quadro
+        // ATIVO cobrindo todas as categorias, a PO vira Call-off sem o comprador fazer nada.
+        List<String> categories = products.stream().map(Product::getCategory).distinct().toList();
+        Contract contract = contractService.findActiveContractForOrder(buyerCompanyId, supplierCompanyId, categories).orElse(null);
+
         String reference = referenceCounterService.nextReference("PO", "purchaseOrder");
         Instant agora = Instant.now();
 
         PurchaseOrder po = new PurchaseOrder(UUID.randomUUID().toString(), reference, buyerCompanyId, supplierCompanyId,
                 createdById, PoStatus.AGUARDANDO_APROVACAO, impostos.gross(), impostos.net(), impostos.tax(),
                 impostos.withheld(), false, false, null, createdBySource, null, agora, agora);
+        // Call-off: a aprovação de negócio já aconteceu na assinatura do contrato.
+        if (contract != null) po.nascerComoCallOff(contract.getId(), agora);
         purchaseOrderRepository.save(po);
 
         for (LineItem li : lineItems) {
@@ -196,7 +207,14 @@ public class PoService {
                     aviso.produto().getName(), aviso.restante(), aviso.produto().getMinStock());
         }
 
-        notificationService.poAguardaAprovacao(po);
+        if (contract != null) {
+            // O tecto do contrato-quadro é um valor COMERCIAL: consome-se com o líquido, não com o IVA.
+            contractService.consumir(contract.getId(), impostos.net());
+            // Já aprovada -> segue diretamente para o fornecedor.
+            notificationService.poRecebidaPeloFornecedor(po);
+        } else {
+            notificationService.poAguardaAprovacao(po);
+        }
         return po;
     }
 
@@ -291,7 +309,7 @@ public class PoService {
 
         if (po.isCallOff()) {
             // Call-off: sem fatura individual nem prazo de 7 dias — a faturação
-            // consolida-se periodicamente. Não implementado neste marco (Contract, M3+).
+            // consolida-se periodicamente (ContractService.consolidateContractBilling).
             po.setStatus(PoStatus.EM_EXECUCAO);
             po.setAcceptedAt(acceptedAt);
             return po;
