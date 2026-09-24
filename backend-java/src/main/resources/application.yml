@@ -1,0 +1,85 @@
+# Configuração base — comum a todos os perfis. Nomes de variável de ambiente
+# alinhados 1:1 com backend/src/config/env.js (Node), para as duas versões
+# poderem ser configuradas com o MESMO conjunto de segredos no painel do
+# Render durante a janela de sobreposição.
+spring:
+  application:
+    name: kixima-backend
+
+  datasource:
+    # DATABASE_URL do Node é uma connection string única; aqui separamos em
+    # host/user/password porque é o formato que o Spring espera — o valor
+    # continua a apontar ao MESMO pooler Supabase (porta 6543, Transaction
+    # pooler) usado pelo backend Node. Nunca o host direto (só IPv6).
+    url: ${DATABASE_URL_JDBC:jdbc:postgresql://localhost:5432/kixima_test}
+    username: ${DATABASE_USER:kixima}
+    password: ${DATABASE_PASSWORD:kixima}
+    hikari:
+      # Pool pequeno e limitado de propósito — Java não pode esfomear o pool
+      # do Node em produção enquanto os dois backends coexistem (plano,
+      # secção 5 "Base de dados durante a sobreposição").
+      maximum-pool-size: ${DB_POOL_MAX:5}
+
+  jpa:
+    hibernate:
+      # NUNCA "update"/"create" — o schema é gerido pelo Prisma (Node) durante
+      # toda a janela de transição (plano, secção 2). O Hibernate só LÊ a
+      # estrutura existente; nunca a altera.
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    # Baseline sobre o schema já existente — nunca tenta repetir o histórico
+    # do Prisma (plano, secção 2). Fica desligado por omissão: só se liga
+    # explicitamente quando um domínio específico precisar de uma migração
+    # nova do lado Java (depois de cortado, ou uma adição genuinamente
+    # Java-side). Ver docs/migracao-java/PLANO.md.
+    enabled: ${FLYWAY_ENABLED:false}
+    baseline-on-migrate: true
+    baseline-version: 0
+
+server:
+  port: ${PORT:4001}
+  # Porta diferente da do Node (4000) por omissão, para os dois poderem
+  # correr lado a lado no mesmo ambiente local durante o desenvolvimento.
+
+spring.mvc.throw-exception-if-no-handler-found: true
+spring.web.resources.add-mappings: false
+# As duas linhas acima ligam NoHandlerFoundException para rotas sem
+# handler — equivalente ao notFoundHandler (404 ROUTE_NOT_FOUND) no fundo de
+# backend/src/middleware/errorHandler.js, em vez da Whitelabel Error Page
+# por omissão do Spring.
+
+kixima:
+  auth:
+    jwt-secret: ${JWT_SECRET:}
+    jwt-expires-in: ${JWT_EXPIRES_IN:1d}
+  business:
+    payment-sla-days: ${PAYMENT_SLA_DAYS:7}
+    policy-expiry-alert-days: ${POLICY_EXPIRY_ALERT_DAYS:30}
+  agt:
+    jws-private-key-base64: ${AGT_JWS_PRIVATE_KEY_BASE64:}
+    software-validation-number: ${AGT_SOFTWARE_VALIDATION_NUMBER:}
+    software-id: ${AGT_SOFTWARE_ID:}
+    software-version: ${AGT_SOFTWARE_VERSION:}
+    nif: ${AGT_NIF:}
+    establishment-number: ${AGT_ESTABLISHMENT_NUMBER:}
+    env: ${AGT_ENV:}
+    sandbox-username: ${AGT_SANDBOX_USERNAME:}
+    sandbox-password: ${AGT_SANDBOX_PASSWORD:}
+  storage:
+    provider: ${STORAGE_PROVIDER:local}
+    bucket: ${STORAGE_BUCKET:}
+  cors:
+    origins: ${CORS_ORIGINS:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

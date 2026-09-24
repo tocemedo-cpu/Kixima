@@ -1,0 +1,244 @@
+package ao.kixima.company;
+
+import ao.kixima.user.User;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+
+/**
+ * Espelha o modelo Prisma `Company` (backend/prisma/schema.prisma:244-347,
+ * tabela `companies`).
+ *
+ * ÂMBITO NESTE MARCO (M0/M1): só os campos escalares e a relação `users`,
+ * necessários para autenticação/RBAC. As restantes ~20 relações do modelo
+ * Prisma (productsOffered, purchaseOrdersMade/Recv, contracts*, policies,
+ * ...) entram entidade a entidade nos marcos M2-M5, à medida que cada
+ * domínio é portado — nunca `fetch = EAGER`, sempre mapeadas explicitamente
+ * (ver plano, secção 2: "cada resposta JSON é construída por um mapper
+ * explícito, nunca por serializar o grafo da entidade directamente").
+ */
+@Entity
+@Table(name = "companies")
+public class Company {
+
+    /**
+     * `text` na base, não `uuid` nativo — confirmado por inspecção directa
+     * de `\d companies` na base de teste local (M0, verificação obrigatória
+     * do plano, secção 2): o Prisma gera o UUID do lado do cliente e o
+     * guarda como texto simples, não usa o tipo `uuid` do Postgres nem
+     * `gen_random_uuid()`. Java tem de gerar o valor da mesma forma, nunca
+     * `@GeneratedValue`.
+     */
+    @Id
+    private String id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(name = "tax_id", nullable = false, unique = true)
+    private String taxId;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false)
+    private CompanyType type;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false)
+    private CompanyStatus status = CompanyStatus.PENDENTE;
+
+    @Column(name = "contact_email", nullable = false)
+    private String contactEmail;
+
+    @Column(name = "contact_phone")
+    private String contactPhone;
+
+    private String address;
+
+    @Column(nullable = false)
+    private boolean verified = false;
+
+    @Column(name = "logo_url")
+    private String logoUrl;
+
+    private String city;
+    private String province;
+    private String country = "Angola";
+
+    // `settings Json?` no Prisma — mapeado como texto JSON bruto neste marco;
+    // um @Convert dedicado entra quando um domínio precisar de o ler/escrever
+    // estruturadamente (M2, "Configurações do Company Admin").
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String settings;
+
+    @Column(name = "bank_name")
+    private String bankName;
+    private String iban;
+    private String swift;
+
+    @Column(name = "serie_fiscal")
+    private String serieFiscal;
+
+    @Column(name = "data_adesao_facturacao_electronica")
+    private Instant dataAdesaoFacturacaoElectronica;
+
+    @Column(name = "terms_accepted_at")
+    private Instant termsAcceptedAt;
+
+    private Integer employees;
+
+    @Column(name = "annual_revenue_usd", precision = 16, scale = 2)
+    private BigDecimal annualRevenueUsd;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false)
+    private CompanySize size = CompanySize.PEQUENA;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false)
+    private CompanyPlan plan = CompanyPlan.BASE;
+
+    @Column(name = "search_rank", nullable = false)
+    private int searchRank = 0;
+
+    @Column(name = "search_text")
+    private String searchText;
+
+    @Column(name = "plano_valido_ate")
+    private Instant planoValidoAte;
+
+    @Column(name = "seat_price_usd", nullable = false, precision = 10, scale = 2)
+    private BigDecimal seatPriceUsd = new BigDecimal("100");
+
+    @Column(name = "plan_notes")
+    private String planNotes;
+
+    @Column(name = "ultimo_aviso_subscricao_tier")
+    private String ultimoAvisoSubscricaoTier;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    @Column(name = "approved_at")
+    private Instant approvedAt;
+
+    @Column(name = "rejected_at")
+    private Instant rejectedAt;
+
+    @OneToMany(mappedBy = "company", fetch = jakarta.persistence.FetchType.LAZY)
+    private List<User> users;
+
+    protected Company() {
+        // JPA
+    }
+
+    // --- getters/setters -----------------------------------------------
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getTaxId() {
+        return taxId;
+    }
+
+    public void setTaxId(String taxId) {
+        this.taxId = taxId;
+    }
+
+    public CompanyType getType() {
+        return type;
+    }
+
+    public void setType(CompanyType type) {
+        this.type = type;
+    }
+
+    public CompanyStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(CompanyStatus status) {
+        this.status = status;
+    }
+
+    public String getContactEmail() {
+        return contactEmail;
+    }
+
+    public void setContactEmail(String contactEmail) {
+        this.contactEmail = contactEmail;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
+
+    public CompanySize getSize() {
+        return size;
+    }
+
+    public void setSize(CompanySize size) {
+        this.size = size;
+    }
+
+    public CompanyPlan getPlan() {
+        return plan;
+    }
+
+    public void setPlan(CompanyPlan plan) {
+        this.plan = plan;
+    }
+
+    public Instant getPlanoValidoAte() {
+        return planoValidoAte;
+    }
+
+    public void setPlanoValidoAte(Instant planoValidoAte) {
+        this.planoValidoAte = planoValidoAte;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+}

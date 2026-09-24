@@ -1,0 +1,22 @@
+# Perfil de produção — NENHUM valor por omissão para segredos. Falha no
+# arranque se DATABASE_URL_JDBC/JWT_SECRET não estiverem definidos, tal como
+# o backend Node recusa arrancar com um JWT_SECRET fraco (env.js).
+#
+# Durante a janela de sobreposição (plano, secção 5), este perfil só deve
+# apontar à base de produção partilhada na janela final de verificação
+# pré-cutover de um domínio específico — nunca por omissão.
+spring:
+  datasource:
+    url: ${DATABASE_URL_JDBC}
+    username: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:5}
+
+kixima:
+  auth:
+    jwt-secret: ${JWT_SECRET}
+
+logging:
+  level:
+    ao.kixima: INFO

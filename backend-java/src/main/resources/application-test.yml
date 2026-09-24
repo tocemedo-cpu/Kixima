@@ -1,0 +1,14 @@
+# Perfil de testes JUnit — mesma base Postgres local que o backend Node usa
+# em tests/env.js, para os testes portados correrem sobre dados idênticos.
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kixima_test
+    username: kixima
+    password: kixima
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+kixima:
+  auth:
+    jwt-secret: teste-jwt-secret-com-pelo-menos-32-caracteres-000000

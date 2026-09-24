@@ -1,0 +1,12 @@
+# Perfil de desenvolvimento local — mesma base Postgres local usada pelos
+# testes do backend Node (docker-compose.yml / tests/env.js).
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kixima_test
+    username: kixima
+    password: kixima
+
+logging:
+  level:
+    ao.kixima: DEBUG
+    org.hibernate.SQL: DEBUG
