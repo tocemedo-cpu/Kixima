@@ -1,6 +1,7 @@
-package ao.kixima.company;
+package ao.kixima.policy;
 
 import ao.kixima.common.persistence.AbstractPersistableEntity;
+import ao.kixima.company.PolicyStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,15 +16,15 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * Espelha o modelo Prisma `SupplierToKiximaPolicy` (schema.prisma:1473-1493,
- * tabela `supplier_to_kixima_policies`) — apólice de seguro
- * Fornecedor→KIXIMA, exigida para credenciar qualquer empresa fornecedora
- * (ver companyService.decideCompanyStatus, ainda não portado). Só criação
- * neste marco (ver {@code ao.kixima.supplierdev.SupplierDevService#approve}).
+ * Espelha o modelo Prisma `KiximaToClientPolicy` (schema.prisma:1496-1519,
+ * tabela `kixima_to_client_policies`) — apólice de seguro KIXIMA→Cliente,
+ * emitida pelo Admin do Sistema (área "apólices") após due diligence, por
+ * empresa. {@code expiryAlertSentAt} evita reenviar o aviso de expiração
+ * (ver {@link PolicyService#enviarAvisosDeExpiracao()}).
  */
 @Entity
-@Table(name = "supplier_to_kixima_policies")
-public class SupplierToKiximaPolicy extends AbstractPersistableEntity<String> {
+@Table(name = "kixima_to_client_policies")
+public class KiximaToClientPolicy extends AbstractPersistableEntity<String> {
 
     @Id
     private String id;
@@ -46,7 +47,10 @@ public class SupplierToKiximaPolicy extends AbstractPersistableEntity<String> {
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
-    private PolicyStatus status = PolicyStatus.SUBMETIDA;
+    private PolicyStatus status = PolicyStatus.APROVADA;
+
+    @Column(name = "issued_by_id", nullable = false)
+    private String issuedById;
 
     @Column(name = "valid_from", nullable = false)
     private Instant validFrom;
@@ -54,8 +58,8 @@ public class SupplierToKiximaPolicy extends AbstractPersistableEntity<String> {
     @Column(name = "valid_until", nullable = false)
     private Instant validUntil;
 
-    @Column(name = "document_url")
-    private String documentUrl;
+    @Column(name = "expiry_alert_sent_at")
+    private Instant expiryAlertSentAt;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -64,19 +68,20 @@ public class SupplierToKiximaPolicy extends AbstractPersistableEntity<String> {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected SupplierToKiximaPolicy() {
+    protected KiximaToClientPolicy() {
         // JPA
     }
 
-    public SupplierToKiximaPolicy(String id, String companyId, String policyNumber, String insurer,
-                                   BigDecimal coverageAmount, String currency, Instant validFrom, Instant validUntil,
-                                   Instant createdAt) {
+    public KiximaToClientPolicy(String id, String companyId, String policyNumber, String insurer,
+                                 BigDecimal coverageAmount, String currency, String issuedById,
+                                 Instant validFrom, Instant validUntil, Instant createdAt) {
         this.id = id;
         this.companyId = companyId;
         this.policyNumber = policyNumber;
         this.insurer = insurer;
         this.coverageAmount = coverageAmount;
         this.currency = currency == null || currency.isBlank() ? "AOA" : currency;
+        this.issuedById = issuedById;
         this.validFrom = validFrom;
         this.validUntil = validUntil;
         this.createdAt = createdAt;
@@ -110,8 +115,8 @@ public class SupplierToKiximaPolicy extends AbstractPersistableEntity<String> {
         return status;
     }
 
-    public void setStatus(PolicyStatus status) {
-        this.status = status;
+    public String getIssuedById() {
+        return issuedById;
     }
 
     public Instant getValidFrom() {
@@ -122,8 +127,12 @@ public class SupplierToKiximaPolicy extends AbstractPersistableEntity<String> {
         return validUntil;
     }
 
-    public String getDocumentUrl() {
-        return documentUrl;
+    public Instant getExpiryAlertSentAt() {
+        return expiryAlertSentAt;
+    }
+
+    public void setExpiryAlertSentAt(Instant expiryAlertSentAt) {
+        this.expiryAlertSentAt = expiryAlertSentAt;
     }
 
     public Instant getCreatedAt() {
