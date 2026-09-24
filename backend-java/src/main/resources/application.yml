@@ -90,6 +90,16 @@ kixima:
       enabled: ${KIXIMA_JOB_LEMBRETES_2FA_ENABLED:false}
     po-robot:
       enabled: ${KIXIMA_JOB_PO_ROBOT_ENABLED:false}
+    backup:
+      enabled: ${KIXIMA_JOB_BACKUP_ENABLED:false}
+  backup:
+    # Mesmas variáveis que backupJob.js. BACKUP_CRON é opt-in (5 campos, como
+    # o node-cron: "0 3 * * *"); sem ela não se faz nada. DIRECT_URL é a
+    # ligação libpq para o pg_dump (o pooler não serve); sem ela deriva-se da
+    # ligação JDBC configurada.
+    cron: ${BACKUP_CRON:}
+    max-idade-horas: ${BACKUP_MAX_IDADE_HORAS:26}
+    direct-url: ${DIRECT_URL:${DATABASE_URL:}}
   addons:
     # Mesmas variáveis que addonService.js — preço configurável por ambiente, nunca hardcoded.
     po-robot:
@@ -136,6 +146,8 @@ kixima:
     # log (mesmo espírito do "S3 mal configurado" do Node), nunca silencioso.
     provider: ${STORAGE_PROVIDER:local}
     bucket: ${STORAGE_BUCKET:}
+    # Bucket PRIVADO só para cópias de segurança — nunca o das imagens, que é público.
+    backup-bucket: ${STORAGE_BACKUP_BUCKET:}
     local-dir: ${STORAGE_LOCAL_DIR:uploads}
   db:
     # Tecto de segurança para listas sem paginação própria — equivalente ao

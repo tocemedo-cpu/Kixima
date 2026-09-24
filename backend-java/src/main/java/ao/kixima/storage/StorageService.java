@@ -70,6 +70,26 @@ public class StorageService {
         return "/api/uploads/" + filename;
     }
 
+    /** Espelha `comChave: true` — quem guarda cópias de segurança precisa da CHAVE para as voltar a ler. */
+    public record Guardado(String url, String key) {
+    }
+
+    /**
+     * Espelha `saveFile({ ..., folder, bucket, comChave: true })`. No provider
+     * local a chave é o próprio nome do ficheiro ({@code folder}/{@code bucket}
+     * só têm significado no S3, ainda não portado — ver Javadoc da classe).
+     */
+    public Guardado saveFileComChave(byte[] buffer, String originalname, String mimetype, String keyHint,
+                                     String folder, String bucket) {
+        String url = saveFile(buffer, originalname, mimetype, keyHint);
+        return new Guardado(url, url.substring(url.lastIndexOf('/') + 1));
+    }
+
+    /** Lê um objeto de volta do armazenamento — no provider local, pelo nome (nunca um caminho). */
+    public byte[] lerFicheiro(String key, String bucket) throws IOException {
+        return readFile(key);
+    }
+
     /** Lê um ficheiro já guardado — {@code filename}, nunca um caminho completo (só nome+extensão). */
     public byte[] readFile(String filename) throws IOException {
         return Files.readAllBytes(uploadsDir.resolve(Paths.get(filename).getFileName()));
