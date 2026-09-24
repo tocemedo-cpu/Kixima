@@ -4,6 +4,7 @@ import ao.kixima.catalog.dto.AddReviewRequest;
 import ao.kixima.catalog.dto.ProductDto;
 import ao.kixima.catalog.dto.ReviewDto;
 import ao.kixima.catalog.dto.ReviewSummaryDto;
+import ao.kixima.catalog.dto.SupplierDocumentsResponse;
 import ao.kixima.common.error.ValidationException;
 import ao.kixima.security.CurrentUser;
 import ao.kixima.security.CurrentUserHolder;
@@ -20,7 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import static ao.kixima.security.PersonaRole.COMPANY_ADMIN;
 import static ao.kixima.security.PersonaRole.COMPRADOR;
+import static ao.kixima.security.PersonaRole.FORNECEDOR;
 import static org.springframework.http.HttpStatus.CREATED;
 
 /**
@@ -51,6 +54,13 @@ public class CatalogController {
         // Um comprador não vê (nem compra) produtos da própria empresa.
         String excludeSupplierId = user.role() == PersonaRole.COMPRADOR ? user.companyId() : null;
         return catalogService.listCatalog(new CatalogService.Filtros(category, search, supplierId, excludeSupplierId, kind));
+    }
+
+    /** Módulo de Documentação do fornecedor — documentos técnicos dos produtos + de credenciamento da empresa. */
+    @GetMapping("/documents")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public SupplierDocumentsResponse documentosDoFornecedor() {
+        return catalogService.listSupplierDocuments(CurrentUserHolder.get().companyId());
     }
 
     @GetMapping("/slug/{slug}")

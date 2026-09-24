@@ -1,10 +1,15 @@
 package ao.kixima.catalog;
 
+import ao.kixima.catalog.dto.CompanyDocumentDto;
 import ao.kixima.catalog.dto.ProductDocumentDto;
 import ao.kixima.catalog.dto.ProductDto;
 import ao.kixima.catalog.dto.ProductImageDto;
+import ao.kixima.catalog.dto.SupplierDocumentDto;
+import ao.kixima.catalog.dto.SupplierDocumentsResponse;
 import ao.kixima.common.error.NotFoundException;
 import ao.kixima.company.Company;
+import ao.kixima.company.CompanyDocument;
+import ao.kixima.company.CompanyDocumentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,11 +35,16 @@ public class CatalogService {
     private static final Logger log = LoggerFactory.getLogger(CatalogService.class);
 
     private final ProductRepository productRepository;
+    private final ProductDocumentRepository productDocumentRepository;
+    private final CompanyDocumentRepository companyDocumentRepository;
     private final int tectoPorOmissao;
 
-    public CatalogService(ProductRepository productRepository,
+    public CatalogService(ProductRepository productRepository, ProductDocumentRepository productDocumentRepository,
+                           CompanyDocumentRepository companyDocumentRepository,
                            @Value("${kixima.db.max-rows:1000}") int tectoPorOmissao) {
         this.productRepository = productRepository;
+        this.productDocumentRepository = productDocumentRepository;
+        this.companyDocumentRepository = companyDocumentRepository;
         this.tectoPorOmissao = tectoPorOmissao;
     }
 
@@ -74,6 +84,32 @@ public class CatalogService {
     public ProductDto getProductBySlug(String slug) {
         Product product = productRepository.findBySlug(slug).orElseThrow(() -> new NotFoundException("Produto"));
         return toDto(product, supplierSlugView(product.getSupplier()), true);
+    }
+
+    /**
+     * Espelha catalogService.listSupplierDocuments — documentos técnicos
+     * de todos os produtos do fornecedor (ficha técnica, certificado,
+     * catálogo, ...) + os documentos de credenciamento da própria empresa
+     * (Alvará, Licença ANPG, Certidão Comercial), para o módulo de
+     * Documentação.
+     */
+    @Transactional(readOnly = true)
+    public SupplierDocumentsResponse listSupplierDocuments(String supplierCompanyId) {
+        List<SupplierDocumentDto> productDocs = productDocumentRepository.findBySupplierIdOrderByCreatedAtDesc(supplierCompanyId)
+                .stream()
+                .map(d -> new SupplierDocumentDto(d.getId(), d.getType().name(), d.getFileUrl(), d.getOriginalName(),
+                        d.getCreatedAt(), d.getProductId(), d.getProduct() == null || d.getProduct().getName() == null
+                        ? "—" : d.getProduct().getName()))
+                .toList();
+        List<CompanyDocumentDto> companyDocs = companyDocumentRepository.findByCompanyIdOrderByTypeAsc(supplierCompanyId)
+                .stream()
+                .map(this::toDto)
+                .toList();
+        return new SupplierDocumentsResponse(productDocs, companyDocs);
+    }
+
+    private CompanyDocumentDto toDto(CompanyDocument d) {
+        return new CompanyDocumentDto(d.getId(), d.getType().name(), d.getFileUrl(), d.getOriginalName(), d.getCreatedAt());
     }
 
     /** Best-effort, tal como incrementView() no Node — nunca bloqueia a resposta do chamador. */

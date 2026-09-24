@@ -1,39 +1,39 @@
-package ao.kixima.catalog;
+package ao.kixima.company;
 
 import ao.kixima.common.persistence.AbstractPersistableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
-/** Espelha o modelo Prisma `ProductDocument` (schema.prisma:859-869, tabela `product_documents`). */
+/**
+ * Espelha o modelo Prisma `CompanyDocument` (schema.prisma:485-496, tabela
+ * `company_documents`) — documento de credenciamento (Certidão Comercial,
+ * Alvará, Licença ANPG) enviado no cadastro da empresa (ver
+ * companyService.registerCompany — NÃO PORTADO). Só de LEITURA neste
+ * marco: a listagem para o módulo de Documentação do fornecedor (ver
+ * ao.kixima.catalog.CatalogController#documentosDoFornecedor).
+ */
 @Entity
-@Table(name = "product_documents")
-public class ProductDocument extends AbstractPersistableEntity<String> {
+@Table(name = "company_documents")
+public class CompanyDocument extends AbstractPersistableEntity<String> {
 
     @Id
     private String id;
 
-    @Column(name = "product_id", nullable = false)
-    private String productId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", insertable = false, updatable = false)
-    private Product product;
+    @Column(name = "company_id", nullable = false)
+    private String companyId;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
-    private ProductDocType type;
+    private DocumentType type;
 
     @Column(name = "file_url", nullable = false)
     private String fileUrl;
@@ -44,7 +44,7 @@ public class ProductDocument extends AbstractPersistableEntity<String> {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    protected ProductDocument() {
+    protected CompanyDocument() {
         // JPA
     }
 
@@ -52,7 +52,11 @@ public class ProductDocument extends AbstractPersistableEntity<String> {
         return id;
     }
 
-    public ProductDocType getType() {
+    public String getCompanyId() {
+        return companyId;
+    }
+
+    public DocumentType getType() {
         return type;
     }
 
@@ -62,14 +66,6 @@ public class ProductDocument extends AbstractPersistableEntity<String> {
 
     public String getOriginalName() {
         return originalName;
-    }
-
-    public String getProductId() {
-        return productId;
-    }
-
-    public Product getProduct() {
-        return product;
     }
 
     public Instant getCreatedAt() {

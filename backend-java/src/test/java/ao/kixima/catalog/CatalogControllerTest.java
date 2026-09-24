@@ -87,4 +87,26 @@ class CatalogControllerTest {
                 .andExpect(jsonPath("$.error.code").value("NOT_FOUND"))
                 .andExpect(jsonPath("$.error.message").value("Produto não encontrado."));
     }
+
+    @Test
+    void documentacaoDoFornecedorListaDocumentosDeCredenciamentoESoParaFornecedorOuCompanyAdmin() throws Exception {
+        String compradorToken = login();
+        mockMvc.perform(get("/api/catalog/documents").header("Authorization", "Bearer " + compradorToken))
+                .andExpect(status().isForbidden());
+
+        var res = mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of("email", "fornecedor@kianda.co.ao", "password", PASSWORD))))
+                .andExpect(status().isOk())
+                .andReturn();
+        String fornecedorToken = objectMapper.readTree(res.getResponse().getContentAsString()).get("token").asText();
+
+        mockMvc.perform(get("/api/catalog/documents").header("Authorization", "Bearer " + fornecedorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productDocs").isArray())
+                .andExpect(jsonPath("$.companyDocs").isArray())
+                .andExpect(jsonPath("$.companyDocs.length()").value(2))
+                .andExpect(jsonPath("$.companyDocs[?(@.type=='CERTIDAO_COMERCIAL')].originalName").value("certidao-kianda.pdf"))
+                .andExpect(jsonPath("$.companyDocs[?(@.type=='LICENCA_ANPG')]").exists());
+    }
 }
