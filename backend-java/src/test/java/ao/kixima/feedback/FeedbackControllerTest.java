@@ -151,7 +151,7 @@ class FeedbackControllerTest {
         var minhasRes = mockMvc.perform(get("/api/feedback/minhas").header("Authorization", "Bearer " + compradorToken))
                 .andExpect(status().isOk())
                 .andReturn();
-        assertEquals(5, objectMapper.readTree(minhasRes.getResponse().getContentAsString()).size());
+        assertEquals(6, objectMapper.readTree(minhasRes.getResponse().getContentAsString()).size()); // 5 + a de PAGAMENTO
 
         // Ainda não aprovadas — a parede pública está vazia.
         mockMvc.perform(get("/api/public/feedback"))
@@ -167,7 +167,7 @@ class FeedbackControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode fila = objectMapper.readTree(filaRes.getResponse().getContentAsString());
-        assertEquals(5, fila.get("itens").size());
+        assertEquals(6, fila.get("itens").size());
         assertEquals(true, fila.get("itens").get(0).has("approved"));
 
         // Aprova só uma.
@@ -189,6 +189,6 @@ class FeedbackControllerTest {
         // Remover uma avaliação.
         mockMvc.perform(get("/api/admin/feedback").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total").value(5));
+                .andExpect(jsonPath("$.total").value(6));
     }
 }
