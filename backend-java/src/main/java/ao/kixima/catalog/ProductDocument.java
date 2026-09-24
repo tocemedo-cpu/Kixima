@@ -1,5 +1,6 @@
 package ao.kixima.catalog;
 
+import ao.kixima.common.persistence.AbstractPersistableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,7 +18,7 @@ import java.time.Instant;
 /** Espelha o modelo Prisma `ProductDocument` (schema.prisma:859-869, tabela `product_documents`). */
 @Entity
 @Table(name = "product_documents")
-public class ProductDocument {
+public class ProductDocument extends AbstractPersistableEntity<String> {
 
     @Id
     private String id;

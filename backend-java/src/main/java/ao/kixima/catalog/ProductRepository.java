@@ -26,4 +26,16 @@ public interface ProductRepository extends JpaRepository<Product, String>, JpaSp
     @Modifying
     @Query("UPDATE Product p SET p.viewCount = p.viewCount + 1 WHERE p.id = :id")
     void incrementViewCount(@Param("id") String id);
+
+    /**
+     * Espelha o `updateMany({ where: { id, stockQuantity: { gte: quantity } },
+     * data: { stockQuantity: { decrement: quantity } } })` de
+     * poService.createPurchaseOrder — o `stockQuantity >= :quantity` na
+     * cláusula WHERE fecha a janela de concorrência: duas POs a pedir mais
+     * do que o stock permite não podem as duas ter sucesso. Devolve o
+     * número de linhas afectadas (0 = ou não existe, ou não havia stock).
+     */
+    @Modifying
+    @Query("UPDATE Product p SET p.stockQuantity = p.stockQuantity - :quantity WHERE p.id = :id AND p.stockQuantity >= :quantity")
+    int decrementStockIfAvailable(@Param("id") String id, @Param("quantity") int quantity);
 }

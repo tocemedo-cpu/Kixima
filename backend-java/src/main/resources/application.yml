@@ -72,6 +72,9 @@ kixima:
   business:
     payment-sla-days: ${PAYMENT_SLA_DAYS:7}
     policy-expiry-alert-days: ${POLICY_EXPIRY_ALERT_DAYS:30}
+  tax:
+    iva-rate: ${IVA_RATE:0.14}
+    withholding-rate: ${WITHHOLDING_RATE:0.065}
   agt:
     jws-private-key-base64: ${AGT_JWS_PRIVATE_KEY_BASE64:}
     software-validation-number: ${AGT_SOFTWARE_VALIDATION_NUMBER:}

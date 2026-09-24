@@ -1,5 +1,6 @@
 package ao.kixima.company;
 
+import ao.kixima.common.persistence.AbstractPersistableEntity;
 import ao.kixima.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,7 +30,7 @@ import java.util.List;
  */
 @Entity
 @Table(name = "companies")
-public class Company {
+public class Company extends AbstractPersistableEntity<String> {
 
     /**
      * `text` na base, não `uuid` nativo — confirmado por inspecção directa
@@ -216,6 +217,14 @@ public class Company {
 
     public String getCountry() {
         return country;
+    }
+
+    public String getSerieFiscal() {
+        return serieFiscal;
+    }
+
+    public Instant getDataAdesaoFacturacaoElectronica() {
+        return dataAdesaoFacturacaoElectronica;
     }
 
     public CompanySize getSize() {

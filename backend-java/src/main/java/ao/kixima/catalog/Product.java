@@ -1,5 +1,6 @@
 package ao.kixima.catalog;
 
+import ao.kixima.common.persistence.AbstractPersistableEntity;
 import ao.kixima.company.Company;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,7 +32,7 @@ import java.util.List;
  */
 @Entity
 @Table(name = "products")
-public class Product {
+public class Product extends AbstractPersistableEntity<String> {
 
     @Id
     private String id;

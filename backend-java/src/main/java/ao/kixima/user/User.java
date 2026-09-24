@@ -1,5 +1,6 @@
 package ao.kixima.user;
 
+import ao.kixima.common.persistence.AbstractPersistableEntity;
 import ao.kixima.company.Company;
 import ao.kixima.security.PersonaRole;
 import jakarta.persistence.Column;
@@ -28,7 +29,7 @@ import java.util.List;
  */
 @Entity
 @Table(name = "users")
-public class User {
+public class User extends AbstractPersistableEntity<String> {
 
     /** `text` na base, não `uuid` nativo — ver o mesmo comentário em Company.id. */
     @Id

@@ -1,5 +1,6 @@
 package ao.kixima.audit;
 
+import ao.kixima.common.persistence.AbstractPersistableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -17,7 +18,7 @@ import java.time.Instant;
  */
 @Entity
 @Table(name = "audit_logs")
-public class AuditLog {
+public class AuditLog extends AbstractPersistableEntity<String> {
 
     @Id
     private String id;

@@ -1,5 +1,6 @@
 package ao.kixima.catalog;
 
+import ao.kixima.common.persistence.AbstractPersistableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -13,7 +14,7 @@ import java.time.Instant;
 /** Espelha o modelo Prisma `ProductImage` (schema.prisma:836-846, tabela `product_images`). */
 @Entity
 @Table(name = "product_images")
-public class ProductImage {
+public class ProductImage extends AbstractPersistableEntity<String> {
 
     @Id
     private String id;
