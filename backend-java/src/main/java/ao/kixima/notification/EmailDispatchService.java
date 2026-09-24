@@ -98,6 +98,17 @@ public class EmailDispatchService {
         }
     }
 
+    /**
+     * Espelha `!config.email.apenasLog && !config.email.missing.length` —
+     * usado por alertaOperacionalService para não tentar um envio que se
+     * sabe à partida que não vai a lado nenhum (provider 'console', ou um
+     * provider real sem as credenciais que precisa).
+     */
+    public boolean configurado() {
+        if ("brevo".equals(provider) || "brevo-api".equals(provider)) return !brevoApiKey.isBlank();
+        return false;
+    }
+
     /** Nunca lança — uma falha de envio é registada e quem chama continua. */
     public void dispatch(String to, String subject, String body) {
         if ("console".equals(provider) || to == null || to.isBlank()) {

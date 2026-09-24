@@ -75,6 +75,13 @@ kixima:
   # pedido (protocolo+host) como já faz o Node quando APP_URL não está
   # definida — ver InviteService.baseUrl.
   app-url: ${APP_URL:}
+  jobs:
+    # Todos DESLIGADOS por omissão (plano, M6): o Node continua a correr os
+    # seus próprios jobs em produção enquanto os dois backends coexistem —
+    # ligar os dois ao mesmo tempo duplicaria o trabalho. Cada job liga-se
+    # individualmente só quando o domínio correspondente for cortado.
+    retencao:
+      enabled: ${KIXIMA_JOB_RETENCAO_ENABLED:false}
   auth:
     jwt-secret: ${JWT_SECRET:}
     jwt-expires-in: ${JWT_EXPIRES_IN:1d}
@@ -127,6 +134,14 @@ kixima:
     seat-price-cap-usd: ${KIXIMA_SEAT_PRICE_CAP_USD:100}
     grace-period-days: ${KIXIMA_GRACE_PERIOD_DAYS:7}
     limiar-a-expirar-dias: 30
+  ops:
+    # Mesma variável que alertaOperacionalService.js — 1 aviso/hora por assunto.
+    alerta-intervalo-min: ${ALERTA_INTERVALO_MIN:60}
+  retencao:
+    # Mesmas variáveis que retencaoService.js — prazos operacionais (nunca os financeiros/legais).
+    notificacoes-dias: ${RETENCAO_NOTIFICACOES_DIAS:180}
+    convites-dias: ${RETENCAO_CONVITES_DIAS:90}
+    codigos-dias: ${RETENCAO_CODIGOS_DIAS:1}
   erp:
     # Mesma chave AES-256-GCM (32 bytes hex) que erpCrypto.js — só exigida
     # quando se cifra/decifra uma configuração ERP real.

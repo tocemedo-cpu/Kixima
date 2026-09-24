@@ -62,6 +62,8 @@ public class PublicPaths {
         adicionar("GET", "/api/supplier-development/requests/*/track");
         // publicRoutes.js — a parede pública de avaliações, só leitura.
         adicionar("GET", "/api/public/feedback");
+        // app.js — rota pública direta (fora de qualquer router com `authenticate`).
+        adicionar("GET", "/api/retencao");
     }
 
     /** Regista um caminho como público para TODOS os métodos HTTP. */

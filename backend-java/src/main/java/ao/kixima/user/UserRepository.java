@@ -2,9 +2,11 @@ package ao.kixima.user;
 
 import ao.kixima.security.PersonaRole;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,4 +43,10 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.company WHERE u.email = :email")
     Optional<User> findByEmailWithCompany(@Param("email") String email);
+
+    /** Espelha o `updateMany` de retencaoService.limpar — códigos de 2FA por email já expirados há muito. */
+    @Modifying
+    @Query("UPDATE User u SET u.mfaCodeHash = NULL, u.mfaCodeExpiraEm = NULL, u.mfaCodeTentativas = 0 "
+            + "WHERE u.mfaCodeExpiraEm IS NOT NULL AND u.mfaCodeExpiraEm < :ate")
+    int limparCodigos2faExpirados(@Param("ate") Instant ate);
 }
