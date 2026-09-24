@@ -28,6 +28,12 @@ backends.
 
 ### A. Núcleo comercial — o caminho do dinheiro (bloqueia o cutover de PO/fatura)
 
+**Estado: FECHADO** (commits "Lacunas A.1" a "Lacunas A.6/A.7"). Única
+excepção, documentada: o webhook `/api/webhooks/pagamento/{canal}` e os
+adaptadores de gateway ficam para o grupo C (partilham o serviço de
+subscrição/cobrança). Também portados de passagem: contexto "quote" e
+"contract" do Chat Comercial, ERP-managed no checkout, `ErpSyncLog`.
+
 | Rotas Node | Endpoints | Serviço(s) Node | Notas |
 |---|---|---|---|
 | `/api/payments` | 7 | paymentService (257), creditNoteService (278) | pagar fatura, confirmar receção, notas de crédito, anular; desbloqueia `payment.completed` (eventBus) e a categoria PAGAMENTO do feedback |
@@ -39,6 +45,8 @@ backends.
 | `/api/integration/callback` | 1 | poService.aplicarDecisaoErp/aplicarPagamentoErp | POs ERP-managed (DOA) + `purchase_order.approval_requested` |
 
 ### B. Empresa, utilizadores e painéis
+
+**Estado: em curso** — `/api/companies` (13 endpoints) fechado em "Lacunas B.1".
 
 | Rotas Node | Endpoints | Serviço(s) Node | Notas |
 |---|---|---|---|

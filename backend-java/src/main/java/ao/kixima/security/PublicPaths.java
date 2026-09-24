@@ -50,6 +50,8 @@ public class PublicPaths {
         // token assinado (ver InviteController/InviteService) é a própria
         // autorização, tal como authenticate não está composto nestas duas
         // rotas no Node.
+        // Cadastro público de empresa (onboarding) — companyRoutes.js, antes de authenticate.
+        adicionar("POST", "/api/companies/register");
         adicionar("/api/companies/invite/*");
         adicionar("/api/companies/invite/*/accept");
         // supplierDevRoutes.js — candidatura e a sua consulta pública são

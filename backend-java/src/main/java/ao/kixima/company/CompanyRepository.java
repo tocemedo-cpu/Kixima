@@ -9,4 +9,13 @@ public interface CompanyRepository extends JpaRepository<Company, String> {
 
     /** Espelha o `findMany({ where: { planoValidoAte: { not: null } } })` de assinaturaService.enviarAvisosDeExpiracao. */
     List<Company> findByPlanoValidoAteIsNotNull();
+
+    // listCompanies — filtros opcionais por estado/tipo (enums ligados como parâmetros).
+    List<Company> findAllByOrderByCreatedAtDesc();
+
+    List<Company> findByStatusOrderByCreatedAtDesc(CompanyStatus status);
+
+    List<Company> findByTypeOrderByCreatedAtDesc(CompanyType type);
+
+    List<Company> findByStatusAndTypeOrderByCreatedAtDesc(CompanyStatus status, CompanyType type);
 }

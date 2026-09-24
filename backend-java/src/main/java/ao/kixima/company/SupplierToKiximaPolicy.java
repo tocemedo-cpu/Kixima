@@ -110,6 +110,10 @@ public class SupplierToKiximaPolicy extends AbstractPersistableEntity<String> {
         return status;
     }
 
+    public void setDocumentUrl(String documentUrl) {
+        this.documentUrl = documentUrl;
+    }
+
     public void setStatus(PolicyStatus status) {
         this.status = status;
     }

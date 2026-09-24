@@ -220,6 +220,10 @@ public class User extends AbstractPersistableEntity<String> {
         return active;
     }
 
+    public void setApprovalCap(BigDecimal approvalCap) {
+        this.approvalCap = approvalCap;
+    }
+
     public void setActive(boolean active) {
         this.active = active;
     }

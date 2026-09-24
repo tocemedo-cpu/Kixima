@@ -303,4 +303,115 @@ public class Company extends AbstractPersistableEntity<String> {
     public List<User> getUsers() {
         return users;
     }
+
+    // --- acessores acrescentados no fecho de lacunas B.1 (cadastro/due diligence) ---
+
+    public String getContactPhone() {
+        return contactPhone;
+    }
+
+    public void setContactPhone(String contactPhone) {
+        this.contactPhone = contactPhone;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getSettings() {
+        return settings;
+    }
+
+    public void setSettings(String settings) {
+        this.settings = settings;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public String getIban() {
+        return iban;
+    }
+
+    public String getSwift() {
+        return swift;
+    }
+
+    public void setDadosBancarios(String bankName, String iban, String swift) {
+        this.bankName = bankName;
+        this.iban = iban;
+        this.swift = swift;
+    }
+
+    public void setSerieFiscal(String serieFiscal) {
+        this.serieFiscal = serieFiscal;
+    }
+
+    public void setDataAdesaoFacturacaoElectronica(Instant dataAdesaoFacturacaoElectronica) {
+        this.dataAdesaoFacturacaoElectronica = dataAdesaoFacturacaoElectronica;
+    }
+
+    public Instant getTermsAcceptedAt() {
+        return termsAcceptedAt;
+    }
+
+    public void setTermsAcceptedAt(Instant termsAcceptedAt) {
+        this.termsAcceptedAt = termsAcceptedAt;
+    }
+
+    public Integer getEmployees() {
+        return employees;
+    }
+
+    public void setEmployees(Integer employees) {
+        this.employees = employees;
+    }
+
+    public BigDecimal getAnnualRevenueUsd() {
+        return annualRevenueUsd;
+    }
+
+    public void setAnnualRevenueUsd(BigDecimal annualRevenueUsd) {
+        this.annualRevenueUsd = annualRevenueUsd;
+    }
+
+    public int getSearchRank() {
+        return searchRank;
+    }
+
+    public void setSearchRank(int searchRank) {
+        this.searchRank = searchRank;
+    }
+
+    public void setSeatPriceUsd(BigDecimal seatPriceUsd) {
+        this.seatPriceUsd = seatPriceUsd;
+    }
+
+    public String getPlanNotes() {
+        return planNotes;
+    }
+
+    public void setPlanNotes(String planNotes) {
+        this.planNotes = planNotes;
+    }
+
+    public Instant getApprovedAt() {
+        return approvedAt;
+    }
+
+    public Instant getRejectedAt() {
+        return rejectedAt;
+    }
+
+    /** `decideCompanyStatus`: APROVADA + approvedAt, ou REJEITADA + rejectedAt. */
+    public void decidir(boolean approve, Instant agora) {
+        if (approve) {
+            this.status = CompanyStatus.APROVADA;
+            this.approvedAt = agora;
+        } else {
+            this.status = CompanyStatus.REJEITADA;
+            this.rejectedAt = agora;
+        }
+    }
 }

@@ -57,4 +57,8 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.company WHERE u.role IN :roles AND u.active = true "
             + "AND u.totpEnabledAt IS NULL ORDER BY u.name ASC")
     List<User> findMfaPendentes(@Param("roles") List<PersonaRole> roles);
+
+    /** Espelha o `groupBy({ by: ['companyId'], where: { active: true }, _count })` de companyService.subscriptionsFor — UMA consulta para N empresas. */
+    @Query("SELECT u.companyId, COUNT(u) FROM User u WHERE u.companyId IN :ids AND u.active = true GROUP BY u.companyId")
+    List<Object[]> contagemAtivosPorEmpresa(@Param("ids") List<String> ids);
 }

@@ -48,6 +48,15 @@ public class CompanyDocument extends AbstractPersistableEntity<String> {
         // JPA
     }
 
+    public CompanyDocument(String id, String companyId, DocumentType type, String fileUrl, String originalName, Instant createdAt) {
+        this.id = id;
+        this.companyId = companyId;
+        this.type = type;
+        this.fileUrl = fileUrl;
+        this.originalName = originalName;
+        this.createdAt = createdAt;
+    }
+
     public String getId() {
         return id;
     }
