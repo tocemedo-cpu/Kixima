@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.List;
 
 public interface NotificationRepository extends JpaRepository<Notification, String> {
 
@@ -21,4 +22,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.readAt IS NOT NULL AND n.readAt < :ate")
     int deleteByReadAtNotNullAndBefore(@Param("ate") Instant ate);
+
+    /** dadosPessoaisService.exportar — notificações recebidas pelo titular (take 1000). */
+    List<Notification> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
+
+    /** dadosPessoaisService.anonimizar — a correspondência pessoal apaga-se. */
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.userId = :userId")
+    int deleteByUserId(@Param("userId") String userId);
 }

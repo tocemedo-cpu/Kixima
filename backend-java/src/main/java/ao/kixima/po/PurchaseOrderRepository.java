@@ -32,4 +32,13 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, St
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT po FROM PurchaseOrder po WHERE po.id = :id")
     java.util.Optional<PurchaseOrder> findByIdParaAtualizar(@Param("id") String id);
+
+    // dadosPessoaisService.exportar / profileService.getProfile
+    List<PurchaseOrder> findByCreatedByIdOrderByCreatedAtDesc(String createdById);
+
+    List<PurchaseOrder> findByApprovedByIdOrderByApprovedAtDesc(String approvedById);
+
+    List<PurchaseOrder> findByBuyerCompanyIdOrderByUpdatedAtDesc(String buyerCompanyId);
+
+    List<PurchaseOrder> findBySupplierCompanyIdOrderByUpdatedAtDesc(String supplierCompanyId);
 }

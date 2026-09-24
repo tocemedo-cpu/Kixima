@@ -22,4 +22,12 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, String>, Jpa
 
     /** Linha do tempo auditável de uma entidade — poService.getPurchaseOrderHistory. */
     List<AuditLog> findByEntityTypeAndEntityIdOrderByCreatedAtAsc(String entityType, String entityId);
+
+    /** dadosPessoaisService.exportar — o rasto do titular (take 1000). */
+    List<AuditLog> findByActorIdOrderByCreatedAtDesc(String actorId, Pageable pageable);
+
+    /** dadosPessoaisService.anonimizar — o trilho sobrevive, sem o nome da pessoa. */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE AuditLog a SET a.actorName = :nome WHERE a.actorId = :actorId")
+    int anonimizarAtor(@Param("actorId") String actorId, @Param("nome") String nome);
 }

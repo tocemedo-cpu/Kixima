@@ -331,4 +331,16 @@ public class User extends AbstractPersistableEntity<String> {
     public String getAvatarUrl() {
         return avatarUrl;
     }
+
+    public void setLocale(String locale) {
+        this.locale = locale;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public Instant getTermsAcceptedAt() {
+        return termsAcceptedAt;
+    }
 }

@@ -20,4 +20,7 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
 
     @Query("SELECT p FROM Payment p JOIN FETCH p.invoice i JOIN FETCH i.purchaseOrder WHERE p.id = :id")
     Optional<Payment> findByIdComFatura(@Param("id") String id);
+
+    /** dadosPessoaisService.exportar — pagamentos autorizados pelo titular. */
+    List<Payment> findByProcessedByIdOrderByProcessedAtDesc(String processedById);
 }

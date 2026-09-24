@@ -429,4 +429,8 @@ public class PurchaseOrder extends AbstractPersistableEntity<String> {
     public Invoice getInvoice() {
         return invoice;
     }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
 }
