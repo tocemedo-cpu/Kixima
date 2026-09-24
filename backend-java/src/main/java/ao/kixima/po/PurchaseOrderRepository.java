@@ -27,4 +27,9 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, St
 
     /** `include: { callOffs: { orderBy: { createdAt: 'desc' } } }` de getContract. */
     List<PurchaseOrder> findByContractIdOrderByCreatedAtDesc(String contractId);
+
+    /** Reivindicação atómica de estado (callbacks ERP concorrentes): bloqueia a linha até ao fim da transação. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT po FROM PurchaseOrder po WHERE po.id = :id")
+    java.util.Optional<PurchaseOrder> findByIdParaAtualizar(@Param("id") String id);
 }

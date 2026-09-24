@@ -1,6 +1,7 @@
 package ao.kixima.po;
 
 import ao.kixima.audit.AuditService;
+import ao.kixima.audit.dto.AuditLogDto;
 import ao.kixima.po.dto.CreatePoRequest;
 import ao.kixima.po.dto.PurchaseOrderDto;
 import ao.kixima.po.dto.PurchaseOrderItemDto;
@@ -72,6 +73,12 @@ public class PoController {
     @GetMapping("/{id}")
     public PurchaseOrderDto getOne(@PathVariable String id) {
         return toDto(poService.getPurchaseOrder(id, CurrentUserHolder.get()));
+    }
+
+    /** Linha do tempo auditável da PO (quem fez o quê, quando) — mesmo controlo de acesso de GET /{id}. */
+    @GetMapping("/{id}/history")
+    public List<AuditLogDto> history(@PathVariable String id) {
+        return poService.getPurchaseOrderHistory(id, CurrentUserHolder.get()).stream().map(auditService::toDto).toList();
     }
 
     @PatchMapping("/{id}/approve")

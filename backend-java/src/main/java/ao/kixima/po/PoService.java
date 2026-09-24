@@ -1,6 +1,10 @@
 package ao.kixima.po;
 
 import ao.kixima.agt.AgtSandboxSubmissionService;
+import ao.kixima.audit.Actor;
+import ao.kixima.audit.AuditLog;
+import ao.kixima.audit.AuditLogRepository;
+import ao.kixima.audit.AuditService;
 import ao.kixima.catalog.Product;
 import ao.kixima.catalog.ProductRepository;
 import ao.kixima.common.error.BusinessRuleException;
@@ -9,6 +13,13 @@ import ao.kixima.common.error.ForbiddenException;
 import ao.kixima.common.error.NotFoundException;
 import ao.kixima.common.reference.ReferenceCounterService;
 import ao.kixima.company.Company;
+import ao.kixima.company.CompanyRepository;
+import ao.kixima.erp.CompanyErpConfigRepository;
+import ao.kixima.erp.ErpFields;
+import ao.kixima.erp.ErpSyncDirection;
+import ao.kixima.erp.ErpSyncLog;
+import ao.kixima.erp.ErpSyncLogRepository;
+import ao.kixima.erp.ErpSyncStatus;
 import ao.kixima.contract.Contract;
 import ao.kixima.contract.ContractService;
 import ao.kixima.faturacao.FaturacaoService;
@@ -21,9 +32,16 @@ import ao.kixima.invoice.InvoiceLineRepository;
 import ao.kixima.invoice.InvoiceRepository;
 import ao.kixima.invoice.InvoiceStatus;
 import ao.kixima.notification.NotificationService;
+import ao.kixima.payment.Payment;
+import ao.kixima.payment.PaymentRepository;
+import ao.kixima.payment.PlatformFeeService;
+import ao.kixima.plan.PlanFeatureFlag;
+import ao.kixima.plan.PlanService;
 import ao.kixima.security.CurrentUser;
 import ao.kixima.security.PersonaRole;
 import ao.kixima.tax.TaxService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +52,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -50,15 +69,8 @@ import java.util.UUID;
  *       aqui nunca deteta um contrato activo; toda PO nasce
  *       {@code isCallOff=false}, precisa de aprovação. Depende do domínio
  *       Contract, ainda não portado.</li>
- *   <li>ERP DOA Approval (erpConfigService/planService) — toda PO nasce
- *       {@code erpManaged=false}. {@code aplicarDecisaoErp}/
- *       {@code aplicarPagamentoErp} não portados.</li>
- *   <li>eventBus.publish — {@code purchase_order.approved}, {@code invoice.issued}
- *       e {@code goods.received} são publicados (M6, ver EventBus);
- *       {@code purchase_order.approval_requested} + ErpSyncLog ficam com as
- *       POs ERP-managed, e {@code payment.completed} com o domínio de
- *       pagamento — ambos por portar.</li>
- *   <li>agtSandboxSubmissionService.submeter('FT', ...) — pendente M4.</li>
+ *   <li>(nenhum) — call-off (A.5) e ERP DOA Approval (A.7:
+ *       {@link #aplicarDecisaoErp}/{@link #aplicarPagamentoErp}) já portados.</li>
  * </ul>
  * O estado da PO, a matemática de imposto, a cadeia de hash da fatura, a
  * referência de pagamento e a decrementação atómica de stock — o núcleo que
@@ -80,16 +92,41 @@ public class PoService {
     private final NotificationService notificationService;
     private final EventBus eventBus;
     private final ContractService contractService;
+    private final CompanyRepository companyRepository;
+    private final PlanService planService;
+    private final CompanyErpConfigRepository companyErpConfigRepository;
+    private final ErpSyncLogRepository erpSyncLogRepository;
+    private final AuditService auditService;
+    private final AuditLogRepository auditLogRepository;
+    private final PaymentRepository paymentRepository;
+    private final PlatformFeeService platformFeeService;
     private final int paymentSlaDays;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    /** `ATOR_ERP` de poService.js — as decisões vindas do callback assinado são do ERP, não de um utilizador. */
+    static final Actor ATOR_ERP = new Actor(null, "ERP", null, null, null);
 
     public PoService(PurchaseOrderRepository purchaseOrderRepository, PurchaseOrderItemRepository purchaseOrderItemRepository,
                       ProductRepository productRepository, InvoiceRepository invoiceRepository,
                       InvoiceLineRepository invoiceLineRepository, TaxService taxService, FaturacaoService faturacaoService,
                       ConciliacaoService conciliacaoService, ReferenceCounterService referenceCounterService,
                       AgtSandboxSubmissionService agtSandboxSubmissionService, NotificationService notificationService,
-                      EventBus eventBus, ContractService contractService,
+                      EventBus eventBus, ContractService contractService, CompanyRepository companyRepository,
+                      PlanService planService, CompanyErpConfigRepository companyErpConfigRepository,
+                      ErpSyncLogRepository erpSyncLogRepository, AuditService auditService, AuditLogRepository auditLogRepository,
+                      PaymentRepository paymentRepository, PlatformFeeService platformFeeService,
                       @Value("${kixima.business.payment-sla-days:7}") int paymentSlaDays) {
         this.eventBus = eventBus;
+        this.companyRepository = companyRepository;
+        this.planService = planService;
+        this.companyErpConfigRepository = companyErpConfigRepository;
+        this.erpSyncLogRepository = erpSyncLogRepository;
+        this.auditService = auditService;
+        this.auditLogRepository = auditLogRepository;
+        this.paymentRepository = paymentRepository;
+        this.platformFeeService = platformFeeService;
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderItemRepository = purchaseOrderItemRepository;
         this.productRepository = productRepository;
@@ -182,12 +219,25 @@ public class PoService {
         List<String> categories = products.stream().map(Product::getCategory).distinct().toList();
         Contract contract = contractService.findActiveContractForOrder(buyerCompanyId, supplierCompanyId, categories).orElse(null);
 
+        // ERP DOA Approval (PRO): quando o comprador tem a feature erpIntegration no
+        // plano E um ERP real configurado (≠ MANUAL), a aprovação acontece no ERP dele,
+        // não no KIXIMA. Call-offs ficam de fora — já nascem aprovados pela assinatura
+        // do contrato-quadro, não há decisão nenhuma para o ERP tomar.
+        boolean erpManaged = false;
+        if (contract == null) {
+            Company buyerCompany = companyRepository.findById(buyerCompanyId).orElse(null);
+            if (buyerCompany != null && planService.hasFeature(buyerCompany.getPlan(), PlanFeatureFlag.ERP_INTEGRATION)) {
+                erpManaged = companyErpConfigRepository.findByCompanyId(buyerCompanyId)
+                        .map(cfg -> ErpFields.isRealErp(cfg.getErp())).orElse(false);
+            }
+        }
+
         String reference = referenceCounterService.nextReference("PO", "purchaseOrder");
         Instant agora = Instant.now();
 
         PurchaseOrder po = new PurchaseOrder(UUID.randomUUID().toString(), reference, buyerCompanyId, supplierCompanyId,
                 createdById, PoStatus.AGUARDANDO_APROVACAO, impostos.gross(), impostos.net(), impostos.tax(),
-                impostos.withheld(), false, false, null, createdBySource, null, agora, agora);
+                impostos.withheld(), false, erpManaged, erpManaged ? agora : null, createdBySource, null, agora, agora);
         // Call-off: a aprovação de negócio já aconteceu na assinatura do contrato.
         if (contract != null) po.nascerComoCallOff(contract.getId(), agora);
         purchaseOrderRepository.save(po);
@@ -212,9 +262,136 @@ public class PoService {
             contractService.consumir(contract.getId(), impostos.net());
             // Já aprovada -> segue diretamente para o fornecedor.
             notificationService.poRecebidaPeloFornecedor(po);
+        } else if (erpManaged) {
+            // O ERP corre o próprio workflow/DOA; a decisão chega de volta pelo callback
+            // assinado (IntegrationCallbackController -> aplicarDecisaoErp). Não se
+            // notifica o Company Admin para aprovar — não é ele quem decide agora.
+            // No Node o `publish` é síncrono e devolve se publicou; aqui a publicação
+            // corre depois do commit (EventBus), por isso o registo OUTBOUND reflete se
+            // o barramento está sequer configurado — uma falha de envio fica no log do EventBus.
+            entityManager.flush();
+            entityManager.refresh(po); // carrega buyerCompany/supplierCompany/items.product para o payload
+            boolean publicavel = eventBus.ativo();
+            eventBus.publish("purchase_order.approval_requested", EventPayloads.purchaseOrderApprovalRequested(po, agora),
+                    "po-approval-requested:" + po.getId(), buyerCompanyId);
+            erpSyncLogRepository.save(new ErpSyncLog(po.getId(), ErpSyncDirection.OUTBOUND, "approval_requested",
+                    publicavel ? ErpSyncStatus.SUCCESS : ErpSyncStatus.FAILED, null,
+                    publicavel ? null : "Não foi possível publicar no barramento de eventos (broker indisponível)."));
         } else {
             notificationService.poAguardaAprovacao(po);
         }
+        return po;
+    }
+
+    /** Linha do tempo auditável da PO — mesmo controlo de acesso de {@link #getPurchaseOrder}. */
+    @Transactional(readOnly = true)
+    public List<AuditLog> getPurchaseOrderHistory(String id, CurrentUser user) {
+        getPurchaseOrder(id, user);
+        return auditLogRepository.findByEntityTypeAndEntityIdOrderByCreatedAtAsc("PurchaseOrder", id);
+    }
+
+    // --- ERP DOA Approval: decisão e pagamento vindos do callback assinado -----
+
+    /**
+     * Aplica a decisão (aprovação/rejeição) do ERP a uma PO erpManaged.
+     * Idempotente por estado: só a primeira a reivindicar AGUARDANDO_APROVACAO
+     * é aplicada; repetições devolvem a PO como está, sem duplicar
+     * ErpSyncLog/auditoria/notificações.
+     */
+    @Transactional
+    public PurchaseOrder aplicarDecisaoErp(String poId, boolean aprovado, String erpExternalId, String motivo) {
+        PurchaseOrder po = purchaseOrderRepository.findByIdParaAtualizar(poId).orElseThrow(() -> new NotFoundException("Ordem de compra"));
+        if (!po.isErpManaged()) throw new BusinessRuleException("Esta PO não é gerida por ERP.");
+        if (po.getStatus() != PoStatus.AGUARDANDO_APROVACAO) return po; // outro callback já decidiu entretanto
+
+        Instant agora = Instant.now();
+        if (aprovado) {
+            po.setStatus(PoStatus.APROVADA);
+            po.setApprovedAt(agora);
+        } else {
+            po.setStatus(PoStatus.REJEITADA);
+            po.setRejectedAt(agora);
+            po.setRejectionReason(motivo == null || motivo.isBlank() ? "Rejeitada pelo workflow de aprovação do ERP." : motivo);
+        }
+        if (erpExternalId != null && !erpExternalId.isBlank()) po.setErpExternalId(erpExternalId);
+
+        erpSyncLogRepository.save(new ErpSyncLog(poId, ErpSyncDirection.INBOUND, "approval_decided", ErpSyncStatus.SUCCESS,
+                erpExternalId == null || erpExternalId.isBlank() ? null : erpExternalId, null));
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("erpExternalId", erpExternalId == null || erpExternalId.isBlank() ? null : erpExternalId);
+        detail.put("motivo", motivo == null || motivo.isBlank() ? null : motivo);
+        auditService.record(new AuditService.Entry(ATOR_ERP, aprovado ? "PO_APROVADA_ERP" : "PO_REJEITADA_ERP",
+                "PurchaseOrder", po.getId(), po.getReference(), detail));
+
+        notificationService.poAprovadaOuRejeitada(po);
+        if (aprovado) notificationService.poRecebidaPeloFornecedor(po);
+        // NÃO republica purchase_order.approved no eventBus — o ERP já sabe da sua
+        // própria decisão; republicá-la criaria um loop entre os dois sistemas.
+        return po;
+    }
+
+    /**
+     * Aplica a confirmação de pagamento do ERP a uma PO erpManaged — o dinheiro
+     * não passa pelo KIXIMA, só a confirmação. O bloqueio da linha da PO fecha
+     * a janela TOCTOU do Node (duas confirmações concorrentes: a segunda espera
+     * e encontra a PO já PAGA).
+     */
+    @Transactional
+    public PurchaseOrder aplicarPagamentoErp(String poId, String erpExternalId, BigDecimal valorPago, Instant pagoEm) {
+        PurchaseOrder po = purchaseOrderRepository.findByIdParaAtualizar(poId).orElseThrow(() -> new NotFoundException("Ordem de compra"));
+        if (!po.isErpManaged()) throw new BusinessRuleException("Esta PO não é gerida por ERP.");
+        if (po.getStatus() == PoStatus.PAGA) return po;
+        // Pela tabela, não pela relação inversa `po.invoice`: numa sessão que já tinha a PO
+        // carregada antes de a fatura nascer (aceitação e confirmação no mesmo contexto), a
+        // relação lazy ficaria a null mesmo com a fatura já gravada.
+        Invoice invoice = invoiceRepository.findByPurchaseOrderId(poId).orElse(null);
+        if (invoice == null) {
+            throw new BusinessRuleException("Esta PO ainda não tem fatura — o fornecedor precisa de a aceitar primeiro.");
+        }
+        if (po.getStatus() != PoStatus.AGUARDANDO_PAGAMENTO) {
+            throw new ConflictException("PO no estado \"" + po.getStatus() + "\" não pode receber confirmação de pagamento.");
+        }
+
+        Company supplierCompany = companyRepository.findById(po.getSupplierCompanyId()).orElse(null);
+        Instant agora = Instant.now();
+        // O pagamento É o documento "RC" (Recibo) da AGT — mesma cadeia de integridade
+        // de qualquer outro pagamento, independentemente do canal.
+        var certificacao = faturacaoService.atribuir(pagoEm == null ? agora : pagoEm, invoice.getAmount(),
+                faturacaoService.serieReciboDoFornecedor(supplierCompany == null ? null : supplierCompany.getSerieFiscal()),
+                supplierCompany == null ? null : supplierCompany.getDataAdesaoFacturacaoElectronica());
+        Payment payment = Payment.confirmadoPeloErp(UUID.randomUUID().toString(), invoice.getId(),
+                valorPago != null ? valorPago : invoice.getAmount(), invoice.getCurrency(),
+                "PAY-ERP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(), agora, certificacao);
+        paymentRepository.save(payment);
+
+        invoice.setStatus(InvoiceStatus.PAGA);
+        po.setStatus(PoStatus.PAGA);
+        po.setPaidAt(agora);
+        if (erpExternalId != null && !erpExternalId.isBlank()) po.setErpExternalId(erpExternalId);
+
+        // Taxa da plataforma — cobrada ao fornecedor, independentemente de o pagamento
+        // ter passado pelo KIXIMA ou ter sido confirmado pelo ERP.
+        platformFeeService.createForInvoice(invoice, po.getSupplierCompanyId());
+
+        erpSyncLogRepository.save(new ErpSyncLog(poId, ErpSyncDirection.INBOUND, "payment_confirmed", ErpSyncStatus.SUCCESS,
+                erpExternalId == null || erpExternalId.isBlank() ? null : erpExternalId, null));
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("po", po.getReference());
+        detail.put("valor", payment.getAmount().toPlainString());
+        detail.put("erpExternalId", erpExternalId == null || erpExternalId.isBlank() ? null : erpExternalId);
+        auditService.record(new AuditService.Entry(ATOR_ERP, "PAGAMENTO_CONFIRMADO_ERP", "Payment", payment.getId(),
+                payment.getReference(), detail));
+
+        notificationService.pagamentoProcessado(payment, po);
+        // Submissão à Sandbox AGT (não-bloqueante, silenciosa sem credenciais) — depois do commit.
+        String paymentIdParaAgt = payment.getId();
+        String supplierCompanyIdParaAgt = po.getSupplierCompanyId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                agtSandboxSubmissionService.submeter("RC", paymentIdParaAgt, supplierCompanyIdParaAgt);
+            }
+        });
         return po;
     }
 

@@ -286,6 +286,18 @@ public class PurchaseOrder extends AbstractPersistableEntity<String> {
         return erpManaged;
     }
 
+    public String getErpExternalId() {
+        return erpExternalId;
+    }
+
+    public void setErpExternalId(String erpExternalId) {
+        this.erpExternalId = erpExternalId;
+    }
+
+    public Instant getErpApprovalRequestedAt() {
+        return erpApprovalRequestedAt;
+    }
+
     public Instant getAcceptedAt() {
         return acceptedAt;
     }

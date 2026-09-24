@@ -20,4 +20,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i WHERE i.id = :id")
     Optional<Invoice> findByIdParaAtualizar(@org.springframework.data.repository.query.Param("id") String id);
+
+    /** A fatura individual de uma PO (null nas call-offs, cujas faturas são consolidadas). */
+    Optional<Invoice> findByPurchaseOrderId(String purchaseOrderId);
 }

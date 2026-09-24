@@ -59,6 +59,8 @@ public class PublicPaths {
         // caminho inteiro.
         adicionar("GET", "/api/supplier-development/fee");
         adicionar("POST", "/api/supplier-development/requests");
+        // Callback do microserviço de integração ERP — protegido pela assinatura HMAC, não por sessão.
+        adicionar("POST", "/api/integration/callback");
         adicionar("GET", "/api/supplier-development/requests/*/track");
         // publicRoutes.js — a parede pública de avaliações, só leitura.
         adicionar("GET", "/api/public/feedback");

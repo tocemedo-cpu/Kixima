@@ -15,3 +15,6 @@ kixima:
   erp:
     # 32 bytes em hex — só para os testes, nunca uma chave real.
     config-encryption-key: "aab062c1f56d3cbf37c5e15cf2f33260887d9d5e6b177005142c363df9d6ea94"
+  integration:
+    # Só para os testes (erp-doa-approval.test.js); a falha fechada testa-se com a propriedade vazia.
+    callback-secret: segredo-teste-erp-doa

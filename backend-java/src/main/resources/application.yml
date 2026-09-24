@@ -189,6 +189,10 @@ kixima:
     # ERP fica guardado mas não sincronizado, tal como no Node.
     integration-url: ${INTEGRATION_URL:}
     integration-admin-token: ${INTEGRATION_ADMIN_TOKEN:}
+  integration:
+    # Segredo HMAC-SHA256 do callback do microserviço (integrationRoutes.js).
+    # Sem ele, POST /api/integration/callback falha fechado (503).
+    callback-secret: ${KIXIMA_CALLBACK_SECRET:}
   cors:
     origins: ${CORS_ORIGINS:}
   events:

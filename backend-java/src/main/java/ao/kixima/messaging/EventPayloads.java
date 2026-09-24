@@ -56,6 +56,20 @@ public final class EventPayloads {
         return lines;
     }
 
+    /** `purchase_order.approval_requested` — a PO ERP-managed pede a decisão ao ERP do comprador. */
+    public static Map<String, Object> purchaseOrderApprovalRequested(PurchaseOrder po, Instant requestedAt) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("poId", po.getId());
+        m.put("reference", po.getReference());
+        m.put("buyer", empresa(po.getBuyerCompany()));
+        m.put("supplier", empresa(po.getSupplierCompany()));
+        m.put("currency", po.getCurrency());
+        m.put("totalAmount", num(po.getTotalAmount()));
+        m.put("lines", linhas(po));
+        m.put("requestedAt", (requestedAt == null ? Instant.now() : requestedAt).toString());
+        return m;
+    }
+
     public static Map<String, Object> purchaseOrderApproved(PurchaseOrder po, Instant approvedAt) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("poId", po.getId());

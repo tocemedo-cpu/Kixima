@@ -123,7 +123,7 @@ public class AuditService {
                 pagina.getTotalElements(), current, Math.max(1, pagina.getTotalPages()), actions);
     }
 
-    private AuditLogDto toDto(AuditLog row) {
+    public AuditLogDto toDto(AuditLog row) {
         JsonNode detail = null;
         if (row.getDetail() != null) {
             try {

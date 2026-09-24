@@ -123,6 +123,14 @@ public class Payment extends AbstractPersistableEntity<String> {
         return p;
     }
 
+    /** Espelha o `payment.create` de poService.aplicarPagamentoErp — canal ERP, sem executor KIXIMA nem comprovativo. */
+    public static Payment confirmadoPeloErp(String id, String invoiceId, BigDecimal amount, String currency, String reference,
+                                            Instant processedAt, FaturacaoService.Certificacao certificacao) {
+        Payment p = new Payment(id, invoiceId, amount, currency, null, reference, null, null, processedAt, certificacao);
+        p.canal = CanalPagamento.ERP;
+        return p;
+    }
+
     public String getId() {
         return id;
     }
