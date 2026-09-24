@@ -184,13 +184,18 @@ class ConversationControllerTest {
     }
 
     @Test
-    void contextoDeCotacaoOuContratoRecusaExplicitamenteComoAindaPorPortar() throws Exception {
+    void contextoDeContratoRecusaExplicitamenteComoAindaPorPortarECotacaoInexistenteDa404() throws Exception {
         String token = login(COMPRADOR_EMAIL);
         mockMvc.perform(post("/api/conversations")
                         .header("Authorization", "Bearer " + token)
                         .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("contextType", "quote", "contextId", "qualquer-id"))))
+                        .content(objectMapper.writeValueAsString(Map.of("contextType", "contract", "contextId", "qualquer-id"))))
                 .andExpect(status().isServiceUnavailable())
-                .andExpect(jsonPath("$.error.message").value(org.hamcrest.Matchers.containsString("QuoteRequest")));
+                .andExpect(jsonPath("$.error.message").value(org.hamcrest.Matchers.containsString("Contract")));
+        mockMvc.perform(post("/api/conversations")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of("contextType", "quote", "contextId", "qualquer-id"))))
+                .andExpect(status().isNotFound());
     }
 }

@@ -16,6 +16,8 @@ import ao.kixima.notification.NotificationType;
 import ao.kixima.po.PurchaseOrder;
 import ao.kixima.conversation.dto.ConversationMessageDto;
 import ao.kixima.po.PurchaseOrderRepository;
+import ao.kixima.quote.QuoteRequest;
+import ao.kixima.quote.QuoteRequestRepository;
 import ao.kixima.realtime.RealtimeService;
 import ao.kixima.risk.RiskAlert;
 import ao.kixima.risk.RiskAlertRepository;
@@ -42,10 +44,9 @@ import java.util.UUID;
  * falar com quem — {@link #conversationComAcesso} é chamada no TOPO de
  * toda a operação sobre uma conversa já existente.
  *
- * ÂMBITO NESTE MARCO: contexto "product" e "purchase_order" — os dois
- * domínios já portados. "quote" (QuoteRequest) e "contract" (Contract)
- * recusam-se explicitamente (503) em vez de fingir suporte — os
- * respectivos domínios ainda não existem em Java.
+ * Contextos "product", "purchase_order" e "quote" resolvem-se contra os
+ * domínios já portados. "contract" (Contract) recusa-se explicitamente
+ * (503) em vez de fingir suporte — o domínio ainda não existe em Java.
  *
  * Tempo real (M6): {@code realtimeService.emitToConversation} é
  * {@link RealtimeService#emitToConversation} (STOMP, depois do commit) e o
@@ -65,6 +66,7 @@ public class ConversationService {
     private final CompanyRepository companyRepository;
     private final ProductRepository productRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
+    private final QuoteRequestRepository quoteRequestRepository;
     private final AuditService auditService;
     private final NotificationService notificationService;
     private final RiskAnalysisService riskAnalysisService;
@@ -74,7 +76,8 @@ public class ConversationService {
 
     public ConversationService(ConversationRepository conversationRepository, ConversationMessageRepository messageRepository,
                                 CompanyRepository companyRepository, ProductRepository productRepository,
-                                PurchaseOrderRepository purchaseOrderRepository, AuditService auditService,
+                                PurchaseOrderRepository purchaseOrderRepository, QuoteRequestRepository quoteRequestRepository,
+                                AuditService auditService,
                                 NotificationService notificationService, RiskAnalysisService riskAnalysisService,
                                 RiskAlertRepository riskAlertRepository, ObjectMapper objectMapper,
                                 RealtimeService realtimeService) {
@@ -84,6 +87,7 @@ public class ConversationService {
         this.companyRepository = companyRepository;
         this.productRepository = productRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
+        this.quoteRequestRepository = quoteRequestRepository;
         this.auditService = auditService;
         this.notificationService = notificationService;
         this.riskAnalysisService = riskAnalysisService;
@@ -104,10 +108,13 @@ public class ConversationService {
                 PurchaseOrder po = purchaseOrderRepository.findById(contextId).orElseThrow(() -> new NotFoundException("Ordem de compra"));
                 yield new ParDeEmpresas(po.getBuyerCompanyId(), po.getSupplierCompanyId());
             }
-            case "quote", "contract" -> throw new ServiceUnavailableException(
-                    "Conversas associadas a \"" + contextType + "\" ainda não estão disponíveis neste backend (Java) — "
-                            + "dependem do domínio " + ("quote".equals(contextType) ? "QuoteRequest" : "Contract")
-                            + ", ainda não portado. Use o backend Node por agora.");
+            case "quote" -> {
+                QuoteRequest q = quoteRequestRepository.findById(contextId).orElseThrow(() -> new NotFoundException("Cotação"));
+                yield new ParDeEmpresas(q.getBuyerCompanyId(), q.getSupplierCompanyId());
+            }
+            case "contract" -> throw new ServiceUnavailableException(
+                    "Conversas associadas a \"contract\" ainda não estão disponíveis neste backend (Java) — "
+                            + "dependem do domínio Contract, ainda não portado. Use o backend Node por agora.");
             default -> throw new ValidationException("Contexto inválido.");
         };
     }
