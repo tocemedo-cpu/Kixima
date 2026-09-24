@@ -1,7 +1,6 @@
 package ao.kixima.feedback;
 
 import ao.kixima.common.error.NotFoundException;
-import ao.kixima.common.error.ServiceUnavailableException;
 import ao.kixima.common.error.ValidationException;
 import ao.kixima.common.pagination.PaginaResposta;
 import ao.kixima.common.pagination.Paginacao;
@@ -14,6 +13,9 @@ import ao.kixima.feedback.dto.FeedbackOptionDto;
 import ao.kixima.feedback.dto.FeedbackOptionsResponse;
 import ao.kixima.feedback.dto.PublicFeedbackResponse;
 import ao.kixima.catalog.ProductKind;
+import ao.kixima.payment.Payment;
+import ao.kixima.payment.PaymentRepository;
+import ao.kixima.payment.PaymentStatus;
 import ao.kixima.po.PurchaseOrder;
 import ao.kixima.po.PurchaseOrderItem;
 import ao.kixima.po.PurchaseOrderItemRepository;
@@ -40,10 +42,9 @@ import java.util.UUID;
  * {@link #resolverAlvo}) — nunca aceite de olhos fechados a partir do
  * cliente. "Experiência geral" é a única categoria sem alvo.
  *
- * NÃO PORTADO: a categoria PAGAMENTO (em {@link #resolverAlvo} e em
- * {@link #opcoes}) — depende do domínio Payment, ainda não portado;
- * recusa-se a fingir (503), nunca aceita um alvo que não consegue
- * verificar.
+ * A categoria PAGAMENTO verifica-se contra {@link Payment} (PROCESSADO, de
+ * uma PO em que a empresa é parte) — portado com o domínio de pagamentos
+ * (grupo A das lacunas pós-M6).
  */
 @Service
 public class FeedbackService {
@@ -55,9 +56,12 @@ public class FeedbackService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderItemRepository purchaseOrderItemRepository;
     private final SupportTicketRepository supportTicketRepository;
+    private final PaymentRepository paymentRepository;
 
     public FeedbackService(FeedbackRepository feedbackRepository, PurchaseOrderRepository purchaseOrderRepository,
-                            PurchaseOrderItemRepository purchaseOrderItemRepository, SupportTicketRepository supportTicketRepository) {
+                            PurchaseOrderItemRepository purchaseOrderItemRepository, SupportTicketRepository supportTicketRepository,
+                            PaymentRepository paymentRepository) {
+        this.paymentRepository = paymentRepository;
         this.feedbackRepository = feedbackRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderItemRepository = purchaseOrderItemRepository;
@@ -78,6 +82,15 @@ public class FeedbackService {
         Map<String, FeedbackOptionDto> servicos = new LinkedHashMap<>();
         List<FeedbackOptionDto> pedidosOpts = new java.util.ArrayList<>();
         List<FeedbackOptionDto> entregas = new java.util.ArrayList<>();
+        List<FeedbackOptionDto> pagamentos = new java.util.ArrayList<>();
+
+        // `po.invoice.payment` do Node — um SELECT só para os pagamentos das 100 POs.
+        Map<String, Payment> pagamentoPorFatura = new LinkedHashMap<>();
+        List<String> invoiceIds = pedidos.stream().map(PurchaseOrder::getInvoice).filter(java.util.Objects::nonNull)
+                .map(ao.kixima.invoice.Invoice::getId).toList();
+        if (!invoiceIds.isEmpty()) {
+            for (Payment p : paymentRepository.findByInvoiceIdIn(invoiceIds)) pagamentoPorFatura.put(p.getInvoiceId(), p);
+        }
 
         for (PurchaseOrder po : pedidos) {
             boolean souComprador = po.getBuyerCompanyId().equals(companyId);
@@ -94,6 +107,10 @@ public class FeedbackService {
             if (po.getDeliveredAt() != null || po.getReceivedAt() != null) {
                 entregas.add(new FeedbackOptionDto(po.getId(), rotulo));
             }
+            Payment pagamento = po.getInvoice() == null ? null : pagamentoPorFatura.get(po.getInvoice().getId());
+            if (pagamento != null && pagamento.getStatus() == PaymentStatus.PROCESSADO) {
+                pagamentos.add(new FeedbackOptionDto(pagamento.getId(), pagamento.getReference() + " — " + po.getReference()));
+            }
         }
 
         List<FeedbackOptionDto> atendimento = tickets.stream()
@@ -102,7 +119,7 @@ public class FeedbackService {
 
         return new FeedbackOptionsResponse(
                 limitar(fornecedores.values()), limitar(produtos.values()), limitar(servicos.values()),
-                limitar(pedidosOpts), limitar(entregas), List.of(), limitar(atendimento));
+                limitar(pedidosOpts), limitar(entregas), limitar(pagamentos), limitar(atendimento));
     }
 
     private List<FeedbackOptionDto> limitar(java.util.Collection<FeedbackOptionDto> valores) {
@@ -141,8 +158,13 @@ public class FeedbackService {
                 Company contraparte = po.getBuyerCompanyId().equals(companyId) ? po.getSupplierCompany() : po.getBuyerCompany();
                 return new String[]{targetId, po.getReference() + " — " + (contraparte != null ? contraparte.getName() : "")};
             }
-            case PAGAMENTO -> throw new ServiceUnavailableException(
-                    "Avaliações sobre pagamentos ainda não estão disponíveis neste backend (Java) — dependem do domínio Payment, ainda não portado.");
+            case PAGAMENTO -> {
+                Payment pagamento = paymentRepository.findByIdComFatura(targetId).orElseThrow(() -> naoEncontrado);
+                PurchaseOrder po = pagamento.getInvoice().getPurchaseOrder();
+                boolean daEmpresa = po != null && (po.getBuyerCompanyId().equals(companyId) || po.getSupplierCompanyId().equals(companyId));
+                if (pagamento.getStatus() != PaymentStatus.PROCESSADO || !daEmpresa) throw naoEncontrado;
+                return new String[]{targetId, pagamento.getReference() + " — " + po.getReference()};
+            }
             case ATENDIMENTO -> {
                 SupportTicket ticket = supportTicketRepository.findById(targetId).orElseThrow(() -> naoEncontrado);
                 boolean pertence = (ticket.getCompanyId() != null && ticket.getCompanyId().equals(companyId)) || ticket.getUserId().equals(userId);

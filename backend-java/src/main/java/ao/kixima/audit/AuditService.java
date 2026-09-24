@@ -71,6 +71,22 @@ public class AuditService {
     }
 
     /**
+     * Espelha {@code auditService.record(tx, ...)} — DENTRO da transação de
+     * negócio, e a falhar com ela: um pagamento sem registo não existe.
+     */
+    public void record(Entry entry) {
+        try {
+            String detailJson = entry.detail() == null ? null : objectMapper.writeValueAsString(entry.detail());
+            Actor a = entry.actor() == null ? Actor.anonimo(null) : entry.actor();
+            repository.save(new AuditLog(UUID.randomUUID().toString(), entry.action(), entry.entityType(),
+                    entry.entityId(), entry.entityRef(), a.actorId(), a.actorName(), a.actorRole(),
+                    a.companyId(), a.ip(), detailJson, Instant.now()));
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalStateException("Falha a serializar o detalhe do registo de auditoria.", e);
+        }
+    }
+
+    /**
      * Variante "não pode partir o negócio": regista após o sucesso da
      * operação; uma falha aqui vai para o log (Sentry entra quando M0
      * adicionar essa dependência — ver TODO em GlobalExceptionHandler).

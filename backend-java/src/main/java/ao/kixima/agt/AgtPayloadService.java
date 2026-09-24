@@ -7,7 +7,11 @@ import ao.kixima.common.error.NotFoundException;
 import ao.kixima.common.error.ServiceUnavailableException;
 import ao.kixima.company.Company;
 import ao.kixima.company.CompanyRepository;
+import ao.kixima.creditnote.CreditNote;
+import ao.kixima.creditnote.CreditNoteRepository;
 import ao.kixima.invoice.Invoice;
+import ao.kixima.payment.Payment;
+import ao.kixima.payment.PaymentRepository;
 import ao.kixima.invoice.InvoiceLine;
 import ao.kixima.invoice.InvoiceRepository;
 import ao.kixima.po.PurchaseOrder;
@@ -62,11 +66,16 @@ public class AgtPayloadService {
     private final AgtSandboxClient agtSandboxClient;
     private final AgtSeriesService agtSeriesService;
     private final String establishmentNumber;
+    private final CreditNoteRepository creditNoteRepository;
+    private final PaymentRepository paymentRepository;
 
     public AgtPayloadService(InvoiceRepository invoiceRepository, CompanyRepository companyRepository,
                               TaxService taxService, AgtSigningService agtSigningService,
                               AgtSandboxClient agtSandboxClient, AgtSeriesService agtSeriesService,
+                              CreditNoteRepository creditNoteRepository, PaymentRepository paymentRepository,
                               @Value("${kixima.agt.establishment-number:}") String establishmentNumber) {
+        this.creditNoteRepository = creditNoteRepository;
+        this.paymentRepository = paymentRepository;
         this.invoiceRepository = invoiceRepository;
         this.companyRepository = companyRepository;
         this.taxService = taxService;
@@ -115,6 +124,16 @@ public class AgtPayloadService {
                                                        Instant dataCriacao, String taxRegistrationNumber, Company cliente,
                                                        List<Map<String, Object>> linhas, Map<String, Object> documentTotals,
                                                        List<Map<String, Object>> withholdingTaxList) {
+        return montarDocumentoComum(documentType, documentNo, dataDocumento, dataCriacao, taxRegistrationNumber, cliente,
+                linhas, null, documentTotals, withholdingTaxList);
+    }
+
+    /** {@code paymentReceipt} só existe no RC (spec 4.1.6) — é ele, não `lines`, que liga o recibo à fatura que quita. */
+    private Map<String, Object> montarDocumentoComum(String documentType, String documentNo, Instant dataDocumento,
+                                                       Instant dataCriacao, String taxRegistrationNumber, Company cliente,
+                                                       List<Map<String, Object>> linhas, Map<String, Object> paymentReceipt,
+                                                       Map<String, Object> documentTotals,
+                                                       List<Map<String, Object>> withholdingTaxList) {
         String documentDate = DATA.format(dataDocumento != null ? dataDocumento : (dataCriacao != null ? dataCriacao : Instant.now()));
         String systemEntryDate = (dataCriacao != null ? dataCriacao : (dataDocumento != null ? dataDocumento : Instant.now())).toString();
         String customerTaxID = cliente != null && cliente.getTaxId() != null ? cliente.getTaxId() : CUSTOMER_TAX_ID_DESCONHECIDO;
@@ -135,6 +154,7 @@ public class AgtPayloadService {
         m.put("customerCountry", customerCountry);
         m.put("companyName", companyName);
         m.put("lines", linhas);
+        if (paymentReceipt != null) m.put("paymentReceipt", paymentReceipt);
         m.put("documentTotals", documentTotals);
         if (withholdingTaxList != null && !withholdingTaxList.isEmpty()) {
             m.put("withholdingTaxList", withholdingTaxList);
@@ -176,6 +196,69 @@ public class AgtPayloadService {
                 cliente, linhas, documentTotals, withholdingListDe(invoice.getWithholdingAmount()));
     }
 
+    /** Espelha documentoDeNotaCredito — uma linha "CORRECAO" que referencia a fatura original (retificação). */
+    private Map<String, Object> documentoDeNotaCredito(CreditNote creditNote, String fornecedorTaxId) {
+        Invoice invoice = creditNote.getInvoice();
+        PurchaseOrder po = invoice.getPurchaseOrder();
+        Company cliente = po == null ? null : po.getBuyerCompany();
+        String faturaOriginalNo = numeroDocumento("FT", invoice.getId(), invoice.getAssinadaEm());
+        BigDecimal netAmount = nz(creditNote.getNetAmount());
+        BigDecimal taxAmount = nz(creditNote.getTaxAmount());
+
+        List<Map<String, Object>> linhas = List.of(AgtJson.mapa(
+                "lineNumber", 1,
+                "productCode", "CORRECAO",
+                "productDescription", creditNote.getMotivo(),
+                "quantity", 1,
+                "unitOfMeasure", "UN",
+                "unitPrice", netAmount,
+                "unitPriceBase", netAmount,
+                "referenceInfo", AgtJson.mapa("reason", "retificacao", "reference", faturaOriginalNo, "referenceItemLineNo", 1),
+                "debitAmount", netAmount,
+                "creditAmount", 0,
+                "taxes", List.of(AgtJson.mapa(
+                        "taxType", "IVA",
+                        "taxCountryRegion", "AO",
+                        "taxCode", "NOR",
+                        "taxPercentage", taxService.getIvaRate().multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP),
+                        "taxContribution", taxAmount)),
+                "settlementAmount", 0));
+
+        // Retenção proporcional ao peso da NC sobre a fatura original — a NC não guarda a sua própria retenção.
+        BigDecimal invoiceNet = nz(invoice.getNetAmount());
+        BigDecimal retencao = invoiceNet.signum() > 0
+                ? netAmount.divide(invoiceNet, 10, RoundingMode.HALF_UP).multiply(nz(invoice.getWithholdingAmount()))
+                : BigDecimal.ZERO;
+
+        String documentNo = numeroDocumento("NC", creditNote.getId(), creditNote.getAssinadaEm());
+        Instant dataDocumento = creditNote.getAssinadaEm() != null ? creditNote.getAssinadaEm() : creditNote.getIssuedAt();
+        return montarDocumentoComum("NC", documentNo, dataDocumento, creditNote.getCreatedAt(), fornecedorTaxId, cliente, linhas,
+                AgtSigningService.documentTotals(taxAmount, netAmount, nz(creditNote.getAmount())), withholdingListDe(retencao));
+    }
+
+    /**
+     * Espelha documentoDeRecibo — o RC quita uma fatura: sem linhas próprias; os
+     * totais são os da fatura que liquida (o bruto é o efetivamente pago).
+     */
+    private Map<String, Object> documentoDeRecibo(Payment payment, String fornecedorTaxId) {
+        Invoice invoice = payment.getInvoice();
+        PurchaseOrder po = invoice.getPurchaseOrder();
+        Company cliente = po == null ? null : po.getBuyerCompany();
+        String faturaNo = numeroDocumento("FT", invoice.getId(), invoice.getAssinadaEm());
+        String faturaData = DATA.format(invoice.getAssinadaEm() != null ? invoice.getAssinadaEm() : invoice.getCreatedAt());
+
+        Map<String, Object> paymentReceipt = AgtJson.mapa("sourceDocuments", List.of(AgtJson.mapa(
+                "lineNo", 1,
+                "sourceDocumentID", AgtJson.mapa("originatingON", faturaNo, "documentDate", faturaData),
+                "creditAmount", nz(invoice.getNetAmount()))));
+
+        String documentNo = numeroDocumento("RC", payment.getId(), payment.getAssinadaEm());
+        return montarDocumentoComum("RC", documentNo, payment.getAssinadaEm(), payment.getProcessedAt(), fornecedorTaxId, cliente,
+                List.of(), paymentReceipt,
+                AgtSigningService.documentTotals(nz(invoice.getTaxAmount()), nz(invoice.getNetAmount()), nz(payment.getAmount())),
+                withholdingListDe(invoice.getWithholdingAmount()));
+    }
+
     private Map<String, Object> envelope(String taxRegistrationNumber, Map<String, Object> documento) {
         return AgtJson.mapa(
                 "schemaVersion", "2.0",
@@ -188,9 +271,8 @@ public class AgtPayloadService {
     }
 
     /**
-     * Ponto de entrada — `tipo` ∈ 'FT' (suportado) | 'NC' | 'RC' (por
-     * portar, ver o Javadoc da classe). Confirma que o documento pertence a
-     * `supplierCompanyId` antes de assinar nada.
+     * Ponto de entrada — `tipo` ∈ 'FT' | 'NC' | 'RC'. Confirma que o documento
+     * pertence a `supplierCompanyId` antes de assinar nada.
      */
     // NÃO readOnly: numeroDocumento()/atribuirDocumentNo() ESCREVE o número atribuído (idempotente, mas é escrita real).
     @Transactional
@@ -205,11 +287,18 @@ public class AgtPayloadService {
             return envelope(fornecedor.getTaxId(), documentoDeFatura(invoice, fornecedor.getTaxId()));
         }
 
-        if ("NC".equals(tipo) || "RC".equals(tipo)) {
-            throw new ServiceUnavailableException(
-                    "Documentos do tipo \"" + tipo + "\" ainda não estão disponíveis neste backend (Java) — dependem do "
-                            + "domínio " + ("NC".equals(tipo) ? "CreditNote" : "Payment") + ", ainda não portado (ver PLANO.md, M5+). "
-                            + "Use o backend Node para este tipo de documento por agora.");
+        if ("NC".equals(tipo)) {
+            CreditNote creditNote = creditNoteRepository.findByIdComFatura(id).orElseThrow(() -> new NotFoundException("Nota de crédito"));
+            PurchaseOrder po = creditNote.getInvoice().getPurchaseOrder();
+            verificarPosse(po == null ? null : po.getSupplierCompanyId(), supplierCompanyId);
+            return envelope(fornecedor.getTaxId(), documentoDeNotaCredito(creditNote, fornecedor.getTaxId()));
+        }
+
+        if ("RC".equals(tipo)) {
+            Payment payment = paymentRepository.findByIdComFatura(id).orElseThrow(() -> new NotFoundException("Recibo"));
+            PurchaseOrder po = payment.getInvoice().getPurchaseOrder();
+            verificarPosse(po == null ? null : po.getSupplierCompanyId(), supplierCompanyId);
+            return envelope(fornecedor.getTaxId(), documentoDeRecibo(payment, fornecedor.getTaxId()));
         }
 
         throw new BusinessRuleException(
@@ -274,6 +363,12 @@ public class AgtPayloadService {
     @Transactional
     public ResultadoSubmissao submeterFatura(String invoiceId, String supplierCompanyId) {
         return submeterDocumento("FT", invoiceId, supplierCompanyId);
+    }
+
+    /** Submissão explícita e visível da NC — ver CreditNoteService.anular. */
+    @Transactional
+    public ResultadoSubmissao submeterNotaCredito(String creditNoteId, String supplierCompanyId) {
+        return submeterDocumento("NC", creditNoteId, supplierCompanyId);
     }
 
     /**

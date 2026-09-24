@@ -291,6 +291,14 @@ public class PurchaseOrder extends AbstractPersistableEntity<String> {
         this.deliveredAt = deliveredAt;
     }
 
+    public Instant getPaidAt() {
+        return paidAt;
+    }
+
+    public void setPaidAt(Instant paidAt) {
+        this.paidAt = paidAt;
+    }
+
     public Instant getReceivedAt() {
         return receivedAt;
     }

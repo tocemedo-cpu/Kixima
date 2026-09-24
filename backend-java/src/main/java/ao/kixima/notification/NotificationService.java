@@ -4,6 +4,7 @@ import ao.kixima.company.Company;
 import ao.kixima.company.CompanyRepository;
 import ao.kixima.invoice.Invoice;
 import ao.kixima.notification.dto.NotificationDto;
+import ao.kixima.payment.Payment;
 import ao.kixima.po.PoStatus;
 import ao.kixima.realtime.RealtimeService;
 import ao.kixima.po.PurchaseOrder;
@@ -212,6 +213,13 @@ public class NotificationService {
                         + ". Contacto: " + r.getContactName() + " — " + r.getContactEmail() + ". Taxa de acesso de "
                         + r.getAccessFeeUsd() + " USD emitida na submissão — por receber.",
                 NotificationChannel.IN_APP_EMAIL, "SupplierDevRequest", r.getId());
+    }
+
+    public void pagamentoProcessado(Payment payment, PurchaseOrder po) {
+        notifyUsersByRole(po.getSupplierCompanyId(), List.of(PersonaRole.FORNECEDOR, PersonaRole.COMPANY_ADMIN),
+                NotificationType.PAGAMENTO_PROCESSADO, "Pagamento recebido",
+                "O pagamento da PO " + po.getReference() + " foi processado. Pode iniciar a execução/entrega.",
+                NotificationChannel.IN_APP_EMAIL, "Payment", payment.getId());
     }
 
     private static final java.util.Map<String, String> MENSAGENS_SUBSCRICAO_A_EXPIRAR = java.util.Map.of(

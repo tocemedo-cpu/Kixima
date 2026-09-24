@@ -3,6 +3,7 @@ package ao.kixima.messaging;
 import ao.kixima.catalog.Product;
 import ao.kixima.company.Company;
 import ao.kixima.invoice.Invoice;
+import ao.kixima.payment.Payment;
 import ao.kixima.po.PurchaseOrder;
 import ao.kixima.po.PurchaseOrderItem;
 
@@ -80,6 +81,17 @@ public final class EventPayloads {
                 : invoice.getCreatedAt() != null ? invoice.getCreatedAt() : Instant.now();
         m.put("issuedAt", issued.toString());
         m.put("dueAt", (invoice.getDueAt() == null ? Instant.now() : invoice.getDueAt()).toString());
+        return m;
+    }
+
+    public static Map<String, Object> paymentCompleted(Payment payment, Invoice invoice) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("paymentId", payment.getId());
+        m.put("invoiceReference", invoice == null || invoice.getReference() == null ? "" : invoice.getReference());
+        m.put("amount", num(payment.getAmount()));
+        m.put("currency", payment.getCurrency());
+        m.put("paidAt", (payment.getProcessedAt() == null ? Instant.now() : payment.getProcessedAt()).toString());
+        m.put("method", "KIXIMA");
         return m;
     }
 

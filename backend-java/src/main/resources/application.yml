@@ -115,6 +115,12 @@ kixima:
     policy-expiry-alert-days: ${POLICY_EXPIRY_ALERT_DAYS:30}
     # Câmbio USD→AOA com que se aferem limiares definidos em dólares (platformFeeService.fxRate).
     usd-aoa-rate: ${KIXIMA_USD_AOA_RATE:900}
+  fees:
+    # Mesmas variáveis que platformFeeService.js — taxa da plataforma, em USD.
+    per-po-usd: ${KIXIMA_FEE_PER_PO_USD:8}
+    per-invoice-usd: ${KIXIMA_FEE_PER_INVOICE_USD:15}
+    threshold-usd: ${KIXIMA_FEE_THRESHOLD_USD:11500}
+    percent-above: ${KIXIMA_FEE_PERCENT_ABOVE:0.002}
   tax:
     iva-rate: ${IVA_RATE:0.14}
     withholding-rate: ${WITHHOLDING_RATE:0.065}

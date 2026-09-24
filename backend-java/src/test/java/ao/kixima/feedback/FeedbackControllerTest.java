@@ -72,8 +72,9 @@ class FeedbackControllerTest {
         var opcoesRes = mockMvc.perform(get("/api/feedback/opcoes").header("Authorization", "Bearer " + compradorToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.FORNECEDOR[?(@.id=='" + supplierCompanyId + "')]").exists())
+                // Os pagamentos PROCESSADOS das POs da empresa (seed: PAY-2026-0000x) aparecem como "PAY-… — PO-…".
                 .andExpect(jsonPath("$.PAGAMENTO").isArray())
-                .andExpect(jsonPath("$.PAGAMENTO.length()").value(0))
+                .andExpect(jsonPath("$.PAGAMENTO[0].label").value(org.hamcrest.Matchers.containsString("PAY-")))
                 .andReturn();
         JsonNode opcoes = objectMapper.readTree(opcoesRes.getResponse().getContentAsString());
         String produtoId = opcoes.get("PRODUTO").get(0).get("id").asText();
@@ -89,13 +90,22 @@ class FeedbackControllerTest {
                                 "rating", 5, "message", "Excelente parceiro."))))
                 .andExpect(status().isUnprocessableEntity());
 
-        // PAGAMENTO recusa-se explicitamente — domínio Payment ainda não portado.
+        // PAGAMENTO: um id que não é um pagamento processado de uma PO da empresa é rejeitado; um real é aceite e verificado.
         mockMvc.perform(post("/api/feedback")
                         .header("Authorization", "Bearer " + compradorToken)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "categoria", "PAGAMENTO", "targetId", "qualquer", "rating", 5, "message", "Pago a tempo."))))
-                .andExpect(status().isServiceUnavailable());
+                .andExpect(status().isUnprocessableEntity());
+        String pagamentoId = opcoes.get("PAGAMENTO").get(0).get("id").asText();
+        mockMvc.perform(post("/api/feedback")
+                        .header("Authorization", "Bearer " + compradorToken)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "categoria", "PAGAMENTO", "targetId", pagamentoId, "rating", 5, "message", "Pago a tempo."))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.recebido").value(true))
+                .andExpect(jsonPath("$.id").isString());
 
         // Avaliação real, verificada — sobre o fornecedor.
         var criarRes = mockMvc.perform(post("/api/feedback")

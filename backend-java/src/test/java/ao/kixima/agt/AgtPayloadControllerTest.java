@@ -185,16 +185,16 @@ class AgtPayloadControllerTest {
     }
 
     @Test
-    void payloadDeNcOuRcRecusaExplicitamenteComoAindaPorPortar() throws Exception {
+    void payloadDeNcOuRcProcuraODocumentoPeloId() throws Exception {
+        // NC e RC já têm produtor em Java (CreditNote/Payment, grupo A das lacunas) — um id desconhecido é 404, como no Node.
         String fornecedorToken = login(FORNECEDOR_EMAIL);
         mockMvc.perform(get("/api/faturacao/agt-payload/NC/qualquer-id").header("Authorization", "Bearer " + fornecedorToken))
-                .andExpect(status().isServiceUnavailable())
-                .andExpect(jsonPath("$.error.code").value("SERVICO_INDISPONIVEL"))
-                .andExpect(jsonPath("$.error.message").value(org.hamcrest.Matchers.containsString("CreditNote")));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.message").value(org.hamcrest.Matchers.containsString("Nota de crédito")));
 
         mockMvc.perform(get("/api/faturacao/agt-payload/RC/qualquer-id").header("Authorization", "Bearer " + fornecedorToken))
-                .andExpect(status().isServiceUnavailable())
-                .andExpect(jsonPath("$.error.message").value(org.hamcrest.Matchers.containsString("Payment")));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.message").value(org.hamcrest.Matchers.containsString("Recibo")));
     }
 
     @Test
