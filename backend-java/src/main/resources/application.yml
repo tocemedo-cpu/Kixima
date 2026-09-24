@@ -127,6 +127,14 @@ kixima:
     seat-price-cap-usd: ${KIXIMA_SEAT_PRICE_CAP_USD:100}
     grace-period-days: ${KIXIMA_GRACE_PERIOD_DAYS:7}
     limiar-a-expirar-dias: 30
+  erp:
+    # Mesma chave AES-256-GCM (32 bytes hex) que erpCrypto.js — só exigida
+    # quando se cifra/decifra uma configuração ERP real.
+    config-encryption-key: ${ERP_CONFIG_ENCRYPTION_KEY:}
+    # Microserviço kixima-integration-service (opcional) — sem isto, o
+    # ERP fica guardado mas não sincronizado, tal como no Node.
+    integration-url: ${INTEGRATION_URL:}
+    integration-admin-token: ${INTEGRATION_ADMIN_TOKEN:}
   cors:
     origins: ${CORS_ORIGINS:}
 
