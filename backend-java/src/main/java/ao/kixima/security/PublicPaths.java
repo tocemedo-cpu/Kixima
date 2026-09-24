@@ -36,6 +36,12 @@ public class PublicPaths {
         // seguem sem utilizador) — por isso marcar como público aqui já reproduz
         // "autenticação opcional", sem precisar de um segundo modo no filtro.
         exatos.add("/api/uploads/*");
+        // companyRoutes.js — resolução/aceitação de convite são públicas: o
+        // token assinado (ver InviteController/InviteService) é a própria
+        // autorização, tal como authenticate não está composto nestas duas
+        // rotas no Node.
+        exatos.add("/api/companies/invite/*");
+        exatos.add("/api/companies/invite/*/accept");
     }
 
     public void adicionar(String pathPattern) {

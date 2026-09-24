@@ -70,6 +70,11 @@ spring.web.resources.add-mappings: false
 # por omissão do Spring.
 
 kixima:
+  # Endereço público usado nos links de email (convite, recuperação de
+  # senha, ...). Vazio por omissão: cada chamador usa o endereço real do
+  # pedido (protocolo+host) como já faz o Node quando APP_URL não está
+  # definida — ver InviteService.baseUrl.
+  app-url: ${APP_URL:}
   auth:
     jwt-secret: ${JWT_SECRET:}
     jwt-expires-in: ${JWT_EXPIRES_IN:1d}
@@ -117,6 +122,11 @@ kixima:
     # (isso pede um mecanismo cross-cutting, ver TODO no plano de migração);
     # por agora aplica-se explicitamente em CatalogService.listCatalog.
     max-rows: ${DB_MAX_ROWS:1000}
+  plan:
+    # Mesmas variáveis de ambiente que backend/src/services/planService.js.
+    seat-price-cap-usd: ${KIXIMA_SEAT_PRICE_CAP_USD:100}
+    grace-period-days: ${KIXIMA_GRACE_PERIOD_DAYS:7}
+    limiar-a-expirar-dias: 30
   cors:
     origins: ${CORS_ORIGINS:}
 

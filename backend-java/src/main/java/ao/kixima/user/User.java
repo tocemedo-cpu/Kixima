@@ -123,11 +123,31 @@ public class User extends AbstractPersistableEntity<String> {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @org.hibernate.annotations.UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     protected User() {
         // JPA
+    }
+
+    /**
+     * Criação de uma conta nova (aceitação de convite — ver
+     * ao.kixima.invite.InviteService — ou registo directo de empresa,
+     * ainda não portado). Os restantes campos (MFA, bloqueio progressivo,
+     * ...) nascem com o valor por omissão declarado acima.
+     */
+    public User(String id, String name, String email, String passwordHash, PersonaRole role, String companyId,
+                boolean active, Instant termsAcceptedAt, Instant createdAt) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.role = role;
+        this.companyId = companyId;
+        this.active = active;
+        this.termsAcceptedAt = termsAcceptedAt;
+        this.createdAt = createdAt;
     }
 
     // --- getters/setters -----------------------------------------------
