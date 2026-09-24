@@ -1,15 +1,27 @@
 package ao.kixima.catalog;
 
+import ao.kixima.apikey.ApiKeyService;
+import ao.kixima.apikey.dto.ApiKeyCreatedDto;
+import ao.kixima.apikey.dto.ApiKeyDto;
+import ao.kixima.apikey.dto.CreateApiKeyRequest;
+import ao.kixima.apikey.dto.RevokedApiKeyDto;
+import ao.kixima.audit.Actor;
+import ao.kixima.audit.AuditService;
 import ao.kixima.catalog.dto.AddReviewRequest;
 import ao.kixima.catalog.dto.ProductDto;
 import ao.kixima.catalog.dto.ReviewDto;
 import ao.kixima.catalog.dto.ReviewSummaryDto;
 import ao.kixima.catalog.dto.SupplierDocumentsResponse;
+import ao.kixima.common.error.NotFoundException;
 import ao.kixima.common.error.ValidationException;
+import ao.kixima.company.Company;
+import ao.kixima.company.CompanyRepository;
 import ao.kixima.security.CurrentUser;
 import ao.kixima.security.CurrentUserHolder;
 import ao.kixima.security.PersonaRole;
 import ao.kixima.security.RequireRole;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +32,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 import static ao.kixima.security.PersonaRole.COMPANY_ADMIN;
 import static ao.kixima.security.PersonaRole.COMPRADOR;
@@ -39,10 +52,17 @@ public class CatalogController {
 
     private final CatalogService catalogService;
     private final ReviewService reviewService;
+    private final ApiKeyService apiKeyService;
+    private final CompanyRepository companyRepository;
+    private final AuditService auditService;
 
-    public CatalogController(CatalogService catalogService, ReviewService reviewService) {
+    public CatalogController(CatalogService catalogService, ReviewService reviewService, ApiKeyService apiKeyService,
+                              CompanyRepository companyRepository, AuditService auditService) {
         this.catalogService = catalogService;
         this.reviewService = reviewService;
+        this.apiKeyService = apiKeyService;
+        this.companyRepository = companyRepository;
+        this.auditService = auditService;
     }
 
     @GetMapping
@@ -61,6 +81,39 @@ public class CatalogController {
     @RequireRole({FORNECEDOR, COMPANY_ADMIN})
     public SupplierDocumentsResponse documentosDoFornecedor() {
         return catalogService.listSupplierDocuments(CurrentUserHolder.get().companyId());
+    }
+
+    // --- Chaves da API de catálogo (plano Pro) -----------------------------
+    // Ficam aqui, ao lado do catálogo, tal como no Node: não é "uma chave da
+    // KIXIMA", é uma chave do meu catálogo.
+
+    @GetMapping("/api-keys")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public List<ApiKeyDto> listarChavesApi() {
+        return apiKeyService.listar(CurrentUserHolder.get().companyId());
+    }
+
+    @PostMapping("/api-keys")
+    @ResponseStatus(CREATED)
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public ApiKeyCreatedDto criarChaveApi(@RequestBody CreateApiKeyRequest body, HttpServletRequest req) {
+        CurrentUser user = CurrentUserHolder.get();
+        Company empresa = companyRepository.findById(user.companyId()).orElseThrow(() -> new NotFoundException("Empresa"));
+        ApiKeyCreatedDto criada = apiKeyService.criar(empresa, body == null ? null : body.nome(), user.id());
+        Actor actor = auditService.actorFrom(user, req);
+        auditService.recordSafe(new AuditService.Entry(actor, "CHAVE_API_CRIADA", "ApiKey", criada.id(),
+                criada.prefixo(), Map.of("nome", criada.nome())));
+        return criada;
+    }
+
+    @DeleteMapping("/api-keys/{id}")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public RevokedApiKeyDto revogarChaveApi(@PathVariable String id, HttpServletRequest req) {
+        CurrentUser user = CurrentUserHolder.get();
+        RevokedApiKeyDto r = apiKeyService.revogar(user.companyId(), id);
+        Actor actor = auditService.actorFrom(user, req);
+        auditService.recordSafe(new AuditService.Entry(actor, "CHAVE_API_REVOGADA", "ApiKey", id, null, null));
+        return r;
     }
 
     @GetMapping("/slug/{slug}")
