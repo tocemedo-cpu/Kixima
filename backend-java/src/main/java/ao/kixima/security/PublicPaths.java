@@ -64,6 +64,10 @@ public class PublicPaths {
         adicionar("GET", "/api/public/feedback");
         // app.js — rota pública direta (fora de qualquer router com `authenticate`).
         adicionar("GET", "/api/retencao");
+        // realtimeService.js — o upgrade HTTP do WebSocket passa sem token: a
+        // autenticação é no CONNECT STOMP (io.use(autenticarSocket) no Node),
+        // porque o Bearer do Capacitor só pode vir nesse frame, nunca no upgrade.
+        adicionar("/ws/**");
     }
 
     /** Regista um caminho como público para TODOS os métodos HTTP. */

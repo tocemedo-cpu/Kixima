@@ -14,7 +14,9 @@ import ao.kixima.notification.NotificationChannel;
 import ao.kixima.notification.NotificationService;
 import ao.kixima.notification.NotificationType;
 import ao.kixima.po.PurchaseOrder;
+import ao.kixima.conversation.dto.ConversationMessageDto;
 import ao.kixima.po.PurchaseOrderRepository;
+import ao.kixima.realtime.RealtimeService;
 import ao.kixima.risk.RiskAlert;
 import ao.kixima.risk.RiskAlertRepository;
 import ao.kixima.risk.RiskAlertStatus;
@@ -67,12 +69,15 @@ public class ConversationService {
     private final RiskAnalysisService riskAnalysisService;
     private final RiskAlertRepository riskAlertRepository;
     private final ObjectMapper objectMapper;
+    private final RealtimeService realtimeService;
 
     public ConversationService(ConversationRepository conversationRepository, ConversationMessageRepository messageRepository,
                                 CompanyRepository companyRepository, ProductRepository productRepository,
                                 PurchaseOrderRepository purchaseOrderRepository, AuditService auditService,
                                 NotificationService notificationService, RiskAnalysisService riskAnalysisService,
-                                RiskAlertRepository riskAlertRepository, ObjectMapper objectMapper) {
+                                RiskAlertRepository riskAlertRepository, ObjectMapper objectMapper,
+                                RealtimeService realtimeService) {
+        this.realtimeService = realtimeService;
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.companyRepository = companyRepository;
@@ -219,6 +224,7 @@ public class ConversationService {
         // Trust & Safety: TODA mensagem é classificada; só MEDIUM+ vira alerta. Nunca bloqueia.
         analisarRisco(conversa, mensagem, user, req);
 
+        realtimeService.emitToConversation(conversationId, "conversation:message", ConversationMessageDto.de(mensagem));
         return mensagem;
     }
 
@@ -244,7 +250,7 @@ public class ConversationService {
         detail.put("reason", resultado.reason());
         auditService.recordSafe(new AuditService.Entry(auditService.actorFrom(user, req), "ALERTA_SEGURANCA_CRIADO",
                 "RiskAlert", alerta.getId(), null, detail));
-        // TODO (M6): realtimeService.emitToConversation(conversa.getId(), "conversation:risk-alert", {level: alerta.getLevel()}).
+        realtimeService.emitToConversation(conversa.getId(), "conversation:risk-alert", Map.of("level", alerta.getLevel().name()));
     }
 
     private String escreverJsonSilencioso(Object valor) {

@@ -3,7 +3,9 @@ package ao.kixima.notification;
 import ao.kixima.company.Company;
 import ao.kixima.company.CompanyRepository;
 import ao.kixima.invoice.Invoice;
+import ao.kixima.notification.dto.NotificationDto;
 import ao.kixima.po.PoStatus;
+import ao.kixima.realtime.RealtimeService;
 import ao.kixima.po.PurchaseOrder;
 import ao.kixima.security.PersonaRole;
 import ao.kixima.supplierdev.SupplierDevRequest;
@@ -62,13 +64,16 @@ public class NotificationService {
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final EmailDispatchService emailDispatchService;
+    private final RealtimeService realtimeService;
 
     public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository,
-                                CompanyRepository companyRepository, EmailDispatchService emailDispatchService) {
+                                CompanyRepository companyRepository, EmailDispatchService emailDispatchService,
+                                RealtimeService realtimeService) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.companyRepository = companyRepository;
         this.emailDispatchService = emailDispatchService;
+        this.realtimeService = realtimeService;
     }
 
     public Notification notifyUser(String userId, NotificationType type, String title, String message,
@@ -83,7 +88,9 @@ public class NotificationService {
             emailDispatchService.dispatch(emailTo, title, message);
         }
 
-        // TODO (M6): realtimeService.emitToUser(userId, "notification:new", notification) — STOMP.
+        // Sem efeito se ninguém estiver ligado — a notificação já ficou gravada acima de qualquer
+        // forma; isto só evita que a interface precise de recarregar a página para a ver.
+        realtimeService.emitToUser(userId, "notification:new", NotificationDto.de(notification));
         return notification;
     }
 

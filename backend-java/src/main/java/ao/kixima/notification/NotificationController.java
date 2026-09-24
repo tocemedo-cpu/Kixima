@@ -60,7 +60,6 @@ public class NotificationController {
     }
 
     private NotificationDto toDto(Notification n) {
-        return new NotificationDto(n.getId(), n.getUserId(), n.getCompanyId(), n.getType().name(), n.getChannel().name(),
-                n.getTitle(), n.getMessage(), n.getReadAt(), n.getRelatedEntityType(), n.getRelatedEntityId(), n.getCreatedAt());
+        return NotificationDto.de(n);
     }
 }

@@ -7,7 +7,10 @@ import ao.kixima.common.error.ValidationException;
 import ao.kixima.notification.NotificationChannel;
 import ao.kixima.notification.NotificationService;
 import ao.kixima.notification.NotificationType;
+import ao.kixima.realtime.RealtimeService;
 import ao.kixima.security.CurrentUser;
+import ao.kixima.support.dto.SupportMessageDto;
+import ao.kixima.support.dto.SupportTicketDto;
 import ao.kixima.security.PersonaRole;
 import ao.kixima.user.User;
 import ao.kixima.user.UserRepository;
@@ -49,13 +52,16 @@ public class SupportChatService {
     private final SupportMessageRepository messageRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final RealtimeService realtimeService;
 
     public SupportChatService(SupportTicketRepository ticketRepository, SupportMessageRepository messageRepository,
-                               UserRepository userRepository, NotificationService notificationService) {
+                               UserRepository userRepository, NotificationService notificationService,
+                               RealtimeService realtimeService) {
         this.ticketRepository = ticketRepository;
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.realtimeService = realtimeService;
     }
 
     public static boolean podeGerirSuporte(PersonaRole role, List<String> adminAreas) {
@@ -102,6 +108,7 @@ public class SupportChatService {
         }
         ticket.setAssignedToId(admin.id());
         if (ticket.getStatus() == SupportStatus.ABERTO) ticket.setStatus(SupportStatus.EM_ANDAMENTO);
+        realtimeService.emitToTicket(ticketId, "support:updated", SupportTicketDto.semExtras(ticket));
         return ticket;
     }
 
@@ -120,6 +127,7 @@ public class SupportChatService {
                 "Pedido de suporte transferido para si", "O pedido " + ticket.getReference() + " foi transferido para si.",
                 NotificationChannel.IN_APP, "SupportTicket", ticketId, null);
 
+        realtimeService.emitToTicket(ticketId, "support:updated", SupportTicketDto.semExtras(ticket));
         return ticket;
     }
 
@@ -168,6 +176,7 @@ public class SupportChatService {
                     NotificationChannel.IN_APP, "SupportTicket", ticketId, null);
         }
 
+        realtimeService.emitToTicket(ticketId, "support:message", SupportMessageDto.de(mensagem));
         return mensagem;
     }
 
@@ -191,6 +200,7 @@ public class SupportChatService {
         if (!podeGerirSuporte(admin)) throw new ForbiddenException("Esta ação está reservada a quem gere Suporte.");
         SupportTicket ticket = ticketRepository.findById(ticketId).orElseThrow(() -> new NotFoundException("Pedido de suporte"));
         ticket.setStatus(novoEstado);
+        realtimeService.emitToTicket(ticketId, "support:updated", SupportTicketDto.semExtras(ticket));
         return ticket;
     }
 }
