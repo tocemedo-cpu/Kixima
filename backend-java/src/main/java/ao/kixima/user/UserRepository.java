@@ -14,6 +14,12 @@ public interface UserRepository extends JpaRepository<User, String> {
     /** Espelha `prisma.user.findMany({ where: { companyId, role: { in: roles }, active: true } })` (notificationService.notifyUsersByRole). */
     List<User> findByCompanyIdAndRoleInAndActiveTrue(String companyId, List<PersonaRole> roles);
 
+    /** Usado por UploadAccessService — o avatar de um utilizador é sempre público. */
+    boolean existsByAvatarUrl(String avatarUrl);
+
+    /** Lista de assessores para o seletor "Transferir para..." (SupportController.agentes). */
+    List<User> findByRoleAndActiveTrue(PersonaRole role);
+
     /**
      * `company` é LAZY (plano, secção 2) — o AuthenticationFilter e o login
      * precisam de `company.type`/`company.plan` na mesma resposta que o

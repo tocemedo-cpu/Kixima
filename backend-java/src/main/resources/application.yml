@@ -43,6 +43,12 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
 
+spring.servlet.multipart.max-file-size: 12MB
+spring.servlet.multipart.max-request-size: 12MB
+# 12MB cobre o maior limite dos dois usados no Node (upload de imagem —
+# uploadDocuments.js fica nos 10MB, dentro deste tecto); cada endpoint
+# continua a validar o seu próprio limite mais apertado onde aplicável.
+
 server:
   servlet:
     encoding:
@@ -98,8 +104,12 @@ kixima:
     from: ${EMAIL_FROM:notificacoes@kixima.co.ao}
     brevo-api-key: ${BREVO_API_KEY:}
   storage:
+    # 's3' ainda não portado para Java (SDK novo no pom.xml) — ver
+    # StorageService, M5: cai sempre no disco local, com um aviso alto no
+    # log (mesmo espírito do "S3 mal configurado" do Node), nunca silencioso.
     provider: ${STORAGE_PROVIDER:local}
     bucket: ${STORAGE_BUCKET:}
+    local-dir: ${STORAGE_LOCAL_DIR:uploads}
   db:
     # Tecto de segurança para listas sem paginação própria — equivalente ao
     # TETO_POR_OMISSAO/DB_MAX_ROWS de config/database.js. Ainda não é o

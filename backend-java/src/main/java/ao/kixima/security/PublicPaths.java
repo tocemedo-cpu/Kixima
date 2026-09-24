@@ -30,6 +30,12 @@ public class PublicPaths {
         exatos.add("/api/auth/2fa/verify");
         exatos.add("/api/auth/2fa/reenviar");
         exatos.add("/actuator/health");
+        // uploadsRoutes.js — `optionalAuthenticate`, não `authenticate`: o mesmo
+        // filtro que decide "público" também popula CurrentUserHolder quando um
+        // token válido vem no pedido (só os ramos de token AUSENTE/INVÁLIDO é que
+        // seguem sem utilizador) — por isso marcar como público aqui já reproduz
+        // "autenticação opcional", sem precisar de um segundo modo no filtro.
+        exatos.add("/api/uploads/*");
     }
 
     public void adicionar(String pathPattern) {

@@ -22,6 +22,9 @@ public interface ProductRepository extends JpaRepository<Product, String>, JpaSp
 
     Optional<Product> findBySlug(String slug);
 
+    /** Usado por UploadAccessService — imagem de capa de produto é sempre pública. */
+    boolean existsByImageUrl(String imageUrl);
+
     /** Espelha incrementView() — best-effort, um único UPDATE em vez de ler+gravar a entidade inteira. */
     @Modifying
     @Query("UPDATE Product p SET p.viewCount = p.viewCount + 1 WHERE p.id = :id")
