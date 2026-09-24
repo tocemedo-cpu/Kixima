@@ -23,13 +23,14 @@ import java.util.List;
 
 /**
  * Espelha o modelo Prisma `Invoice` (schema.prisma:1103-1176, tabela
- * `invoices`). ÂMBITO NESTE MARCO (M3c): os campos de negócio e a cadeia de
- * integridade local (serie/numeroNaSerie/hash*). As colunas AGT
- * (agtDocumentNo, agtRequestId, agtResultCode, agtErro, agtEstado) ficam de
- * fora do mapeamento — existem na tabela mas entram no M4, quando o domínio
- * AGT for portado (não bloqueiam `ddl-auto=validate`, só não são lidas/
- * escritas por este marco). `contract`/`consolidatedCallOffs` (call-off)
- * também ficam para quando o domínio Contract for portado.
+ * `invoices`). ÂMBITO: os campos de negócio, a cadeia de integridade local
+ * (serie/numeroNaSerie/hash*) e, desde o M4, as colunas AGT (agtDocumentNo,
+ * agtRequestId, agtResultCode, agtErro, agtEstado — ver AgtPayloadService).
+ * `agtErro`/`agtEstado` são `jsonb` na base — mapeadas como texto JSON
+ * bruto, mesmo padrão de Company.settings (M0/M1): um @Convert dedicado só
+ * entra quando algum domínio precisar de os ler/escrever estruturadamente.
+ * `contract`/`consolidatedCallOffs` (call-off) ficam para quando o domínio
+ * Contract for portado.
  */
 @Entity
 @Table(name = "invoices")
@@ -91,6 +92,23 @@ public class Invoice extends AbstractPersistableEntity<String> {
     @Column(name = "referencia_pagamento", unique = true)
     private String referenciaPagamento;
 
+    @Column(name = "agt_document_no")
+    private String agtDocumentNo;
+
+    @Column(name = "agt_request_id")
+    private String agtRequestId;
+
+    @Column(name = "agt_result_code")
+    private String agtResultCode;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "agt_erro")
+    private String agtErro;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "agt_estado")
+    private String agtEstado;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -140,6 +158,10 @@ public class Invoice extends AbstractPersistableEntity<String> {
 
     public String getPurchaseOrderId() {
         return purchaseOrderId;
+    }
+
+    public PurchaseOrder getPurchaseOrder() {
+        return purchaseOrder;
     }
 
     public BigDecimal getAmount() {
@@ -200,5 +222,53 @@ public class Invoice extends AbstractPersistableEntity<String> {
 
     public List<InvoiceLine> getLines() {
         return lines;
+    }
+
+    public Instant getAssinadaEm() {
+        return assinadaEm;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public String getAgtDocumentNo() {
+        return agtDocumentNo;
+    }
+
+    public void setAgtDocumentNo(String agtDocumentNo) {
+        this.agtDocumentNo = agtDocumentNo;
+    }
+
+    public String getAgtRequestId() {
+        return agtRequestId;
+    }
+
+    public void setAgtRequestId(String agtRequestId) {
+        this.agtRequestId = agtRequestId;
+    }
+
+    public String getAgtResultCode() {
+        return agtResultCode;
+    }
+
+    public void setAgtResultCode(String agtResultCode) {
+        this.agtResultCode = agtResultCode;
+    }
+
+    public String getAgtErro() {
+        return agtErro;
+    }
+
+    public void setAgtErro(String agtErro) {
+        this.agtErro = agtErro;
+    }
+
+    public String getAgtEstado() {
+        return agtEstado;
+    }
+
+    public void setAgtEstado(String agtEstado) {
+        this.agtEstado = agtEstado;
     }
 }

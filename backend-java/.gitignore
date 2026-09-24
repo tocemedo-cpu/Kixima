@@ -1,3 +1,8 @@
 target/
 *.class
 .mvn/
+
+# Chave privada JWS da AGT (dev local) — nunca comitar, mesma disciplina de
+# backend/src/chave/ no Node. kixima.agt.jws-private-key-path aponta para aqui.
+src/main/resources/chave/*
+!src/main/resources/chave/.gitkeep

@@ -1,5 +1,6 @@
 package ao.kixima.po;
 
+import ao.kixima.agt.AgtSandboxSubmissionService;
 import ao.kixima.catalog.Product;
 import ao.kixima.catalog.ProductRepository;
 import ao.kixima.common.error.BusinessRuleException;
@@ -23,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -69,12 +72,14 @@ public class PoService {
     private final FaturacaoService faturacaoService;
     private final ConciliacaoService conciliacaoService;
     private final ReferenceCounterService referenceCounterService;
+    private final AgtSandboxSubmissionService agtSandboxSubmissionService;
     private final int paymentSlaDays;
 
     public PoService(PurchaseOrderRepository purchaseOrderRepository, PurchaseOrderItemRepository purchaseOrderItemRepository,
                       ProductRepository productRepository, InvoiceRepository invoiceRepository,
                       InvoiceLineRepository invoiceLineRepository, TaxService taxService, FaturacaoService faturacaoService,
                       ConciliacaoService conciliacaoService, ReferenceCounterService referenceCounterService,
+                      AgtSandboxSubmissionService agtSandboxSubmissionService,
                       @Value("${kixima.business.payment-sla-days:7}") int paymentSlaDays) {
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderItemRepository = purchaseOrderItemRepository;
@@ -85,6 +90,7 @@ public class PoService {
         this.faturacaoService = faturacaoService;
         this.conciliacaoService = conciliacaoService;
         this.referenceCounterService = referenceCounterService;
+        this.agtSandboxSubmissionService = agtSandboxSubmissionService;
         this.paymentSlaDays = paymentSlaDays;
     }
 
@@ -291,7 +297,23 @@ public class PoService {
         }
 
         // TODO (M5/M6): notificationService.events.faturaGerada; eventBus.publish('invoice.issued', ...).
-        // TODO (M4): agtSandboxSubmissionService.submeter('FT', invoice.id, po.getSupplierCompanyId()).
+
+        // Submissão à Sandbox AGT (não-bloqueante, silenciosa sem credenciais) —
+        // espelha o `await agtSandboxSubmissionService.submeter(...)` do Node, que só
+        // corre DEPOIS do `prisma.$transaction(...)` fechar (documento já comitado).
+        // Aqui equivale a correr depois do COMMIT desta transacção Spring — nunca
+        // dentro dela, para uma falha de rede nunca poder reverter a fatura já
+        // emitida. `afterCommit` não corre em testes com rollback (@Transactional de
+        // teste) — correcto: nada foi comitado para submeter.
+        String invoiceIdParaAgt = invoice.getId();
+        String supplierCompanyIdParaAgt = po.getSupplierCompanyId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                agtSandboxSubmissionService.submeter("FT", invoiceIdParaAgt, supplierCompanyIdParaAgt);
+            }
+        });
+
         return po;
     }
 

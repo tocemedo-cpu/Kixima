@@ -77,12 +77,17 @@ kixima:
     withholding-rate: ${WITHHOLDING_RATE:0.065}
   agt:
     jws-private-key-base64: ${AGT_JWS_PRIVATE_KEY_BASE64:}
+    # Ficheiro local de desenvolvimento (nunca comitado) — mesmo caminho
+    # relativo que o Node usa para src/chave/chavePrivada.pem, só que a
+    # partir da raiz de backend-java/. Fallback quando a variável de
+    # ambiente acima não está definida.
+    jws-private-key-path: ${AGT_JWS_PRIVATE_KEY_PATH:src/main/resources/chave/chavePrivada.pem}
     software-validation-number: ${AGT_SOFTWARE_VALIDATION_NUMBER:}
-    software-id: ${AGT_SOFTWARE_ID:}
-    software-version: ${AGT_SOFTWARE_VERSION:}
+    software-id: ${AGT_SOFTWARE_ID:KIXIMA}
+    software-version: ${AGT_SOFTWARE_VERSION:1.0}
     nif: ${AGT_NIF:}
     establishment-number: ${AGT_ESTABLISHMENT_NUMBER:}
-    env: ${AGT_ENV:}
+    env: ${AGT_ENV:hml}
     sandbox-username: ${AGT_SANDBOX_USERNAME:}
     sandbox-password: ${AGT_SANDBOX_PASSWORD:}
   storage:

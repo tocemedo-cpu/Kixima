@@ -120,4 +120,8 @@ public class InvoiceLine extends AbstractPersistableEntity<String> {
     public BigDecimal getIvaAmount() {
         return ivaAmount;
     }
+
+    public String getIvaTaxCode() {
+        return ivaTaxCode;
+    }
 }
