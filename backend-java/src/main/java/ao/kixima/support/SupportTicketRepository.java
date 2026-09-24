@@ -3,10 +3,17 @@ package ao.kixima.support;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
 public interface SupportTicketRepository extends JpaRepository<SupportTicket, String> {
+
+    /** Espelha `OR: [{ companyId }, { userId }]` — feedbackService.opcoes/resolverAlvo(ATENDIMENTO). */
+    @Query("SELECT t FROM SupportTicket t WHERE t.companyId = :companyId OR t.userId = :userId ORDER BY t.createdAt DESC")
+    List<SupportTicket> findByCompanyIdOrUserIdOrderByCreatedAtDesc(@Param("companyId") String companyId,
+                                                                     @Param("userId") String userId, Pageable pageable);
 
     List<SupportTicket> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 

@@ -60,6 +60,8 @@ public class PublicPaths {
         adicionar("GET", "/api/supplier-development/fee");
         adicionar("POST", "/api/supplier-development/requests");
         adicionar("GET", "/api/supplier-development/requests/*/track");
+        // publicRoutes.js — a parede pública de avaliações, só leitura.
+        adicionar("GET", "/api/public/feedback");
     }
 
     /** Regista um caminho como público para TODOS os métodos HTTP. */
