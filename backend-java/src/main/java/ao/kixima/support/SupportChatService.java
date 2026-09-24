@@ -32,11 +32,11 @@ import static ao.kixima.security.AdminArea.SUPORTE;
  * que a página de Ajuda e o painel administrativo já usam. {@link #LABEL_ESTADO}
  * é só para apresentação (nunca gravado nem comparado em código).
  *
- * NÃO PORTADO (M5/M6): {@code realtimeService.emitToTicket}/
- * {@code setAutorizadores} — push imediato via Socket.IO/STOMP; cada
- * método aqui já grava tudo o que é preciso (fonte da verdade), só falta o
- * "empurrão" em tempo real, tal como NotificationService (mesma decisão,
- * já tomada no plano para M6).
+ * Tempo real (M6): {@code realtimeService.emitToTicket} é
+ * {@link RealtimeService#emitToTicket} (STOMP, depois do commit — cada
+ * método aqui grava primeiro, que é a fonte da verdade) e o autorizador de
+ * {@code support:join} é {@link #ticketComAcesso}, chamado por
+ * {@link ao.kixima.realtime.RealtimeAuthInterceptor} no SUBSCRIBE.
  */
 @Service
 public class SupportChatService {

@@ -179,9 +179,18 @@ kixima:
     integration-admin-token: ${INTEGRATION_ADMIN_TOKEN:}
   cors:
     origins: ${CORS_ORIGINS:}
+  events:
+    # Mesmas variáveis que eventBus.js — integração ERP (RabbitMQ) OPCIONAL e
+    # não-bloqueante: sem RABBITMQ_URL nada é publicado e o Kixima funciona igual.
+    url: ${RABBITMQ_URL:}
+    exchange: ${RABBITMQ_EXCHANGE:kixima.events}
 
 management:
   endpoints:
     web:
       exposure:
         include: health
+  health:
+    rabbit:
+      # O health do Node não depende do RabbitMQ (é opcional) — aqui também não.
+      enabled: false

@@ -40,10 +40,9 @@ import java.util.UUID;
  *
  * NÃO PORTADO NESTE MARCO (M5):
  * <ul>
- *   <li>{@code realtimeService.emitToUser} — push imediato via Socket.IO/
- *   STOMP; a notificação fica sempre gravada (fonte da verdade), só falta
- *   o "empurrão" em tempo real — entra no M6, junto com o resto de
- *   tempo real (decisão já tomada no plano).</li>
+ *   <li>({@code realtimeService.emitToUser} — portado no M6: push via STOMP
+ *   em {@link ao.kixima.realtime.RealtimeService}, adiado para depois do
+ *   commit; a notificação continua a ser a fonte da verdade.)</li>
  *   <li>{@code i18n/emails.js} — tradução do assunto/corpo do EMAIL para o
  *   idioma do destinatário; o email sai sempre em português por agora
  *   (a notificação in-app já era traduzida do lado do cliente, essa parte

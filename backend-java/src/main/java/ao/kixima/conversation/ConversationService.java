@@ -47,9 +47,10 @@ import java.util.UUID;
  * recusam-se explicitamente (503) em vez de fingir suporte — os
  * respectivos domínios ainda não existem em Java.
  *
- * NÃO PORTADO: {@code realtimeService.emitToConversation}/
- * {@code setAutorizadores} (M6, mesma decisão de NotificationService/
- * SupportChatService).
+ * Tempo real (M6): {@code realtimeService.emitToConversation} é
+ * {@link RealtimeService#emitToConversation} (STOMP, depois do commit) e o
+ * autorizador de {@code conversation:join} é {@link #conversationComAcesso},
+ * chamado por {@link ao.kixima.realtime.RealtimeAuthInterceptor} no SUBSCRIBE.
  */
 @Service
 public class ConversationService {

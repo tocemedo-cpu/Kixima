@@ -11,6 +11,8 @@ import ao.kixima.common.reference.ReferenceCounterService;
 import ao.kixima.company.Company;
 import ao.kixima.faturacao.FaturacaoService;
 import ao.kixima.invoice.ConciliacaoService;
+import ao.kixima.messaging.EventBus;
+import ao.kixima.messaging.EventPayloads;
 import ao.kixima.invoice.Invoice;
 import ao.kixima.invoice.InvoiceLine;
 import ao.kixima.invoice.InvoiceLineRepository;
@@ -49,8 +51,11 @@ import java.util.UUID;
  *   <li>ERP DOA Approval (erpConfigService/planService) — toda PO nasce
  *       {@code erpManaged=false}. {@code aplicarDecisaoErp}/
  *       {@code aplicarPagamentoErp} não portados.</li>
- *   <li>eventBus.publish / notificationService.events.* — pendentes M5/M6;
- *       os pontos onde o Node os chama ficam marcados com TODO.</li>
+ *   <li>eventBus.publish — {@code purchase_order.approved}, {@code invoice.issued}
+ *       e {@code goods.received} são publicados (M6, ver EventBus);
+ *       {@code purchase_order.approval_requested} + ErpSyncLog ficam com as
+ *       POs ERP-managed, e {@code payment.completed} com o domínio de
+ *       pagamento — ambos por portar.</li>
  *   <li>agtSandboxSubmissionService.submeter('FT', ...) — pendente M4.</li>
  * </ul>
  * O estado da PO, a matemática de imposto, a cadeia de hash da fatura, a
@@ -71,6 +76,7 @@ public class PoService {
     private final ReferenceCounterService referenceCounterService;
     private final AgtSandboxSubmissionService agtSandboxSubmissionService;
     private final NotificationService notificationService;
+    private final EventBus eventBus;
     private final int paymentSlaDays;
 
     public PoService(PurchaseOrderRepository purchaseOrderRepository, PurchaseOrderItemRepository purchaseOrderItemRepository,
@@ -78,7 +84,9 @@ public class PoService {
                       InvoiceLineRepository invoiceLineRepository, TaxService taxService, FaturacaoService faturacaoService,
                       ConciliacaoService conciliacaoService, ReferenceCounterService referenceCounterService,
                       AgtSandboxSubmissionService agtSandboxSubmissionService, NotificationService notificationService,
+                      EventBus eventBus,
                       @Value("${kixima.business.payment-sla-days:7}") int paymentSlaDays) {
+        this.eventBus = eventBus;
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderItemRepository = purchaseOrderItemRepository;
         this.productRepository = productRepository;
@@ -236,7 +244,9 @@ public class PoService {
         po.setApprovedAt(Instant.now());
         notificationService.poAprovadaOuRejeitada(po);
         notificationService.poRecebidaPeloFornecedor(po);
-        // TODO (M6): eventBus.publish('purchase_order.approved', ...) — RabbitMQ, não-bloqueante.
+        // Evento para a integração ERP (não-bloqueante; enviado depois do commit).
+        eventBus.publish("purchase_order.approved", EventPayloads.purchaseOrderApproved(po, po.getApprovedAt()),
+                "po-approved:" + po.getId(), po.getBuyerCompanyId());
         return po;
     }
 
@@ -322,7 +332,9 @@ public class PoService {
         }
 
         notificationService.faturaGerada(invoice, po);
-        // TODO (M6): eventBus.publish('invoice.issued', ...) — RabbitMQ, não-bloqueante.
+        // Evento para a integração ERP (não-bloqueante; enviado depois do commit).
+        eventBus.publish("invoice.issued", EventPayloads.invoiceIssued(invoice, po),
+                "invoice-issued:" + invoice.getId(), po.getBuyerCompanyId());
 
         // Submissão à Sandbox AGT (não-bloqueante, silenciosa sem credenciais) —
         // espelha o `await agtSandboxSubmissionService.submeter(...)` do Node, que só
@@ -414,7 +426,9 @@ public class PoService {
         po.setReceivedAt(Instant.now());
         po.setReceptionStatus(receptionStatus);
 
-        // TODO (M6): eventBus.publish('goods.received', ...) — não-bloqueante.
+        // Evento para a integração ERP (receção de mercadoria) — não-bloqueante; enviado depois do commit.
+        eventBus.publish("goods.received", EventPayloads.goodsReceived(po, po.getReceivedAt()),
+                "goods-received:" + po.getId(), po.getBuyerCompanyId());
 
         if (!body.conforme()) {
             notificationService.rececaoComDivergencia(po);
