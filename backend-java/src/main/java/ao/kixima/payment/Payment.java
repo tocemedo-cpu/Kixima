@@ -115,6 +115,14 @@ public class Payment extends AbstractPersistableEntity<String> {
         this.assinadaEm = certificacao.assinadaEm();
     }
 
+    /** Espelha o `payment.create` de conciliacaoService.tentarConciliar — canal REFERENCIA_BANCARIA, sem comprovativo. */
+    public static Payment conciliado(String id, String invoiceId, BigDecimal amount, String currency, String processedById,
+                                     String reference, Instant processedAt, FaturacaoService.Certificacao certificacao) {
+        Payment p = new Payment(id, invoiceId, amount, currency, processedById, reference, null, null, processedAt, certificacao);
+        p.canal = CanalPagamento.REFERENCIA_BANCARIA;
+        return p;
+    }
+
     public String getId() {
         return id;
     }

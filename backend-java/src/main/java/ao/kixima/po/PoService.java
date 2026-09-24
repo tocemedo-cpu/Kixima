@@ -10,7 +10,7 @@ import ao.kixima.common.error.NotFoundException;
 import ao.kixima.common.reference.ReferenceCounterService;
 import ao.kixima.company.Company;
 import ao.kixima.faturacao.FaturacaoService;
-import ao.kixima.invoice.ConciliacaoService;
+import ao.kixima.conciliacao.ConciliacaoService;
 import ao.kixima.messaging.EventBus;
 import ao.kixima.messaging.EventPayloads;
 import ao.kixima.invoice.Invoice;
