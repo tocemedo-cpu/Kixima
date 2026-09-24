@@ -101,6 +101,17 @@ public class PoService {
     @Transactional
     public PurchaseOrder createPurchaseOrder(String buyerCompanyId, String supplierCompanyId, String createdById,
                                               List<ItemPedido> items) {
+        return createPurchaseOrder(buyerCompanyId, supplierCompanyId, createdById, items, "HUMANO");
+    }
+
+    /**
+     * {@code createdBySource} só marca a origem ("HUMANO"/"ROBOT") para a
+     * auditoria/interface distinguirem — o PO Robot chama isto TAL E QUAL,
+     * sem via paralela: a PO nasce em AGUARDANDO_APROVACAO como qualquer outra.
+     */
+    @Transactional
+    public PurchaseOrder createPurchaseOrder(String buyerCompanyId, String supplierCompanyId, String createdById,
+                                              List<ItemPedido> items, String createdBySource) {
         if (items == null || items.isEmpty()) {
             throw new BusinessRuleException("A ordem de compra precisa de pelo menos um item.");
         }
@@ -159,7 +170,7 @@ public class PoService {
 
         PurchaseOrder po = new PurchaseOrder(UUID.randomUUID().toString(), reference, buyerCompanyId, supplierCompanyId,
                 createdById, PoStatus.AGUARDANDO_APROVACAO, impostos.gross(), impostos.net(), impostos.tax(),
-                impostos.withheld(), false, false, null, "HUMANO", null, agora, agora);
+                impostos.withheld(), false, false, null, createdBySource, null, agora, agora);
         purchaseOrderRepository.save(po);
 
         for (LineItem li : lineItems) {

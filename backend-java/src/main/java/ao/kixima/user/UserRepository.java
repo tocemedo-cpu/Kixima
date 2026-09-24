@@ -50,6 +50,9 @@ public interface UserRepository extends JpaRepository<User, String> {
             + "WHERE u.mfaCodeExpiraEm IS NOT NULL AND u.mfaCodeExpiraEm < :ate")
     int limparCodigos2faExpirados(@Param("ate") Instant ate);
 
+    /** O Company Admin mais antigo da empresa — em nome de quem o PO Robot cria a PO (poRoboService.executarRegra). */
+    Optional<User> findFirstByCompanyIdAndRoleAndActiveTrueOrderByCreatedAtAsc(String companyId, PersonaRole role);
+
     /** Espelha mfaLembreteService.pendentes — contas com poder que ainda não têm 2FA. */
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.company WHERE u.role IN :roles AND u.active = true "
             + "AND u.totpEnabledAt IS NULL ORDER BY u.name ASC")

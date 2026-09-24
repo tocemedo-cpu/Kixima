@@ -14,4 +14,16 @@ public interface PurchaseOrderItemRepository extends JpaRepository<PurchaseOrder
     @Query("SELECT i FROM PurchaseOrderItem i JOIN FETCH i.product p JOIN i.purchaseOrder po "
             + "WHERE i.productId = :productId AND (po.buyerCompanyId = :companyId OR po.supplierCompanyId = :companyId)")
     List<PurchaseOrderItem> findByProductIdEComEmpresa(@Param("productId") String productId, @Param("companyId") String companyId, Pageable pageable);
+
+    /**
+     * Espelha o `findMany` de categoryAnalyticsService.historicoMensalPorProduto —
+     * compra reconhecida de um produto por uma empresa num período; devolve
+     * [po.createdAt, quantity] por item, agrupado por mês do lado Java.
+     */
+    @Query("SELECT po.createdAt, i.quantity FROM PurchaseOrderItem i JOIN i.purchaseOrder po "
+            + "WHERE i.productId = :productId AND po.buyerCompanyId = :companyId AND po.status IN :status "
+            + "AND po.createdAt BETWEEN :de AND :ate")
+    List<Object[]> historicoDeCompra(@Param("companyId") String companyId, @Param("productId") String productId,
+                                     @Param("status") List<PoStatus> status, @Param("de") java.time.Instant de,
+                                     @Param("ate") java.time.Instant ate);
 }

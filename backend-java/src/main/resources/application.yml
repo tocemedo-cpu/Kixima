@@ -88,6 +88,13 @@ kixima:
       enabled: ${KIXIMA_JOB_EXPIRACAO_SUBSCRICOES_ENABLED:false}
     lembretes-2fa:
       enabled: ${KIXIMA_JOB_LEMBRETES_2FA_ENABLED:false}
+    po-robot:
+      enabled: ${KIXIMA_JOB_PO_ROBOT_ENABLED:false}
+  addons:
+    # Mesmas variáveis que addonService.js — preço configurável por ambiente, nunca hardcoded.
+    po-robot:
+      valor-usd: ${KIXIMA_PRECO_ADDON_PO_ROBOT_USD:200}
+      periodo: ${KIXIMA_PRECO_ADDON_PO_ROBOT_PERIODO:MENSAL}
   auth:
     jwt-secret: ${JWT_SECRET:}
     jwt-expires-in: ${JWT_EXPIRES_IN:1d}
@@ -96,6 +103,8 @@ kixima:
   business:
     payment-sla-days: ${PAYMENT_SLA_DAYS:7}
     policy-expiry-alert-days: ${POLICY_EXPIRY_ALERT_DAYS:30}
+    # Câmbio USD→AOA com que se aferem limiares definidos em dólares (platformFeeService.fxRate).
+    usd-aoa-rate: ${KIXIMA_USD_AOA_RATE:900}
   tax:
     iva-rate: ${IVA_RATE:0.14}
     withholding-rate: ${WITHHOLDING_RATE:0.065}
