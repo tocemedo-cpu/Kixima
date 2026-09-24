@@ -44,6 +44,14 @@ spring:
     baseline-version: 0
 
 server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+      # Sem isto, o Content-Type de respostas JSON sai sem "charset=utf-8" e o
+      # MockMvc (e alguns clientes) descodifica acentos mal — o Express do
+      # Node já assume UTF-8 em toda a parte por omissão.
   port: ${PORT:4001}
   # Porta diferente da do Node (4000) por omissão, para os dois poderem
   # correr lado a lado no mesmo ambiente local durante o desenvolvimento.
@@ -59,6 +67,8 @@ kixima:
   auth:
     jwt-secret: ${JWT_SECRET:}
     jwt-expires-in: ${JWT_EXPIRES_IN:1d}
+    mfa-required-roles: ${MFA_REQUIRED_ROLES:ADMIN_SISTEMA,COMPANY_ADMIN}
+    mfa-enforce-from: ${MFA_ENFORCE_FROM:}
   business:
     payment-sla-days: ${PAYMENT_SLA_DAYS:7}
     policy-expiry-alert-days: ${POLICY_EXPIRY_ALERT_DAYS:30}

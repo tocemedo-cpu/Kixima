@@ -66,6 +66,13 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
+    <!-- AOP — RbacAspect intercepta @RequireRole/@RequirePermission/@RequireSuperAdmin,
+         equivalente à composição de middlewares requireRole()/requirePermission()/
+         requireSuperAdmin() do rbac.js do Node. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-aop</artifactId>
+    </dependency>
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-api</artifactId>

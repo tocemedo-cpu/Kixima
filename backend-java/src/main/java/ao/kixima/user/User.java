@@ -294,4 +294,12 @@ public class User {
     public Instant getUpdatedAt() {
         return updatedAt;
     }
+
+    public BigDecimal getApprovalCap() {
+        return approvalCap;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
 }
