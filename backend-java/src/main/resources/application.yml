@@ -86,6 +86,8 @@ kixima:
       enabled: ${KIXIMA_JOB_EXPIRACAO_APOLICES_ENABLED:false}
     expiracao-subscricoes:
       enabled: ${KIXIMA_JOB_EXPIRACAO_SUBSCRICOES_ENABLED:false}
+    lembretes-2fa:
+      enabled: ${KIXIMA_JOB_LEMBRETES_2FA_ENABLED:false}
   auth:
     jwt-secret: ${JWT_SECRET:}
     jwt-expires-in: ${JWT_EXPIRES_IN:1d}

@@ -46,6 +46,16 @@ public class MfaPolicyService {
         return mfaEnforceFrom != null && !agora.isBefore(mfaEnforceFrom);
     }
 
+    /** Os perfis obrigados a 2FA, como enum — usado por {@link MfaReminderService#pendentes()}. */
+    public List<PersonaRole> rolesObrigados() {
+        return mfaRequiredRoles.stream().map(PersonaRole::valueOf).toList();
+    }
+
+    /** {@code null} enquanto MFA_ENFORCE_FROM não estiver definida (ou mal escrita) — sem prazo, não há nada a lembrar. */
+    public Instant mfaEnforceFrom() {
+        return mfaEnforceFrom;
+    }
+
     public record Estado(boolean pendente, boolean restrita, Instant prazo) {
     }
 

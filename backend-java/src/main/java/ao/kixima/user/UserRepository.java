@@ -49,4 +49,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("UPDATE User u SET u.mfaCodeHash = NULL, u.mfaCodeExpiraEm = NULL, u.mfaCodeTentativas = 0 "
             + "WHERE u.mfaCodeExpiraEm IS NOT NULL AND u.mfaCodeExpiraEm < :ate")
     int limparCodigos2faExpirados(@Param("ate") Instant ate);
+
+    /** Espelha mfaLembreteService.pendentes — contas com poder que ainda não têm 2FA. */
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.company WHERE u.role IN :roles AND u.active = true "
+            + "AND u.totpEnabledAt IS NULL ORDER BY u.name ASC")
+    List<User> findMfaPendentes(@Param("roles") List<PersonaRole> roles);
 }
