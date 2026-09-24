@@ -409,8 +409,16 @@ public class Product extends AbstractPersistableEntity<String> {
         return rating;
     }
 
+    public void setRating(Float rating) {
+        this.rating = rating;
+    }
+
     public int getReviewCount() {
         return reviewCount;
+    }
+
+    public void setReviewCount(int reviewCount) {
+        this.reviewCount = reviewCount;
     }
 
     public String getImageUrl() {
