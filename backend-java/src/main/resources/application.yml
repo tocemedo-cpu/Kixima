@@ -85,6 +85,13 @@ kixima:
   storage:
     provider: ${STORAGE_PROVIDER:local}
     bucket: ${STORAGE_BUCKET:}
+  db:
+    # Tecto de segurança para listas sem paginação própria — equivalente ao
+    # TETO_POR_OMISSAO/DB_MAX_ROWS de config/database.js. Ainda não é o
+    # interceptor genérico que se aplica a TODAS as leituras como no Node
+    # (isso pede um mecanismo cross-cutting, ver TODO no plano de migração);
+    # por agora aplica-se explicitamente em CatalogService.listCatalog.
+    max-rows: ${DB_MAX_ROWS:1000}
   cors:
     origins: ${CORS_ORIGINS:}
 

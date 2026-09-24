@@ -206,6 +206,18 @@ public class Company {
         this.verified = verified;
     }
 
+    public String getLogoUrl() {
+        return logoUrl;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
     public CompanySize getSize() {
         return size;
     }
