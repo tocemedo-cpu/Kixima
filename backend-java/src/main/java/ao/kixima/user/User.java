@@ -188,6 +188,10 @@ public class User extends AbstractPersistableEntity<String> {
         this.companyId = companyId;
     }
 
+    public String getLocale() {
+        return locale;
+    }
+
     public Company getCompany() {
         return company;
     }

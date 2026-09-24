@@ -12,9 +12,10 @@ import java.time.Instant;
 
 /**
  * Espelha o modelo Prisma `AuditLog` (schema.prisma:1838-1861, tabela
- * `audit_logs`). Trilho APPEND-ONLY — este marco só precisa do caminho de
- * escrita (ver {@link AuditService}); a listagem paginada para o Admin do
- * Sistema (`GET /api/admin/audit-logs`) entra no M5.
+ * `audit_logs`). Trilho APPEND-ONLY — nenhum caminho de update/delete,
+ * mesmo princípio do Node. Escrita: {@link AuditService#recordSafe}.
+ * Leitura paginada/filtrável para o Admin do Sistema:
+ * {@link AuditService#list}.
  */
 @Entity
 @Table(name = "audit_logs")
@@ -78,5 +79,49 @@ public class AuditLog extends AbstractPersistableEntity<String> {
 
     public String getId() {
         return id;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public String getEntityType() {
+        return entityType;
+    }
+
+    public String getEntityId() {
+        return entityId;
+    }
+
+    public String getEntityRef() {
+        return entityRef;
+    }
+
+    public String getActorId() {
+        return actorId;
+    }
+
+    public String getActorName() {
+        return actorName;
+    }
+
+    public String getActorRole() {
+        return actorRole;
+    }
+
+    public String getCompanyId() {
+        return companyId;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public String getDetail() {
+        return detail;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 }

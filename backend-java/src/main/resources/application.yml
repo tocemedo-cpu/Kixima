@@ -90,6 +90,13 @@ kixima:
     env: ${AGT_ENV:hml}
     sandbox-username: ${AGT_SANDBOX_USERNAME:}
     sandbox-password: ${AGT_SANDBOX_PASSWORD:}
+  email:
+    # 'console' (log), 'brevo'/'brevo-api' (API HTTP) — mesmas opções do Node.
+    # 'smtp' ainda não portado (ver EmailDispatchService, M5): cai no aviso
+    # "provider desconhecido", nunca bloqueia quem chama.
+    provider: ${EMAIL_PROVIDER:console}
+    from: ${EMAIL_FROM:notificacoes@kixima.co.ao}
+    brevo-api-key: ${BREVO_API_KEY:}
   storage:
     provider: ${STORAGE_PROVIDER:local}
     bucket: ${STORAGE_BUCKET:}

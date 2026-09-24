@@ -16,11 +16,10 @@ import ao.kixima.invoice.InvoiceLine;
 import ao.kixima.invoice.InvoiceLineRepository;
 import ao.kixima.invoice.InvoiceRepository;
 import ao.kixima.invoice.InvoiceStatus;
+import ao.kixima.notification.NotificationService;
 import ao.kixima.security.CurrentUser;
 import ao.kixima.security.PersonaRole;
 import ao.kixima.tax.TaxService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,8 +60,6 @@ import java.util.UUID;
 @Service
 public class PoService {
 
-    private static final Logger log = LoggerFactory.getLogger(PoService.class);
-
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderItemRepository purchaseOrderItemRepository;
     private final ProductRepository productRepository;
@@ -73,13 +70,14 @@ public class PoService {
     private final ConciliacaoService conciliacaoService;
     private final ReferenceCounterService referenceCounterService;
     private final AgtSandboxSubmissionService agtSandboxSubmissionService;
+    private final NotificationService notificationService;
     private final int paymentSlaDays;
 
     public PoService(PurchaseOrderRepository purchaseOrderRepository, PurchaseOrderItemRepository purchaseOrderItemRepository,
                       ProductRepository productRepository, InvoiceRepository invoiceRepository,
                       InvoiceLineRepository invoiceLineRepository, TaxService taxService, FaturacaoService faturacaoService,
                       ConciliacaoService conciliacaoService, ReferenceCounterService referenceCounterService,
-                      AgtSandboxSubmissionService agtSandboxSubmissionService,
+                      AgtSandboxSubmissionService agtSandboxSubmissionService, NotificationService notificationService,
                       @Value("${kixima.business.payment-sla-days:7}") int paymentSlaDays) {
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.purchaseOrderItemRepository = purchaseOrderItemRepository;
@@ -91,6 +89,7 @@ public class PoService {
         this.conciliacaoService = conciliacaoService;
         this.referenceCounterService = referenceCounterService;
         this.agtSandboxSubmissionService = agtSandboxSubmissionService;
+        this.notificationService = notificationService;
         this.paymentSlaDays = paymentSlaDays;
     }
 
@@ -134,6 +133,11 @@ public class PoService {
                 .toList());
 
         // Stock: verificado E decrementado atomicamente por item, na mesma transação da criação da PO.
+        // Aviso de stock baixo só na TRANSIÇÃO (mesmo critério de catalogService.createStockMovement/
+        // updateStock, ainda não portados) — recolhido aqui, disparado só depois de a PO existir.
+        record AvisoEstoqueBaixo(Product produto, int restante) {
+        }
+        List<AvisoEstoqueBaixo> avisosEstoqueBaixo = new java.util.ArrayList<>();
         for (LineItem li : lineItems) {
             Product produto = products.stream().filter(p -> p.getId().equals(li.productId())).findFirst().orElseThrow();
             if (produto.getStockQuantity() == null) continue; // null = não rastreado, sem limite.
@@ -143,7 +147,11 @@ public class PoService {
                 throw new BusinessRuleException(
                         "Stock insuficiente para \"" + produto.getName() + "\": pediu " + li.quantity() + ", há " + atual + " em stock.");
             }
-            // TODO (M5): notificationService.events.estoqueBaixo — aviso só na transição, ver catalogService.updateStock.
+            Integer minStock = produto.getMinStock();
+            int restante = produto.getStockQuantity() - li.quantity();
+            if (minStock != null && produto.getStockQuantity() > minStock && restante <= minStock) {
+                avisosEstoqueBaixo.add(new AvisoEstoqueBaixo(produto, restante));
+            }
         }
 
         String reference = referenceCounterService.nextReference("PO", "purchaseOrder");
@@ -164,8 +172,12 @@ public class PoService {
             po.getItems().add(item);
         }
 
-        // TODO (M5/M6): notificationService.events.poAguardaAprovacao(po) — a Company Admin da compradora.
-        log.debug("(pendente M5) notificaria poAguardaAprovacao para {}", reference);
+        for (var aviso : avisosEstoqueBaixo) {
+            notificationService.estoqueBaixo(aviso.produto().getSupplierId(), aviso.produto().getId(),
+                    aviso.produto().getName(), aviso.restante(), aviso.produto().getMinStock());
+        }
+
+        notificationService.poAguardaAprovacao(po);
         return po;
     }
 
@@ -211,7 +223,9 @@ public class PoService {
         po.setStatus(PoStatus.APROVADA);
         po.setApprovedById(approverId);
         po.setApprovedAt(Instant.now());
-        // TODO (M5/M6): notificationService.events.poAprovadaOuRejeitada / poRecebidaPeloFornecedor; eventBus.publish('purchase_order.approved', ...).
+        notificationService.poAprovadaOuRejeitada(po);
+        notificationService.poRecebidaPeloFornecedor(po);
+        // TODO (M6): eventBus.publish('purchase_order.approved', ...) — RabbitMQ, não-bloqueante.
         return po;
     }
 
@@ -236,7 +250,7 @@ public class PoService {
         po.setApprovedById(approverId);
         po.setRejectedAt(Instant.now());
         po.setRejectionReason(reason);
-        // TODO (M5): notificationService.events.poAprovadaOuRejeitada.
+        notificationService.poAprovadaOuRejeitada(po);
         return po;
     }
 
@@ -296,7 +310,8 @@ public class PoService {
                     l.productCode(), l.description(), l.quantity(), l.unitPrice(), l.netAmount(), l.ivaAmount(), acceptedAt));
         }
 
-        // TODO (M5/M6): notificationService.events.faturaGerada; eventBus.publish('invoice.issued', ...).
+        notificationService.faturaGerada(invoice, po);
+        // TODO (M6): eventBus.publish('invoice.issued', ...) — RabbitMQ, não-bloqueante.
 
         // Submissão à Sandbox AGT (não-bloqueante, silenciosa sem credenciais) —
         // espelha o `await agtSandboxSubmissionService.submeter(...)` do Node, que só
@@ -329,7 +344,7 @@ public class PoService {
         po.setStatus(PoStatus.RECUSADA_FORNECEDOR);
         po.setRefusedAt(Instant.now());
         po.setRefusalReason(reason);
-        // TODO (M5): notificationService.events.poRecusadaPeloFornecedor.
+        notificationService.poRecusadaPeloFornecedor(po);
         return po;
     }
 
@@ -349,7 +364,7 @@ public class PoService {
         }
         po.setStatus(PoStatus.EM_EXECUCAO);
         po.setDispatchedAt(Instant.now());
-        // TODO (M5): notificationService.events.entregaDespachada.
+        notificationService.entregaDespachada(po);
         return po;
     }
 
@@ -364,7 +379,7 @@ public class PoService {
         }
         po.setStatus(PoStatus.ENTREGUE);
         po.setDeliveredAt(Instant.now());
-        // TODO (M5): notificationService.events.poEntregue.
+        notificationService.poEntregue(po);
         return po;
     }
 
@@ -391,13 +406,13 @@ public class PoService {
         // TODO (M6): eventBus.publish('goods.received', ...) — não-bloqueante.
 
         if (!body.conforme()) {
-            // TODO (M5): notificationService.events.rececaoComDivergencia.
+            notificationService.rececaoComDivergencia(po);
             return po;
         }
 
         // 8. Sistema fecha a ordem automaticamente quando a receção é conforme.
         po.setStatus(PoStatus.CONCLUIDA);
-        // TODO (M5): notificationService.events.poRecebidaConforme.
+        notificationService.poRecebidaConforme(po);
         return po;
     }
 
@@ -427,7 +442,7 @@ public class PoService {
         po.setDivergenceResolution(body.outcome());
         po.setDivergenceResolutionNotes(body.notes());
         po.setDivergenceResolvedAt(Instant.now());
-        // TODO (M5): notificationService.events.divergenciaResolvida.
+        notificationService.divergenciaResolvida(po);
         return po;
     }
 }
