@@ -272,6 +272,14 @@ public class Company extends AbstractPersistableEntity<String> {
         this.planoValidoAte = planoValidoAte;
     }
 
+    public String getUltimoAvisoSubscricaoTier() {
+        return ultimoAvisoSubscricaoTier;
+    }
+
+    public void setUltimoAvisoSubscricaoTier(String ultimoAvisoSubscricaoTier) {
+        this.ultimoAvisoSubscricaoTier = ultimoAvisoSubscricaoTier;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }

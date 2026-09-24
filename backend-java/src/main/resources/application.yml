@@ -84,6 +84,8 @@ kixima:
       enabled: ${KIXIMA_JOB_RETENCAO_ENABLED:false}
     expiracao-apolices:
       enabled: ${KIXIMA_JOB_EXPIRACAO_APOLICES_ENABLED:false}
+    expiracao-subscricoes:
+      enabled: ${KIXIMA_JOB_EXPIRACAO_SUBSCRICOES_ENABLED:false}
   auth:
     jwt-secret: ${JWT_SECRET:}
     jwt-expires-in: ${JWT_EXPIRES_IN:1d}

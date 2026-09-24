@@ -2,6 +2,11 @@ package ao.kixima.company;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface CompanyRepository extends JpaRepository<Company, String> {
     boolean existsByTaxId(String taxId);
+
+    /** Espelha o `findMany({ where: { planoValidoAte: { not: null } } })` de assinaturaService.enviarAvisosDeExpiracao. */
+    List<Company> findByPlanoValidoAteIsNotNull();
 }

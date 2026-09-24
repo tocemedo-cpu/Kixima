@@ -207,4 +207,20 @@ public class NotificationService {
                         + r.getAccessFeeUsd() + " USD emitida na submissão — por receber.",
                 NotificationChannel.IN_APP_EMAIL, "SupplierDevRequest", r.getId());
     }
+
+    private static final java.util.Map<String, String> MENSAGENS_SUBSCRICAO_A_EXPIRAR = java.util.Map.of(
+            "D30", "A subscrição da sua empresa vence em 30 dias.",
+            "D7", "A subscrição da sua empresa vence em 7 dias. Renove para continuar a utilizar todos os recursos do plano.",
+            "D3", "A subscrição da sua empresa vence em 3 dias. Renove para não perder acesso aos recursos pagos.",
+            "D1", "A subscrição da sua empresa vence amanhã. Renove hoje para não interromper o serviço.",
+            "D0", "A subscrição da sua empresa vence hoje. Envie o comprovativo de pagamento para não interromper o serviço.",
+            "GRACE_INICIO", "A subscrição da sua empresa expirou. Os seus dados continuam seguros — envie o comprovativo de pagamento para renovar o acesso aos recursos pagos.",
+            "GRACE_META", "A subscrição da sua empresa continua por regularizar. Os seus dados continuam seguros, mas os recursos pagos ficam indisponíveis em breve sem renovação.");
+
+    public void subscricaoAExpirar(Company company, String tier) {
+        String mensagem = MENSAGENS_SUBSCRICAO_A_EXPIRAR.getOrDefault(tier, MENSAGENS_SUBSCRICAO_A_EXPIRAR.get("D30"));
+        notifyUsersByRole(company.getId(), List.of(PersonaRole.COMPANY_ADMIN, PersonaRole.FINANCEIRO),
+                NotificationType.SUBSCRICAO_A_EXPIRAR, "Subscrição a vencer", mensagem,
+                NotificationChannel.IN_APP_EMAIL, null, null);
+    }
 }
