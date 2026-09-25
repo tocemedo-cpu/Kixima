@@ -1,0 +1,241 @@
+@if (error() && !po()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!po()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px" (click)="navigateBack()">← Voltar</button>
+
+    <div class="page-header">
+      <div>
+        <h1 class="mono" style="font-size:22px">{{ po()!.reference }}</h1>
+        <p>
+          <app-badge [tone]="statusInfo?.tone">{{ statusInfo?.label }}</app-badge>
+          @if (po()!.isCallOff) {
+            <span style="margin-left:8px"><app-badge tone="info">Call-off</app-badge></span>
+          }
+          @if (po()!.erpManaged) {
+            <span style="margin-left:8px"><app-badge tone="info">Aprovação via ERP</app-badge></span>
+          }
+        </p>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--navy-900)">
+        {{ formatMoney(po()!.totalAmount, po()!.currency) }}
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" (click)="verPdfPo()">Visualizar PDF (PO)</button>
+      <button class="btn btn-ghost btn-sm" (click)="baixarPdfPo()">Baixar PDF (PO)</button>
+      @if (po()!.invoice) {
+        <button class="btn btn-ghost btn-sm" (click)="verPdfFatura()">Visualizar PDF (Fatura)</button>
+        <button class="btn btn-ghost btn-sm" (click)="baixarPdfFatura()">Baixar PDF (Fatura)</button>
+      }
+    </div>
+
+    <app-error-banner [message]="error()"></app-error-banner>
+    <app-success-banner [message]="success()"></app-success-banner>
+
+    <div class="grid-cols grid-2" style="align-items:start">
+      <div class="card card-pad" style="margin-bottom:16px">
+        <strong style="font-size:13.5px">Itens</strong>
+        <div class="bz-scroll-x">
+          <table style="margin-top:10px">
+            <thead><tr><th>Produto</th><th>Qtd.</th><th>Preço unit.</th><th>Total</th></tr></thead>
+            <tbody>
+              @for (item of po()!.items; track item.id) {
+                <tr>
+                  <td>{{ item.product?.name || item.productId }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td class="r">{{ formatMoney(item.unitPrice, po()!.currency) }}</td>
+                  <td class="r">{{ formatMoney(item.lineTotal, po()!.currency) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card card-pad" style="margin-bottom:16px">
+        <strong style="font-size:13.5px">Pagamento garantido</strong>
+        <div style="margin-top:16px;font-size:12.5px;color:var(--ink-600);display:grid;gap:6px">
+          <div>Emitida em: {{ formatDate(po()!.createdAt) }}</div>
+          @if (po()!.approvedAt) { <div>Aprovada em: {{ formatDate(po()!.approvedAt) }}</div> }
+          @if (po()!.acceptedAt) { <div>Aceite pelo fornecedor em: {{ formatDate(po()!.acceptedAt) }}</div> }
+          @if (po()!.dispatchedAt) { <div>Despachada em: {{ formatDate(po()!.dispatchedAt) }}</div> }
+          @if (po()!.deliveredAt) { <div>Entregue em: {{ formatDate(po()!.deliveredAt) }}</div> }
+          @if (po()!.receivedAt) { <div>Receção confirmada em: {{ formatDate(po()!.receivedAt) }} ({{ po()!.receptionStatus }})</div> }
+          @if (po()!.divergenceResolvedAt) {
+            <div>
+              Divergência resolvida em: {{ formatDate(po()!.divergenceResolvedAt) }}
+              ({{ po()!.divergenceResolution === 'REPOSICAO' ? 'reposição solicitada' : 'entrega aceite' }})
+              @if (po()!.divergenceResolutionNotes) { — {{ po()!.divergenceResolutionNotes }} }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (po()!.invoice) {
+      <div class="card card-pad" style="margin-bottom:16px">
+        <strong style="font-size:13.5px">Notas de crédito</strong>
+        @if ((po()!.invoice!.creditNotes || []).length) {
+          <ul style="margin-top:10px;padding-left:18px">
+            @for (n of po()!.invoice!.creditNotes; track n.id) {
+              <li style="font-size:12.5px;margin-bottom:4px">
+                <span class="mono">{{ n.serie && n.numeroNaSerie ? (n.serie + '/' + n.numeroNaSerie) : n.reference }}</span>
+                — {{ formatMoney(n.amount, po()!.invoice!.currency) }} — {{ n.motivo }} ({{ formatDate(n.issuedAt) }})
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="helptext" style="margin-top:8px">Sem notas de crédito emitidas para esta fatura.</p>
+        }
+
+        @if (canCreditNote && porCreditar > 0) {
+          <div style="margin-top:12px">
+            @if (!showCreditNote() && !showAnular()) {
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-ghost btn-sm" (click)="showCreditNote.set(true)">Emitir nota de crédito</button>
+                <button class="btn btn-danger btn-sm" (click)="showAnular.set(true)">Anular fatura</button>
+              </div>
+            } @else if (showCreditNote()) {
+              <div style="display:grid;gap:10px;max-width:420px">
+                <p class="helptext">Corrige esta fatura sem a alterar — pode creditar até {{ formatMoney(porCreditar, po()!.invoice!.currency) }}.</p>
+                <app-field label="Motivo">
+                  <textarea rows="2" [value]="cnMotivo()" (input)="cnMotivo.set($any($event.target).value)" placeholder="Ex.: devolução parcial, erro de quantidade…"></textarea>
+                </app-field>
+                <app-field label="Valor a creditar">
+                  <input type="number" min="0.01" step="0.01" [value]="cnAmount()" (input)="cnAmount.set($any($event.target).value)">
+                </app-field>
+                <div style="display:flex;gap:8px">
+                  <button class="btn btn-accent" [disabled]="busy() || !cnMotivo().trim() || !cnAmountValida" (click)="submitCreditNote()">Confirmar nota de crédito</button>
+                  <button class="btn btn-ghost" (click)="showCreditNote.set(false)">Cancelar</button>
+                </div>
+              </div>
+            } @else {
+              <div style="display:grid;gap:10px;max-width:420px">
+                <p class="helptext">Esta ação cria uma nota de crédito pelo valor total ainda por creditar ({{ formatMoney(porCreditar, po()!.invoice!.currency) }}) e anula a fatura.</p>
+                <app-field label="Motivo">
+                  <textarea rows="2" [value]="anularMotivo()" (input)="anularMotivo.set($any($event.target).value)" placeholder="Ex.: pedido de cancelamento do comprador…"></textarea>
+                </app-field>
+                <div style="display:flex;gap:8px">
+                  <button class="btn btn-danger" [disabled]="anularBusy()" (click)="submitAnular()">{{ anularBusy() ? 'A anular…' : 'Confirmar anulação' }}</button>
+                  <button class="btn btn-ghost" (click)="showAnular.set(false)">Cancelar</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (temAcaoDisponivel) {
+      <div class="card card-pad" style="display:flex;gap:10px;flex-wrap:wrap">
+        @if (canApprove) {
+          <button class="btn btn-accent" [disabled]="busy()" (click)="aprovar()">Aprovar PO</button>
+          <button class="btn btn-danger" [disabled]="busy()" (click)="showReject.set(!showReject())">Rejeitar PO</button>
+        }
+        @if (canAcceptRefuse) {
+          <button class="btn btn-accent" [disabled]="busy()" (click)="aceitar()">Aceitar PO</button>
+          <button class="btn btn-danger" [disabled]="busy()" (click)="showRefuse.set(!showRefuse())">Recusar PO</button>
+        }
+        @if (canDispatch) {
+          <app-button variant="primary" [disabled]="busy()" (clicked)="despachar()">Despachar entrega</app-button>
+        }
+        @if (canMarkDelivered) {
+          <app-button variant="primary" [disabled]="busy()" (clicked)="marcarEntregue()">Marcar como entregue</app-button>
+        }
+        @if (canReceive) {
+          <button class="btn btn-accent" [disabled]="busy()" (click)="confirmarRececaoConforme()">Confirmar receção conforme</button>
+          <button class="btn btn-danger" [disabled]="busy()" (click)="showDivergence.set(!showDivergence())">Reportar divergência</button>
+        }
+        @if (canResolveDivergence) {
+          <button class="btn btn-accent" [disabled]="busy()" (click)="resolveOutcome.set(resolveOutcome() === 'ACEITE' ? null : 'ACEITE')">Aceitar entrega e concluir</button>
+          <app-button variant="primary" [disabled]="busy()" (clicked)="resolveOutcome.set(resolveOutcome() === 'REPOSICAO' ? null : 'REPOSICAO')">Pedir reposição ao fornecedor</app-button>
+        }
+      </div>
+    }
+
+    @if (canResolveDivergence && resolveOutcome()) {
+      <div class="card card-pad" style="margin-top:12px">
+        <strong style="font-size:13.5px">{{ resolveOutcome() === 'ACEITE' ? 'Aceitar a entrega como está' : 'Pedir reposição/correção' }}</strong>
+        <p class="helptext" style="margin:8px 0 10px">
+          @if (resolveOutcome() === 'ACEITE') {
+            A divergência fica registada, mas a entrega é aceite (ex.: após acordo com o fornecedor) e a ordem é CONCLUÍDA.
+          } @else {
+            O fornecedor será notificado para corrigir/reentregar. A ordem volta a "Em execução" e, após a nova entrega, confirma a receção outra vez.
+          }
+        </p>
+        <app-field [label]="'Notas ' + (resolveOutcome() === 'REPOSICAO' ? '(o que deve ser corrigido)' : '(opcional)')">
+          <textarea rows="3" [value]="resolveNotes()" (input)="resolveNotes.set($any($event.target).value)"
+            [placeholder]="resolveOutcome() === 'REPOSICAO' ? 'Ex.: repor as 3 unidades danificadas…' : 'Ex.: acordado desconto de 10% com o fornecedor…'"></textarea>
+        </app-field>
+        <app-button variant="primary" [disabled]="busy() || (resolveOutcome() === 'REPOSICAO' && !resolveNotes().trim())" (clicked)="confirmarResolucaoDivergencia()">
+          {{ resolveOutcome() === 'ACEITE' ? 'Confirmar: aceitar e concluir' : 'Confirmar: pedir reposição' }}
+        </app-button>
+      </div>
+    }
+
+    @if (showReject()) {
+      <div class="card card-pad" style="margin-top:12px">
+        <app-field label="Motivo da rejeição">
+          <textarea rows="3" [value]="rejectReason()" (input)="rejectReason.set($any($event.target).value)"></textarea>
+        </app-field>
+        <button class="btn btn-danger" [disabled]="busy() || !rejectReason().trim()" (click)="confirmarRejeicao()">Confirmar rejeição</button>
+      </div>
+    }
+
+    @if (showRefuse()) {
+      <div class="card card-pad" style="margin-top:12px">
+        <app-field label="Motivo da recusa">
+          <textarea rows="3" [value]="refuseReason()" (input)="refuseReason.set($any($event.target).value)" placeholder="Ex.: sem stock suficiente para cumprir a quantidade pedida…"></textarea>
+        </app-field>
+        <p class="helptext" style="margin-bottom:10px">O comprador é notificado do motivo — é obrigatório para recusar.</p>
+        <button class="btn btn-danger" [disabled]="busy() || !refuseReason().trim()" (click)="confirmarRecusa()">Confirmar recusa</button>
+      </div>
+    }
+
+    @if (showDivergence()) {
+      <div class="card card-pad" style="margin-top:12px">
+        <app-field label="Descreva a divergência">
+          <textarea rows="3" [value]="receptionNotes()" (input)="receptionNotes.set($any($event.target).value)" placeholder="Ex.: quantidade incompleta, item danificado…"></textarea>
+        </app-field>
+        <p class="helptext" style="margin-bottom:10px">A KIXIMA e o fornecedor serão notificados. Depois, resolve a divergência aqui mesmo: aceitar a entrega (após acordo) ou pedir reposição.</p>
+        <button class="btn btn-danger" [disabled]="busy() || !receptionNotes().trim()" (click)="reportarDivergencia()">Reportar divergência</button>
+      </div>
+    }
+
+    @if (po()!.rejectionReason) {
+      <div class="banner banner-error" style="margin-top:16px">Motivo da rejeição: {{ po()!.rejectionReason }}</div>
+    }
+    @if (po()!.refusalReason) {
+      <div class="banner banner-error" style="margin-top:16px">Motivo da recusa do fornecedor: {{ po()!.refusalReason }}</div>
+    }
+
+    <div class="card card-pad" style="margin-top:16px">
+      <strong style="font-size:13.5px">Linha do tempo</strong>
+      <p class="helptext" style="margin:4px 0 12px">Registo de auditoria — cada evento é gravado no momento em que acontece e não pode ser alterado.</p>
+      @if (history() === null) {
+        <app-loading></app-loading>
+      } @else if (history()!.length === 0) {
+        <p class="helptext">Ainda sem eventos registados.</p>
+      } @else {
+        <ol class="po-timeline">
+          @for (ev of history()!; track ev.id) {
+            <li class="po-timeline-item">
+              <span class="po-timeline-icon" aria-hidden="true">{{ TIMELINE_LABELS[ev.action]?.icon || '•' }}</span>
+              <div>
+                <div><strong>{{ TIMELINE_LABELS[ev.action]?.label || ev.action }}</strong> — {{ formatDate(ev.createdAt) }}</div>
+                <div class="helptext">{{ ev.actorName ? (ev.actorName + ' (' + (ev.actorRole || '') + ')') : 'Sistema' }}</div>
+                @if (timelineDetail(ev.detail)) {
+                  <div class="helptext">{{ timelineDetail(ev.detail) }}</div>
+                }
+              </div>
+            </li>
+          }
+        </ol>
+      }
+    </div>
+  </div>
+}

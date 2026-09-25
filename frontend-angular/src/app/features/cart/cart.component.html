@@ -1,0 +1,74 @@
+@if (cart.items().length === 0) {
+  <div>
+    <app-crumbs [trail]="[{ label: 'Home', to: '/comprador' }, 'Minha Cesta']"></app-crumbs>
+    <div class="empty-state">
+      <h3>A sua cesta está vazia</h3>
+      <p>Explore o catálogo e adicione produtos ou serviços.</p>
+      <button class="btn btn-accent" (click)="irParaCatalogo()">Explorar catálogo</button>
+    </div>
+  </div>
+} @else {
+  <div>
+    @if (toast()) {
+      <div class="svc-toast">{{ toast() }}</div>
+    }
+    <app-crumbs [trail]="[{ label: 'Home', to: '/comprador' }, 'Minha Cesta']"></app-crumbs>
+    <app-buyer-page-head
+      title="Minha Cesta"
+      [subtitle]="cart.items().length + ' ' + (cart.items().length === 1 ? 'item' : 'itens') + ' na sua cesta'">
+      <button class="btn btn-ghost btn-sm" (click)="saveCart()"><app-icon name="policy" [size]="14"></app-icon> Guardar Cesta</button>
+      <button class="btn btn-ghost btn-sm" (click)="exportCart()"><app-icon name="report" [size]="14"></app-icon> Exportar Cesta</button>
+      <button class="btn btn-ghost btn-sm" (click)="cart.clear()"><app-icon name="approvals" [size]="14"></app-icon> Limpar Cesta</button>
+    </app-buyer-page-head>
+
+    <div class="bz-layout">
+      <div class="bz-card bz-tablewrap">
+        <table class="bz-table">
+          <thead>
+            <tr><th>Produto / Serviço</th><th>Fornecedor</th><th class="r">Preço Unitário</th><th>Qtd.</th><th class="r">Subtotal</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (it of cart.items(); track it.product.id) {
+              <tr>
+                <td>
+                  <strong>{{ it.product.name }}</strong>
+                  <span class="bz-sub2">SKU: {{ it.product.sku || '—' }} · {{ it.product.category }}</span>
+                </td>
+                <td>
+                  <div>{{ it.product.supplier?.name }}</div>
+                  @if (it.product.rating) {
+                    <span class="svc-ratingrow"><app-stars [value]="it.product.rating!"></app-stars> <span class="svc-ratenum">{{ it.product.rating!.toFixed(1) }}</span></span>
+                  }
+                </td>
+                <td class="r">{{ formatMoney(it.product.unitPrice, it.product.currency) }}</td>
+                <td>
+                  <div class="cart-qty">
+                    <button (click)="cart.updateQuantity(it.product.id, it.quantity - 1)">−</button>
+                    <input [value]="it.quantity" (change)="cart.updateQuantity(it.product.id, Math.max(1, +$any($event.target).value || 1))">
+                    <button (click)="cart.updateQuantity(it.product.id, it.quantity + 1)">+</button>
+                  </div>
+                </td>
+                <td class="r"><strong>{{ formatMoney(+it.product.unitPrice * it.quantity, it.product.currency) }}</strong></td>
+                <td><button class="bz-iconbtn" title="Remover" (click)="cart.removeItem(it.product.id)"><app-icon name="approvals" [size]="14"></app-icon></button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bz-side">
+        <div class="bz-panel">
+          <h3>Resumo da Cesta</h3>
+          <div class="bz-panel-row"><span>Subtotal ({{ cart.items().length }} itens)</span><strong>{{ formatMoney(subtotal) }}</strong></div>
+          <div class="bz-panel-row"><span>Impostos (IVA 14%)</span><strong>{{ formatMoney(iva) }}</strong></div>
+          <div class="bz-panel-row co-total"><span>Total Estimado</span><strong>{{ formatMoney(total) }}</strong></div>
+          <button class="btn btn-accent" style="width:100%;margin-top:12px" (click)="irParaCheckout()">Avançar para Checkout →</button>
+          <button class="btn btn-ghost" style="width:100%;margin-top:8px" (click)="irParaCotacoes()"><app-icon name="invoice" [size]="14"></app-icon> Solicitar Cotação</button>
+        </div>
+        <div class="bz-panel co-note" style="background:var(--ok-bg);border-color:var(--ok-bd);color:var(--ok-fg)">
+          <app-icon name="shield" [size]="16"></app-icon> Compra 100% Segura — todos os dados são protegidos pela KIXIMA.
+        </div>
+      </div>
+    </div>
+  </div>
+}

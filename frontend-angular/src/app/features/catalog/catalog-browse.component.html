@@ -1,0 +1,204 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else {
+<div>
+  <app-crumbs [trail]="[{ label: 'Home', to: '/comprador' }, 'Catálogo', 'Produtos']"></app-crumbs>
+  <app-buyer-page-head title="Produtos">
+    <button class="btn btn-ghost btn-sm" [disabled]="compare().length < 2" (click)="showCompare.set(true)">
+      <app-icon name="report" [size]="14"></app-icon> Comparar ({{ compare().length }})
+    </button>
+  </app-buyer-page-head>
+
+  <div class="pc-toolbar">
+    <div class="pc-search">
+      <app-icon name="search" [size]="18"></app-icon>
+      <input placeholder="Pesquisar produtos por nome, categoria, marca, modelo…" [value]="search()" (input)="search.set($any($event.target).value)">
+    </div>
+  </div>
+
+  <div class="pc-layout">
+    <aside class="pc-aside">
+      <div class="pc-filter">
+        <h3>Categorias</h3>
+        <ul class="pc-cats">
+          <li [class]="category() === '' ? 'on' : ''" (click)="category.set('')">
+            <span>Todos</span><span class="pc-c">{{ totalAll }}</span>
+          </li>
+          @for (c of facets().categories; track c.name) {
+            <li [class]="category() === c.name ? 'on' : ''" (click)="category.set(category() === c.name ? '' : c.name)">
+              <span>{{ c.name }}</span><span class="pc-c">{{ c.count }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <div class="pc-filter">
+        <h3>Faixa de Preço (Kz)</h3>
+        <div class="pc-price">
+          <input type="number" min="0" placeholder="Mínimo" [value]="priceMin()" (input)="priceMin.set($any($event.target).value)">
+          <input type="number" min="0" placeholder="Máximo" [value]="priceMax()" (input)="priceMax.set($any($event.target).value)">
+        </div>
+        @if (bounds.max > 0) {
+          <div class="pc-price-hint">{{ formatMoney(bounds.min) }} — {{ formatMoney(bounds.max) }}</div>
+        }
+      </div>
+
+      <div class="pc-filter">
+        <h3>Fornecedor Verificado</h3>
+        <label class="pc-check">
+          <input type="checkbox" [checked]="onlyVerified()" (change)="onlyVerified.set($any($event.target).checked)">
+          <span>Apenas Fornecedores Verificados</span>
+        </label>
+      </div>
+
+      <div class="pc-filter">
+        <h3>Avaliação do Produto</h3>
+        @for (n of [5, 4, 3, 2, 1]; track n) {
+          <label [class]="'pc-check pc-rate' + (minRating() === n ? ' on' : '')">
+            <input type="radio" name="rate" [checked]="minRating() === n" (click)="minRating.set(minRating() === n ? 0 : n)">
+            <span class="pc-stars"><app-stars [value]="n"></app-stars></span>
+            <span class="pc-c">{{ n === 5 ? '' : '+' }}</span>
+          </label>
+        }
+      </div>
+
+      <div class="pc-filter-actions">
+        <button class="btn btn-ghost btn-sm" (click)="clearFilters()">Limpar Filtros</button>
+      </div>
+    </aside>
+
+    <div class="pc-main">
+      <div class="pc-resultbar">
+        <span class="pc-count">
+          @if (!data()) {
+            A carregar…
+          } @else if (total === 0) {
+            Nenhum resultado
+          } @else {
+            A mostrar {{ start + 1 }} - {{ Math.min(start + pageSize(), total) }} de {{ total }} produtos
+          }
+        </span>
+        <div class="pc-resultbar-right">
+          <label class="pc-sort">
+            Ordenar por
+            <select [value]="sort()" (change)="sort.set($any($event.target).value)">
+              <option value="rel">Mais Relevantes</option>
+              <option value="price_asc">Preço: menor primeiro</option>
+              <option value="price_desc">Preço: maior primeiro</option>
+              <option value="rating">Melhor Avaliados</option>
+              <option value="recent">Mais Recentes</option>
+            </select>
+          </label>
+          <div class="pc-viewtoggle">
+            <button [class]="view() === 'grid' ? 'on' : ''" (click)="view.set('grid')" aria-label="Grelha"><app-icon name="catalog" [size]="16"></app-icon></button>
+            <button [class]="view() === 'list' ? 'on' : ''" (click)="view.set('list')" aria-label="Lista"><app-icon name="report" [size]="16"></app-icon></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pc-tabs">
+        @for (opt of [['TODOS', 'Todos'], ['PROMO', 'Promoções']]; track opt[0]) {
+          <button [class]="'pc-tab' + (tab() === opt[0] ? ' on' : '')" (click)="tab.set(opt[0])">{{ opt[1] }}</button>
+        }
+      </div>
+
+      @if (!data()) {
+        <div class="pc-grid">
+          @for (i of [1,2,3,4,5,6,7,8]; track i) {
+            <div class="pc-card pc-skel"></div>
+          }
+        </div>
+      } @else if (total === 0) {
+        <div class="empty-state">
+          <h3>Nenhum item encontrado</h3>
+          <p>Ajuste a pesquisa ou os filtros.</p>
+          <button class="btn btn-accent btn-sm" (click)="clearFilters()">Limpar filtros</button>
+        </div>
+      } @else {
+        <div [class]="view() === 'grid' ? 'pc-grid' : 'pc-grid pc-grid-list'">
+          @for (p of items; track p.id) {
+            <div class="pc-card">
+              <div class="pc-cover">
+                <span [class]="'pc-avail ' + (availabilityOf(p) === 'STOCK' ? 'stock' : 'enc')">{{ availabilityOf(p) === 'STOCK' ? 'Em Stock' : 'Por Encomenda' }}</span>
+                <button [class]="'pc-fav' + (inCompare(p.id) ? ' on' : '')" (click)="toggleCompare(p)" aria-label="Comparar" title="Adicionar à comparação">
+                  <app-icon name="report" [size]="15"></app-icon>
+                </button>
+                <a [routerLink]="'/comprador/catalogo/' + p.id"><app-product-cover [imageUrl]="p.imageUrl" [category]="p.category" [name]="p.name" [caption]="false"></app-product-cover></a>
+              </div>
+              <div class="pc-body">
+                <a [routerLink]="'/comprador/catalogo/' + p.id" class="pc-name">{{ p.name }}</a>
+                @if (p.brand) { <div class="pc-brand">{{ p.brand }}</div> }
+                @if (p.rating) {
+                  <div class="pc-rate"><app-stars [value]="p.rating"></app-stars> <strong>{{ p.rating.toFixed(1) }}</strong> <span>({{ p.reviewCount }} avaliações)</span></div>
+                } @else {
+                  <div class="pc-rate pc-rate-empty">Sem avaliações</div>
+                }
+                <div class="pc-sup">
+                  <span class="pc-sup-label">Fornecedor</span>
+                  <span class="pc-sup-name">{{ p.supplier?.name || '—' }}</span>
+                  @if (isVerified(p)) { <span class="pc-verif"><app-icon name="approvals" [size]="12"></app-icon> Verificado</span> }
+                  @if (isDestaque(p)) { <span class="pc-destaque"><app-icon name="policy" [size]="12"></app-icon> Destaque</span> }
+                </div>
+                <div class="pc-price-row">
+                  @if (p.promoPrice != null) { <span class="pc-old">{{ formatMoney(p.unitPrice, p.currency) }}</span> }
+                  <span class="pc-price">{{ formatMoney(p.promoPrice ?? p.unitPrice, p.currency) }}{{ p.measurementUnit ? (' / ' + p.measurementUnit) : '' }}</span>
+                </div>
+                <div class="pc-actions">
+                  <button class="btn btn-accent btn-sm pc-add" (click)="handleAdd(p)">{{ added() === p.id ? 'Adicionado ✓' : 'Adicionar à Cesta' }}</button>
+                  <button [class]="'pc-cmp' + (inCompare(p.id) ? ' on' : '')" (click)="toggleCompare(p)" aria-label="Comparar" title="Comparar">
+                    <app-icon name="report" [size]="15"></app-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (total > 0) {
+        <div class="pc-pagination">
+          <button class="pc-pg" [disabled]="current === 1" (click)="page.set(current - 1)">← Anterior</button>
+          <span class="pc-pg-info">Página {{ current }} de {{ pages }}</span>
+          <button class="pc-pg" [disabled]="current >= pages" (click)="page.set(current + 1)">Próximo →</button>
+          <label class="pc-pagesize">
+            Produtos por página
+            <select [value]="pageSize()" (change)="pageSize.set(+$any($event.target).value)">
+              @for (s of PAGE_SIZES; track s) { <option [value]="s">{{ s }}</option> }
+            </select>
+          </label>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (showCompare() && compare().length) {
+    <div class="pc-modal" (click)="showCompare.set(false)">
+      <div class="pc-modal-box" (click)="$event.stopPropagation()">
+        <div class="pc-modal-head">
+          <h3>Comparar Produtos ({{ compare().length }})</h3>
+          <button class="pc-modal-x" (click)="showCompare.set(false)">✕</button>
+        </div>
+        <div class="pc-compare">
+          <div class="bz-scroll-x">
+            <table class="bz-table">
+              <thead><tr><th>Produto</th>@for (p of compare(); track p.id) { <th>{{ p.name }}</th> }</tr></thead>
+              <tbody>
+                <tr><td>Fornecedor</td>@for (p of compare(); track p.id) { <td>{{ p.supplier?.name || '—' }}</td> }</tr>
+                <tr><td>Categoria</td>@for (p of compare(); track p.id) { <td>{{ p.category }}</td> }</tr>
+                <tr><td>Marca</td>@for (p of compare(); track p.id) { <td>{{ p.brand || '—' }}</td> }</tr>
+                <tr><td>Preço</td>@for (p of compare(); track p.id) { <td>{{ formatMoney(p.promoPrice ?? p.unitPrice, p.currency) }}</td> }</tr>
+                <tr><td>Avaliação</td>@for (p of compare(); track p.id) { <td>{{ p.rating ? (p.rating.toFixed(1) + ' (' + p.reviewCount + ')') : '—' }}</td> }</tr>
+                <tr><td>Disponibilidade</td>@for (p of compare(); track p.id) { <td>{{ availabilityOf(p) === 'STOCK' ? 'Em Stock' : 'Por Encomenda' }}</td> }</tr>
+                <tr><td>Prazo de Entrega</td>@for (p of compare(); track p.id) { <td>{{ p.leadTimeDays != null ? (p.leadTimeDays + ' dias') : '—' }}</td> }</tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="pc-modal-foot">
+          <button class="btn btn-ghost btn-sm" (click)="compare.set([]); showCompare.set(false)">Limpar comparação</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+}

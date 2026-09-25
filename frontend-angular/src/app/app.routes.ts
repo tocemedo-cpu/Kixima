@@ -42,8 +42,38 @@ export const routes: Routes = [
         children: [
           { path: '', component: PendingPageComponent, data: { titulo: 'Início — Comprador' } },
           {
-            path: 'pedidos',
+            // Corrigido nesta sessão: o caminho real de Quotes.jsx é
+            // /comprador/cotacoes (ver frontend/src/App.jsx:191), não
+            // /comprador/pedidos — a versão anterior deste ficheiro tinha
+            // o caminho errado e a rota nunca era alcançável a partir da
+            // navegação real da aplicação.
+            path: 'cotacoes',
             loadComponent: () => import('./features/quotes/quotes.component').then((m) => m.QuotesComponent),
+          },
+          {
+            path: 'catalogo',
+            loadComponent: () =>
+              import('./features/catalog/catalog-browse.component').then((m) => m.CatalogBrowseComponent),
+          },
+          {
+            path: 'catalogo/:id',
+            loadComponent: () => import('./features/catalog/item-detail.component').then((m) => m.ItemDetailComponent),
+          },
+          {
+            path: 'cesta',
+            loadComponent: () => import('./features/cart/cart.component').then((m) => m.CartComponent),
+          },
+          {
+            path: 'checkout',
+            loadComponent: () => import('./features/orders/checkout.component').then((m) => m.CheckoutComponent),
+          },
+          {
+            path: 'ordens',
+            loadComponent: () => import('./features/orders/orders.component').then((m) => m.OrdersComponent),
+          },
+          {
+            path: 'ordens/:id',
+            loadComponent: () => import('./features/orders/order-detail.component').then((m) => m.OrderDetailComponent),
           },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Comprador' } },
         ],
@@ -67,6 +97,10 @@ export const routes: Routes = [
               import('./features/quotes/supplier-quotes.component').then((m) => m.SupplierQuotesComponent),
             data: { inbox: false },
           },
+          {
+            path: 'ordens/:id',
+            loadComponent: () => import('./features/orders/order-detail.component').then((m) => m.OrderDetailComponent),
+          },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Fornecedor' } },
         ],
       },
@@ -77,6 +111,13 @@ export const routes: Routes = [
         canActivate: [roleGuard('COMPANY_ADMIN')],
         children: [
           { path: '', component: PendingPageComponent, data: { titulo: 'Início — Administração da Empresa' } },
+          // OrderDetail é partilhado por 4 personas (ver frontend/src/App.jsx:216)
+          // — a lista de Approvals.jsx continua pendente, só o detalhe (que já
+          // foi migrado por inteiro, com as acções de Company Admin) é montado aqui.
+          {
+            path: 'aprovacoes/:id',
+            loadComponent: () => import('./features/orders/order-detail.component').then((m) => m.OrderDetailComponent),
+          },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Administração da Empresa' } },
         ],
       },
@@ -87,6 +128,10 @@ export const routes: Routes = [
         canActivate: [roleGuard('FINANCEIRO')],
         children: [
           { path: '', component: PendingPageComponent, data: { titulo: 'Início — Financeiro' } },
+          {
+            path: 'ordens/:id',
+            loadComponent: () => import('./features/orders/order-detail.component').then((m) => m.OrderDetailComponent),
+          },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Financeiro' } },
         ],
       },

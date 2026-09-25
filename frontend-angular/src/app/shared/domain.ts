@@ -1,8 +1,14 @@
-// Porta de frontend/src/domain.js — só a parte usada pelo que já foi migrado
-// para Angular (autenticação + cotações + catálogo). O resto do ficheiro
-// (PO_STATUS, INVOICE_STATUS, notificações→rota, etc.) fica para migrar junto
-// com os respectivos ecrãs — ver docs/migracao-angular/PLANO.md.
+// Porta de frontend/src/domain.js — a parte usada pelo que já foi migrado
+// para Angular (autenticação, cotações, catálogo, carrinho/checkout, ordens
+// de compra). O resto do ficheiro (notificações→rota, etc.) fica para migrar
+// junto com os respectivos ecrãs — ver docs/migracao-angular/PLANO.md.
 import type { PersonaRole } from '../core/models/user.model';
+import type { PoStatus } from '../core/models/purchase-order.model';
+
+// IVA (lei angolana): 14% sobre tudo. Espelha domain.js:IVA_RATE — usado só
+// para o RESUMO no ecrã (Cesta/Checkout); o cálculo autoritativo é sempre o
+// do backend (taxService), tal como o comentário original explica.
+export const IVA_RATE = 0.14;
 
 // Ver a nota completa em frontend/src/domain.js sobre porquê "Dashboard" fica
 // como está e porquê COMPANY_ADMIN deixou de estar em inglês.
@@ -56,3 +62,19 @@ export function formatDateTime(value: string | null | undefined): string {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   }).format(new Date(value));
 }
+
+// Espelha PO_STATUS em frontend/src/domain.js:48-61.
+export const PO_STATUS: Record<PoStatus, { label: string; tone: string }> = {
+  AGUARDANDO_APROVACAO: { label: 'Aguardando aprovação', tone: 'pending' },
+  APROVADA: { label: 'Aprovada', tone: 'info' },
+  REJEITADA: { label: 'Rejeitada', tone: 'danger' },
+  ACEITE_FORNECEDOR: { label: 'Aceite pelo fornecedor', tone: 'info' },
+  RECUSADA_FORNECEDOR: { label: 'Recusada pelo fornecedor', tone: 'danger' },
+  AGUARDANDO_PAGAMENTO: { label: 'Aguardando pagamento', tone: 'pending' },
+  PAGA: { label: 'Paga', tone: 'success' },
+  EM_EXECUCAO: { label: 'Em execução', tone: 'info' },
+  ENTREGUE: { label: 'Entregue', tone: 'info' },
+  RECEBIDA_CONFORME: { label: 'Recebida — conforme', tone: 'success' },
+  RECEBIDA_COM_DIVERGENCIA: { label: 'Recebida — com divergência', tone: 'danger' },
+  CONCLUIDA: { label: 'Concluída', tone: 'success' },
+};

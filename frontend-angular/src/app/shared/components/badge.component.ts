@@ -8,5 +8,9 @@ import { Component, Input } from '@angular/core';
   template: `<span [class]="'badge badge-' + tone"><ng-content></ng-content></span>`,
 })
 export class BadgeComponent {
-  @Input() tone: 'neutral' | 'pending' | 'info' | 'success' | 'danger' = 'neutral';
+  // `string | undefined` (não a união estrita de tons) porque quem chama
+  // muitas vezes lê o tom de um mapa (PO_STATUS[status]?.tone), tipado como
+  // string genérica — o React aceitava exactamente o mesmo (`tone={string}`,
+  // sem validação de tipo em tempo de execução).
+  @Input() tone: string | undefined = 'neutral';
 }

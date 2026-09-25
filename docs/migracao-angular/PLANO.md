@@ -39,7 +39,8 @@ neste repositório.
 | Constantes de domínio (papéis, formatação) | `shared/domain.ts` | `frontend/src/domain.js` |
 | Tema (3 fundos) | `shared/tema/*` | `frontend/src/tema/TemaContext.jsx` |
 | Identidade visual (CSS, fontes, marca) | `src/styles/*.css` (copiados), fontes @fontsource, `shared/components/logo.component.ts` | `frontend/src/styles/*.css`, `Logo.jsx` |
-| Componentes partilhados | `shared/components/{page-header,loading,error-banner,success-banner,field,badge,icon,auth-hero}.component.ts` | `frontend/src/components/{Common,Badge,icons,AuthHero,Logo}.jsx` |
+| Componentes partilhados | `shared/components/{page-header,loading,error-banner,success-banner,field,badge,icon,auth-hero,stars,product-cover,button}.component.ts` | `frontend/src/components/{Common,Badge,icons,AuthHero,Logo,ProductCover,Button}.jsx` |
+| Componentes "Bancada" do Comprador | `shared/buyer-ui/{crumbs,page-head,kpi-row,tabs,pill,toolbar,supplier-cell,empty-row,pagination}.component.ts` | `frontend/src/components/BuyerUI.jsx` |
 | Casca de layout (provisória) | `features/shell/shell.component.ts` | `frontend/src/components/AppLayout.jsx` (versão completa com sidebar ainda por portar) |
 
 ## Domínios migrados de ponta a ponta
@@ -49,7 +50,14 @@ neste repositório.
 | Autenticação + 2FA | `features/auth/login-page.component.ts` | `pages/shared/LoginPage.jsx` | `/api/auth/*` |
 | Cotações — Comprador | `features/quotes/quotes.component.ts` | `pages/comprador/Quotes.jsx` | `GET/POST /api/quotes`, `PATCH .../close` |
 | Cotações — Fornecedor | `features/quotes/supplier-quotes.component.ts` | `pages/fornecedor/SupplierQuotes.jsx` | `GET /api/quotes`, `PATCH .../respond` |
-| Catálogo (leitura) | `features/catalog/catalog.service.ts` | usado por `Quotes.jsx` | `GET /api/catalog`, `GET .../:id`, `GET .../slug/:slug` |
+| Catálogo — navegação/pesquisa | `features/catalog/catalog-browse.component.ts` | `pages/comprador/Catalog.jsx` | `GET /api/marketplace/search`, `GET .../facets` |
+| Catálogo — detalhe do item | `features/catalog/item-detail.component.ts` | `pages/comprador/ItemDetail.jsx` | `GET /api/catalog/:id` |
+| Carrinho de compras | `features/cart/{cart.service,cart.component}.ts` | `pages/comprador/{CartContext,Cart}.jsx` | (estado local — sem API própria) |
+| Checkout | `features/orders/checkout.component.ts` | `pages/comprador/Checkout.jsx` | `POST /api/purchase-orders` (uma vez por fornecedor) |
+| Ordens de Compra — lista do Comprador | `features/orders/orders.component.ts` | `pages/comprador/Orders.jsx` | `GET /api/buyer/orders` |
+| Ordens de Compra — detalhe (partilhado por 4 personas) | `features/orders/order-detail.component.ts` | `pages/shared/OrderDetail.jsx` | `GET /api/purchase-orders/:id`, `.../history`, `PATCH .../{approve,reject,accept,refuse,dispatch,delivered,reception,resolve-divergence}`, `POST /api/payments/invoices/:id/{notas-credito,anular}` |
+
+**Verificação ao vivo desta etapa** (Postgres + backend Java a correr localmente, Angular com o seu proxy): login como Comprador → pesquisa no catálogo → produto → cesta → checkout (gera PO) → lista de ordens com KPIs → detalhe da PO → aprovação pelo Company Admin → aceitação pelo Fornecedor (gera fatura com os campos AGT presentes, correctamente vazios sem credenciais) → guarda de máquina de estados (despachar antes de pago devolve 400) → fluxo de rejeição com motivo. RBAC confirmado com 403 em cada ponto errado: Comprador não aprova nem aceita a própria PO, Fornecedor não aprova, Fornecedor não lê `/api/buyer/orders` (403), pedido sem sessão dá 401. Um bug de routing desta sessão anterior foi encontrado e corrigido: a rota de Cotações do Comprador estava em `/comprador/pedidos`, mas a real (`frontend/src/App.jsx:191`) é `/comprador/cotacoes` — nunca teria sido alcançável pela navegação real da aplicação.
 
 ## Inventário completo das 97 páginas React e prioridade sugerida
 
@@ -69,7 +77,7 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 | `Profile.jsx` | 2 | Pendente |
 | `Security.jsx` | 2 | Pendente |
 | `Notifications.jsx` | 2 | Pendente |
-| `OrderDetail.jsx` | 1 | Pendente (partilhada por 4 personas — ver nota) |
+| `OrderDetail.jsx` | 1 | **Migrado** (partilhada por 4 personas — todas as acções condicionais portadas e testadas com a matriz de RBAC completa) |
 | `ChatComercial.jsx` | 2 | Pendente (tempo real — ver secção "Tempo real") |
 | `SuporteChat.jsx` | 2 | Pendente (tempo real) |
 | `SuporteFeedback.jsx` | 3 | Pendente |
@@ -87,11 +95,11 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 | Página | Prioridade | Estado |
 |---|---|---|
 | `Quotes.jsx` | 1 | **Migrado** |
-| `Catalog.jsx` | 1 | Pendente |
-| `ItemDetail.jsx` | 1 | Pendente |
-| `Cart.jsx` / `CartContext.jsx` | 1 | Pendente |
-| `Checkout.jsx` | 1 | Pendente |
-| `Orders.jsx` | 1 | Pendente |
+| `Catalog.jsx` | 1 | **Migrado** |
+| `ItemDetail.jsx` | 1 | **Migrado** |
+| `Cart.jsx` / `CartContext.jsx` | 1 | **Migrado** |
+| `Checkout.jsx` | 1 | **Migrado** |
+| `Orders.jsx` | 1 | **Migrado** |
 | `Payments.jsx` | 1 | Pendente |
 | `Deliveries.jsx` | 2 | Pendente |
 | `Receptions.jsx` | 2 | Pendente |
@@ -194,10 +202,9 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 |---|---|
 | **i18n (PT/EN/FR)** | O sistema `frontend/src/i18n/` (dicionários + `useI18n`) ainda não foi portado. Os ecrãs migrados mostram texto directamente em português (a língua-fonte do dicionário original) — nenhuma tradução foi perdida, só ainda não há troca de idioma em Angular. |
 | **Barra lateral completa (`AppLayout.jsx` + `data/sidebar.js`)** | O `ShellComponent` actual é uma casca mínima (barra superior + logout). A navegação lateral por persona, com todos os ícones e badges de notificação, ainda não foi portada. |
-| **Tempo real (Socket.IO / STOMP)** | `frontend/src/realtime/{RealtimeContext,socketioAdapter,stompAdapter}.jsx` — necessário para Chat Comercial e Suporte. Ainda não portado para Angular; útil portar o adaptador STOMP primeiro, já que o Java é o backend definitivo. |
+| **Tempo real (Socket.IO / STOMP)** | `frontend/src/realtime/{RealtimeContext,socketioAdapter,stompAdapter}.jsx` — necessário para Chat Comercial e Suporte. Ainda não portado para Angular; útil portar o adaptador STOMP primeiro, já que o Java é o backend definitivo. O botão "Falar com o fornecedor/comprador" (`StartConversationButton`) foi omitido em `ItemDetail` e `OrderDetail` por esta mesma razão — nada mais foi removido dessas páginas. |
 | **Capacitor (app móvel)** | A app móvel actual empacota o **frontend React** (`frontend/capacitor.config.json`). Só deve mudar para empacotar o Angular depois de a cobertura de páginas ser suficiente — ver secção "Node/Vite" abaixo. |
-| **Biblioteca de ícones completa** | Só os 4 ícones usados por `AuthHero` foram portados (`shared/components/icon.component.ts`). O ficheiro original tem dezenas. |
-| **Carrinho de compras (`CartContext.jsx`)** | Estado partilhado entre `Catalog`, `ItemDetail`, `Cart`, `Checkout` — migrar como um serviço Angular (`CartService`) na mesma leva que essas 4 páginas. |
+| **Biblioteca de ícones completa** | 15 ícones portados (`shared/components/icon.component.ts`) — os usados por auth, cotações, catálogo e ordens. O ficheiro original tem dezenas (categorias, módulos de outras personas). Um nome não portado cai em `box`, o mesmo comportamento do React para um nome desconhecido. |
 
 ## O que ainda depende do Node.js hoje
 
@@ -208,9 +215,14 @@ em Node.js, e porquê, está descrito na secção seguinte deste relatório
 
 ## Como continuar esta migração
 
-1. Escolher o próximo domínio pela tabela de prioridade acima (sugestão:
-   Catálogo de leitura/detalhe → Carrinho → Checkout → Ordens, que fecha o
-   percurso de compra do Comprador de ponta a ponta).
+1. Escolher o próximo domínio pela tabela de prioridade acima. O percurso de
+   compra do Comprador (Catálogo → Cesta → Checkout → Ordens) já está
+   completo nesta sessão; sugestão para a próxima: **Faturação e Pagamentos
+   do Fornecedor** (`fornecedor/{Invoices,Payments}.jsx`, prioridade 1 —
+   fecha o outro lado da mesma PO já migrada) ou **Aprovações do Company
+   Admin** (`companyAdmin/Approvals.jsx`, prioridade 1 — a lista que falta
+   para o detalhe já migrado de `OrderDetail`). Ambas reutilizam
+   directamente `OrdersService`/`PurchaseOrderDto` já existentes.
 2. Para cada página: ler o `.jsx` original por completo, confirmar as
    chamadas de API reais (nunca assumir pelo nome do ficheiro), portar
    modelo → serviço → componente → template, escrever testes, e só depois

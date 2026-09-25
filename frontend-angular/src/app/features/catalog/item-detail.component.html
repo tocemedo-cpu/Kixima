@@ -1,0 +1,133 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!product()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px" (click)="voltar()">← Voltar ao catálogo</button>
+
+    <div class="grid-cols grid-2" style="align-items:start">
+      <div class="card" style="overflow:hidden">
+        <div class="detail-cover">
+          <app-product-cover [imageUrl]="activeImg()" [category]="product()!.category" [name]="product()!.name"></app-product-cover>
+        </div>
+        @if ((product()!.images || []).length > 1) {
+          <div class="dz-grid" style="padding:12px 16px 0">
+            @for (img of product()!.images!; track img.id) {
+              <button type="button" class="dz-item" [style.border]="activeImg() === img.url ? '2px solid var(--brand-600)' : '1px solid var(--line)'" style="cursor:pointer" (click)="activeImg.set(img.url)">
+                <img [src]="img.url" [alt]="product()!.name">
+              </button>
+            }
+          </div>
+        }
+        <div class="card-pad">
+          <span class="badge badge-neutral">{{ product()!.category }}</span>
+          @if (product()!.subcategory) {
+            <span class="badge badge-neutral" style="margin-left:6px">{{ product()!.subcategory }}</span>
+          }
+          <h1 style="font-size:22px;margin-top:12px">{{ product()!.name }}</h1>
+          <p style="font-size:14px;color:var(--ink-600);margin-top:10px;line-height:1.6">
+            {{ product()!.fullDescription || product()!.description || 'Sem descrição adicional.' }}
+          </p>
+
+          @if (product()!.applications) {
+            <div style="margin-top:14px">
+              <div style="font-size:12px;font-weight:700;color:var(--ink-900);margin-bottom:4px">Aplicações</div>
+              <p style="font-size:13.5px;color:var(--ink-600);line-height:1.6;margin:0;white-space:pre-line">{{ product()!.applications }}</p>
+            </div>
+          }
+          @if (product()!.benefits) {
+            <div style="margin-top:14px">
+              <div style="font-size:12px;font-weight:700;color:var(--ink-900);margin-bottom:4px">Benefícios</div>
+              <p style="font-size:13.5px;color:var(--ink-600);line-height:1.6;margin:0;white-space:pre-line">{{ product()!.benefits }}</p>
+            </div>
+          }
+
+          <div style="margin-top:20px;display:grid;gap:10px;font-size:13.5px">
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <span style="color:var(--ink-400)">Fornecedor</span>
+              <span style="text-align:right">{{ product()!.supplier?.name }}</span>
+            </div>
+            @for (f of idents; track f[0]) {
+              <div style="display:flex;justify-content:space-between;gap:12px">
+                <span style="color:var(--ink-400)">{{ f[1] }}</span>
+                <span style="text-align:right">{{ valor(f[0]) }}</span>
+              </div>
+            }
+            @if (product()!.leadTimeDays) {
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--ink-400)">Prazo de entrega</span><span style="text-align:right">{{ product()!.leadTimeDays }} dias</span></div>
+            }
+            @if (product()!.availability) {
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--ink-400)">Disponibilidade</span><span style="text-align:right">{{ product()!.availability }}</span></div>
+            }
+            @if (product()!.warehouse) {
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--ink-400)">Armazém</span><span style="text-align:right">{{ product()!.warehouse }}</span></div>
+            }
+          </div>
+
+          @if (specs.length > 0) {
+            <div class="reg-section">Especificações técnicas</div>
+            <div style="display:grid;gap:10px;font-size:13.5px">
+              @for (f of specs; track f[0]) {
+                <div style="display:flex;justify-content:space-between;gap:12px">
+                  <span style="color:var(--ink-400)">{{ f[1] }}</span>
+                  <span style="text-align:right">{{ valor(f[0]) }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          @if ((product()!.documents || []).length > 0) {
+            <div class="reg-section">Documentos</div>
+            <div class="doc-list">
+              @for (d of product()!.documents!; track d.id) {
+                <a class="doc-item" [href]="d.fileUrl" target="_blank" rel="noreferrer">
+                  <span>{{ DOC_LABELS[d.type] || d.type }}</span>
+                  <span class="doc-name">{{ d.originalName }}</span>
+                </a>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="card card-pad">
+        <div class="stat-label">Preço unitário</div>
+        @if (hasPromo) {
+          <div>
+            <div class="stat-value" style="font-family:var(--font-mono);color:var(--brand-600)">{{ formatMoney(product()!.promoPrice, product()!.currency) }}</div>
+            <div style="font-size:13px;color:var(--ink-400);text-decoration:line-through">{{ formatMoney(product()!.unitPrice, product()!.currency) }}</div>
+          </div>
+        } @else {
+          <div class="stat-value" style="font-family:var(--font-mono)">{{ formatMoney(product()!.unitPrice, product()!.currency) }}</div>
+        }
+        @if (product()!.minQuantity || product()!.maxQuantity) {
+          <div style="font-size:12.5px;color:var(--ink-600);margin-top:6px">
+            @if (product()!.minQuantity) { Mín. {{ product()!.minQuantity }} }
+            @if (product()!.minQuantity && product()!.maxQuantity) { · }
+            @if (product()!.maxQuantity) { Máx. {{ product()!.maxQuantity }} }
+            unidades
+          </div>
+        }
+
+        <app-field label="Quantidade" style="margin-top:20px">
+          <input type="number" min="1" [value]="quantity()" (input)="setQuantity($any($event.target).value)" style="max-width:120px">
+        </app-field>
+
+        <div style="font-size:13px;color:var(--ink-600);margin-bottom:16px">
+          Subtotal: <strong>{{ formatMoney(+product()!.unitPrice * quantity(), product()!.currency) }}</strong>
+        </div>
+
+        <button class="btn btn-accent" style="width:100%" (click)="handleAdd()">
+          {{ added() ? 'Adicionado à cesta ✓' : 'Adicionar à cesta' }}
+        </button>
+        <a [routerLink]="'/comprador/comparar'" [queryParams]="{ productId: product()!.id }" class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px;justify-content:center">
+          ⇄ Comparar fornecedores
+        </a>
+        @if (added()) {
+          <a routerLink="/comprador/cesta" class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px;justify-content:center">Ver cesta</a>
+        }
+      </div>
+    </div>
+  </div>
+}

@@ -14,6 +14,16 @@ const PATHS: Record<string, string> = {
   chart: `<g ${P}><path d="M4 20V4M4 20h16" /><path d="M8 16v-4M12 16V8M16 16v-6" /></g>`,
   approvals: `<g ${P}><path d="M4 5h16v12H4z" /><path d="m8 11 2.5 2.5L16 8" /></g>`,
   box: `<g ${P}><path d="M3 8v8l9 5 9-5V8l-9-5z" /><path d="M3 8l9 5 9-5M12 13v8" /></g>`,
+  search: `<g ${P}><circle cx="11" cy="11" r="7" /><path d="m21 21-4-4" /></g>`,
+  catalog: `<g ${P}><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></g>`,
+  orders: `<g ${P}><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 9h8M8 13h8M8 17h5" /></g>`,
+  checkout: `<g ${P}><rect x="2" y="6" width="20" height="12" rx="2" /><path d="M2 10h20" /></g>`,
+  payment: `<g ${P}><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></g>`,
+  truck: `<g ${P}><path d="M3 6h11v9H3zM14 9h4l3 3v3h-7z" /><circle cx="7" cy="18" r="1.6" /><circle cx="17" cy="18" r="1.6" /></g>`,
+  reception: `<g ${P}><path d="m9 12 2 2 4-4" /><rect x="4" y="4" width="16" height="16" rx="2" /></g>`,
+  invoice: `<g ${P}><path d="M6 2h9l3 3v17l-2.5-1.5L13 22l-2.5-1.5L8 22l-2.5-1.5L6 22z" /><path d="M9 8h6M9 12h6" /></g>`,
+  shield: `<g ${P}><path d="M12 3l7 3v5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z" /></g>`,
+  report: `<g ${P}><path d="M6 2h9l3 3v17H6z" /><path d="M9 13l2 2 4-4M9 8h6" /></g>`,
 };
 
 @Component({

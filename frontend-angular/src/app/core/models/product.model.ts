@@ -73,7 +73,77 @@ export interface ProductDto {
   createdAt: string;
   updatedAt: string;
 
-  supplier?: { id: string; name: string; verified?: boolean } | null;
+  // GET /api/catalog/:id inclui supplier{id,name,status}; GET /api/marketplace/search
+  // inclui um "selo" adicional (verified/destaque) — ver comSelo() em marketplaceService.js.
+  supplier?: {
+    id: string;
+    name: string;
+    status?: string;
+    verified?: boolean;
+    destaque?: boolean;
+    logoUrl?: string | null;
+    city?: string | null;
+    country?: string | null;
+  } | null;
+
+  // Só em GET /api/catalog/:id (catalogService.getProduct).
+  images?: ProductImageDto[];
+  documents?: ProductDocumentDto[];
+
+  // Só em GET /api/marketplace/search, quando autenticado (marketplaceService.search).
+  isFavorite?: boolean;
+}
+
+export interface ProductImageDto {
+  id: string;
+  productId: string;
+  url: string;
+  isPrimary: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export type ProductDocType = 'FICHA_TECNICA' | 'DATASHEET' | 'MANUAL' | 'CATALOGO' | 'CERTIFICADO' | 'DESENHO_TECNICO';
+
+export interface ProductDocumentDto {
+  id: string;
+  productId: string;
+  type: ProductDocType;
+  fileUrl: string;
+  originalName: string;
+  createdAt: string;
 }
 
 export const PRODUCT_AVAILABILITY = ['Em stock', 'Sob encomenda', 'Esgotado'] as const;
+
+// Espelha marketplaceService.search() — backend/src/services/marketplaceService.js:116-142.
+export interface MarketplaceSearchResult {
+  items: ProductDto[];
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
+}
+
+// Espelha marketplaceService.facets() — backend/src/services/marketplaceService.js:146-179.
+export interface MarketplaceFacets {
+  categories: Array<{ name: string; count: number }>;
+  kinds: Array<{ name: string; count: number }>;
+  countries: Array<{ name: string; count: number }>;
+  certifications: Array<{ name: string; count: number }>;
+  priceBounds: { min: number; max: number };
+}
+
+export interface MarketplaceSearchParams {
+  q?: string;
+  category?: string;
+  kind?: 'PRODUTO' | 'SERVICO';
+  minPrice?: string;
+  maxPrice?: string;
+  verified?: 'true';
+  minRating?: number;
+  promo?: 'true';
+  sort?: string;
+  page?: number;
+  limit?: number;
+}
