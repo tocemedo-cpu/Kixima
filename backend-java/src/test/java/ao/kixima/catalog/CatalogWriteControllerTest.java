@@ -378,6 +378,21 @@ class CatalogWriteControllerTest {
         return jdbcTemplate.queryForObject("SELECT count(*) FROM products WHERE supplier_id = ? AND name = ?", Integer.class, supplierId(), nome);
     }
 
+    private static MockMultipartFile xlsx(byte[] conteudo) {
+        return new MockMultipartFile("file", "catalogo.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", conteudo);
+    }
+
+    /**
+     * O carregamento em massa é do plano Pro e o seed deixa a Kianda em CORE —
+     * o `beforeAll` do Node põe a empresa em Pro (e repõe no fim); aqui cada
+     * cenário chama isto e o {@code @Transactional} da classe repõe tudo.
+     */
+    private void emPro() {
+        porNoPlano("PRO");
+    }
+
+    // Um cenário por `test()` de catalog-import.test.js, pela mesma ordem.
+
     @Test
     void parsePriceInterpretaFormatosAoaENumeros() {
         assertThat(CatalogImportService.parsePrice("1.250.000,00 AOA")).isEqualTo(1250000d);
@@ -388,25 +403,26 @@ class CatalogWriteControllerTest {
     }
 
     @Test
-    void importCatalogDados() throws Exception {
-        String fornecedor = login(FORNECEDOR_EMAIL);
-        byte[] buf = buildXlsx(List.of(HEADER,
-                linha("Válvulas e Conexões", "Válvula de teste", "Válvula de esfera de teste", "Produto", "un", "40141607", "Ball valves", "40 — X", "4014 — Y", "EUA", "1.500.000,00 AOA"),
-                linha("Inspeção, Testes e Certificação", "Inspeção de teste", "Serviço de inspeção", "Serviço", "serviço", "81141804", "Inspection", "81 — Z", "8114 — W", "Angola", "")));
-
-        // O carregamento em massa é do plano Pro — em CORE (seed da Kianda) é recusado, e diz qual plano falta.
-        mockMvc.perform(multipart("/api/catalog/import")
-                        .file(new MockMultipartFile("file", "catalogo.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buf)).header("Authorization", "Bearer " + fornecedor))
+    void importCatalogExigeOPlanoPro() throws Exception {
+        // Fora do plano Pro (CORE, seed da Kianda) é recusado, e diz qual plano falta — a regra que o Node só assume no beforeAll.
+        byte[] buf = buildXlsx(List.of(HEADER, linha("Segurança e EPI", "Capacete de teste", "Capacete", "Produto", "un", "46181503", "Helmet", "46 — X", "4618 — Y", "Angola", "30000")));
+        mockMvc.perform(multipart("/api/catalog/import").file(xlsx(buf)).header("Authorization", "Bearer " + login(FORNECEDOR_EMAIL)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("PLANO_INSUFICIENTE"))
                 .andExpect(jsonPath("$.error.details.planoNecessario").value("PRO"));
-        porNoPlano("PRO");
+    }
 
-        // Cria produtos e serviços com UNSPSC, origem e preço.
+    @Test
+    void criaProdutosEServicosComUnspscOrigemEPreco() throws Exception {
+        emPro();
+        byte[] buf = buildXlsx(List.of(HEADER,
+                linha("Válvulas e Conexões", "Válvula de teste", "Válvula de esfera de teste", "Produto", "un", "40141607", "Ball valves", "40 — X", "4014 — Y", "EUA", "1.500.000,00 AOA"),
+                linha("Inspeção, Testes e Certificação", "Inspeção de teste", "Serviço de inspeção", "Serviço", "serviço", "81141804", "Inspection", "81 — Z", "8114 — W", "Angola", "")));
         Map<String, Object> res = importar(buf);
         assertThat(res.get("total")).isEqualTo(2);
         assertThat((Integer) res.get("created") + (Integer) res.get("updated")).isEqualTo(2);
         assertThat((List<?>) res.get("errors")).isEmpty();
+
         Map<String, Object> prod = produto("Válvula de teste");
         assertThat(prod.get("kind")).isEqualTo("PRODUTO");
         assertThat(prod.get("unspsc_code")).isEqualTo("40141607");
@@ -415,96 +431,134 @@ class CatalogWriteControllerTest {
         assertThat(prod.get("country_of_origin")).isEqualTo("EUA");
         assertThat(((java.math.BigDecimal) prod.get("unit_price")).intValue()).isEqualTo(1500000);
         assertThat(prod.get("currency")).isEqualTo("AOA");
+
         Map<String, Object> serv = produto("Inspeção de teste");
         assertThat(serv.get("kind")).isEqualTo("SERVICO");
         assertThat(serv.get("country_of_origin")).isEqualTo("Angola");
-        assertThat(((java.math.BigDecimal) serv.get("unit_price")).intValue()).isGreaterThan(0); // preço estimado
-        assertThat(serv.get("stock_quantity")).isNull();
+        // sem coluna de preço preenchida → preço estimado (> 0)
+        assertThat(((java.math.BigDecimal) serv.get("unit_price")).intValue()).isGreaterThan(0);
+        assertThat(serv.get("stock_quantity")).isNull(); // serviço não tem stock
+    }
 
-        // É idempotente (reimportar atualiza, não duplica).
-        byte[] bomba = buildXlsx(List.of(HEADER, linha("Bombas e Compressores", "Bomba de teste", "Bomba", "Produto", "un", "40151503", "Pumps", "40 — X", "4015 — Y", "Angola", "900000")));
-        importar(bomba);
-        Map<String, Object> r2 = importar(bomba);
+    @Test
+    void eIdempotenteReimportarAtualizaNaoDuplica() throws Exception {
+        emPro();
+        byte[] buf = buildXlsx(List.of(HEADER, linha("Bombas e Compressores", "Bomba de teste", "Bomba", "Produto", "un", "40151503", "Pumps", "40 — X", "4015 — Y", "Angola", "900000")));
+        importar(buf);
+        Map<String, Object> r2 = importar(buf);
         assertThat(r2.get("created")).isEqualTo(0);
         assertThat(r2.get("updated")).isEqualTo(1);
         assertThat(contar("Bomba de teste")).isEqualTo(1);
+    }
 
-        // Rejeita ficheiro sem as colunas mínimas.
-        byte[] semColunas = buildXlsx(List.of(linha("Coluna A", "Coluna B"), linha("x", "y")));
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> importar(semColunas))
-                .isInstanceOf(ao.kixima.common.error.BusinessRuleException.class).hasMessageContaining("Categoria");
+    @Test
+    void rejeitaFicheiroSemAsColunasMinimas() throws Exception {
+        emPro();
+        byte[] buf = buildXlsx(List.of(linha("Coluna A", "Coluna B"), linha("x", "y")));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> importar(buf))
+                .isInstanceOf(ao.kixima.common.error.BusinessRuleException.class)
+                .hasMessageContaining("Categoria").hasMessageContaining("Produto");
+    }
 
-        // Endpoint HTTP: só Fornecedor/Company Admin importam; sem ficheiro → 400 NO_FILE; formato errado → 422.
-        byte[] capacete = buildXlsx(List.of(HEADER, linha("Segurança e EPI", "Capacete de teste", "Capacete", "Produto", "un", "46181503", "Helmet", "46 — X", "4618 — Y", "Angola", "30000")));
-        mockMvc.perform(multipart("/api/catalog/import")
-                        .file(new MockMultipartFile("file", "catalogo.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", capacete)).header("Authorization", "Bearer " + fornecedor))
+    @Test
+    void endpointHttpSoFornecedorCompanyAdminImportam() throws Exception {
+        emPro();
+        String fornecedor = login(FORNECEDOR_EMAIL);
+        byte[] buf = buildXlsx(List.of(HEADER, linha("Segurança e EPI", "Capacete de teste", "Capacete", "Produto", "un", "46181503", "Helmet", "46 — X", "4618 — Y", "Angola", "30000")));
+        mockMvc.perform(multipart("/api/catalog/import").file(xlsx(buf)).header("Authorization", "Bearer " + fornecedor))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.total").value(1));
-        mockMvc.perform(multipart("/api/catalog/import")
-                        .file(new MockMultipartFile("file", "catalogo.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", capacete)).header("Authorization", "Bearer " + login(COMPRADOR_EMAIL)))
+        mockMvc.perform(multipart("/api/catalog/import").file(xlsx(buf)).header("Authorization", "Bearer " + login(COMPRADOR_EMAIL)))
                 .andExpect(status().isForbidden());
+
+        // Sem ficheiro → 400 NO_FILE; formato errado → 422 (filtro do upload, como o multer do Node).
         mockMvc.perform(multipart("/api/catalog/import").header("Authorization", "Bearer " + fornecedor))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.code").value("NO_FILE"));
         mockMvc.perform(multipart("/api/catalog/import")
                         .file(new MockMultipartFile("file", "catalogo.csv", "text/csv", "a,b".getBytes(StandardCharsets.UTF_8))).header("Authorization", "Bearer " + fornecedor))
                 .andExpect(status().isUnprocessableEntity());
+    }
 
-        // Conta preços estimados quando a coluna Preço vem vazia.
-        Map<String, Object> precos = importar(buildXlsx(List.of(HEADER,
+    @Test
+    void contaPrecosEstimadosQuandoAColunaPrecoVemVazia() throws Exception {
+        emPro();
+        Map<String, Object> res = importar(buildXlsx(List.of(HEADER,
                 linha("Válvulas e Conexões", "Válvula com preço de teste", "x", "Produto", "un", "", "", "", "", "", "700000"),
                 linha("Válvulas e Conexões", "Válvula sem preço de teste", "x", "Produto", "un", "", "", "", "", "", ""))));
-        assertThat(precos.get("precosEstimados")).isEqualTo(1);
+        assertThat(res.get("precosEstimados")).isEqualTo(1);
+    }
 
-        // Usa as colunas Stock e Cidade quando presentes; conta por omissão quando ausentes.
+    @Test
+    void usaAsColunasStockECidadeQuandoPresentesContaPorOmissaoQuandoAusentes() throws Exception {
+        emPro();
         List<String> headerComStockCidade = new ArrayList<>(HEADER);
         headerComStockCidade.add("Stock");
         headerComStockCidade.add("Cidade");
-        Map<String, Object> stock = importar(buildXlsx(List.of(headerComStockCidade,
+        Map<String, Object> res = importar(buildXlsx(List.of(headerComStockCidade,
                 linha("Bombas e Compressores", "Bomba com stock de teste", "x", "Produto", "un", "", "", "", "", "", "500000", "17", "Cabinda"),
                 linha("Bombas e Compressores", "Bomba sem stock de teste", "x", "Produto", "un", "", "", "", "", "", "500000", "", ""))));
-        assertThat(stock.get("stockPorOmissao")).isEqualTo(1);
-        assertThat(stock.get("localizacaoPorOmissao")).isEqualTo(1);
+        assertThat(res.get("stockPorOmissao")).isEqualTo(1);
+        assertThat(res.get("localizacaoPorOmissao")).isEqualTo(1);
+
         Map<String, Object> comColuna = produto("Bomba com stock de teste");
         assertThat(comColuna.get("stock_quantity")).isEqualTo(17);
         assertThat(comColuna.get("city")).isEqualTo("Cabinda");
         assertThat(comColuna.get("province")).isEqualTo("Cabinda");
+
         Map<String, Object> semColuna = produto("Bomba sem stock de teste");
         assertThat(semColuna.get("stock_quantity")).isEqualTo(50);
         assertThat(semColuna.get("city")).isEqualTo("Luanda");
+    }
 
-        // Avisa quando o número de fotos não bate com o de linhas de dados; não avisa quando bate.
+    @Test
+    void avisaQuandoONumeroDeFotosNaoBateComODeLinhasDeDados() throws Exception {
+        emPro();
         byte[] base = buildXlsx(List.of(HEADER, linha("Elétrico, Iluminação e Automação", "Item com fotos desalinhadas", "x", "Produto", "un", "", "", "", "", "", "400000")));
-        Map<String, Object> desalinhado = importar(comImagensFalsas(base, 2));
-        @SuppressWarnings("unchecked") List<String> avisos = (List<String>) desalinhado.get("warnings");
+        // 1 linha de dados, 2 "fotos" embebidas — desalinhado de propósito.
+        Map<String, Object> res = importar(comImagensFalsas(base, 2));
+        @SuppressWarnings("unchecked") List<String> avisos = (List<String>) res.get("warnings");
         assertThat(avisos).hasSize(1);
         assertThat(avisos.get(0)).contains("2 imagem").contains("1 linha");
-        byte[] base2 = buildXlsx(List.of(HEADER, linha("Elétrico, Iluminação e Automação", "Item com fotos alinhadas", "x", "Produto", "un", "", "", "", "", "", "400000")));
-        Map<String, Object> alinhado = importar(comImagensFalsas(base2, 1));
-        assertThat((List<?>) alinhado.get("warnings")).isEmpty();
-        assertThat(alinhado.get("withImages")).isEqualTo(1);
+    }
+
+    @Test
+    void naoAvisaQuandoONumeroDeFotosBateComODeLinhas() throws Exception {
+        emPro();
+        byte[] base = buildXlsx(List.of(HEADER, linha("Elétrico, Iluminação e Automação", "Item com fotos alinhadas", "x", "Produto", "un", "", "", "", "", "", "400000")));
+        Map<String, Object> res = importar(comImagensFalsas(base, 1));
+        assertThat((List<?>) res.get("warnings")).isEmpty();
+        assertThat(res.get("withImages")).isEqualTo(1);
         entityManager.flush();
         assertThat(jdbcTemplate.queryForObject("SELECT image_url FROM products WHERE supplier_id = ? AND name = 'Item com fotos alinhadas'", String.class, supplierId()))
                 .startsWith("/api/uploads/");
+    }
 
-        // Muitas linhas independentes.
+    @Test
+    void processaMuitasLinhasIndependentesSemSeAtropelarem() throws Exception {
+        emPro();
         int n = 150;
         List<List<String>> rows = new ArrayList<>();
         rows.add(HEADER);
         for (int k = 0; k < n; k++) {
             rows.add(linha("Ferramentas e Equipamento de Oficina", "Item em massa " + k, "x", "Produto", "un", "MASSA-" + k, "", "", "", "", String.valueOf(100000 + k)));
         }
-        Map<String, Object> massa = importar(buildXlsx(rows));
-        assertThat(massa.get("total")).isEqualTo(n);
-        assertThat(massa.get("created")).isEqualTo(n);
-        assertThat((List<?>) massa.get("errors")).isEmpty();
+        Map<String, Object> res = importar(buildXlsx(rows));
+        assertThat(res.get("total")).isEqualTo(n);
+        assertThat(res.get("created")).isEqualTo(n);
+        assertThat((List<?>) res.get("errors")).isEmpty();
         entityManager.flush();
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM products WHERE supplier_id = ? AND name LIKE 'Item em massa %'", Integer.class, supplierId())).isEqualTo(n);
+    }
 
-        // Duas linhas com o mesmo produto (mesmo código): a primeira cria, a segunda fica como erro.
-        Map<String, Object> dup = importar(buildXlsx(List.of(HEADER,
+    @Test
+    void duasLinhasComOMesmoProdutoNoMesmoFicheiroAPrimeiraCriaASegundaFicaComoErro() throws Exception {
+        emPro();
+        Map<String, Object> res = importar(buildXlsx(List.of(HEADER,
                 linha("Ferramentas e Equipamento de Oficina", "Item duplicado no ficheiro", "x", "Produto", "un", "DUP-001", "", "", "", "", "111111"),
                 linha("Ferramentas e Equipamento de Oficina", "Item duplicado no ficheiro", "x", "Produto", "un", "DUP-001", "", "", "", "", "222222"))));
-        assertThat(dup.get("created")).isEqualTo(1);
-        assertThat((List<?>) dup.get("errors")).hasSize(1);
+        assertThat(res.get("created")).isEqualTo(1);
+        assertThat((List<?>) res.get("errors")).hasSize(1);
         assertThat(contar("Item duplicado no ficheiro")).isEqualTo(1);
+        // A primeira ocorrência é a que ficou — o segundo preço não sobrescreveu em silêncio.
+        assertThat(((java.math.BigDecimal) produto("Item duplicado no ficheiro").get("unit_price")).intValue()).isEqualTo(111111);
     }
 }

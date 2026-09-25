@@ -63,18 +63,13 @@ import java.util.UUID;
  * fecho). Ver o cabeçalho do ficheiro Node para a numeração dos 8 passos,
  * reproduzida nos comentários dos métodos abaixo.
  *
- * NÃO PORTADO NESTE MARCO (M3b/c) — sinalizado aqui, não escondido:
- * <ul>
- *   <li>Call-off / contrato-quadro (contractService) — createPurchaseOrder
- *       aqui nunca deteta um contrato activo; toda PO nasce
- *       {@code isCallOff=false}, precisa de aprovação. Depende do domínio
- *       Contract, ainda não portado.</li>
- *   <li>(nenhum) — call-off (A.5) e ERP DOA Approval (A.7:
- *       {@link #aplicarDecisaoErp}/{@link #aplicarPagamentoErp}) já portados.</li>
- * </ul>
- * O estado da PO, a matemática de imposto, a cadeia de hash da fatura, a
- * referência de pagamento e a decrementação atómica de stock — o núcleo que
- * move dinheiro — estão completos e testados.
+ * Também já cá estão o call-off / contrato-quadro (A.5: createPurchaseOrder
+ * consulta {@link ContractService#findActiveContractForOrder} e a PO nasce
+ * {@code isCallOff=true}, sem aprovação) e a ERP DOA Approval (A.7:
+ * {@link #aplicarDecisaoErp}/{@link #aplicarPagamentoErp}). O estado da PO,
+ * a matemática de imposto, a cadeia de hash da fatura, a referência de
+ * pagamento e a decrementação atómica de stock — o núcleo que move dinheiro
+ * — estão completos e testados.
  */
 @Service
 public class PoService {
@@ -193,8 +188,8 @@ public class PoService {
                 .toList());
 
         // Stock: verificado E decrementado atomicamente por item, na mesma transação da criação da PO.
-        // Aviso de stock baixo só na TRANSIÇÃO (mesmo critério de catalogService.createStockMovement/
-        // updateStock, ainda não portados) — recolhido aqui, disparado só depois de a PO existir.
+        // Aviso de stock baixo só na TRANSIÇÃO (mesmo critério de CatalogService.createStockMovement/
+        // updateStock) — recolhido aqui, disparado só depois de a PO existir.
         record AvisoEstoqueBaixo(Product produto, int restante) {
         }
         List<AvisoEstoqueBaixo> avisosEstoqueBaixo = new java.util.ArrayList<>();

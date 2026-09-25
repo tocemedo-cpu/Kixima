@@ -21,11 +21,10 @@ import java.util.Map;
  * PRO). Fonte única de verdade para o que cada plano inclui: qualquer
  * limite/funcionalidade que dependa do plano lê-se daqui.
  *
- * Porta só a metade de LIMITES/FUNCIONALIDADES do ficheiro Node (a que já
- * tem chamador — {@code CompanyService.criarConvite}, M5 lote 2, e servirá
- * ERP/chaves de API/category management quando entrarem). A metade de
- * PREÇOS ({@code preco}/{@code tabela}/{@code PRECOS}) fica por portar —
- * ainda não há nenhuma página/endpoint que a use.
+ * As duas metades do ficheiro Node estão cá: LIMITES/FUNCIONALIDADES
+ * ({@link #assertFeature}, limites por plano) e PREÇOS ({@link #preco},
+ * {@link #configurarPrecos} — mesmas variáveis {@code KIXIMA_PRECO_*}, com
+ * o equivalente mensal calculado).
  */
 @Service
 public class PlanService {

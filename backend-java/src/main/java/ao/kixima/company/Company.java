@@ -151,11 +151,11 @@ public class Company extends AbstractPersistableEntity<String> {
     }
 
     /**
-     * Criação de uma empresa nova — hoje só usado por
-     * {@code ao.kixima.supplierdev.SupplierDevService#approve} (nasce
-     * sempre FORNECEDOR/PENDENTE, tal como o Node; ver
-     * companyService.registerCompany, ainda não portado, para o cadastro
-     * público completo).
+     * Criação de uma empresa nova — pelo cadastro público completo
+     * ({@link CompanyService#registerCompany}: dimensão, plano, documentos,
+     * apólice, administrador) e pela aprovação de um pedido de Supplier
+     * Development ({@code ao.kixima.supplierdev.SupplierDevService#approve},
+     * que nasce sempre FORNECEDOR/PENDENTE, tal como o Node).
      */
     public Company(String id, String name, String taxId, CompanyType type, String contactEmail, String contactPhone,
                     String province, Integer employees, Instant createdAt) {
