@@ -1,0 +1,49 @@
+<div>
+  <app-page-header title="Ordens de Compra Recebidas" subtitle="Aceite ou recuse novas POs; acompanhe o estado até à entrega."></app-page-header>
+  <app-error-banner [message]="error()"></app-error-banner>
+
+  <div class="field" style="max-width:260px;margin-bottom:16px">
+    <select aria-label="Filtrar por estado" [value]="statusFilter()" (change)="setStatusFilter($any($event.target).value)">
+      <option value="">Todos os estados</option>
+      @for (entry of statusEntries; track entry[0]) {
+        <option [value]="entry[0]">{{ entry[1].label }}</option>
+      }
+    </select>
+  </div>
+
+  @if (!orders()) {
+    <app-loading></app-loading>
+  } @else {
+    <div class="card">
+      @if (orders()!.length === 0) {
+        <div class="empty-state">
+          <h3>Sem ordens de compra recebidas</h3>
+          <p>Quando um cliente emitir uma PO para a sua empresa, ela aparece aqui.</p>
+        </div>
+      } @else {
+        <table>
+          <thead>
+            <tr><th>Referência</th><th>Valor</th><th>Tipo</th><th>Estado</th><th>Recebida em</th></tr>
+          </thead>
+          <tbody>
+            @for (o of orders()!; track o.id) {
+              <tr class="row-link" (click)="verDetalhe(o.id)">
+                <td><span class="mono">{{ o.reference }}</span></td>
+                <td>{{ formatMoney(o.totalAmount, o.currency) }}</td>
+                <td>
+                  @if (o.isCallOff) {
+                    <app-badge tone="info">Call-off</app-badge>
+                  } @else {
+                    PO regular
+                  }
+                </td>
+                <td><app-badge [tone]="PO_STATUS[o.status]?.tone">{{ PO_STATUS[o.status]?.label }}</app-badge></td>
+                <td>{{ formatDate(o.createdAt) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,64 @@
+<app-crumbs [trail]="['Contratos']"></app-crumbs>
+<app-buyer-page-head title="Contratos" subtitle="Gerencie todos os contratos ativos e históricos da sua empresa."></app-buyer-page-head>
+
+<app-kpi-row [cards]="kpiCards()"></app-kpi-row>
+
+<div class="bz-layout">
+  <div>
+    <app-toolbar placeholder="Buscar por contrato, cliente ou projeto…" [q]="q()" (onQ)="q.set($event)"></app-toolbar>
+    @if (error()) {
+      <div class="empty-state"><p>{{ error() }}</p></div>
+    } @else {
+      <div class="bz-card bz-tablewrap">
+        <table class="bz-table">
+          <thead>
+            <tr>
+              <th>Nº do Contrato</th><th>Contraparte</th><th>Âmbito</th><th class="r">Valor</th>
+              <th>Vigência</th><th>Periodicidade</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (!rows()) {
+              <tr><td colspan="7"><app-empty-row>A carregar…</app-empty-row></td></tr>
+            } @else if (list().length === 0) {
+              <tr><td colspan="7"><app-empty-row>Sem contratos.</app-empty-row></td></tr>
+            } @else {
+              @for (c of list(); track c.id) {
+                <tr>
+                  <td><span class="bz-mono">{{ c.reference }}</span></td>
+                  <td>{{ contraparte(c)?.name || '—' }}</td>
+                  <td>{{ (c.categoriesCovered || []).join(', ') || '—' }}</td>
+                  <td class="r">
+                    <strong>{{ formatMoney(c.totalValue, c.currency) }}</strong>
+                    <span class="bz-sub2">usado {{ formatMoney(c.usedValue, c.currency) }}</span>
+                  </td>
+                  <td>
+                    {{ formatDate(c.validFrom) }}
+                    <span class="bz-sub2">até {{ formatDate(c.validUntil) }}</span>
+                  </td>
+                  <td>{{ BILLING_PERIODICITY[c.billingPeriodicity] || c.billingPeriodicity }}</td>
+                  <td><app-pill [tone]="CONTRACT_STATUS[c.status]?.tone">{{ CONTRACT_STATUS[c.status]?.label || c.status }}</app-pill></td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <div class="bz-side">
+    <div class="bz-panel">
+      <h3>Resumo por Status</h3>
+      <div class="bz-panel-row"><span>Ativos</span><strong style="color:var(--ok-700)">{{ kpis().ativos }}</strong></div>
+      <div class="bz-panel-row"><span>A Vencer</span><strong style="color:var(--cu-fg)">{{ kpis().aVencer }}</strong></div>
+      <div class="bz-panel-row"><span>Vencidos</span><strong style="color:var(--al-fg)">{{ kpis().vencidos }}</strong></div>
+    </div>
+    <div class="bz-panel">
+      <h3>Próximos a Vencer</h3>
+      @for (c of proximosAVencer(); track c.id) {
+        <div class="bz-panel-row"><span class="bz-mono">{{ c.reference }}</span><span class="bz-sub2">{{ formatDate(c.validUntil) }}</span></div>
+      }
+    </div>
+  </div>
+</div>

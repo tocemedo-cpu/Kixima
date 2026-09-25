@@ -59,12 +59,16 @@ neste repositório.
 | Aprovações — Company Admin | `features/orders/approvals.component.ts` | `pages/companyAdmin/Approvals.jsx` | `GET /api/purchase-orders?status=AGUARDANDO_APROVACAO` |
 | Faturas — Fornecedor | `features/orders/supplier-invoices.component.ts` | `pages/fornecedor/Invoices.jsx` | `GET /api/purchase-orders?invoiced=true&page=&limit=` (envelope paginado) |
 | Pagamentos Recebidos — Fornecedor/Financeiro | `features/orders/supplier-payments.component.ts` | `pages/fornecedor/Payments.jsx` (mesmo componente React em `/fornecedor/pagamentos` e `/financeiro/recebidos`) | `GET /api/purchase-orders` (array puro, filtrado no cliente), `PATCH /api/payments/:paymentId/confirm-received` |
+| Ordens de Compra Recebidas — Fornecedor | `features/orders/orders-received.component.ts` | `pages/fornecedor/OrdersReceived.jsx` | `GET /api/purchase-orders?status=` (filtro de estado opcional) |
+| Contratos-quadro — Company Admin | `features/contracts/contracts.component.ts` | `pages/companyAdmin/Contracts.jsx` | `GET /api/contracts` |
 
 **Verificação ao vivo desta etapa** (Postgres + backend Java a correr localmente, Angular com o seu proxy): login como Comprador → pesquisa no catálogo → produto → cesta → checkout (gera PO) → lista de ordens com KPIs → detalhe da PO → aprovação pelo Company Admin → aceitação pelo Fornecedor (gera fatura com os campos AGT presentes, correctamente vazios sem credenciais) → guarda de máquina de estados (despachar antes de pago devolve 400) → fluxo de rejeição com motivo. RBAC confirmado com 403 em cada ponto errado: Comprador não aprova nem aceita a própria PO, Fornecedor não aprova, Fornecedor não lê `/api/buyer/orders` (403), pedido sem sessão dá 401. Um bug de routing desta sessão anterior foi encontrado e corrigido: a rota de Cotações do Comprador estava em `/comprador/pedidos`, mas a real (`frontend/src/App.jsx:191`) é `/comprador/cotacoes` — nunca teria sido alcançável pela navegação real da aplicação.
 
 **Verificação ao vivo — Aprovações/Faturas/Pagamentos** (mesmo ambiente, sessões reais via login + cookie de sessão, testado por HTTP directo e por browser headless através do `ng serve`): Company Admin lê `/empresa/aprovacoes` e vê a PO pendente real; Fornecedor lê `/fornecedor/faturas` (envelope paginado, badges de estado) e `/fornecedor/pagamentos` (filtra só as próprias vendas pagas); Financeiro lê `/financeiro/recebidos` — mesmo componente, mostra "sem pagamentos" correctamente porque a empresa cliente não vende; confirmação de recebimento (`PATCH /api/payments/:id/confirm-received`) testada ao vivo: Comprador (empresa errada) → 403, Fornecedor dono → 200 com `receivedAt` preenchido, segunda tentativa → 409. `roleGuard('COMPANY_ADMIN')` confirmado a bloquear um Comprador que tenta `/empresa/aprovacoes` (redireccionado para a sua própria área) — RBAC do lado do cliente, o servidor continua a ser a fonte de verdade.
 
 **Bug de paridade Node↔Java encontrado e corrigido nesta etapa** (fora do Angular, no backend Java): `GET /api/purchase-orders` no `backend-java` (`PoController.list`) só aceitava `status` — ignorava silenciosamente `invoiced`/`page`/`limit`, devolvendo sempre o array completo sem filtrar nem paginar. O Node (`poService.listPurchaseOrders`, `backend/src/services/poService.js:245-268`) filtra por `invoiced` e, quando `page` está presente, devolve o envelope `{items,total,page,pages,limit}`. Corrigido em `PoController`/`PoDtoService`/`PurchaseOrderSpecifications` para reproduzir exactamente os dois ramos do Node (mesmo tecto `min(max(1,limit||15),50)`, mesmo `pages=max(1,ceil(total/take))`), com teste de contrato adicionado em `PoControllerTest` e verificado ao vivo (a diferença foi vista primeiro por HTTP directo, antes de qualquer suposição). Sem esta correcção, o ecrã de Faturas do Fornecedor teria mostrado todas as POs (faturadas ou não) sem paginação real.
+
+**Verificação ao vivo — Ordens Recebidas/Contratos**: `GET /api/contracts` e `GET /api/purchase-orders` (sem `page`) já estavam correctos e completos no Java — nenhuma correcção necessária desta vez. Confirmado por HTTP directo (Company Admin lê os 3 contratos reais de demonstração, com `clientCompany`/`supplierCompany` presentes) e por browser headless: Company Admin em `/empresa/contratos` vê os KPIs correctos (total, ativos, a vencer em 30 dias, vencidos, valor somado — mesmo cálculo do React) e a lista lateral "Próximos a Vencer"; Fornecedor em `/fornecedor/ordens` vê o filtro de estado e a lista de POs recebidas. RBAC do lado do cliente confirmado nos dois sentidos: Fornecedor bloqueado de `/empresa/contratos` (`roleGuard('COMPANY_ADMIN')`) e Comprador bloqueado de `/fornecedor/ordens` (`roleGuard('FORNECEDOR')`), ambos redireccionados para a sua própria área inicial.
 
 ## Inventário completo das 97 páginas React e prioridade sugerida
 
@@ -126,7 +130,7 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 |---|---|---|
 | `SupplierQuotes.jsx` | 1 | **Migrado** |
 | `CatalogManage.jsx` | 1 | Pendente (formulário grande — 754 linhas, taxonomia Oil & Gas completa) |
-| `OrdersReceived.jsx` | 1 | Pendente |
+| `OrdersReceived.jsx` | 1 | **Migrado** |
 | `Invoices.jsx` | 1 | **Migrado** |
 | `Payments.jsx` | 1 | **Migrado** (reutilizado também em `/financeiro/recebidos` — mesmo componente React de origem) |
 | `Inventory.jsx` | 2 | Pendente |
@@ -147,7 +151,7 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 | Página | Prioridade | Estado |
 |---|---|---|
 | `Approvals.jsx` | 1 | **Migrado** |
-| `Contracts.jsx` | 1 | Pendente |
+| `Contracts.jsx` | 1 | **Migrado** |
 | `Assinatura.jsx` | 2 | Pendente |
 | `Home.jsx` | 2 | Pendente |
 | `Users.jsx` | 2 | Pendente |
@@ -223,14 +227,22 @@ em Node.js, e porquê, está descrito na secção seguinte deste relatório
 ## Como continuar esta migração
 
 1. Escolher o próximo domínio pela tabela de prioridade acima. O percurso de
-   compra do Comprador (Catálogo → Cesta → Checkout → Ordens) e o fecho do
+   compra do Comprador (Catálogo → Cesta → Checkout → Ordens), o fecho do
    ciclo de aprovação/facturação/pagamento (Aprovações do Company Admin,
-   Faturas e Pagamentos do Fornecedor/Financeiro) já estão completos;
-   sugestão para a próxima sessão: **`fornecedor/OrdersReceived.jsx`**
-   (prioridade 1 — a lista de ordens recebidas do Fornecedor, único ecrã de
-   prioridade 1 do Fornecedor ainda pendente, reutiliza `OrdersService`) ou
-   **`companyAdmin/Contracts.jsx`** (prioridade 1 — contratos, domínio ainda
-   sem nenhuma página Angular).
+   Faturas e Pagamentos do Fornecedor/Financeiro), as Ordens Recebidas do
+   Fornecedor e os Contratos-quadro do Company Admin já estão completos.
+   Restam de prioridade 1: `comprador/Payments.jsx` (histórico de pagamentos
+   FEITOS pelo Comprador — distinto de `fornecedor/Payments.jsx`, já
+   migrado), `fornecedor/CatalogManage.jsx` (formulário grande — 754 linhas,
+   taxonomia Oil & Gas completa), `financeiro/{PendingInvoices,
+   PaymentHistory}.jsx` (sugestão para a próxima sessão — fecha o domínio
+   Financeiro, que já tem `/financeiro/recebidos` a funcionar, e reutiliza
+   `OrdersService`/`PurchaseOrderDto`), e `adminSistema/{DueDiligence,
+   PlatformFees}.jsx` (ainda sem nenhuma página Angular nesse domínio). As 4
+   páginas de sessão sem login (`Register`, `AcceptInvite`,
+   `AcceptAdminInvite`, `PasswordReset`) também são prioridade 1, mas ficam
+   melhor junto de uma revisão do fluxo de autenticação completo, não
+   isoladas.
 2. Para cada página: ler o `.jsx` original por completo, confirmar as
    chamadas de API reais (nunca assumir pelo nome do ficheiro), portar
    modelo → serviço → componente → template, escrever testes, e só depois

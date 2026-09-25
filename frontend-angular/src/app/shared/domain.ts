@@ -86,3 +86,15 @@ export const INVOICE_STATUS: Record<string, { label: string; tone: string }> = {
   VENCIDA: { label: 'Vencida', tone: 'danger' },
   CANCELADA: { label: 'Cancelada', tone: 'neutral' },
 };
+
+// Espelha CONTRACT_STATUS/BILLING_PERIODICITY em frontend/src/domain.js:77-86.
+export const CONTRACT_STATUS: Record<string, { label: string; tone: string }> = {
+  ATIVO: { label: 'Ativo', tone: 'success' },
+  EXPIRADO: { label: 'Expirado', tone: 'danger' },
+  ENCERRADO: { label: 'Encerrado', tone: 'neutral' },
+};
+
+export const BILLING_PERIODICITY: Record<string, string> = {
+  TRIMESTRAL: 'Trimestral',
+  SEMESTRAL: 'Semestral',
+};

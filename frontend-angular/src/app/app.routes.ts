@@ -98,6 +98,11 @@ export const routes: Routes = [
             data: { inbox: false },
           },
           {
+            path: 'ordens',
+            loadComponent: () =>
+              import('./features/orders/orders-received.component').then((m) => m.OrdersReceivedComponent),
+          },
+          {
             path: 'ordens/:id',
             loadComponent: () => import('./features/orders/order-detail.component').then((m) => m.OrderDetailComponent),
           },
@@ -129,6 +134,10 @@ export const routes: Routes = [
           {
             path: 'aprovacoes/:id',
             loadComponent: () => import('./features/orders/order-detail.component').then((m) => m.OrderDetailComponent),
+          },
+          {
+            path: 'contratos',
+            loadComponent: () => import('./features/contracts/contracts.component').then((m) => m.ContractsComponent),
           },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Administração da Empresa' } },
         ],
