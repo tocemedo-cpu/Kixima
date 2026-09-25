@@ -21,6 +21,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n, LANGS } from '../../i18n';
 import { SeletorDeFundo } from '../../tema/TemaContext';
+import './bancada-front.css';
 import kiximaMark from '../../assets/brand/kixima-mark.png';
 import kiximaMarkReversed from '../../assets/brand/kixima-mark-reversed.png';
 
@@ -53,8 +54,10 @@ export function NavLink({ href, className, children }) {
 
 export function Brand({ inverse = false, compact = false, isHome = false }) {
   const { t } = useI18n();
-  const content = <><img src={inverse ? kiximaMarkReversed : kiximaMark} alt="" /><span>KIXIMA<small>.NET</small></span></>;
-  const className = `brand ${compact ? 'brand-compact' : ''}`;
+  // O símbolo existente (normal ou invertido) e a marca nominal da proposta:
+  // KIXIMA com o ".NET" em expoente.
+  const content = <><img src={inverse ? kiximaMarkReversed : kiximaMark} alt="" /><span className="wm">KIXIMA<i>.NET</i></span></>;
+  const className = `lock brand ${compact ? 'brand-compact' : ''}`;
   const label = t('KIXIMA.NET — página inicial');
   // "#top" só na home, onde <main id="top"> existe — o logótipo faz scroll
   // até ao topo em vez de navegar. Nas restantes páginas, navega para "/".
@@ -73,7 +76,9 @@ function ChevronIcon() {
 // equivalente nas versões anteriores desta página.
 export function TopStrip() {
   const { t } = useI18n();
-  return <div className="top-strip"><span>{t('E-MARKETPLACE B2B · SOURCE-TO-PAY')}</span><b>{t('NASCIDO EM ANGOLA · PREPARADO PARA ÁFRICA')}</b></div>;
+  // As duas frases da antiga faixa superior ficam: esta na barra (o rótulo
+  // `.prop` da proposta), a outra no rodapé.
+  return <div className="prop">{t('E-MARKETPLACE B2B · SOURCE-TO-PAY')}</div>;
 }
 
 // Dropdown de idiomas real — mesma lógica (useI18n/LANGS/setLang) que já
@@ -135,26 +140,42 @@ export function LanguageDropdown() {
 function DesktopNavigation() {
   const { t } = useI18n();
   const navGroups = buildNavGroups(t);
-  return <nav className="desktop-nav" aria-label={t('Navegação principal')}>{navGroups.map((group) => <div className="nav-item" key={group.label}><button type="button" aria-haspopup="true">{group.label}<span aria-hidden="true">⌄</span></button><div className="mega-menu"><div className="mega-intro"><span className="eyebrow">{group.label}</span><p>{group.featured}</p></div><div className="mega-links">{group.links.map(([label, href]) => <NavLink href={href} key={label}>{label}<Arrow /></NavLink>)}</div></div></div>)}</nav>;
+  return <nav className="tabs" aria-label={t('Navegação principal')}>{navGroups.map((group) => <div className="nav-item" key={group.label}><button type="button" className="tab" aria-haspopup="true">{group.label}<ChevronIcon /></button><div className="mega-menu"><div className="mega-intro"><span className="eyebrow">{group.label}</span><p>{group.featured}</p></div><div className="mega-links">{group.links.map(([label, href]) => <NavLink href={href} key={label}>{label}<Arrow /></NavLink>)}</div></div></div>)}</nav>;
 }
 
 function MobileNavigation() {
   const { t } = useI18n();
   const navGroups = buildNavGroups(t);
-  return <details className="mobile-nav"><summary aria-label={t('Abrir menu')}><span></span><span></span><span></span></summary><div className="mobile-panel">{navGroups.map((group) => <details key={group.label}><summary>{group.label}<span>+</span></summary><div>{group.links.map(([label, href]) => <NavLink href={href} key={label}>{label}</NavLink>)}</div></details>)}<LanguageDropdown /><SeletorDeFundo compacto /><Link className="mobile-login" to="/login">{t('Entrar')}</Link><Link className="button button-primary" to="/cadastro">{t('Registar empresa')}</Link></div></details>;
+  return <details className="mobile-nav"><summary aria-label={t('Abrir menu')}><span></span><span></span><span></span></summary><div className="mobile-panel">{navGroups.map((group) => <details key={group.label}><summary>{group.label}<span>+</span></summary><div>{group.links.map(([label, href]) => <NavLink href={href} key={label}>{label}</NavLink>)}</div></details>)}<LanguageDropdown /><SeletorDeFundo compacto /><Link className="mobile-login" to="/login">{t('Entrar')}</Link><Link className="btn" to="/cadastro">{t('Registar empresa')}</Link></div></details>;
 }
 
 export function CorporateHeader({ isHome = false }) {
   const { t } = useI18n();
-  return <><TopStrip /><header className="site-header"><Brand compact isHome={isHome} /><DesktopNavigation /><Link className="login-link" to="/login">{t('Entrar')}</Link><Link className="button button-primary" to="/cadastro">{t('Registar empresa')}</Link><div className="header-actions"><SeletorDeFundo compacto /><LanguageDropdown /></div><MobileNavigation /></header></>;
+  // A barra da proposta: marca, rótulo, abas (com os menus reais), e à direita
+  // Entrar, Registar empresa, os três fundos e o idioma.
+  return <header className="topo"><div className="topo-in">
+    <Brand compact isHome={isHome} />
+    <TopStrip />
+    <DesktopNavigation />
+    <div className="topo-acc header-actions">
+      <Link className="tab-link login-link" to="/login">{t('Entrar')}</Link>
+      <Link className="btn pequeno" to="/cadastro">{t('Registar empresa')}</Link>
+      <SeletorDeFundo compacto />
+      <LanguageDropdown />
+    </div>
+    <MobileNavigation />
+  </div></header>;
 }
 
 export function CorporateFooter({ isHome = false }) {
   const { t } = useI18n();
-  return <footer className="site-footer" id="contactos"><div className="footer-main">
-    <div className="footer-brand"><Brand inverse isHome={isHome} /><p>{t('The state of the art — do procurement à execução.')}</p><LanguageDropdown /></div>
-    <div className="footer-column"><h3>{t('Plataforma')}</h3><NavLink href="#plataforma">{t('Visão geral')}</NavLink><NavLink href="#demonstracao">{t('Demonstração')}</NavLink><NavLink href="#empresas">{t('Para empresas')}</NavLink><NavLink href="#como-funciona">{t('Como funciona')}</NavLink><Link to="/planos">{t('Planos e preços')}</Link></div>
-    <div className="footer-column"><h3>{t('Empresa')}</h3><NavLink href="#sobre">{t('Sobre a Kixima')}</NavLink><NavLink href="#roadmap">Roadmap</NavLink><Link to="/noticias">{t('Notícias e perspectivas')}</Link><Link to="/carreiras">{t('Carreiras')}</Link><a href="mailto:geral@kixima.net">{t('Contactos')}</a><Link to="/login">{t('Entrar')}</Link></div>
-    <div className="footer-column"><h3>{t('Confiança')}</h3><NavLink href="#diferenciais">{t('Diferenciais')}</NavLink><NavLink href="#avaliacoes">{t('Avaliações verificadas')}</NavLink><Link to="/faq">{t('Perguntas frequentes')}</Link><Link to="/recursos">{t('Guias e recursos')}</Link><Link to="/supplier-development">Supplier Development</Link><Link to="/parcerias">{t('Parceiros internacionais')}</Link><Link to="/termos">{t('Termos de uso')}</Link><Link to="/privacidade">{t('Privacidade')}</Link></div>
-  </div><div className="footer-bottom"><span>{t('© 2026 KIXIMA.NET. Todos os direitos reservados.')}</span><b>{t('NASCIDO EM ANGOLA · PREPARADO PARA ÁFRICA')}</b></div></footer>;
+  // Rodapé preto com o fio Samakaka: as mesmas três colunas e ligações de
+  // sempre, mais a linha legal da proposta.
+  return <><div className="fio" aria-hidden="true" /><footer className="rodape" id="contactos"><div className="rodape-in"><div className="rodape-grid">
+    <div className="rodape-marca"><Brand inverse isHome={isHome} /><p>{t('The state of the art — do procurement à execução.')}</p><LanguageDropdown /></div>
+    <div className="rodape-col"><h3>{t('Plataforma')}</h3><NavLink href="#plataforma">{t('Visão geral')}</NavLink><NavLink href="#demonstracao">{t('Demonstração')}</NavLink><NavLink href="#empresas">{t('Para empresas')}</NavLink><NavLink href="#como-funciona">{t('Como funciona')}</NavLink><Link to="/planos">{t('Planos e preços')}</Link></div>
+    <div className="rodape-col"><h3>{t('Empresa')}</h3><NavLink href="#sobre">{t('Sobre a Kixima')}</NavLink><NavLink href="#roadmap">Roadmap</NavLink><Link to="/noticias">{t('Notícias e perspectivas')}</Link><Link to="/carreiras">{t('Carreiras')}</Link><a href="mailto:geral@kixima.net">{t('Contactos')}</a><Link to="/login">{t('Entrar')}</Link></div>
+    <div className="rodape-col"><h3>{t('Confiança')}</h3><NavLink href="#diferenciais">{t('Diferenciais')}</NavLink><NavLink href="#avaliacoes">{t('Avaliações verificadas')}</NavLink><Link to="/faq">{t('Perguntas frequentes')}</Link><Link to="/recursos">{t('Guias e recursos')}</Link><Link to="/supplier-development">Supplier Development</Link><Link to="/parcerias">{t('Parceiros internacionais')}</Link><Link to="/termos">{t('Termos de uso')}</Link><Link to="/privacidade">{t('Privacidade')}</Link></div>
+  </div><div className="rodape-fim"><span>{t('© 2026 KIXIMA.NET. Todos os direitos reservados.')}</span><b>{t('NASCIDO EM ANGOLA · PREPARADO PARA ÁFRICA')}</b></div>
+  <div className="rodape-legal">APP-KIXIMA.NET — Prestação de Serviços, (SU), Lda · NIF 5003488276 · Luanda, Angola</div></div></footer></>;
 }

@@ -12,6 +12,21 @@ export const EN18 = {
   'Apoio': 'Support',
   'Conta': 'Account',
   'Navegação': 'Navigation',
+  // Página corporativa — front da proposta
+  'A jornada gravada': 'The recorded journey',
+  'a partir da recepção validada': 'from validated receipt',
+  'A pesquisa devolve artigo, fornecedor credenciado e preço na mesma linha. O catálogo é de quem tem sessão — comece aqui e entre.': 'Search returns the item, the accredited supplier and the price on the same line. The catalogue is for signed-in users — start here and sign in.',
+  'Capacidade local': 'Local capacity',
+  'Catálogo UNSPSC': 'UNSPSC catalogue',
+  'com due diligence feita uma vez, válida para todos os compradores': 'with due diligence done once, valid for every buyer',
+  'com registo integral do ciclo, da cesta ao pagamento': 'with the full cycle recorded, from cart to payment',
+  'credenciadas na plataforma': 'accredited on the platform',
+  'Duas portas': 'Two doors',
+  'O que precisa de comprar?': 'What do you need to buy?',
+  'prazo de pagamento ao fornecedor, contado da recepção validada': 'payment term to the supplier, counted from validated receipt',
+  'Procurar': 'Search',
+  'Sou comprador': 'I am a buyer',
+  'Sou fornecedor': 'I am a supplier',
 };
 
 export const FR18 = {
@@ -25,4 +40,19 @@ export const FR18 = {
   'Apoio': 'Assistance',
   'Conta': 'Compte',
   'Navegação': 'Navigation',
+  // Página corporativa — front da proposta
+  'A jornada gravada': 'Le parcours enregistré',
+  'a partir da recepção validada': 'à partir de la réception validée',
+  'A pesquisa devolve artigo, fornecedor credenciado e preço na mesma linha. O catálogo é de quem tem sessão — comece aqui e entre.': "La recherche renvoie l'article, le fournisseur accrédité et le prix sur la même ligne. Le catalogue est réservé aux utilisateurs connectés — commencez ici et connectez-vous.",
+  'Capacidade local': 'Capacité locale',
+  'Catálogo UNSPSC': 'Catalogue UNSPSC',
+  'com due diligence feita uma vez, válida para todos os compradores': 'avec une due diligence faite une seule fois, valable pour tous les acheteurs',
+  'com registo integral do ciclo, da cesta ao pagamento': 'avec le cycle intégralement enregistré, du panier au paiement',
+  'credenciadas na plataforma': 'accréditées sur la plateforme',
+  'Duas portas': 'Deux portes',
+  'O que precisa de comprar?': 'Que devez-vous acheter ?',
+  'prazo de pagamento ao fornecedor, contado da recepção validada': 'délai de paiement au fournisseur, compté à partir de la réception validée',
+  'Procurar': 'Rechercher',
+  'Sou comprador': 'Je suis acheteur',
+  'Sou fornecedor': 'Je suis fournisseur',
 };

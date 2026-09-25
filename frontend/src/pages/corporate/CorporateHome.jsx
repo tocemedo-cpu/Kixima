@@ -1,78 +1,44 @@
 // src/pages/corporate/CorporateHome.jsx
-// Porta de app/page.tsx do pacote "KIXIMA_FRONTEND_SELECTED_EXACT" (2ª
-// geração do design da página corporativa KIXIMA.NET — mesma estrutura,
-// mesmas classes CSS (ver corporate.css), mesmo texto por omissão
-// (português). Mudanças em relação ao original:
-//   1. Os links que no original apontavam para "https://kixima.net/..."
-//      passam a rotas relativas via <Link> — já vivem no mesmo sítio.
-//   2. "Registar como comprador/fornecedor" incluem ?tipo=CLIENTE|
-//      FORNECEDOR, lidos por Register.jsx para pré-selecionar o tipo.
-//   3. As imagens são import ES em vez de caminhos de public/ (Next.js).
-//   4. Todo o texto passa pelo sistema de tradução do KIXIMA (useI18n/t) —
-//      a chave é o próprio texto em português, exactamente como no resto
-//      da app (ver src/i18n/index.jsx).
-//   5. Duas secções do pacote de origem usam conteúdo fabricado — uma
-//      maquete decorativa em "Demonstração" e um cartão placeholder "em
-//      breve" em "Avaliações". Aqui ficam, respectivamente, o vídeo real de
-//      ecrã da plataforma (gravação genuína, não uma montagem) e a parede
-//      de avaliações real, com moderação no Admin do Sistema (GET
-//      /api/public/feedback) — construída em versões anteriores desta
-//      página e mantida propositadamente ao adoptar este novo visual, para
-//      não perder funcionalidade real por uma versão fabricada ("sem
-//      quebrar o que já funciona"). A submissão em si já não vive aqui:
-//      passou a exigir sessão iniciada (ver src/pages/shared/
-//      SuporteFeedback.jsx, POST /api/feedback) para o selo "Verificado"
-//      significar alguma coisa.
-//   6. Uma faixa de estatísticas reais ("stats-strip", GET /api/public/stats)
-//      e o indicador "07 · Pagamento em 7 dias" (secção "metrics") usam o
-//      prazo real configurado no backend em vez de texto fixo — pedido
-//      explícito do utilizador, para "nada ser estático" nesta página; não
-//      existe em nenhuma versão do design de referência.
-//   7. A secção "Programas" (Supplier Development / Parceiros
-//      internacionais) é específica do KIXIMA e não existe no design de
-//      referência — mantida por serem páginas e programas reais da
-//      plataforma.
-//   8. Cabeçalho/rodapé/navegação vivem em CorporateChrome.jsx, partilhados
-//      com /noticias, /carreiras, /faq e /recursos — useScrollToHash()
-//      garante que os links de secção funcionam mesmo vindos de outra
-//      página.
+// A página corporativa com o layout e a identidade da vista "Front
+// corporativo" da Proposta 04 · Bancada (ver bancada-front.css) — herói com
+// a compra guiada, "Duas portas", pilares, números — e, dentro dessa
+// identidade, TODO o conteúdo real que a página já tinha:
+//   - vídeo real da plataforma (gravação genuína, não uma montagem);
+//   - parede de avaliações reais, moderadas no Admin do Sistema
+//     (GET /api/public/feedback);
+//   - faixa de números reais (GET /api/public/stats) e o prazo de pagamento
+//     real configurado no backend — nunca um número escrito à mão;
+//   - fotografias dos sectores, programas (Supplier Development / Parceiros
+//     internacionais), roadmap, "Sobre a KIXIMA", CTA final e o rodapé
+//     completo (CorporateChrome.jsx, partilhado com /noticias, /carreiras,
+//     /faq e /recursos).
+// Os números fictícios do HTML de referência (artigos e fornecedores por
+// categoria, estatísticas do sector) não entram: as categorias da compra
+// guiada são as reais do catálogo (as mesmas de src/components/icons.jsx),
+// sem contagens, e a pesquisa leva a quem tem sessão para o catálogo.
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n';
 import { api } from '../../api/client';
+import { Icon, CATEGORY_NAMES, categoryVisual } from '../../components/icons';
 import { Arrow, CorporateHeader, CorporateFooter, useCorporateActive } from './CorporateChrome';
-import './corporate.css';
-import kiximaMark from '../../assets/brand/kixima-mark.png';
+import './bancada-front.css';
 import kiximaHumanNetwork from '../../assets/corporate/kixima-human-network.webp';
 import kiximaEnergyMining from '../../assets/corporate/kixima-energy-mining.webp';
 import kiximaLogisticsAgri from '../../assets/corporate/kixima-logistics-agri.webp';
 
-// Maquete decorativa da plataforma (formas e rótulos genéricos desenhados em
-// CSS, não uma captura de ecrã) — usada só como ilustração de marca no herói.
-// Na secção "Demonstração" real usa-se o vídeo genuíno em vez desta maquete.
-function DashboardMockup({ compact = false, t }) {
-  return <div className={`dashboard-shell ${compact ? 'dashboard-compact' : ''}`} aria-label={t('Pré-visualização da plataforma KIXIMA')}>
-    <div className="dashboard-top"><span className="brand brand-compact" aria-hidden="true"><img src={kiximaMark} alt="" /><span>KIXIMA<small>.NET</small></span></span><nav><span>{t('Visão geral')}</span><span>{t('Mercado')}</span><span>{t('Fornecedores')}</span></nav><i>AO</i></div>
-    <aside><b>+</b><span></span><span></span><span></span><span></span></aside>
-    <div className="dashboard-body"><p>{t('BOM DIA')}</p><h3>{t('O que precisa comprar?')}</h3><div className="search-bar"><span>{t('Pesquise produtos, serviços ou fornecedores')}</span><b>⌕</b></div><div className="dashboard-kpis"><article><span>{t('FORNECEDORES')}</span><strong>{t('Rede verificada')}</strong><i className="dot green"></i></article><article><span>{t('PROCESSO')}</span><strong>{t('360° auditável')}</strong><i className="dot gold"></i></article><article><span>{t('PAGAMENTO')}</span><strong>{t('Até 7 dias')}</strong><i className="dot red"></i></article></div><div className="dashboard-table"><div><b>{t('Oportunidades recentes')}</b><span>{t('Estado')}</span></div><div><p>{t('Equipamento industrial')}</p><i>{t('ABERTO')}</i></div><div><p>{t('Serviços de inspecção')}</p><i>{t('EM ANÁLISE')}</i></div></div></div>
-  </div>;
+// Um dos números da faixa — "—" enquanto não há dados reais (nunca um número
+// inventado a aparecer primeiro e ser substituído depois).
+function Num({ value, unit, desc }) {
+  return <div className="num"><div className="v">{value == null ? '—' : value}</div><div className="u">{unit}</div><div className="d">{desc}</div></div>;
 }
 
-// Um dos 3 números da faixa de estatísticas — "—" enquanto não há dados
-// reais ainda (nunca um número inventado a aparecer primeiro e ser
-// substituído depois).
-function Stat({ value, label }) {
-  return <div className="stat"><strong>{value == null ? '—' : `${value}+`}</strong><span>{label}</span></div>;
-}
-
-// "Avaliações Verificadas" — só leitura: mostra o que já foi aprovado pelo
-// Admin do Sistema. Já não há formulário aqui — quem quiser avaliar tem de
-// estar autenticado (Suporte → Feedback, dentro da app), precisamente para
-// que o selo "Verificado" signifique alguma coisa: vem sempre de uma conta e
-// empresa reais da KIXIMA, nunca de um nome digitado à mão por um visitante
-// anónimo (ver src/pages/shared/SuporteFeedback.jsx e feedbackService.js).
 const FEEDBACK_DATE_LOCALE = { pt: 'pt-AO', en: 'en-GB', fr: 'fr-FR' };
 
+// "Avaliações Verificadas" — só leitura: o que já foi aprovado pelo Admin do
+// Sistema. Quem quiser avaliar tem de estar autenticado (Suporte → Feedback),
+// para o selo "Verificado" significar alguma coisa: vem sempre de uma conta e
+// empresa reais da KIXIMA. Aqui, na forma da bancada da proposta (mosaicos).
 function FeedbackSection({ t }) {
   const { lang } = useI18n();
   const [wall, setWall] = useState(null);
@@ -81,27 +47,28 @@ function FeedbackSection({ t }) {
     api.get('/api/public/feedback').then(setWall).catch(() => {});
   }, []);
 
-  return <section className="section feedback" id="avaliacoes"><div className="section-title"><p className="eyebrow"><i></i>{t('AVALIAÇÕES VERIFICADAS')}</p><h2>{t('Reputação construída')}<br /><em>{t('com transacções reais.')}</em></h2><p>{t('Compradores e fornecedores autenticados avaliam a experiência na KIXIMA. Cada avaliação é revista antes de ser publicada e a média mostrada conta sempre todas as aprovadas.')}</p></div>
-    <div className="feedback-wall feedback-wall-full">
-      {wall && wall.total > 0
-        ? <p className="feedback-average"><strong>{wall.average.toFixed(1).replace('.', ',')}</strong> / 5 · {t('{total} avaliações aprovadas', { total: wall.total })}</p>
-        : null}
-      {wall && wall.feedback.length > 0
-        ? <div className="feedback-cards">{wall.feedback.map((f) => (
-          <article className="feedback-card" key={f.id}>
-            <div className="feedback-card-head">
-              <div className="feedback-stars" aria-label={t('{rating} de 5', { rating: f.rating })} aria-hidden="true">{'★'.repeat(f.rating)}{'☆'.repeat(5 - f.rating)}</div>
-              {f.verified ? <span className="feedback-verified" title={t('Avaliação de uma conta e empresa reais da KIXIMA')}>✓ {t('Verificado')}</span> : null}
-            </div>
-            <p>{f.message}</p>
-            <footer>
-              <div><strong>{f.user.name}</strong><span>{f.company.name}</span></div>
-              <time dateTime={f.createdAt}>{new Date(f.createdAt).toLocaleDateString(FEEDBACK_DATE_LOCALE[lang] || 'pt-AO', { day: '2-digit', month: 'short', year: 'numeric' })}</time>
-            </footer>
-          </article>
-        ))}</div>
-        : <p className="feedback-empty">{t('Ainda não há avaliações públicas. Seja o primeiro a partilhar a sua experiência — inicie sessão e vá a Suporte → Feedback.')}</p>}
-    </div>
+  return <section className="sec" id="avaliacoes">
+    <div className="sec-cab"><div className="eyebrow"><b>{t('Confiança')}</b> · {t('AVALIAÇÕES VERIFICADAS')}</div>
+      <h2>{t('Reputação construída')} <em>{t('com transacções reais.')}</em></h2>
+      <p>{t('Compradores e fornecedores autenticados avaliam a experiência na KIXIMA. Cada avaliação é revista antes de ser publicada e a média mostrada conta sempre todas as aprovadas.')}</p></div>
+    {wall && wall.total > 0
+      ? <div className="media-aval"><span className="v">{wall.average.toFixed(1).replace('.', ',')}</span><span className="u">/ 5 · {t('{total} avaliações aprovadas', { total: wall.total })}</span></div>
+      : null}
+    {wall && wall.feedback.length > 0
+      ? <div className="bancada">{wall.feedback.map((f) => (
+        <article className="bc" key={f.id}>
+          <div className="cab">
+            <span className="estrelas" aria-label={t('{rating} de 5', { rating: f.rating })}>{'★'.repeat(f.rating)}{'☆'.repeat(5 - f.rating)}</span>
+            {f.verified ? <span className="est" title={t('Avaliação de uma conta e empresa reais da KIXIMA')}>✓ {t('Verificado')}</span> : null}
+          </div>
+          <p className="msg">{f.message}</p>
+          <footer>
+            <div><strong>{f.user.name}</strong><span>{f.company.name}</span></div>
+            <time dateTime={f.createdAt}>{new Date(f.createdAt).toLocaleDateString(FEEDBACK_DATE_LOCALE[lang] || 'pt-AO', { day: '2-digit', month: 'short', year: 'numeric' })}</time>
+          </footer>
+        </article>
+      ))}</div>
+      : <p className="vazio">{t('Ainda não há avaliações públicas. Seja o primeiro a partilhar a sua experiência — inicie sessão e vá a Suporte → Feedback.')}</p>}
   </section>;
 }
 
@@ -121,7 +88,9 @@ const SECTORS = ['Oil & Gas', 'Energia', 'Mineração', 'Construção', 'Logíst
 
 export default function CorporateHome() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
+  const [q, setQ] = useState('');
   useScrollToHash();
   useCorporateActive();
 
@@ -134,51 +103,193 @@ export default function CorporateHome() {
 
   const diasPagamento = stats?.pagamentoSlaDias ?? 7;
 
-  return <main id="top" className="kixima-corp">
+  // A compra guiada abre a página pública com o mesmo gesto da plataforma. O
+  // catálogo é de quem tem sessão: a pesquisa leva ao login, e a expressão
+  // segue para lá sem ser perdida.
+  function pesquisar(e) {
+    e.preventDefault();
+    const termo = q.trim();
+    navigate(`/login${termo ? `?q=${encodeURIComponent(termo)}` : ''}`);
+  }
+
+  return <main id="top" className="kx">
     <CorporateHeader isHome />
 
-    <section className="hero" aria-labelledby="hero-title"><div className="hero-copy"><p className="eyebrow"><i></i>{t('A fonte dos seus negócios.')}</p><h1 id="hero-title">{t('The state of the art —')} <em>{t('do procurement à execução.')}</em></h1><p className="hero-lead">{t('O Oil & Gas na palma da sua mão - e o seu negócio à distância de um clique.')}</p><p className="hero-note">{t('Um conceito global. Uma solução local.')}</p><div className="hero-actions"><Link className="button button-primary" to="/cadastro">{t('Registar empresa')} <Arrow /></Link><a className="button button-secondary" href="#demonstracao">{t('Conhecer a plataforma')}</a></div></div><div className="hero-product"><div className="product-halo"></div><DashboardMockup compact t={t} /><div className="sam-diamond d-one"></div><div className="sam-diamond d-two"></div><div className="sam-diamond d-three"></div></div></section>
+    <div className="folha">
 
-    <section className="stats-strip" aria-label={t('KIXIMA em números')}>
-      <div className="stats-grid">
-        <Stat value={stats?.empresasVerificadas} label={t('Empresas verificadas')} />
-        <Stat value={stats?.fornecedoresQualificados} label={t('Fornecedores qualificados')} />
-        <Stat value={stats?.ordensProcessadas} label={t('Ordens de compra concluídas')} />
-      </div>
-    </section>
+      {/* ---------- herói: a compra guiada ---------- */}
+      <section className="sec hero" aria-labelledby="hero-title">
+        <div className="eyebrow"><b>{t('A fonte dos seus negócios.')}</b> · kixima.net</div>
+        <h1 id="hero-title">{t('The state of the art —')} <em>{t('do procurement à execução.')}</em></h1>
+        <p className="lead">{t('O Oil & Gas na palma da sua mão - e o seu negócio à distância de um clique.')}</p>
+        <p className="lead-nota">{t('Um conceito global. Uma solução local.')}</p>
+        <div className="hero-acoes"><Link className="btn" to="/cadastro">{t('Registar empresa')} <Arrow /></Link><a className="btn alt" href="#demonstracao">{t('Conhecer a plataforma')}</a></div>
 
-    <section className="metrics" aria-label={t('Indicadores da proposta de valor')}><article><strong>01×</strong><span>{t('Due diligence')}<br />{t('uma única vez')}</span></article><article><strong>360°</strong><span>{t('Procurement')}<br />{t('auditável')}</span></article><article><strong>{diasPagamento}</strong><span>{t('Pagamento em')}<br />{t('até {dias} dias', { dias: diasPagamento })}</span></article><article><strong>UNSPSC</strong><span>{t('Catálogo')}<br />{t('estruturado')}</span></article></section>
+        <div className="guiado">
+          <h4>{t('O que precisa de comprar?')}</h4>
+          <p>{t('A pesquisa devolve artigo, fornecedor credenciado e preço na mesma linha. O catálogo é de quem tem sessão — comece aqui e entre.')}</p>
+          <form className="campo" onSubmit={pesquisar} role="search">
+            <svg className="ic" viewBox="0 0 22 23" fill="none" stroke="var(--suave)" strokeWidth="1.6" aria-hidden="true"><circle cx="10" cy="10" r="6" /><path d="M14.5 14.5L19 19" /></svg>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Pesquise produtos, serviços ou fornecedores')} aria-label={t('Pesquisar')} />
+            <button type="submit">{t('Procurar')}</button>
+          </form>
+          <div className="cats">
+            {CATEGORY_NAMES.map((nome) => {
+              const vis = categoryVisual(nome);
+              return <Link className="cat" key={nome} to="/login"><h5>{nome}</h5><div className="cod"><Icon name={vis.icon} size={15} />{t('Catálogo UNSPSC')}</div></Link>;
+            })}
+          </div>
+          {/* Os indicadores da proposta de valor, como as políticas da compra guiada. */}
+          <div className="pols">
+            <div className="pol"><b></b><span>{t('Due diligence')}</span><i>{t('uma única vez')}</i></div>
+            <div className="pol ocre"><b></b><span>{t('Procurement')} 360°</span><i>{t('auditável')}</i></div>
+            <div className="pol"><b></b><span>{t('Pagamento em')} {t('até {dias} dias', { dias: diasPagamento })}</span><i>{t('a partir da recepção validada')}</i></div>
+            <div className="pol ocre"><b></b><span>{t('Catálogo')} UNSPSC</span><i>{t('estruturado')}</i></div>
+          </div>
+        </div>
+      </section>
 
-    <section className="section platform" id="plataforma"><div className="section-title"><p className="eyebrow"><i></i>{t('A PLATAFORMA')}</p><h2>{t('Um mercado transacional.')}<br /><em>{t('Um ecossistema funcional.')}</em></h2></div><div className="platform-intro"><p>{t('A KIXIMA integra descoberta, qualificação, contratação e execução numa experiência B2B concebida para reduzir a distância entre quem compra e quem está preparado para fornecer.')}</p><Link className="text-link" to="/cadastro">{t('Entrar no ecossistema')} <Arrow /></Link></div><div className="platform-grid"><article><span>01</span><h3>{t('Marketplace B2B')}</h3><p>{t('Produtos, serviços e capacidade empresarial classificados para facilitar a procura.')}</p></article><article><span>02</span><h3>{t('Rede verificada')}</h3><p>{t('Credenciamento estruturado para gerar confiança antes da primeira transacção.')}</p></article><article><span>03</span><h3>{t('Execução integrada')}</h3><p>{t('Pedido, ordem de compra, entrega, recepção e pagamento numa jornada rastreável.')}</p></article><article><span>04</span><h3>{t('Visibilidade 360°')}</h3><p>{t('Informação organizada para compradores, fornecedores e equipas de decisão.')}</p></article></div></section>
+      {/* ---------- números reais ---------- */}
+      <section className="sec" aria-label={t('KIXIMA em números')}>
+        <div className="eyebrow">{t('KIXIMA em números')}</div>
+        <div className="nums">
+          <Num value={stats?.empresasVerificadas} unit={t('Empresas verificadas')} desc={t('credenciadas na plataforma')} />
+          <Num value={stats?.fornecedoresQualificados} unit={t('Fornecedores qualificados')} desc={t('com due diligence feita uma vez, válida para todos os compradores')} />
+          <Num value={stats?.ordensProcessadas} unit={t('Ordens de compra concluídas')} desc={t('com registo integral do ciclo, da cesta ao pagamento')} />
+          <Num value={diasPagamento} unit={t('dias')} desc={t('prazo de pagamento ao fornecedor, contado da recepção validada')} />
+        </div>
+      </section>
 
-    <section className="section demo" id="demonstracao"><div className="section-title"><p className="eyebrow"><i></i>{t('DEMONSTRAÇÃO DA EXPERIÊNCIA')}</p><h2>{t('Procurement claro.')}<br /><em>{t('Decisões mais rápidas.')}</em></h2><p>{t('Gravação real da plataforma, numa conta de demonstração - sem dados forjados: o mesmo catálogo, carrinho, impostos e checkout por fornecedor que os clientes usam todos os dias.')}</p></div>
-      <div className="demo-frame"><video controls preload="none" poster="/videos/kixima-login-checkout-poster.jpg" aria-label={t('Demonstração da plataforma KIXIMA, do login ao checkout')}><source src="/videos/kixima-login-checkout.mp4" type="video/mp4" /><track kind="captions" src="/videos/kixima-login-checkout.vtt" srcLang="pt" label={t('Português')} default /></video></div>
-      <ol className="demo-journey"><li>{t('Login seguro')}</li><li>{t('Painel do comprador')}</li><li>{t('Catálogo e pesquisa')}</li><li>{t('Ficha de produto')}</li><li>{t('Carrinho e impostos')}</li><li>{t('Checkout por fornecedor')}</li></ol>
-      <p className="demo-note">{t('Conta de demonstração. O IVA de 14% e o agrupamento por fornecedor são calculados exactamente como em produção.')}</p>
-    </section>
+      {/* ---------- a plataforma ---------- */}
+      <section className="sec" id="plataforma">
+        <div className="sec-cab"><div className="eyebrow">{t('A PLATAFORMA')}</div>
+          <h2>{t('Um mercado transacional.')} <em>{t('Um ecossistema funcional.')}</em></h2>
+          <p>{t('A KIXIMA integra descoberta, qualificação, contratação e execução numa experiência B2B concebida para reduzir a distância entre quem compra e quem está preparado para fornecer.')}</p>
+          <p style={{ marginTop: 12 }}><Link className="text-link" to="/cadastro">{t('Entrar no ecossistema')} <Arrow /></Link></p></div>
+        <div className="pilares">
+          <div className="pil"><b>01</b><h4>{t('Marketplace B2B')}</h4><p>{t('Produtos, serviços e capacidade empresarial classificados para facilitar a procura.')}</p></div>
+          <div className="pil"><b>02</b><h4>{t('Rede verificada')}</h4><p>{t('Credenciamento estruturado para gerar confiança antes da primeira transacção.')}</p></div>
+          <div className="pil"><b>03</b><h4>{t('Execução integrada')}</h4><p>{t('Pedido, ordem de compra, entrega, recepção e pagamento numa jornada rastreável.')}</p></div>
+          <div className="pil"><b>04</b><h4>{t('Visibilidade 360°')}</h4><p>{t('Informação organizada para compradores, fornecedores e equipas de decisão.')}</p></div>
+        </div>
+      </section>
 
-    <section className="section business" id="empresas"><div className="section-title"><p className="eyebrow"><i></i>{t('PARA EMPRESAS')}</p><h2>{t('Duas necessidades.')}<br /><em>{t('Uma só fonte.')}</em></h2></div><div className="business-grid">
-      <article className="buyer-card" id="compradores"><span>{t('COMPRADORES')}</span><h3>{t('Mais escolha.')}<br />{t('Mais controlo.')}</h3><p>{t('Encontre fornecedores qualificados, transforme necessidades em ordens de compra e acompanhe a execução ponta a ponta.')}</p><ul><li>{t('Pesquisa e comparação')}</li><li>{t('Fornecedores credenciados')}</li><li>{t('Rastreabilidade e controlo')}</li></ul><Link to="/cadastro?tipo=CLIENTE">{t('Registar como comprador')} <Arrow /></Link></article>
-      <article className="supplier-card" id="fornecedores"><span>{t('FORNECEDORES')}</span><h3>{t('Mais mercado.')}<br />{t('Mais previsibilidade.')}</h3><p>{t('Apresente o seu catálogo, responda a oportunidades reais e transforme capacidade local em crescimento sustentável.')}</p><ul><li>{t('Visibilidade empresarial')}</li><li>{t('Acesso a oportunidades')}</li><li>{t('Pagamento em até 7 dias')}</li></ul><Link to="/cadastro?tipo=FORNECEDOR">{t('Registar como fornecedor')} <Arrow /></Link></article>
-    </div></section>
+      {/* ---------- demonstração: o vídeo real ---------- */}
+      <section className="sec" id="demonstracao">
+        <div className="sec-cab"><div className="eyebrow">{t('DEMONSTRAÇÃO DA EXPERIÊNCIA')}</div>
+          <h2>{t('Procurement claro.')} <em>{t('Decisões mais rápidas.')}</em></h2>
+          <p>{t('Gravação real da plataforma, numa conta de demonstração - sem dados forjados: o mesmo catálogo, carrinho, impostos e checkout por fornecedor que os clientes usam todos os dias.')}</p></div>
+        <div className="fundo video-moldura">
+          <video controls preload="none" poster="/videos/kixima-login-checkout-poster.jpg" aria-label={t('Demonstração da plataforma KIXIMA, do login ao checkout')}><source src="/videos/kixima-login-checkout.mp4" type="video/mp4" /><track kind="captions" src="/videos/kixima-login-checkout.vtt" srcLang="pt" label={t('Português')} default /></video>
+          <div className="txt">
+            <div className="rot">{t('A jornada gravada')}</div>
+            <div className="fluxo">
+              {[t('Login seguro'), t('Painel do comprador'), t('Catálogo e pesquisa'), t('Ficha de produto'), t('Carrinho e impostos'), t('Checkout por fornecedor')].map((passo, i) => (
+                <div className="f feito" key={passo}><div className="pt"></div><b>{passo}</b><i>{String(i + 1).padStart(2, '0')}</i></div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="nota">{t('Conta de demonstração. O IVA de 14% e o agrupamento por fornecedor são calculados exactamente como em produção.')}</p>
+      </section>
 
-    <section className="process-section" id="como-funciona"><div className="section-title light"><p className="eyebrow"><i></i>{t('COMO FUNCIONA')}</p><h2>{t('Da necessidade ao pagamento.')}</h2><p>{t('Uma sequência simples para processos exigentes.')}</p></div><ol><li><span>01</span><i></i><h3>{t('Credenciamento')}</h3><p>{t('Dados e documentos são submetidos para verificação.')}</p></li><li><span>02</span><i></i><h3>{t('Mercado')}</h3><p>{t('Compradores pesquisam; fornecedores apresentam ofertas.')}</p></li><li><span>03</span><i></i><h3>{t('Execução')}</h3><p>{t('O pedido transforma-se em PO, entrega e recepção.')}</p></li><li id="pagamento"><span>04</span><i></i><h3>{t('Pagamento')}</h3><p>{t('A jornada termina com rastreabilidade e previsibilidade.')}</p></li></ol></section>
+      {/* ---------- duas portas ---------- */}
+      <section className="sec" id="empresas">
+        <div className="sec-cab"><div className="eyebrow">{t('PARA EMPRESAS')} · {t('Duas portas')}</div>
+          <h2>{t('Duas necessidades.')} <em>{t('Uma só fonte.')}</em></h2></div>
+        <div className="portas">
+          <div className="porta" id="compradores"><div className="rot">{t('COMPRADORES')}</div><h3>{t('Sou comprador')}</h3><p>{t('Encontre fornecedores qualificados, transforme necessidades em ordens de compra e acompanhe a execução ponta a ponta.')}</p><ul><li>{t('Pesquisa e comparação')}</li><li>{t('Fornecedores credenciados')}</li><li>{t('Rastreabilidade e controlo')}</li></ul><Link className="btn" to="/cadastro?tipo=CLIENTE">{t('Registar como comprador')} <Arrow /></Link></div>
+          <div className="porta" id="fornecedores"><div className="rot">{t('FORNECEDORES')}</div><h3>{t('Sou fornecedor')}</h3><p>{t('Apresente o seu catálogo, responda a oportunidades reais e transforme capacidade local em crescimento sustentável.')}</p><ul><li>{t('Visibilidade empresarial')}</li><li>{t('Acesso a oportunidades')}</li><li>{t('Pagamento em')} {t('até {dias} dias', { dias: diasPagamento })}</li></ul><Link className="btn alt" to="/cadastro?tipo=FORNECEDOR">{t('Registar como fornecedor')} <Arrow /></Link></div>
+        </div>
+      </section>
 
-    <section className="section differentiators" id="diferenciais"><div className="section-title"><p className="eyebrow"><i></i>{t('DIFERENCIAIS')}</p><h2>{t('Confiança incorporada')}<br /><em>{t('em cada etapa.')}</em></h2></div><div className="difference-grid"><article><b>✓</b><h3>{t('Due diligence uma vez')}</h3><p>{t('O fornecedor organiza a sua informação e beneficia da verificação em toda a rede.')}</p></article><article><b>↔</b><h3>{t('Compradores e fornecedores')}</h3><p>{t('As duas partes operam dentro do mesmo fluxo, com informação visível e estruturada.')}</p></article><article><b>◈</b><h3>{t('Capacidade local visível')}</h3><p>{t('Empresas angolanas ganham acesso, contexto e instrumentos para competir.')}</p></article><article><b>7</b><h3>{t('Previsibilidade financeira')}</h3><p>{t('O compromisso de pagamento reduz pressão de caixa e fortalece a execução.')}</p></article></div></section>
+      {/* ---------- como funciona: o fluxo da página de objecto ---------- */}
+      <section className="sec" id="como-funciona">
+        <div className="sec-cab"><div className="eyebrow">{t('COMO FUNCIONA')}</div>
+          <h2>{t('Da necessidade ao pagamento.')}</h2>
+          <p>{t('Uma sequência simples para processos exigentes.')}</p></div>
+        <div className="fluxo">
+          <div className="f"><div className="pt"></div><span className="n">01</span><b>{t('Credenciamento')}</b><i>{t('Dados e documentos são submetidos para verificação.')}</i></div>
+          <div className="f"><div className="pt"></div><span className="n">02</span><b>{t('Mercado')}</b><i>{t('Compradores pesquisam; fornecedores apresentam ofertas.')}</i></div>
+          <div className="f"><div className="pt"></div><span className="n">03</span><b>{t('Execução')}</b><i>{t('O pedido transforma-se em PO, entrega e recepção.')}</i></div>
+          <div className="f" id="pagamento"><div className="pt"></div><span className="n">04</span><b>{t('Pagamento')}</b><i>{t('A jornada termina com rastreabilidade e previsibilidade.')}</i></div>
+        </div>
+      </section>
 
-    <section className="programs" id="impacto"><div className="programs-inner"><div className="programs-heading"><p className="eyebrow"><i></i>{t('MAIS DO QUE UM MARKETPLACE')}</p><h2>{t('Capacidade local. Parcerias globais.')}</h2></div><div className="program-cards"><article><span>SD</span><p className="eyebrow">{t('SUPPLIER DEVELOPMENT')}</p><h3>{t('Prepare a sua empresa para fornecer.')}</h3><p>{t('Apoio no processo de credenciamento, organização documental e desenvolvimento da capacidade empresarial.')}</p><Link to="/supplier-development">{t('Conhecer o programa')} <Arrow /></Link></article><article><span>↔</span><p className="eyebrow">{t('PARCEIROS INTERNACIONAIS')}</p><h3>{t('Ligue capacidade local a tecnologia global.')}</h3><p>{t('Facilitamos relações com parceiros estrangeiros para tecnologia, especialização, capacitação e crescimento conjunto.')}</p><Link to="/parcerias">{t('Encontrar parceiros')} <Arrow /></Link></article></div></div></section>
+      {/* ---------- diferenciais ---------- */}
+      <section className="sec" id="diferenciais">
+        <div className="sec-cab"><div className="eyebrow">{t('DIFERENCIAIS')}</div>
+          <h2>{t('Confiança incorporada')} <em>{t('em cada etapa.')}</em></h2></div>
+        <div className="emprest">
+          <div className="emp"><div className="de">✓ · {t('Confiança')}</div><h4>{t('Due diligence uma vez')}</h4><p>{t('O fornecedor organiza a sua informação e beneficia da verificação em toda a rede.')}</p></div>
+          <div className="emp"><div className="de">↔ · {t('Mercado')}</div><h4>{t('Compradores e fornecedores')}</h4><p>{t('As duas partes operam dentro do mesmo fluxo, com informação visível e estruturada.')}</p></div>
+          <div className="emp"><div className="de">◈ · {t('Capacidade local')}</div><h4>{t('Capacidade local visível')}</h4><p>{t('Empresas angolanas ganham acesso, contexto e instrumentos para competir.')}</p></div>
+          <div className="emp"><div className="de">{diasPagamento} · {t('Pagamento')}</div><h4>{t('Previsibilidade financeira')}</h4><p>{t('O compromisso de pagamento reduz pressão de caixa e fortalece a execução.')}</p></div>
+        </div>
+      </section>
 
-    <section className="sectors" id="sectores"><div className="section-title"><p className="eyebrow"><i></i>{t('SECTORES')}</p><h2>{t('Nascido no Oil & Gas.')}<br /><em>{t('Preparado para crescer.')}</em></h2><p>{t('A arquitectura da KIXIMA permite expandir o modelo a novas cadeias de valor sem perder o rigor do procurement industrial.')}</p></div>
-      <div className="sector-visuals"><figure><img src={kiximaEnergyMining} alt={t('Profissionais angolanos nos sectores de energia, Oil & Gas e mineração')} loading="lazy" /><figcaption><span>{t('OPERAÇÕES DE ALTA EXIGÊNCIA')}</span><b>{t('Energia · Oil & Gas · Mineração')}</b></figcaption></figure><figure><img src={kiximaLogisticsAgri} alt={t('Profissionais angolanos nos sectores de construção, logística e serviços profissionais')} loading="lazy" /><figcaption><span>{t('CADEIAS DE VALOR EM CRESCIMENTO')}</span><b>{t('Construção · Logística · Serviços profissionais')}</b></figcaption></figure></div>
-      <div>{SECTORS.map((sector, index) => <article key={sector}><span>{String(index + 1).padStart(2, '0')}</span><h3>{t(sector)}</h3><Arrow /></article>)}</div></section>
+      {/* ---------- programas ---------- */}
+      <section className="sec" id="impacto">
+        <div className="sec-cab"><div className="eyebrow">{t('MAIS DO QUE UM MARKETPLACE')}</div>
+          <h2>{t('Capacidade local. Parcerias globais.')}</h2></div>
+        <div className="emprest">
+          <div className="emp"><div className="de">{t('SUPPLIER DEVELOPMENT')}</div><h4>{t('Prepare a sua empresa para fornecer.')}</h4><p>{t('Apoio no processo de credenciamento, organização documental e desenvolvimento da capacidade empresarial.')}</p><div className="para"><Link to="/supplier-development">{t('Conhecer o programa')} <Arrow /></Link></div></div>
+          <div className="emp"><div className="de">{t('PARCEIROS INTERNACIONAIS')}</div><h4>{t('Ligue capacidade local a tecnologia global.')}</h4><p>{t('Facilitamos relações com parceiros estrangeiros para tecnologia, especialização, capacitação e crescimento conjunto.')}</p><div className="para"><Link to="/parcerias">{t('Encontrar parceiros')} <Arrow /></Link></div></div>
+        </div>
+      </section>
 
-    <FeedbackSection t={t} />
+      {/* ---------- sectores: as fotografias reais ---------- */}
+      <section className="sec" id="sectores">
+        <div className="sec-cab"><div className="eyebrow">{t('SECTORES')}</div>
+          <h2>{t('Nascido no Oil & Gas.')} <em>{t('Preparado para crescer.')}</em></h2>
+          <p>{t('A arquitectura da KIXIMA permite expandir o modelo a novas cadeias de valor sem perder o rigor do procurement industrial.')}</p></div>
+        <div className="fundos">
+          <figure className="fundo" style={{ margin: 0 }}><img className="foto" src={kiximaEnergyMining} alt={t('Profissionais angolanos nos sectores de energia, Oil & Gas e mineração')} loading="lazy" /><figcaption className="txt"><div className="rot">{t('OPERAÇÕES DE ALTA EXIGÊNCIA')}</div><h4>{t('Energia · Oil & Gas · Mineração')}</h4></figcaption></figure>
+          <figure className="fundo" style={{ margin: 0 }}><img className="foto" src={kiximaLogisticsAgri} alt={t('Profissionais angolanos nos sectores de construção, logística e serviços profissionais')} loading="lazy" /><figcaption className="txt"><div className="rot">{t('CADEIAS DE VALOR EM CRESCIMENTO')}</div><h4>{t('Construção · Logística · Serviços profissionais')}</h4></figcaption></figure>
+        </div>
+        <div className="cats">
+          {SECTORS.map((sector, index) => <div className="cat" key={sector}><h5>{t(sector)}</h5><div className="cod">{String(index + 1).padStart(2, '0')}</div></div>)}
+        </div>
+      </section>
 
-    <section className="roadmap" id="roadmap"><div className="section-title light"><p className="eyebrow"><i></i>ROADMAP</p><h2>{t('De Angola para África.')}</h2></div><ol><li><span>01</span><h3>{t('Lançamento')}</h3><p>{t('Marketplace e rede inicial para Oil & Gas.')}</p></li><li><span>02</span><h3>{t('Consolidação')}</h3><p>{t('Mais compradores, fornecedores e execução digital.')}</p></li><li><span>03</span><h3>{t('Expansão')}</h3><p>{t('Novos sectores e capacidades empresariais.')}</p></li><li><span>04</span><h3>{t('Escala africana')}</h3><p>{t('Integração regional e novas oportunidades.')}</p></li></ol></section>
+      <FeedbackSection t={t} />
 
-    <section className="section about" id="sobre"><div className="about-mark"><img src={kiximaHumanNetwork} alt={t('Compradora e fornecedor angolanos a analisar uma oportunidade de negócio')} loading="lazy" /><span>{t('A FONTE')}</span></div><div><p className="eyebrow"><i></i>{t('SOBRE A KIXIMA')}</p><h2>{t('Uma inquietação transformada em infraestrutura.')}</h2><p>{t('A KIXIMA nasceu de uma questão simples: por que razão empresas locais capazes continuam longe das oportunidades das grandes organizações?')}</p><p>{t('Construímos uma ponte entre procura, capacidade e confiança. Levamos fornecedores qualificados até aos compradores e damos às empresas instrumentos para competir, executar e crescer.')}</p><blockquote>{t('“Por que razão uma pequena empresa do Cazenga não pode fornecer a uma grande operadora?”')}</blockquote></div></section>
+      {/* ---------- roadmap: a linha do tempo vertical ---------- */}
+      <section className="sec" id="roadmap">
+        <div className="sec-cab"><div className="eyebrow">ROADMAP</div>
+          <h2>{t('De Angola para África.')}</h2></div>
+        <div className="linha-t">
+          <div className="et"><div className="pt"></div><div><b><small>01</small>{t('Lançamento')}</b><span>{t('Marketplace e rede inicial para Oil & Gas.')}</span></div></div>
+          <div className="et"><div className="pt"></div><div><b><small>02</small>{t('Consolidação')}</b><span>{t('Mais compradores, fornecedores e execução digital.')}</span></div></div>
+          <div className="et"><div className="pt"></div><div><b><small>03</small>{t('Expansão')}</b><span>{t('Novos sectores e capacidades empresariais.')}</span></div></div>
+          <div className="et"><div className="pt"></div><div><b><small>04</small>{t('Escala africana')}</b><span>{t('Integração regional e novas oportunidades.')}</span></div></div>
+        </div>
+      </section>
 
-    <section className="final-cta"><div><p className="eyebrow"><i></i>{t('A SUA PRÓXIMA OPORTUNIDADE COMEÇA AQUI')}</p><h2>{t('Faça parte da fonte.')}</h2><p>{t('Entre no novo ecossistema africano de procurement.')}</p></div><div><Link className="button light-button" to="/cadastro">{t('Registar empresa')} <Arrow /></Link><a className="button dark-button" href="mailto:geral@kixima.net?subject=Solicitar%20demonstração%20KIXIMA.NET">{t('Solicitar demonstração')}</a></div></section>
+      {/* ---------- sobre ---------- */}
+      <section className="sec" id="sobre">
+        <div className="eyebrow">{t('SOBRE A KIXIMA')}</div>
+        <div className="sobre">
+          <figure className="fundo" style={{ margin: 0 }}><img className="foto" src={kiximaHumanNetwork} alt={t('Compradora e fornecedor angolanos a analisar uma oportunidade de negócio')} loading="lazy" /><figcaption className="txt"><div className="rot">{t('A FONTE')}</div></figcaption></figure>
+          <div className="texto">
+            <h2 style={{ fontSize: 'clamp(25px, 3.6vw, 38px)', letterSpacing: '-.03em', maxWidth: '22ch' }}>{t('Uma inquietação transformada em infraestrutura.')}</h2>
+            <p>{t('A KIXIMA nasceu de uma questão simples: por que razão empresas locais capazes continuam longe das oportunidades das grandes organizações?')}</p>
+            <p>{t('Construímos uma ponte entre procura, capacidade e confiança. Levamos fornecedores qualificados até aos compradores e damos às empresas instrumentos para competir, executar e crescer.')}</p>
+            <blockquote>{t('“Por que razão uma pequena empresa do Cazenga não pode fornecer a uma grande operadora?”')}</blockquote>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- CTA final ---------- */}
+      <section className="sec">
+        <div className="eyebrow">{t('A SUA PRÓXIMA OPORTUNIDADE COMEÇA AQUI')}</div>
+        <div className="cta-final">
+          <div><h2>{t('Faça parte da fonte.')}</h2><p>{t('Entre no novo ecossistema africano de procurement.')}</p></div>
+          <div className="acoes"><Link className="btn" to="/cadastro">{t('Registar empresa')} <Arrow /></Link><a className="btn alt" href="mailto:geral@kixima.net?subject=Solicitar%20demonstração%20KIXIMA.NET">{t('Solicitar demonstração')}</a></div>
+        </div>
+      </section>
+
+    </div>
 
     <CorporateFooter isHome />
   </main>;

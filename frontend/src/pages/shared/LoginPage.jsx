@@ -1,6 +1,6 @@
 // src/pages/shared/LoginPage.jsx
 import { useState } from 'react';
-import { Navigate, useNavigate, Link } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { ROLE_HOME } from '../../domain';
@@ -13,6 +13,13 @@ export default function LoginPage() {
   const { user, login, verify2fa } = useAuth();
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
+  // A compra guiada da página corporativa manda a expressão pesquisada para
+  // aqui (?q=…): um comprador que entra vai direito ao catálogo com ela.
+  const [params] = useSearchParams();
+  const destino = (role) => {
+    const q = (params.get('q') || '').trim();
+    return role === 'COMPRADOR' && q ? `/comprador/servicos?q=${encodeURIComponent(q)}` : ROLE_HOME[role];
+  };
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -41,7 +48,7 @@ export default function LoginPage() {
         setEnviadoPara(result.enviadoPara || '');
         return;
       }
-      navigate(ROLE_HOME[result.role], { replace: true });
+      navigate(destino(result.role), { replace: true });
     } catch (err) {
       setError(err.message || 'Não foi possível entrar.');
     } finally {
@@ -55,7 +62,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const loggedUser = await verify2fa(challenge, code.trim());
-      navigate(ROLE_HOME[loggedUser.role], { replace: true });
+      navigate(destino(loggedUser.role), { replace: true });
     } catch (err) {
       setError(err.message || 'Código incorreto.');
       // Desafio expirado → recomeça do início.

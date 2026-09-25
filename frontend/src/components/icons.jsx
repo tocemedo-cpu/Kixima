@@ -91,6 +91,10 @@ const CATEGORY_VISUAL = {
   'Consultoria': { icon: 'consulting', from: '#262a31', to: '#131519' },
 };
 
+// As categorias reais do catálogo, pela ordem do mapa acima (usadas na compra
+// guiada da página corporativa — sem contagens inventadas).
+export const CATEGORY_NAMES = Object.keys(CATEGORY_VISUAL);
+
 export function categoryVisual(category) {
   return CATEGORY_VISUAL[category] || { icon: 'box', from: '#262a31', to: '#131519' };
 }

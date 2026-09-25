@@ -17,7 +17,7 @@ export default function Faq() {
   const { t } = useI18n();
   useCorporateActive();
 
-  return <main className="kixima-corp">
+  return <main className="kixima-corp kx">
     <CorporateHeader />
 
     <section className="page-hero"><p className="eyebrow">{t('AJUDA')}</p><h1>{t('Perguntas frequentes')}</h1><p>{t('Respostas rápidas às dúvidas mais comuns sobre como funciona a KIXIMA.NET.')}</p></section>

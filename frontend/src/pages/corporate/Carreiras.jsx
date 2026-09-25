@@ -12,7 +12,7 @@ export default function Carreiras() {
   const { t } = useI18n();
   useCorporateActive();
 
-  return <main className="kixima-corp">
+  return <main className="kixima-corp kx">
     <CorporateHeader />
 
     <section className="page-hero"><p className="eyebrow">{t('CARREIRAS')}</p><h1>{t('Construa connosco a ponte entre capacidade local e oportunidade.')}</h1></section>

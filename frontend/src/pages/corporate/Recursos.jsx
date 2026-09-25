@@ -12,7 +12,7 @@ export default function Recursos() {
   const { t } = useI18n();
   useCorporateActive();
 
-  return <main className="kixima-corp">
+  return <main className="kixima-corp kx">
     <CorporateHeader />
 
     <section className="page-hero"><p className="eyebrow">{t('RECURSOS')}</p><h1>{t('Guias e recursos')}</h1><p>{t('Informação prática para preparar a sua empresa e tirar o máximo partido da KIXIMA.NET.')}</p></section>

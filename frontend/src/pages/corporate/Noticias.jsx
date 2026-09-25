@@ -12,7 +12,7 @@ export default function Noticias() {
   const { t } = useI18n();
   useCorporateActive();
 
-  return <main className="kixima-corp">
+  return <main className="kixima-corp kx">
     <CorporateHeader />
 
     <section className="page-hero"><p className="eyebrow">{t('PERSPECTIVAS')}</p><h1>{t('Notícias e perspectivas')}</h1><p>{t('Acompanhe a evolução da KIXIMA.NET e a nossa visão sobre procurement, capacidade local e mercado africano.')}</p></section>
