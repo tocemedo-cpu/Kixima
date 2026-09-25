@@ -318,6 +318,14 @@ public class User extends AbstractPersistableEntity<String> {
         this.mfaCodeTentativas = mfaCodeTentativas;
     }
 
+    public Instant getMfaCodeEnviadoEm() {
+        return mfaCodeEnviadoEm;
+    }
+
+    public void setMfaCodeEnviadoEm(Instant mfaCodeEnviadoEm) {
+        this.mfaCodeEnviadoEm = mfaCodeEnviadoEm;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }

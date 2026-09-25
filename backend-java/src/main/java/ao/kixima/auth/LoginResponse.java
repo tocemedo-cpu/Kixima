@@ -7,26 +7,31 @@ import java.time.Instant;
 /**
  * Espelha as duas formas devolvidas por authService.login()/verify2fa():
  * um desafio de 2FA ({@code requires2fa=true}) ou uma sessão completa
- * ({@code token} + {@code user}). Campos ausentes não saem no JSON
- * (`@JsonInclude(NON_NULL)`), tal como os dois objectos JS distintos que o
- * Node devolve.
+ * ({@code token} + {@code user}). Com o método EMAIL o desafio traz também
+ * o resultado do envio do código ({@code { requires2fa, metodo, challenge,
+ * ...envio }} no Node: enviadoPara, expiraEm, validadeMinutos e, quando o
+ * código pendente foi reaproveitado, reaproveitado=true). Campos ausentes
+ * não saem no JSON (`@JsonInclude(NON_NULL)`), tal como os objectos JS
+ * distintos que o Node devolve.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record LoginResponse(
-        Boolean requires2fa, String metodo, String challenge, Boolean sent,
+        Boolean requires2fa, String metodo, String challenge,
+        String enviadoPara, Instant expiraEm, Integer validadeMinutos, Boolean reaproveitado,
         String token, Boolean mfaPendente, Boolean mfaRestrita, Instant mfaPrazo,
         UserSessionDto user
 ) {
     public static LoginResponse desafio(String metodo, String challenge) {
-        return new LoginResponse(true, metodo, challenge, null, null, null, null, null, null);
+        return new LoginResponse(true, metodo, challenge, null, null, null, null, null, null, null, null, null);
     }
 
-    public static LoginResponse desafioComEnvio(String metodo, String challenge, boolean sent) {
-        return new LoginResponse(true, metodo, challenge, sent, null, null, null, null, null);
+    public static LoginResponse desafioComEnvio(String metodo, String challenge, MfaEmailService.Envio envio) {
+        return new LoginResponse(true, metodo, challenge, envio.enviadoPara(), envio.expiraEm(), envio.validadeMinutos(),
+                envio.reaproveitado(), null, null, null, null, null);
     }
 
     public static LoginResponse sessao(String token, boolean mfaPendente, boolean mfaRestrita,
                                         Instant mfaPrazo, UserSessionDto user) {
-        return new LoginResponse(null, null, null, null, token, mfaPendente, mfaRestrita, mfaPrazo, user);
+        return new LoginResponse(null, null, null, null, null, null, null, token, mfaPendente, mfaRestrita, mfaPrazo, user);
     }
 }

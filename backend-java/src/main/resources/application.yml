@@ -172,12 +172,20 @@ kixima:
     nif: ${KIXIMA_NIF:}
     certificado-agt: ${KIXIMA_CERTIFICADO_AGT:}
   email:
-    # 'console' (log), 'brevo'/'brevo-api' (API HTTP) — mesmas opções do Node.
-    # 'smtp' ainda não portado (ver EmailDispatchService, M5): cai no aviso
-    # "provider desconhecido", nunca bloqueia quem chama.
+    # 'console' (log), 'smtp' (JavaMail, o equivalente ao nodemailer) ou 'brevo'/'brevo-api'
+    # (API HTTP do Brevo — porta 443, imune ao bloqueio de portas SMTP de saída no Render).
+    # Mesmas opções e mesmas variáveis de ambiente que config/env.js; um provider
+    # desconhecido cai no aviso "EMAIL_PROVIDER desconhecido" e nunca bloqueia quem chama.
     provider: ${EMAIL_PROVIDER:console}
     from: ${EMAIL_FROM:notificacoes@kixima.co.ao}
     brevo-api-key: ${BREVO_API_KEY:}
+    smtp:
+      # Obrigatórias com EMAIL_PROVIDER=smtp: SMTP_HOST, SMTP_USER e SMTP_PASSWORD (a Prontidão diz
+      # o NOME das que faltam, nunca o valor). Porta: 465 = TLS direto; 587/2525 = STARTTLS.
+      host: ${SMTP_HOST:}
+      port: ${SMTP_PORT:587}
+      user: ${SMTP_USER:}
+      password: ${SMTP_PASSWORD:}
   storage:
     # Mesmas variáveis que config/env.js: 'local' (disco do contentor, apagado a cada
     # deploy) ou 's3' (AWS S3 / Supabase Storage / R2 / MinIO, via SDK da AWS). Com 's3'

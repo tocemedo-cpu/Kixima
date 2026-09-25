@@ -44,10 +44,6 @@ import java.util.UUID;
  *   <li>({@code realtimeService.emitToUser} — portado no M6: push via STOMP
  *   em {@link ao.kixima.realtime.RealtimeService}, adiado para depois do
  *   commit; a notificação continua a ser a fonte da verdade.)</li>
- *   <li>{@code i18n/emails.js} — tradução do assunto/corpo do EMAIL para o
- *   idioma do destinatário; o email sai sempre em português por agora
- *   (a notificação in-app já era traduzida do lado do cliente, essa parte
- *   não muda).</li>
  *   <li>Eventos de domínios ainda não portados (subscrição, ERP,
  *   Supplier Development, nota de crédito, apólices, cadastro de
  *   empresa) — os métodos existem no Node mas não têm chamador em Java
@@ -79,13 +75,20 @@ public class NotificationService {
     public Notification notifyUser(String userId, NotificationType type, String title, String message,
                                     NotificationChannel channel, String relatedEntityType, String relatedEntityId,
                                     String emailTo) {
+        return notifyUser(userId, type, title, message, channel, relatedEntityType, relatedEntityId, emailTo, null);
+    }
+
+    public Notification notifyUser(String userId, NotificationType type, String title, String message,
+                                    NotificationChannel channel, String relatedEntityType, String relatedEntityId,
+                                    String emailTo, String locale) {
         Notification notification = new Notification(UUID.randomUUID().toString(), userId, null, type, channel,
                 title, message, relatedEntityType, relatedEntityId, Instant.now());
         notificationRepository.save(notification);
 
         if (channel == NotificationChannel.IN_APP_EMAIL && emailTo != null && !emailTo.isBlank()) {
-            // O EMAIL sai sempre em português por agora — ver Javadoc da classe (i18n/emails.js não portado).
-            emailDispatchService.dispatch(emailTo, title, message);
+            // O EMAIL sai na língua do destinatário; a notificação in-app fica em
+            // português porque a interface a traduz do lado do cliente.
+            emailDispatchService.dispatch(emailTo, EmailI18n.t(title, locale), EmailI18n.t(message, locale));
         }
 
         // Sem efeito se ninguém estiver ligado — a notificação já ficou gravada acima de qualquer
@@ -99,7 +102,7 @@ public class NotificationService {
                                                   String relatedEntityType, String relatedEntityId) {
         List<User> users = userRepository.findByCompanyIdAndRoleInAndActiveTrue(companyId, roles);
         return users.stream()
-                .map(u -> notifyUser(u.getId(), type, title, message, channel, relatedEntityType, relatedEntityId, u.getEmail()))
+                .map(u -> notifyUser(u.getId(), type, title, message, channel, relatedEntityType, relatedEntityId, u.getEmail(), u.getLocale()))
                 .toList();
     }
 
@@ -107,7 +110,7 @@ public class NotificationService {
     public List<Notification> notifyPlatformRole(PersonaRole role, NotificationType type, String title, String message,
                                                  String relatedEntityType, String relatedEntityId) {
         return userRepository.findByRoleAndActiveTrue(role).stream()
-                .map(u -> notifyUser(u.getId(), type, title, message, NotificationChannel.IN_APP_EMAIL, relatedEntityType, relatedEntityId, u.getEmail()))
+                .map(u -> notifyUser(u.getId(), type, title, message, NotificationChannel.IN_APP_EMAIL, relatedEntityType, relatedEntityId, u.getEmail(), u.getLocale()))
                 .toList();
     }
 

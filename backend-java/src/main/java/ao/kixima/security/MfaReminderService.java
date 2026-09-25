@@ -5,6 +5,7 @@ import ao.kixima.audit.AuditLogRepository;
 import ao.kixima.audit.AuditService;
 import ao.kixima.common.error.BusinessRuleException;
 import ao.kixima.notification.EmailDispatchService;
+import ao.kixima.notification.EmailI18n;
 import ao.kixima.security.dto.EnviarLembretesResultDto;
 import ao.kixima.security.dto.MfaPendingUserDto;
 import ao.kixima.user.User;
@@ -84,17 +85,29 @@ public class MfaReminderService {
         return ChronoUnit.HOURS.between(ultimoLembrete, Instant.now()) >= INTERVALO_LEMBRETE_HORAS;
     }
 
-    private String corpoDoLembrete() {
+    /**
+     * Texto do lembrete, na língua do destinatário. O prazo entra na mensagem
+     * quando existe: "é obrigatório" sem data é um pedido; com data é uma
+     * consequência.
+     */
+    private String corpoDoLembrete(String locale) {
         Instant prazo = mfaPolicyService.mfaEnforceFrom();
-        String base = "A sua conta KIXIMA aprova operações com dinheiro, por isso a senha deixou de bastar. "
-                + "Falta ativar a verificação em dois passos.";
-        String como = "Entre na plataforma e vá a Configurações → Segurança. Demora menos de um minuto: "
-                + "enviamos-lhe um código por email e é só confirmá-lo.";
+        String base = EmailI18n.t(
+                "A sua conta KIXIMA aprova operações com dinheiro, por isso a senha deixou de bastar. "
+                        + "Falta ativar a verificação em dois passos.",
+                locale);
+        String como = EmailI18n.t(
+                "Entre na plataforma e vá a Configurações → Segurança. Demora menos de um minuto: "
+                        + "enviamos-lhe um código por email e é só confirmá-lo.",
+                locale);
         if (prazo == null) return base + "\n\n" + como;
 
         String data = DATA.format(prazo.atZone(java.time.ZoneOffset.UTC));
-        String consequencia = "A partir de " + data + ", sem isto configurado a sua conta só dá acesso ao ecrã de "
-                + "ativação — não conseguirá aprovar ordens nem consultar o resto da plataforma.";
+        String consequencia = EmailI18n.t(
+                "A partir de {data}, sem isto configurado a sua conta só dá acesso ao ecrã de ativação — "
+                        + "não conseguirá aprovar ordens nem consultar o resto da plataforma.",
+                locale,
+                Map.of("data", data));
         return base + "\n\n" + consequencia + "\n\n" + como;
     }
 
@@ -122,7 +135,14 @@ public class MfaReminderService {
                 ignorados.add(new EnviarLembretesResultDto.Ignorado(u.email(), "Já foi lembrado nas últimas 24 horas."));
                 continue;
             }
-            emailDispatchService.dispatch(u.email(), "Falta ativar a verificação em dois passos", corpoDoLembrete());
+            // O idioma vem do item de pendentes(), exactamente como no Node — e lá o
+            // map de pendentes() não copia `locale` do utilizador, por isso `u.locale` é
+            // sempre undefined e o lembrete sai em português. Mantido igual (fidelidade
+            // ao comportamento actual); a tradução fica ligada para o dia em que o item
+            // passar a trazer o idioma.
+            String locale = null;
+            emailDispatchService.dispatch(u.email(), EmailI18n.t("Falta ativar a verificação em dois passos", locale),
+                    corpoDoLembrete(locale));
 
             Actor atorDoRegisto = new Actor(u.id(), actor == null || actor.actorName() == null ? "Sistema" : actor.actorName(),
                     null, null, null);
