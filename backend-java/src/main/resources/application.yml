@@ -146,10 +146,10 @@ kixima:
     withholding-rate: ${WITHHOLDING_RATE:0.065}
   agt:
     jws-private-key-base64: ${AGT_JWS_PRIVATE_KEY_BASE64:}
-    # Ficheiro local de desenvolvimento (nunca comitado) — mesmo caminho
-    # relativo que o Node usa para src/chave/chavePrivada.pem, só que a
-    # partir da raiz de backend-java/. Fallback quando a variável de
-    # ambiente acima não está definida.
+    # Ordem de resolução igual à do Node: a variável acima, depois os Secret
+    # Files do Render (/etc/secrets/chavePrivada.pem — o RECOMENDADO em
+    # produção, ver render.yaml — ou /etc/secrets/AGT_JWS_PRIVATE_KEY_BASE64),
+    # e por fim este ficheiro local de desenvolvimento (nunca comitado).
     jws-private-key-path: ${AGT_JWS_PRIVATE_KEY_PATH:src/main/resources/chave/chavePrivada.pem}
     software-validation-number: ${AGT_SOFTWARE_VALIDATION_NUMBER:}
     software-id: ${AGT_SOFTWARE_ID:KIXIMA}
@@ -200,7 +200,8 @@ kixima:
     endpoint: ${STORAGE_ENDPOINT:}
     # URL público base para servir os ficheiros (CDN / bucket público); vazio = endpoint/bucket ou host AWS.
     public-url: ${STORAGE_PUBLIC_URL:}
-    force-path-style: ${STORAGE_FORCE_PATH_STYLE:true}
+    # Como no Node: por omissão liga-se sempre que há STORAGE_ENDPOINT (S3-compatíveis).
+    force-path-style: ${STORAGE_FORCE_PATH_STYLE:}
     # Bucket PRIVADO só para cópias de segurança — nunca o das imagens, que é público.
     backup-bucket: ${STORAGE_BACKUP_BUCKET:}
     local-dir: ${STORAGE_LOCAL_DIR:uploads}

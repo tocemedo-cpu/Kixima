@@ -66,7 +66,7 @@ public class StorageService {
                            @Value("${kixima.storage.region:}") String region,
                            @Value("${kixima.storage.endpoint:}") String endpoint,
                            @Value("${kixima.storage.public-url:}") String publicUrl,
-                           @Value("${kixima.storage.force-path-style:true}") boolean forcePathStyle) {
+                           @Value("${kixima.storage.force-path-style:}") String forcePathStyle) {
         this.provider = provider == null ? "local" : provider.trim();
         this.uploadsDir = Paths.get(localDir).toAbsolutePath().normalize();
         this.bucket = limpar(bucket);
@@ -75,7 +75,9 @@ public class StorageService {
         this.region = limpar(region);
         this.endpoint = limpar(endpoint).replaceAll("/+$", "");
         this.publicUrl = limpar(publicUrl).replaceAll("/+$", "");
-        this.forcePathStyle = forcePathStyle;
+        // env.js: STORAGE_FORCE_PATH_STYLE quando definida; senão, path-style
+        // sempre que há um endpoint próprio (Supabase/MinIO/R2 precisam dele).
+        this.forcePathStyle = limpar(forcePathStyle).isEmpty() ? !this.endpoint.isEmpty() : "true".equals(limpar(forcePathStyle));
         if (s3MalConfigurado()) {
             log.error("Armazenamento S3 ATIVO mas mal configurado — faltam: {}. Os ficheiros vão para o disco do contentor, "
                     + "que é APAGADO a cada reinício. Defina essas variáveis no ambiente (Supabase → Project Settings → Storage → "

@@ -11,11 +11,11 @@ import java.util.Base64;
  * Espelha o essencial de {@code lerChavePrivadaAgt()}/
  * {@code diagnosticoChavePrivadaAgt()} em backend/src/config/env.js: chave
  * primeiro de {@code AGT_JWS_PRIVATE_KEY_BASE64} (painel de variáveis de
- * ambiente em produção), com fallback para um ficheiro local de
- * desenvolvimento (nunca comitado). NÃO PORTADO (fora de âmbito para o
- * backend Java, específico do hosting do Node): a lista de caminhos
- * "Secret File" do Render (CAMINHOS_SECRET_FILE_RENDER) — infra-estrutura
- * do Node, não parte da integração AGT em si.
+ * ambiente em produção), depois os "Secret Files" do Render
+ * ({@link #CAMINHOS_SECRET_FILE_RENDER} — o caminho RECOMENDADO em produção:
+ * o painel de variáveis corta valores do tamanho de um PEM sem avisar), e por
+ * fim um ficheiro local de desenvolvimento (nunca comitado). A mesma ordem e
+ * as mesmas fontes do Node, para o cutover não mudar onde a chave vive.
  *
  * Aceita PEM em PKCS#8 ("-----BEGIN PRIVATE KEY-----", o que o
  * {@code openssl genpkey}/Java produzem) e em PKCS#1
@@ -33,35 +33,60 @@ final class AgtPrivateKeyLoader {
     record Resultado(PrivateKey chave, String fonte) {
     }
 
+    /**
+     * Os dois nomes que o Node aceita (CAMINHOS_SECRET_FILE_RENDER em env.js):
+     * "chavePrivada.pem" (o recomendado) e "AGT_JWS_PRIVATE_KEY_BASE64" (caso
+     * real: dar ao Secret File o nome da variável é um erro fácil no painel).
+     */
+    static final java.util.List<Path> CAMINHOS_SECRET_FILE_RENDER = java.util.List.of(
+            Path.of("/etc/secrets/chavePrivada.pem"),
+            Path.of("/etc/secrets/AGT_JWS_PRIVATE_KEY_BASE64"));
+
     static Resultado carregar(String base64Env, String caminhoFicheiroLocal) {
+        return carregar(base64Env, CAMINHOS_SECRET_FILE_RENDER, caminhoFicheiroLocal);
+    }
+
+    /** A mesma ordem de lerChavePrivadaAgt(): variável → Secret Files → ficheiro local. */
+    static Resultado carregar(String base64Env, java.util.List<Path> secretFiles, String caminhoFicheiroLocal) {
         String base64 = base64Env == null ? "" : base64Env.trim();
         if (!base64.isEmpty()) {
-            String pem = new String(Base64.getDecoder().decode(base64), java.nio.charset.StandardCharsets.UTF_8);
-            PrivateKey chave = tentarInterpretar(pem);
+            PrivateKey chave = null;
+            try {
+                chave = tentarInterpretar(new String(Base64.getDecoder().decode(base64), java.nio.charset.StandardCharsets.UTF_8));
+            } catch (IllegalArgumentException ignorado) {
+                // não é Base64 — cortado ou corrompido pelo painel; cai para as fontes seguintes, como o Node.
+            }
             if (chave != null) return new Resultado(chave, "variável de ambiente (AGT_JWS_PRIVATE_KEY_BASE64)");
         }
+        for (Path caminho : secretFiles) {
+            PrivateKey chave = lerFicheiro(caminho);
+            if (chave != null) return new Resultado(chave, "Secret File (" + caminho + ")");
+        }
         if (caminhoFicheiroLocal != null && !caminhoFicheiroLocal.isBlank()) {
-            Path caminho = Path.of(caminhoFicheiroLocal);
-            if (Files.isReadable(caminho)) {
-                try {
-                    String conteudo = Files.readString(caminho, java.nio.charset.StandardCharsets.UTF_8);
-                    PrivateKey chave = tentarInterpretar(conteudo);
-                    if (chave == null) {
-                        // O ficheiro local também pode guardar o valor já em Base64 (não o PEM em texto).
-                        try {
-                            chave = tentarInterpretar(new String(Base64.getDecoder().decode(conteudo.trim()),
-                                    java.nio.charset.StandardCharsets.UTF_8));
-                        } catch (IllegalArgumentException ignorado) {
-                            // não era Base64 válido — já tentámos como PEM directo acima, fica por resolver.
-                        }
-                    }
-                    if (chave != null) return new Resultado(chave, "ficheiro local (" + caminhoFicheiroLocal + ")");
-                } catch (Exception ignorado) {
-                    // ficheiro ilegível/corrompido — cai para "sem chave", mesmo princípio do Node.
-                }
-            }
+            PrivateKey chave = lerFicheiro(Path.of(caminhoFicheiroLocal));
+            if (chave != null) return new Resultado(chave, "ficheiro local (" + caminhoFicheiroLocal + ")");
         }
         return new Resultado(null, null);
+    }
+
+    /** interpretarConteudoFicheiro(): o ficheiro pode ter o PEM em texto ou o valor já em Base64. */
+    private static PrivateKey lerFicheiro(Path caminho) {
+        if (!Files.isReadable(caminho)) return null;
+        try {
+            String conteudo = Files.readString(caminho, java.nio.charset.StandardCharsets.UTF_8);
+            PrivateKey chave = tentarInterpretar(conteudo);
+            if (chave == null) {
+                try {
+                    chave = tentarInterpretar(new String(Base64.getDecoder().decode(conteudo.trim()),
+                            java.nio.charset.StandardCharsets.UTF_8));
+                } catch (IllegalArgumentException ignorado) {
+                    // não era Base64 válido — já tentámos como PEM directo acima, fica por resolver.
+                }
+            }
+            return chave;
+        } catch (Exception ignorado) {
+            return null; // ilegível/corrompido — cai para a fonte seguinte, mesmo princípio do Node.
+        }
     }
 
     private static PrivateKey tentarInterpretar(String pemOuVazio) {
