@@ -110,4 +110,14 @@ describe('CatalogService', () => {
     expect(req.request.body).toEqual({ productId: 'p1', type: 'SAIDA', quantity: 3 });
     req.flush({});
   });
+
+  it('importCatalog() chama POST /api/catalog/import com o campo "file"', () => {
+    const ficheiro = new File(['x'], 'catalogo.xlsx');
+    service.importCatalog(ficheiro).subscribe();
+    const req = http.expectOne('/api/catalog/import');
+    expect(req.request.method).toBe('POST');
+    const fd = req.request.body as FormData;
+    expect(fd.get('file')).toBe(ficheiro);
+    req.flush({ total: 0, created: 0, updated: 0, withImages: 0, warnings: [], errors: [] });
+  });
 });

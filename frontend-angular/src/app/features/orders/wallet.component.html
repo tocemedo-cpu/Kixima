@@ -1,0 +1,63 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!orders()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header title="Financeiro — Carteira" subtitle="A sua posição financeira na plataforma."></app-page-header>
+
+    <div class="grid-cols grid-3" style="margin-bottom:18px">
+      <app-stat-card label="Já recebido" [value]="formatMoney(received())" sub="Ordens pagas ou em execução"></app-stat-card>
+      <app-stat-card label="A receber" [value]="formatMoney(pending())" sub="Aceites, a aguardar pagamento"></app-stat-card>
+      <app-stat-card label="Saldo movimentado" [value]="formatMoney(received() + pending())"></app-stat-card>
+    </div>
+
+    @if (feeStatement(); as f) {
+      <div class="card card-pad" style="margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <strong style="font-size:13.5px">Taxa KIXIMA</strong>
+          <p class="helptext" style="margin:4px 0 0">
+            @if (f.kpis.pendentes > 0) {
+              Tem <strong>{{ formatMoney(f.kpis.pendingAOA) }}</strong> por liquidar ({{ f.kpis.pendentes }}
+              {{ f.kpis.pendentes === 1 ? 'taxa pendente' : 'taxas pendentes' }}).
+            } @else {
+              Sem taxas pendentes — está tudo liquidado.
+            }
+            Total gerado: {{ formatMoney(f.kpis.totalAOA) }}.
+          </p>
+        </div>
+        <button class="btn btn-ghost btn-sm" (click)="extratoTaxas()">Ver extrato completo</button>
+      </div>
+    }
+
+    <div class="card">
+      <div class="card-pad" style="border-bottom:1px solid var(--line)"><strong>Últimos recebimentos</strong></div>
+      @if (recentPaid().length === 0) {
+        <div class="card-pad"><p class="helptext" style="margin:0">Ainda sem pagamentos recebidos.</p></div>
+      } @else {
+        <div class="bz-scroll-x">
+          <table>
+            <thead>
+              <tr>
+                <th>Referência</th>
+                <th>Cliente</th>
+                <th>Estado</th>
+                <th style="text-align:right">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (o of recentPaid(); track o.id) {
+                <tr>
+                  <td class="mono">{{ o.reference }}</td>
+                  <td>{{ o.buyerCompany?.name || '—' }}</td>
+                  <td><app-badge [tone]="PO_STATUS[o.status]?.tone">{{ PO_STATUS[o.status]?.label || o.status }}</app-badge></td>
+                  <td class="r" style="font-weight:700">{{ formatMoney(o.totalAmount, o.currency) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+}

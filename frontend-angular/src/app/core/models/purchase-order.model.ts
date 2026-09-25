@@ -122,8 +122,11 @@ export interface PurchaseOrderDto {
 
   items: PurchaseOrderItemDto[];
   invoice?: InvoiceDto | null;
-  buyerCompany: CompanyRef;
-  supplierCompany: CompanyRef;
+  // Omitidos (não null) pelo Java quando não populados — confirmado em
+  // GET /api/purchase-orders sem :id (a listagem usada por Home/OrderHistory/
+  // Wallet do Fornecedor, PoDtoService.java, @JsonInclude(NON_NULL)).
+  buyerCompany?: CompanyRef;
+  supplierCompany?: CompanyRef;
   createdBy?: { name: string } | null;
   approvedBy?: { name: string } | null;
 }

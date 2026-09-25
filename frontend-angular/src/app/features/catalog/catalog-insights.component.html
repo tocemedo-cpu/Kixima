@@ -1,0 +1,70 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!products()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header [title]="title" subtitle="Baseado nos produtos publicados pela sua empresa."></app-page-header>
+
+    @if (mostraTabela()) {
+      @if (linhasProdutos().length === 0) {
+        <div class="empty-state">
+          <h3>Sem {{ title.toLowerCase() }}</h3>
+          <p>Esta vista preenche-se automaticamente à medida que publica produtos com estes dados.</p>
+        </div>
+      } @else {
+        <div class="card" style="overflow-x:auto">
+          <div class="bz-scroll-x">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Categoria</th>
+                  <th style="text-align:right">Preço</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of linhasProdutos(); track p.id) {
+                  <tr>
+                    <td><strong>{{ p.name }}</strong></td>
+                    <td>{{ p.subcategory ? p.category + ' · ' + p.subcategory : p.category }}</td>
+                    <td style="text-align:right">
+                      @if (seg === 'promocoes' && p.promoPrice) {
+                        <span style="color:var(--brand-600);font-weight:700">{{ formatMoney(p.promoPrice, p.currency) }}</span>
+                        <span style="color:var(--ink-400);text-decoration:line-through;font-size:12px">{{ formatMoney(p.unitPrice, p.currency) }}</span>
+                      } @else {
+                        {{ formatMoney(p.unitPrice, p.currency) }}
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    } @else {
+      @if (agregacao().length === 0) {
+        <div class="empty-state">
+          <h3>Sem {{ title.toLowerCase() }}</h3>
+          <p>Esta vista preenche-se automaticamente à medida que publica produtos com estes dados.</p>
+        </div>
+      } @else {
+        <div class="grid-cols grid-3">
+          @for (r of agregacao(); track r.key) {
+            <div class="card stat-card">
+              <div class="stat-label">{{ r.key }}</div>
+              <div class="stat-value">{{ r.count }}</div>
+              <div class="stat-sub">
+                {{ r.count === 1 ? 'produto' : 'produtos' }}
+                @if (seg === 'armazens') {
+                  · {{ r.units }} un. em stock
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+}

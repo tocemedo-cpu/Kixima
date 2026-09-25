@@ -162,6 +162,38 @@ export const routes: Routes = [
             data: { isEntrada: false },
           },
           {
+            path: 'inventario/armazens',
+            loadComponent: () => import('./features/catalog/catalog-insights.component').then((m) => m.CatalogInsightsComponent),
+            data: { seg: 'armazens' },
+          },
+          {
+            path: 'catalogo/categorias',
+            loadComponent: () => import('./features/catalog/catalog-insights.component').then((m) => m.CatalogInsightsComponent),
+            data: { seg: 'categorias' },
+          },
+          {
+            path: 'catalogo/marcas',
+            loadComponent: () => import('./features/catalog/catalog-insights.component').then((m) => m.CatalogInsightsComponent),
+            data: { seg: 'marcas' },
+          },
+          {
+            path: 'catalogo/promocoes',
+            loadComponent: () => import('./features/catalog/catalog-insights.component').then((m) => m.CatalogInsightsComponent),
+            data: { seg: 'promocoes' },
+          },
+          {
+            path: 'catalogo/importar',
+            loadComponent: () => import('./features/catalog/catalog-import.component').then((m) => m.CatalogImportComponent),
+          },
+          {
+            path: 'pedidos/historico',
+            loadComponent: () => import('./features/orders/order-history.component').then((m) => m.OrderHistoryComponent),
+          },
+          {
+            path: 'financeiro/carteira',
+            loadComponent: () => import('./features/orders/wallet.component').then((m) => m.WalletComponent),
+          },
+          {
             path: 'pedidos/solicitacoes',
             loadComponent: () =>
               import('./features/quotes/supplier-quotes.component').then((m) => m.SupplierQuotesComponent),

@@ -13,6 +13,7 @@ import {
   StockMovementType,
   UpdateStockBody,
 } from '../../core/models/stock-movement.model';
+import { CatalogImportResult } from '../../core/models/catalog-import.model';
 
 export interface CatalogFiltro {
   [key: string]: string | undefined;
@@ -84,5 +85,13 @@ export class CatalogService {
 
   createMovement(body: CreateStockMovementBody): Observable<StockMovementDto> {
     return this.api.post<StockMovementDto>('/api/catalog/movements', body);
+  }
+
+  // POST /api/catalog/import — multipart, campo "file" (.xlsx). Ao contrário
+  // da recusa por plano insuficiente noutros endpoints, aqui chega como 400
+  // com code PLANO_INSUFICIENTE (não 403) — ErrorBannerComponent já trata
+  // isso pelo código do erro, não pelo estado HTTP.
+  importCatalog(file: File): Observable<CatalogImportResult> {
+    return this.api.upload<CatalogImportResult>('/api/catalog/import', file, 'file');
   }
 }

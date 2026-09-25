@@ -1,0 +1,42 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!orders()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header title="Pedidos — Histórico" subtitle="Ordens de compra já concluídas ou recebidas."></app-page-header>
+    @if (closed().length === 0) {
+      <div class="empty-state">
+        <h3>Sem histórico</h3>
+        <p>Ordens concluídas aparecem aqui.</p>
+      </div>
+    } @else {
+      <div class="card" style="overflow-x:auto">
+        <div class="bz-scroll-x">
+          <table>
+            <thead>
+              <tr>
+                <th>Referência</th>
+                <th>Cliente</th>
+                <th>Data</th>
+                <th>Estado</th>
+                <th style="text-align:right">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (o of closed(); track o.id) {
+                <tr class="row-link" (click)="verOrdem(o.id)">
+                  <td class="mono">{{ o.reference }}</td>
+                  <td>{{ o.buyerCompany?.name || '—' }}</td>
+                  <td>{{ formatDate(o.createdAt) }}</td>
+                  <td><app-badge [tone]="PO_STATUS[o.status]?.tone">{{ PO_STATUS[o.status]?.label || o.status }}</app-badge></td>
+                  <td class="r" style="font-weight:700">{{ formatMoney(o.totalAmount, o.currency) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+}

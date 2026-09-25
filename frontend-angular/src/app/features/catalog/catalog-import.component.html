@@ -1,0 +1,118 @@
+<div>
+  <app-page-header
+    title="Importar catálogo (Excel)"
+    subtitle="Carregue muitos produtos e serviços de uma só vez, a partir de uma folha de cálculo."
+  ></app-page-header>
+
+  <app-error-banner [message]="error()"></app-error-banner>
+  @if (semAcesso()) {
+    <app-error-banner
+      [message]="
+        'A importação em massa faz parte do plano PRO — o seu plano atual (' +
+        meuPlano()!.plano +
+        ') não a inclui. Publique os itens um a um em Catálogo, ou mude de plano.'
+      "
+    ></app-error-banner>
+  }
+
+  <div class="grid-cols grid-2" style="align-items:start">
+    <div class="card card-pad">
+      <strong style="font-size:13.5px">Ficheiro do catálogo</strong>
+      <p class="helptext" style="margin-top:8px">
+        Não sabe por onde começar?
+        <a href="/templates/catalogo-modelo.xlsx" download>Descarregue o ficheiro-modelo</a>
+        com as colunas certas e dois exemplos preenchidos.
+      </p>
+      <form (submit)="$event.preventDefault(); handleSubmit()" style="margin-top:14px">
+        <app-field label="Ficheiro Excel (.xlsx)" #fileField="appField">
+          <input
+            [id]="fileField.id"
+            type="file"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            [disabled]="semAcesso()"
+            (change)="onFileChange($event)"
+          />
+        </app-field>
+        @if (file(); as f) {
+          <p class="helptext" style="margin-top:2px">Selecionado: <strong>{{ f.name }}</strong> ({{ fileSizeKb() }} KB)</p>
+        }
+        <button class="btn btn-accent" [disabled]="busy() || semAcesso()" type="submit" style="margin-top:8px">
+          {{ busy() ? 'A importar…' : 'Importar catálogo' }}
+        </button>
+      </form>
+
+      @if (result(); as r) {
+        <div style="margin-top:18px">
+          <app-success-banner
+            [message]="
+              'Importação concluída: ' + r.created + ' criados, ' + r.updated + ' atualizados, ' + r.withImages +
+              ' com imagem (de ' + r.total + ' linhas).'
+            "
+          ></app-success-banner>
+          @if (r.precosEstimados || r.stockPorOmissao || r.localizacaoPorOmissao) {
+            <div class="card card-pad" style="margin-top:10px;background:var(--surface-2, var(--branco))">
+              <strong style="font-size:13px">Valores preenchidos automaticamente</strong>
+              <ul style="margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--ink-400)">
+                @if (r.precosEstimados) {
+                  <li>{{ r.precosEstimados }} preço(s) estimado(s) por categoria — sem coluna Preço no ficheiro. Reveja-os no catálogo.</li>
+                }
+                @if (r.stockPorOmissao) {
+                  <li>{{ r.stockPorOmissao }} item(ns) com stock por omissão (50 unidades) — sem coluna Stock no ficheiro.</li>
+                }
+                @if (r.localizacaoPorOmissao) {
+                  <li>{{ r.localizacaoPorOmissao }} item(ns) com localização por omissão (Luanda) — sem coluna Cidade no ficheiro.</li>
+                }
+              </ul>
+            </div>
+          }
+          @if (r.warnings.length > 0) {
+            <div class="card card-pad" style="margin-top:10px;background:var(--surface-2, var(--branco))">
+              <strong style="font-size:13px">Avisos</strong>
+              <ul style="margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--ink-400)">
+                @for (w of r.warnings; track $index) {
+                  <li>{{ w }}</li>
+                }
+              </ul>
+            </div>
+          }
+          @if (r.errors.length > 0) {
+            <div class="card card-pad" style="margin-top:10px;background:var(--surface-2, var(--branco))">
+              <strong style="font-size:13px">Linhas com problemas ({{ r.errors.length }})</strong>
+              <ul style="margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--ink-400)">
+                @for (er of r.errors.slice(0, 10); track $index) {
+                  <li>Linha {{ er.row }}: {{ er.error }}</li>
+                }
+                @if (r.errors.length > 10) {
+                  <li>… e mais {{ r.errors.length - 10 }}.</li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="card card-pad">
+      <strong style="font-size:13.5px">Formato esperado</strong>
+      <p class="helptext" style="margin-top:8px">
+        A folha "Catálogo" deve ter uma linha de cabeçalho com, no mínimo, as colunas Categoria e Produto/Serviço. As
+        restantes são opcionais e reconhecidas automaticamente:
+      </p>
+      <ul style="margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.7">
+        <li><strong>Categoria</strong> — família comercial do item</li>
+        <li><strong>Produto/Serviço</strong> — nome do item</li>
+        <li><strong>Descrição</strong>, <strong>Tipo</strong> (Produto/Serviço), <strong>UOM</strong></li>
+        <li><strong>Código UNSPSC</strong>, <strong>Título Oficial UNSPSC</strong>, <strong>Segmento</strong>, <strong>Família</strong></li>
+        <li><strong>País de Origem</strong> — opcional (proveniência do fabrico)</li>
+        <li><strong>Preço</strong> — opcional (em AOA; se ausente, é estimado por categoria)</li>
+        <li><strong>Stock</strong> — opcional (se ausente, entra com 50 unidades por omissão)</li>
+        <li><strong>Cidade</strong> — opcional (se ausente, entra como Luanda por omissão)</li>
+      </ul>
+      <p class="helptext" style="margin-top:10px">
+        As fotos podem vir embebidas numa folha "Catálogo Visual" (uma imagem por linha, na mesma ordem dos itens) —
+        são extraídas e associadas automaticamente. A moeda é sempre o Kwanza (AOA) e os produtos ficam publicados no
+        marketplace em nome da sua empresa.
+      </p>
+    </div>
+  </div>
+</div>

@@ -78,6 +78,7 @@ neste repositório.
 | Catálogo de Produtos e Serviços — Fornecedor | `features/catalog/{catalog-manage,dropzone}.component.ts` | `pages/fornecedor/CatalogManage.jsx` | `GET/POST/PUT/DELETE /api/catalog[/:id]`, `POST /api/catalog/:id/{media,image}`, `DELETE /api/catalog/:id/{images,documents}/:id`, `GET /api/planos` |
 | Painéis iniciais (Home) — Fornecedor/Comprador/Company Admin/Financeiro/Admin Sistema | `features/dashboard/*.component.ts` | `pages/{fornecedor,comprador,companyAdmin,financeiro,adminSistema}/Home.jsx` | `GET /api/purchase-orders`, `GET /api/company-admin/dashboard`, `GET /api/dashboard/comprador`, `GET /api/marketplace/{facets,search,suppliers}`, `GET /api/notifications`, `GET /api/financeiro/overview`, `GET /api/companies/:id/platform-fees`, `GET /api/payments/invoices/pending`, `GET /api/companies` |
 | Inventário (Stock/Entradas/Saídas) — Fornecedor | `features/catalog/{inventory,stock-movements}.component.ts` | `pages/fornecedor/{Inventory,StockMovements}.jsx` | `PATCH /api/catalog/:id/stock`, `GET/POST /api/catalog/movements` |
+| Importação/Vistas do Catálogo/Histórico/Carteira — Fornecedor | `features/catalog/{catalog-import,catalog-insights}.component.ts`, `features/orders/{order-history,wallet}.component.ts` | `pages/fornecedor/{CatalogImport,CatalogInsights,OrderHistory,Wallet}.jsx` | `POST /api/catalog/import`, `GET /api/catalog`, `GET /api/purchase-orders`, `GET /api/companies/:id/platform-fees` |
 
 **Verificação ao vivo desta etapa** (Postgres + backend Java a correr localmente, Angular com o seu proxy): login como Comprador → pesquisa no catálogo → produto → cesta → checkout (gera PO) → lista de ordens com KPIs → detalhe da PO → aprovação pelo Company Admin → aceitação pelo Fornecedor (gera fatura com os campos AGT presentes, correctamente vazios sem credenciais) → guarda de máquina de estados (despachar antes de pago devolve 400) → fluxo de rejeição com motivo. RBAC confirmado com 403 em cada ponto errado: Comprador não aprova nem aceita a própria PO, Fornecedor não aprova, Fornecedor não lê `/api/buyer/orders` (403), pedido sem sessão dá 401. Um bug de routing desta sessão anterior foi encontrado e corrigido: a rota de Cotações do Comprador estava em `/comprador/pedidos`, mas a real (`frontend/src/App.jsx:191`) é `/comprador/cotacoes` — nunca teria sido alcançável pela navegação real da aplicação.
 
@@ -104,6 +105,8 @@ neste repositório.
 **Verificação ao vivo — Painéis iniciais (Home) das 5 personas**: todos os 9 endpoints usados (`purchase-orders`, `company-admin/dashboard`, `dashboard/comprador`, `marketplace/{facets,search,suppliers}`, `notifications`, `financeiro/overview`, `companies/:id/platform-fees`, `payments/invoices/pending`, `companies`) já estavam correctos e completos no Java — confirmados endpoint a endpoint por um agente de pesquisa dedicado, que revelou duas particularidades reais preservadas de propósito: `GET /api/dashboard/comprador` só aceita o papel COMPRADOR (não COMPANY_ADMIN, ao contrário dos outros painéis); `GET /api/payments/invoices/pending` só aceita FINANCEIRO/COMPANY_ADMIN (não FORNECEDOR — inofensivo aqui porque a rota `/financeiro/*` já só é alcançável por FINANCEIRO). Duas lacunas reais do modelo `ProductDto` foram corrigidas nesta sessão (faltavam `unspscSegment`/`unspscFamily`/`unspscClass`, que o Java devolve). `marketplace/suppliers` e `notifications` não tinham serviço Angular nenhum — criados de raiz (`MarketplaceService.suppliers()`, `NotificationsService` novo). Testado ao vivo por HTTP directo com as 5 contas de teste (Fornecedor, Comprador, Company Admin, Financeiro, Admin Sistema), confirmando a forma exacta de cada resposta contra o modelo TypeScript. O ramo FORNECEDOR de `financeiro/Home.jsx` (SupplierFinanceCenter) foi testado ao vivo repontando temporariamente um utilizador FINANCEIRO de teste para a empresa Fornecedora Kianda (revertido no fim), já que não existia nenhuma conta FINANCEIRO numa empresa fornecedora na base de teste. Fluxo completo também testado pela UI real com Playwright nas 5 contas: todos os painéis renderizam com dados reais, sem nenhum erro JS de página; confirmados a tabela de ordens recentes do Fornecedor (com `DataTableComponent`/`TableColumnDirective` novos, genéricos e reutilizáveis), os gráficos de barras do Company Admin/Financeiro, a grelha completa da Home do Comprador (KPIs, categorias, trending, fornecedores verificados, actividades recentes) e o banner de "due diligence pendente" do Admin Sistema. RBAC confirmado: Comprador redireccionado ao tentar `/sistema` e `/financeiro`. Dois ícones em falta (`users`, `activities`) portados para `IconComponent`; `categoryVisual()`/`CATEGORY_ICON` extraído para um helper partilhado (`shared/category-visual.ts`) para não duplicar entre `ProductCoverComponent` e a Home do Comprador.
 
 **Verificação ao vivo — Inventário/Entradas/Saídas (Fornecedor)**: os 3 endpoints (`PATCH /api/catalog/:id/stock`, `GET/POST /api/catalog/movements`) já estavam correctos e completos no Java (`CatalogController.java`) — confirmados endpoint a endpoint por um agente de pesquisa dedicado, que revelou um comportamento real preservado de propósito: uma SAÍDA maior do que o stock disponível não é rejeitada (não há 4xx) — o Java (tal como o Node) limita silenciosamente a zero (`Math.max(0, atual+delta)`), sem sinalizar isso na resposta. A resposta de `POST /api/catalog/movements` é plana (sem `product{name}`), ao contrário da listagem `GET /api/catalog/movements`, que inclui `product{name}` — o componente usa a lista de produtos já carregada como reserva quando falta. Testado ao vivo por HTTP directo: `PATCH .../stock` a definir stock/mínimo/armazém, `POST .../movements` com ENTRADA (+20, confirmado no stock do produto a seguir) e SAÍDA (−15, confirmado), e RBAC (403 para Comprador). Fluxo completo também testado pela UI real com Playwright: editar o stock de uma linha na tabela do Inventário e guardar, e registar uma entrada com nota através do formulário de Entradas — ambos com mensagem de sucesso e sem nenhum erro JS de página. Estado dos produtos de demonstração restaurado (stock/mínimo/armazém a `NULL`, movimentos de teste apagados) depois de cada verificação.
+
+**Verificação ao vivo — CatalogImport/CatalogInsights/OrderHistory/Wallet (Fornecedor)**: completa toda a prioridade 2 do Fornecedor. `POST /api/catalog/import` já estava correcto e completo no Java (`CatalogController.java`/`CatalogImportService.java`) — confirmado por um agente de pesquisa dedicado, que revelou uma diferença real face à suposição do React: a recusa por plano insuficiente chega como **400** com `code: PLANO_INSUFICIENTE` (nunca 403), não bloqueando o `ErrorBannerComponent`, que já decide o "muro de plano" pelo código do erro, não pelo estado HTTP — por isso guardei o erro bruto (`ApiError`), não só a mensagem, tal como no padrão já usado em `Users.jsx`/`CatalogManage.jsx`. `CatalogInsights.jsx` e `OrderHistory.jsx`/`Wallet.jsx` não precisaram de nenhum endpoint novo — reutilizam `CatalogService.list()`/`OrdersService.list()`/`PlatformFeesService.forCompany()` já existentes. Corrigido um desvio real do modelo `PurchaseOrderDto`: `buyerCompany`/`supplierCompany` estavam tipados como obrigatórios, mas o Java omite-os (`@JsonInclude(NON_NULL)`) na listagem sem `:id` — confirmado ao vivo (`buyerCompany: None` na resposta real). Detectada também uma lacuna do lado do Java (não corrigida aqui, fora do âmbito desta migração de frontend): o schema Prisma tem `Payment.paidAt`, mas `PaymentDto.java` nunca o devolve — a ordenação de "Últimos recebimentos" em `WalletComponent` usa `processedAt` como substituto fiel, já que é o único campo de data realmente disponível na resposta. Testado ao vivo por HTTP directo: `POST /api/catalog/import` primeiro recusado (400/PLANO_INSUFICIENTE, plano CORE real do Fornecedor Kianda) e depois aceite (201, 2 produtos criados) subindo temporariamente o plano da empresa para PRO na base de teste (revertido a seguir, produtos importados apagados). Fluxo completo também testado pela UI real com Playwright: as 4 páginas renderizam com dados reais e sem nenhum erro JS de página, incluindo o aviso de plano insuficiente a aparecer correctamente com o plano CORE. RBAC confirmado (403 para Comprador em `/api/catalog/import` no servidor, `roleGuard('FORNECEDOR')` a bloquear no cliente). Ficheiro-modelo (`catalogo-modelo.xlsx`) copiado para `frontend-angular/public/templates/`.
 
 ## Inventário completo das 97 páginas React e prioridade sugerida
 
@@ -171,10 +174,10 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 | `Inventory.jsx` | 2 | **Migrado** |
 | `StockMovements.jsx` | 2 | **Migrado** (2 rotas — `/entradas` e `/saidas`) |
 | `Home.jsx` | 2 | **Migrado** |
-| `CatalogImport.jsx` | 2 | Pendente |
-| `CatalogInsights.jsx` | 2 | Pendente |
-| `OrderHistory.jsx` | 2 | Pendente |
-| `Wallet.jsx` | 2 | Pendente |
+| `CatalogImport.jsx` | 2 | **Migrado** |
+| `CatalogInsights.jsx` | 2 | **Migrado** (4 rotas — categorias/marcas/promoções/armazéns; `servicos` nunca é alcançável por routing, tal como no React) |
+| `OrderHistory.jsx` | 2 | **Migrado** |
+| `Wallet.jsx` | 2 | **Migrado** |
 | `Kits.jsx` | 3 | Pendente |
 | `Documents.jsx` | 3 | Pendente |
 | `ProductRanking.jsx` | 3 | Pendente |
@@ -264,18 +267,20 @@ em Node.js, e porquê, está descrito na secção seguinte deste relatório
 1. Escolher o próximo domínio pela tabela de prioridade acima. **Toda a
    prioridade 1 está migrada**, e as 5 páginas `Home.jsx` (painéis iniciais de
    cada persona) também — todas as personas têm agora uma página de entrada
-   real em Angular, em vez de caírem em `PendingPageComponent`. `fornecedor/
-   {Inventory,StockMovements}.jsx` também já estão migrados. O que resta é
-   sobretudo prioridade 2/3. Candidatos com bom custo/benefício para
-   continuar: `fornecedor/{CatalogImport,CatalogInsights,OrderHistory,
-   Wallet}.jsx`, `comprador/{Explore,Services,ServiceDetail,SupplierCompare,
-   Suppliers}.jsx`, `companyAdmin/{Assinatura}.jsx`, `admin/{Companies,
-   Contracts,Cobrancas}.jsx` — todos de prioridade 2. Repare que
-   `DataTableComponent`/`TableColumnDirective` e `StatCardComponent` (novos
-   nesta sessão, em `shared/components/`) são genéricos e reutilizáveis —
-   já usados por `fornecedor-home`/`inventory`; várias destas páginas
-   (ex.: `OrderHistory.jsx`) provavelmente também usam `DataTable`/`StatCard` no
-   React original, portanto não é preciso recriá-los.
+   real em Angular, em vez de caírem em `PendingPageComponent`. **O Fornecedor
+   está com toda a prioridade 1 e 2 concluída** — só resta prioridade 3
+   (`Kits,Documents,ProductRanking,Reports,ApiCatalogo`). Os próximos
+   candidatos de prioridade 2 com bom custo/benefício: `comprador/{Explore,
+   Services,ServiceDetail,SupplierCompare,Suppliers}.jsx` (906 linhas ao
+   todo — o maior lote de prioridade 2 ainda por migrar),
+   `companyAdmin/{Assinatura}.jsx` (446 linhas, sozinha), `admin/{Companies,
+   Contracts,Cobrancas}.jsx` (740 linhas ao todo). Repare que
+   `DataTableComponent`/`TableColumnDirective` e `StatCardComponent` (criados
+   numa sessão anterior, em `shared/components/`) são genéricos e
+   reutilizáveis — já usados por `fornecedor-home`/`inventory`/
+   `order-history`/`wallet`; várias destas páginas seguintes provavelmente
+   também usam `DataTable`/`StatCard` no React original, portanto não é
+   preciso recriá-los.
 2. Para cada página: ler o `.jsx` original por completo, confirmar as
    chamadas de API reais (nunca assumir pelo nome do ficheiro), portar
    modelo → serviço → componente → template, escrever testes, e só depois
