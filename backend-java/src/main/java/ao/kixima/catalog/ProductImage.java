@@ -42,6 +42,23 @@ public class ProductImage extends AbstractPersistableEntity<String> {
         // JPA
     }
 
+    public ProductImage(String id, String productId, String url, boolean primary, int sortOrder, Instant createdAt) {
+        this.id = id;
+        this.productId = productId;
+        this.url = url;
+        this.primary = primary;
+        this.sortOrder = sortOrder;
+        this.createdAt = createdAt;
+    }
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public void setPrimary(boolean primary) {
+        this.primary = primary;
+    }
+
     public String getId() {
         return id;
     }

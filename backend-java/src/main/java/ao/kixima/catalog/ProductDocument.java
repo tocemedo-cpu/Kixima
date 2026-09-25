@@ -48,6 +48,15 @@ public class ProductDocument extends AbstractPersistableEntity<String> {
         // JPA
     }
 
+    public ProductDocument(String id, String productId, ProductDocType type, String fileUrl, String originalName, Instant createdAt) {
+        this.id = id;
+        this.productId = productId;
+        this.type = type;
+        this.fileUrl = fileUrl;
+        this.originalName = originalName;
+        this.createdAt = createdAt;
+    }
+
     public String getId() {
         return id;
     }

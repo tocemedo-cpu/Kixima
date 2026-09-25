@@ -8,6 +8,7 @@ import ao.kixima.catalog.dto.StockMovementDto;
 import ao.kixima.catalog.dto.StockMovementListItemDto;
 import ao.kixima.catalog.dto.SupplierDocumentDto;
 import ao.kixima.catalog.dto.SupplierDocumentsResponse;
+import ao.kixima.catalog.dto.ProductPayload;
 import ao.kixima.catalog.dto.UpdateStockRequest;
 import ao.kixima.common.error.ForbiddenException;
 import ao.kixima.common.error.NotFoundException;
@@ -16,7 +17,16 @@ import ao.kixima.common.pagination.Paginacao;
 import ao.kixima.company.Company;
 import ao.kixima.company.CompanyDocument;
 import ao.kixima.company.CompanyDocumentRepository;
+import ao.kixima.company.CompanyRepository;
+import ao.kixima.company.CompanyStatus;
+import ao.kixima.company.CompanyType;
 import ao.kixima.notification.NotificationService;
+import ao.kixima.plan.PlanLimit;
+import ao.kixima.plan.PlanService;
+import ao.kixima.storage.StorageService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +37,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.text.Normalizer;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,10 +51,9 @@ import java.util.UUID;
  * Espelha backend/src/services/catalogService.js. M2: listCatalog,
  * getProduct, getProductBySlug, incrementView (leitura). M5 lote 2d/2f:
  * listSupplierDocuments, updateStock/createStockMovement/listStockMovements
- * ("documentos"/"stock" do plano). NÃO PORTADO: createProduct,
- * updateProduct, media (mainImage/gallery/documentos), deactivateProduct —
- * escrita de catálogo em si, não nomeada em nenhum item do plano, fica
- * para um marco de catálogo por escrever próprio.
+ * ("documentos"/"stock" do plano). Lacunas D.2: createProduct,
+ * updateProduct, deactivateProduct, setProductImage, addProductMedia,
+ * removeProductImage, removeProductDocument (escrita de catálogo e media).
  */
 @Service
 public class CatalogService {
@@ -52,18 +65,274 @@ public class CatalogService {
     private final CompanyDocumentRepository companyDocumentRepository;
     private final StockMovementRepository stockMovementRepository;
     private final NotificationService notificationService;
+    private final ProductImageRepository productImageRepository;
+    private final CompanyRepository companyRepository;
+    private final PlanService planService;
+    private final StorageService storageService;
     private final int tectoPorOmissao;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public CatalogService(ProductRepository productRepository, ProductDocumentRepository productDocumentRepository,
                            CompanyDocumentRepository companyDocumentRepository, StockMovementRepository stockMovementRepository,
-                           NotificationService notificationService,
+                           NotificationService notificationService, ProductImageRepository productImageRepository,
+                           CompanyRepository companyRepository, PlanService planService, StorageService storageService,
                            @Value("${kixima.db.max-rows:1000}") int tectoPorOmissao) {
         this.productRepository = productRepository;
         this.productDocumentRepository = productDocumentRepository;
         this.companyDocumentRepository = companyDocumentRepository;
         this.stockMovementRepository = stockMovementRepository;
         this.notificationService = notificationService;
+        this.productImageRepository = productImageRepository;
+        this.companyRepository = companyRepository;
+        this.planService = planService;
+        this.storageService = storageService;
         this.tectoPorOmissao = tectoPorOmissao;
+    }
+
+    // --- Escrita (Lacunas D.2) -------------------------------------------------
+
+    public record Documento(ProductDocType type, MultipartFile file) {
+    }
+
+    /** Os ficheiros de uma ficha: capa, galeria e documentos técnicos (por tipo). */
+    public record Media(MultipartFile mainImage, List<MultipartFile> gallery, List<Documento> documents) {
+        public static Media vazia() {
+            return new Media(null, List.of(), List.of());
+        }
+
+        List<MultipartFile> galeria() {
+            return gallery == null ? List.of() : gallery;
+        }
+
+        List<Documento> documentos() {
+            return documents == null ? List.of() : documents;
+        }
+    }
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String ALFANUMERICO = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+    /** `Math.random().toString(36).slice(2, 8)` — seis caracteres base-36. */
+    static String sufixoAleatorio() {
+        StringBuilder sb = new StringBuilder(6);
+        for (int i = 0; i < 6; i++) sb.append(ALFANUMERICO.charAt(RANDOM.nextInt(ALFANUMERICO.length())));
+        return sb.toString();
+    }
+
+    static String slugify(String name, String hint) {
+        String base = Normalizer.normalize(name == null || name.isBlank() ? "item" : name, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
+        if (base.length() > 60) base = base.substring(0, 60);
+        return (base.isEmpty() ? "item" : base) + "-" + hint.substring(0, Math.min(6, hint.length()));
+    }
+
+    private static String keyHintDe(String sku, String name) {
+        String base = sku != null && !sku.isBlank() ? sku : (name != null && !name.isBlank() ? name : "produto");
+        base = base.replaceAll("\\s+", "-");
+        return base.length() > 40 ? base.substring(0, 40) : base;
+    }
+
+    private static byte[] bytes(MultipartFile f) {
+        try {
+            return f.getBytes();
+        } catch (IOException e) {
+            throw new IllegalStateException("Não foi possível ler o ficheiro enviado.", e);
+        }
+    }
+
+    /**
+     * A galeria e os documentos deste item cabem no plano? Conta a imagem
+     * principal, porque para quem publica ela é uma foto como as outras.
+     * `existingImages`/`existingDocs` contam o que o produto já tem.
+     */
+    private void assertMediaCabeNoPlano(Company empresa, Media media, int existingImages, int existingDocs) {
+        int imagens = existingImages + (media.mainImage() != null ? 1 : 0) + media.galeria().size();
+        Integer maxImagens = planService.limite(empresa.getPlan(), PlanLimit.IMAGENS_POR_ITEM);
+        if (maxImagens != null && imagens > maxImagens) {
+            planService.assertLimite(empresa, PlanLimit.IMAGENS_POR_ITEM, maxImagens, "imagens por item");
+        }
+        int docs = existingDocs + media.documentos().size();
+        Integer maxDocs = planService.limite(empresa.getPlan(), PlanLimit.DOCUMENTOS_POR_ITEM);
+        if (maxDocs != null && docs > maxDocs) {
+            planService.assertLimite(empresa, PlanLimit.DOCUMENTOS_POR_ITEM, maxDocs, "documentos técnicos por item");
+        }
+    }
+
+    private Product produtoDaEmpresa(String id, String supplierCompanyId, String mensagem) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new NotFoundException("Produto"));
+        if (!product.getSupplierId().equals(supplierCompanyId)) throw new ForbiddenException(mensagem);
+        return product;
+    }
+
+    /** Recarrega as colecções `images`/`documents` depois de escrever nelas por repositório. */
+    private void recarregar(Product product) {
+        entityManager.flush();
+        entityManager.refresh(product);
+    }
+
+    /** Espelha catalogService.createProduct — bytes primeiro (storage), linhas depois. */
+    @Transactional
+    public ProductDto createProduct(String supplierCompanyId, ProductPayload data, Media media) {
+        Company supplier = companyRepository.findById(supplierCompanyId).orElse(null);
+        if (supplier == null || supplier.getType() != CompanyType.FORNECEDOR) {
+            throw new ForbiddenException("Apenas empresas fornecedoras podem publicar itens no catálogo.");
+        }
+        // Quantos itens a empresa publica NÃO é limitado, em plano nenhum. O que o plano limita é quanta MÍDIA cada item leva.
+        assertMediaCabeNoPlano(supplier, media, 0, 0);
+        if (supplier.getStatus() != CompanyStatus.APROVADA) {
+            throw new ForbiddenException("A empresa precisa estar credenciada (due diligence aprovada) para publicar itens.");
+        }
+
+        String keyHint = keyHintDe(data.texto("sku"), data.texto("name"));
+        Instant agora = Instant.now();
+        Product product = new Product(UUID.randomUUID().toString(), supplierCompanyId, data.texto("name"), data.texto("category"),
+                data.unitPrice(), slugify(data.texto("name"), sufixoAleatorio()), agora);
+        data.aplicar(product);
+
+        // Imagem: a carregada pelo fornecedor tem prioridade; senão, a imagem do catálogo de referência (data.imageUrl).
+        List<ProductImage> imagens = new ArrayList<>();
+        String primaryUrl = null;
+        if (media.mainImage() != null) {
+            MultipartFile m = media.mainImage();
+            primaryUrl = storageService.saveFile(bytes(m), m.getOriginalFilename(), m.getContentType(), keyHint + "-main");
+            imagens.add(new ProductImage(UUID.randomUUID().toString(), product.getId(), primaryUrl, true, 0, agora));
+        }
+        List<MultipartFile> galeria = media.galeria();
+        for (int i = 0; i < galeria.size(); i++) {
+            MultipartFile g = galeria.get(i);
+            String url = storageService.saveFile(bytes(g), g.getOriginalFilename(), g.getContentType(), keyHint + "-g" + i);
+            // Se não houver imagem principal, a primeira da galeria assume esse papel.
+            if (primaryUrl == null && i == 0) {
+                primaryUrl = url;
+                imagens.add(new ProductImage(UUID.randomUUID().toString(), product.getId(), url, true, 0, agora));
+            } else {
+                imagens.add(new ProductImage(UUID.randomUUID().toString(), product.getId(), url, false, i + 1, agora));
+            }
+        }
+        List<ProductDocument> docs = new ArrayList<>();
+        for (Documento d : media.documentos()) {
+            MultipartFile f = d.file();
+            String fileUrl = storageService.saveFile(bytes(f), f.getOriginalFilename(), f.getContentType(), keyHint + "-" + d.type().name());
+            docs.add(new ProductDocument(UUID.randomUUID().toString(), product.getId(), d.type(), fileUrl, f.getOriginalFilename(), agora));
+        }
+        if (primaryUrl != null) product.setImageUrl(primaryUrl);
+
+        productRepository.save(product);
+        productImageRepository.saveAll(imagens);
+        productDocumentRepository.saveAll(docs);
+        recarregar(product);
+        return toDto(product, null, true);
+    }
+
+    /** Espelha catalogService.updateProduct — só os campos enviados; devolve o produto sem `images`/`documents`, como o `prisma.product.update` sem include. */
+    @Transactional
+    public ProductDto updateProduct(String id, String supplierCompanyId, ProductPayload data) {
+        Product product = produtoDaEmpresa(id, supplierCompanyId, "Só pode editar itens da sua própria empresa.");
+        data.aplicar(product);
+        return toDto(product, null, false);
+    }
+
+    @Transactional
+    public ProductDto deactivateProduct(String id, String supplierCompanyId) {
+        Product product = produtoDaEmpresa(id, supplierCompanyId, "Só pode remover itens da sua própria empresa.");
+        product.setActive(false);
+        product.touch();
+        return toDto(product, null, false);
+    }
+
+    /**
+     * Espelha catalogService.setProductImage — mantém a galeria em sincronia
+     * com Product.imageUrl: a foto anterior não é apagada, só deixa de ser a
+     * principal e passa a fazer parte da galeria.
+     */
+    @Transactional
+    public ProductDto setProductImage(String id, String supplierCompanyId, MultipartFile file) {
+        Product product = produtoDaEmpresa(id, supplierCompanyId, "Só pode editar itens da sua própria empresa.");
+        // Guarda no provider configurado só depois de validar a propriedade.
+        String imageUrl = storageService.saveFile(bytes(file), file.getOriginalFilename(), file.getContentType(), id);
+        List<ProductImage> imagens = productImageRepository.findByProductIdOrderByPrimaryDescSortOrderAsc(id);
+        int nextSortOrder = imagens.stream().mapToInt(ProductImage::getSortOrder).max().orElse(-1) + 1;
+        for (ProductImage img : imagens) if (img.isPrimary()) img.setPrimary(false);
+        productImageRepository.save(new ProductImage(UUID.randomUUID().toString(), id, imageUrl, true, nextSortOrder, Instant.now()));
+        product.setImageUrl(imageUrl);
+        product.touch();
+        recarregar(product);
+        return toDto(product, null, false);
+    }
+
+    /** Espelha catalogService.addProductMedia — acrescenta fotos/documentos a um item publicado, contando o que já tem para o limite do plano. */
+    @Transactional
+    public ProductDto addProductMedia(String id, String supplierCompanyId, Media media) {
+        Product product = produtoDaEmpresa(id, supplierCompanyId, "Só pode editar itens da sua própria empresa.");
+        Company supplier = companyRepository.findById(supplierCompanyId).orElseThrow(() -> new NotFoundException("Empresa"));
+        List<ProductImage> existentes = productImageRepository.findByProductIdOrderByPrimaryDescSortOrderAsc(id);
+        List<ProductDocument> docsExistentes = productDocumentRepository.findByProductIdOrderByTypeAsc(id);
+        Media semCapa = new Media(null, media.galeria(), media.documentos());
+        assertMediaCabeNoPlano(supplier, semCapa, existentes.size(), docsExistentes.size());
+
+        String keyHint = keyHintDe(product.getSku(), product.getName());
+        boolean hasPrimaryAlready = existentes.stream().anyMatch(ProductImage::isPrimary);
+        int nextSortOrder = existentes.stream().mapToInt(ProductImage::getSortOrder).max().orElse(-1) + 1;
+        Instant agora = Instant.now();
+
+        List<ProductImage> imagens = new ArrayList<>();
+        List<MultipartFile> galeria = media.galeria();
+        for (int i = 0; i < galeria.size(); i++) {
+            MultipartFile g = galeria.get(i);
+            String url = storageService.saveFile(bytes(g), g.getOriginalFilename(), g.getContentType(), keyHint + "-add" + i);
+            // Só vira principal se o produto ainda não tinha nenhuma foto.
+            imagens.add(new ProductImage(UUID.randomUUID().toString(), id, url, !hasPrimaryAlready && i == 0, nextSortOrder++, agora));
+        }
+        List<ProductDocument> docs = new ArrayList<>();
+        for (Documento d : media.documentos()) {
+            MultipartFile f = d.file();
+            String fileUrl = storageService.saveFile(bytes(f), f.getOriginalFilename(), f.getContentType(), keyHint + "-" + d.type().name() + "-add");
+            docs.add(new ProductDocument(UUID.randomUUID().toString(), id, d.type(), fileUrl, f.getOriginalFilename(), agora));
+        }
+        productImageRepository.saveAll(imagens);
+        productDocumentRepository.saveAll(docs);
+        imagens.stream().filter(ProductImage::isPrimary).findFirst().ifPresent(nova -> product.setImageUrl(nova.getUrl()));
+        product.touch();
+        recarregar(product);
+        return toDto(product, null, true);
+    }
+
+    /** Remove uma foto da galeria. Se era a principal, promove a próxima (menor sortOrder) e sincroniza Product.imageUrl. */
+    @Transactional
+    public Map<String, Object> removeProductImage(String productId, String supplierCompanyId, String imageId) {
+        Product product = produtoDaEmpresa(productId, supplierCompanyId, "Só pode editar itens da sua própria empresa.");
+        List<ProductImage> imagens = productImageRepository.findByProductIdOrderByPrimaryDescSortOrderAsc(productId);
+        ProductImage image = imagens.stream().filter(i -> i.getId().equals(imageId)).findFirst()
+                .orElseThrow(() -> new NotFoundException("Imagem"));
+        productImageRepository.delete(image);
+        if (image.isPrimary()) {
+            ProductImage proxima = imagens.stream().filter(i -> !i.getId().equals(imageId)).findFirst().orElse(null);
+            if (proxima != null) proxima.setPrimary(true);
+            product.setImageUrl(proxima == null ? null : proxima.getUrl());
+            product.touch();
+        }
+        recarregar(product);
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", imageId);
+        m.put("removida", true);
+        return m;
+    }
+
+    /** Remove um documento técnico. Não apaga o ficheiro do storage — mesmo princípio de "não apagar" de deactivateProduct. */
+    @Transactional
+    public Map<String, Object> removeProductDocument(String productId, String supplierCompanyId, String docId) {
+        Product product = produtoDaEmpresa(productId, supplierCompanyId, "Só pode editar itens da sua própria empresa.");
+        ProductDocument doc = productDocumentRepository.findByProductIdOrderByTypeAsc(productId).stream()
+                .filter(d -> d.getId().equals(docId)).findFirst().orElseThrow(() -> new NotFoundException("Documento"));
+        productDocumentRepository.delete(doc);
+        recarregar(product);
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", docId);
+        m.put("removido", true);
+        return m;
     }
 
     public record Filtros(String category, String search, String supplierId, String excludeSupplierId, String kind) {

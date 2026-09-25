@@ -9,6 +9,8 @@ import java.util.List;
 public interface ProductDocumentRepository extends JpaRepository<ProductDocument, String> {
     boolean existsByFileUrl(String fileUrl);
 
+    List<ProductDocument> findByProductIdOrderByTypeAsc(String productId);
+
     long countByFileUrlStartingWith(String prefixo);
 
     /** Espelha catalogService.listSupplierDocuments — documentos técnicos de todos os produtos do fornecedor. */

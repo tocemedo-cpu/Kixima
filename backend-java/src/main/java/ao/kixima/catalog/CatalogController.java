@@ -10,12 +10,14 @@ import ao.kixima.audit.AuditService;
 import ao.kixima.catalog.dto.AddReviewRequest;
 import ao.kixima.catalog.dto.CreateStockMovementRequest;
 import ao.kixima.catalog.dto.ProductDto;
+import ao.kixima.catalog.dto.ProductPayload;
 import ao.kixima.catalog.dto.ReviewDto;
 import ao.kixima.catalog.dto.ReviewSummaryDto;
 import ao.kixima.catalog.dto.StockMovementDto;
 import ao.kixima.catalog.dto.StockMovementListItemDto;
 import ao.kixima.catalog.dto.SupplierDocumentsResponse;
 import ao.kixima.catalog.dto.UpdateStockRequest;
+import ao.kixima.common.error.ErrorResponse;
 import ao.kixima.common.error.NotFoundException;
 import ao.kixima.common.error.ValidationException;
 import ao.kixima.common.pagination.PaginaResposta;
@@ -25,7 +27,15 @@ import ao.kixima.security.CurrentUser;
 import ao.kixima.security.CurrentUserHolder;
 import ao.kixima.security.PersonaRole;
 import ao.kixima.security.RequireRole;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.util.WebUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -37,6 +47,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,14 +74,152 @@ public class CatalogController {
     private final ApiKeyService apiKeyService;
     private final CompanyRepository companyRepository;
     private final AuditService auditService;
+    private final CatalogImportService catalogImportService;
+    private final ObjectMapper objectMapper;
 
     public CatalogController(CatalogService catalogService, ReviewService reviewService, ApiKeyService apiKeyService,
-                              CompanyRepository companyRepository, AuditService auditService) {
+                              CompanyRepository companyRepository, AuditService auditService,
+                              CatalogImportService catalogImportService, ObjectMapper objectMapper) {
         this.catalogService = catalogService;
         this.reviewService = reviewService;
         this.apiKeyService = apiKeyService;
         this.companyRepository = companyRepository;
         this.auditService = auditService;
+        this.catalogImportService = catalogImportService;
+        this.objectMapper = objectMapper;
+    }
+
+    // --- Escrita da ficha e media (Lacunas D.2) --------------------------------
+    // `productMedia`/`productMediaAppend` do Node: os campos de ficheiro que o
+    // multer aceita, por nome — capa, galeria e um campo por tipo de documento.
+
+    /**
+     * O corpo tal como o Node o vê: campos multipart (uma ficha com ficheiros)
+     * ou JSON (a mesma ficha sem ficheiros) — express.json e o multer coexistem.
+     */
+    /** O pedido chega embrulhado (Spring Security, caching) — o multipart está por baixo. */
+    private static MultipartHttpServletRequest multipart(HttpServletRequest req) {
+        return WebUtils.getNativeRequest(req, MultipartHttpServletRequest.class);
+    }
+
+    private Map<String, Object> corpo(HttpServletRequest req) {
+        String contentType = req.getContentType() == null ? "" : req.getContentType();
+        if (multipart(req) != null || contentType.startsWith("multipart/")) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            for (Map.Entry<String, String[]> e : req.getParameterMap().entrySet()) {
+                m.put(e.getKey(), e.getValue().length == 0 ? null : e.getValue()[0]);
+            }
+            return m;
+        }
+        try {
+            byte[] raw = req.getInputStream().readAllBytes();
+            if (raw.length == 0) return Map.of();
+            return objectMapper.readValue(raw, new TypeReference<Map<String, Object>>() {
+            });
+        } catch (IOException e) {
+            throw new ValidationException("Dados inválidos.");
+        }
+    }
+
+    private static List<MultipartFile> ficheiros(HttpServletRequest req, String campo) {
+        MultipartHttpServletRequest mp = multipart(req);
+        if (mp == null) return List.of();
+        return mp.getFiles(campo).stream().filter(f -> !f.isEmpty()).toList();
+    }
+
+    /** Capa (só na criação) + galeria + documentos por tipo, cada um pelo filtro do multer correspondente. */
+    private CatalogService.Media mediaDe(HttpServletRequest req, boolean comCapa) {
+        MultipartFile mainImage = null;
+        if (comCapa) {
+            List<MultipartFile> capa = ficheiros(req, "mainImage");
+            if (!capa.isEmpty()) mainImage = UploadFilters.imagem(capa.get(0), UploadFilters.LIMITE_MEDIA);
+        }
+        List<MultipartFile> gallery = new ArrayList<>();
+        for (MultipartFile g : ficheiros(req, "gallery")) gallery.add(UploadFilters.imagem(g, UploadFilters.LIMITE_MEDIA));
+        List<CatalogService.Documento> documents = new ArrayList<>();
+        for (ProductDocType type : ProductDocType.values()) {
+            for (MultipartFile f : ficheiros(req, type.name())) {
+                documents.add(new CatalogService.Documento(type, UploadFilters.documento(f, UploadFilters.LIMITE_MEDIA)));
+            }
+        }
+        return new CatalogService.Media(mainImage, gallery, documents);
+    }
+
+    @PostMapping
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public ResponseEntity<ProductDto> create(HttpServletRequest req) {
+        CatalogService.Media media = mediaDe(req, true);
+        ProductPayload data = ProductPayload.parse(corpo(req), true);
+        CurrentUser user = CurrentUserHolder.get();
+        ProductDto product = catalogService.createProduct(user.companyId(), data, media);
+        auditService.recordSafe(new AuditService.Entry(auditService.actorFrom(user, req), "CATALOGO_PRODUTO_CRIADO", "Product",
+                product.id(), product.name(), null));
+        return ResponseEntity.status(HttpStatus.CREATED).body(product);
+    }
+
+    @PostMapping("/import")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public ResponseEntity<?> importCatalog(@RequestParam(value = "file", required = false) MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(ErrorResponse.of("NO_FILE", "Envie um ficheiro Excel (.xlsx)."));
+        }
+        UploadFilters.folha(file);
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (IOException e) {
+            throw new ValidationException("Não foi possível ler o ficheiro enviado.");
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(catalogImportService.importCatalog(bytes, CurrentUserHolder.get().companyId()));
+    }
+
+    @PutMapping("/{id}")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public ProductDto update(@PathVariable String id, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest req) {
+        ProductPayload data = ProductPayload.parse(body, false);
+        CurrentUser user = CurrentUserHolder.get();
+        ProductDto product = catalogService.updateProduct(id, user.companyId(), data);
+        auditService.recordSafe(new AuditService.Entry(auditService.actorFrom(user, req), "CATALOGO_PRODUTO_ATUALIZADO", "Product",
+                product.id(), product.name(), Map.of("camposAlterados", data.camposAlterados())));
+        return product;
+    }
+
+    @PostMapping("/{id}/image")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public ResponseEntity<?> uploadImage(@PathVariable String id, @RequestParam(value = "image", required = false) MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            return ResponseEntity.badRequest().body(ErrorResponse.of("NO_FILE", "Nenhuma imagem enviada."));
+        }
+        UploadFilters.imagem(image, UploadFilters.LIMITE_IMAGEM);
+        return ResponseEntity.ok(catalogService.setProductImage(id, CurrentUserHolder.get().companyId(), image));
+    }
+
+    @PostMapping("/{id}/media")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public ProductDto addMedia(@PathVariable String id, HttpServletRequest req) {
+        return catalogService.addProductMedia(id, CurrentUserHolder.get().companyId(), mediaDe(req, false));
+    }
+
+    @DeleteMapping("/{id}/images/{imageId}")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public Map<String, Object> removeImage(@PathVariable String id, @PathVariable String imageId) {
+        return catalogService.removeProductImage(id, CurrentUserHolder.get().companyId(), imageId);
+    }
+
+    @DeleteMapping("/{id}/documents/{docId}")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public Map<String, Object> removeDocument(@PathVariable String id, @PathVariable String docId) {
+        return catalogService.removeProductDocument(id, CurrentUserHolder.get().companyId(), docId);
+    }
+
+    @DeleteMapping("/{id}")
+    @RequireRole({FORNECEDOR, COMPANY_ADMIN})
+    public ProductDto deactivate(@PathVariable String id, HttpServletRequest req) {
+        CurrentUser user = CurrentUserHolder.get();
+        ProductDto product = catalogService.deactivateProduct(id, user.companyId());
+        auditService.recordSafe(new AuditService.Entry(auditService.actorFrom(user, req), "CATALOGO_PRODUTO_REMOVIDO", "Product",
+                product.id(), product.name(), null));
+        return product;
     }
 
     @GetMapping

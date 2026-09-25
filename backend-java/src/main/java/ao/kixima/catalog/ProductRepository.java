@@ -24,6 +24,9 @@ public interface ProductRepository extends JpaRepository<Product, String>, JpaSp
 
     Optional<Product> findBySlug(String slug);
 
+    /** catalogImportService — quais dos slugs do ficheiro já existem (reimportar atualiza, não duplica). */
+    List<Product> findBySlugIn(java.util.Collection<String> slugs);
+
     /** Usado por UploadAccessService — imagem de capa de produto é sempre pública. */
     boolean existsByImageUrl(String imageUrl);
 

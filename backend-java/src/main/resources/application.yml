@@ -43,11 +43,13 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
 
-spring.servlet.multipart.max-file-size: 12MB
-spring.servlet.multipart.max-request-size: 12MB
-# 12MB cobre o maior limite dos dois usados no Node (upload de imagem —
-# uploadDocuments.js fica nos 10MB, dentro deste tecto); cada endpoint
-# continua a validar o seu próprio limite mais apertado onde aplicável.
+spring.servlet.multipart.max-file-size: 25MB
+spring.servlet.multipart.max-request-size: 120MB
+# 25MB é o maior limite por ficheiro usado no Node (folha de cálculo do
+# carregamento em massa; media de produto 15MB, imagem 12MB, documento 10MB);
+# cada endpoint valida o seu próprio limite mais apertado (ver
+# catalog/UploadFilters). O tecto do pedido cobre uma ficha de produto com
+# a galeria e os documentos todos de uma vez.
 
 server:
   servlet:

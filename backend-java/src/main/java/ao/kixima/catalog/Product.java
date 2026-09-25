@@ -181,6 +181,23 @@ public class Product extends AbstractPersistableEntity<String> {
         // JPA
     }
 
+    /** Criação (catalogService.createProduct / catalogImportService) — os restantes campos entram pelos setters. */
+    public Product(String id, String supplierId, String name, String category, BigDecimal unitPrice, String slug, Instant agora) {
+        this.id = id;
+        this.supplierId = supplierId;
+        this.name = name;
+        this.category = category;
+        this.unitPrice = unitPrice;
+        this.slug = slug;
+        this.createdAt = agora;
+        this.updatedAt = agora;
+    }
+
+    /** `updatedAt` é mantido pela aplicação (o Prisma fazia-o com @updatedAt) — chamar depois de qualquer escrita. */
+    public void touch() {
+        this.updatedAt = Instant.now();
+    }
+
     public String getId() {
         return id;
     }
@@ -459,5 +476,195 @@ public class Product extends AbstractPersistableEntity<String> {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    // --- escrita (Lacunas D.2) ---------------------------------------------
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
+
+    public void setManufacturerCode(String manufacturerCode) {
+        this.manufacturerCode = manufacturerCode;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public void setSubcategory(String subcategory) {
+        this.subcategory = subcategory;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public void setManufacturer(String manufacturer) {
+        this.manufacturer = manufacturer;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public void setCountryOfOrigin(String countryOfOrigin) {
+        this.countryOfOrigin = countryOfOrigin;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setFullDescription(String fullDescription) {
+        this.fullDescription = fullDescription;
+    }
+
+    public void setApplications(String applications) {
+        this.applications = applications;
+    }
+
+    public void setBenefits(String benefits) {
+        this.benefits = benefits;
+    }
+
+    public void setKeywords(String keywords) {
+        this.keywords = keywords;
+    }
+
+    public void setUnspscCode(String unspscCode) {
+        this.unspscCode = unspscCode;
+    }
+
+    public void setUnspscTitle(String unspscTitle) {
+        this.unspscTitle = unspscTitle;
+    }
+
+    public void setUnspscSegment(String unspscSegment) {
+        this.unspscSegment = unspscSegment;
+    }
+
+    public void setUnspscFamily(String unspscFamily) {
+        this.unspscFamily = unspscFamily;
+    }
+
+    public void setUnspscClass(String unspscClass) {
+        this.unspscClass = unspscClass;
+    }
+
+    public void setKeySpec(String keySpec) {
+        this.keySpec = keySpec;
+    }
+
+    public void setStandard(String standard) {
+        this.standard = standard;
+    }
+
+    public void setWarranty(String warranty) {
+        this.warranty = warranty;
+    }
+
+    public void setIncoterm(String incoterm) {
+        this.incoterm = incoterm;
+    }
+
+    public void setSupplierNotes(String supplierNotes) {
+        this.supplierNotes = supplierNotes;
+    }
+
+    public void setMaterial(String material) {
+        this.material = material;
+    }
+
+    public void setWeight(String weight) {
+        this.weight = weight;
+    }
+
+    public void setHeight(String height) {
+        this.height = height;
+    }
+
+    public void setWidth(String width) {
+        this.width = width;
+    }
+
+    public void setLength(String length) {
+        this.length = length;
+    }
+
+    public void setPressure(String pressure) {
+        this.pressure = pressure;
+    }
+
+    public void setTemperature(String temperature) {
+        this.temperature = temperature;
+    }
+
+    public void setPower(String power) {
+        this.power = power;
+    }
+
+    public void setVoltage(String voltage) {
+        this.voltage = voltage;
+    }
+
+    public void setMeasurementUnit(String measurementUnit) {
+        this.measurementUnit = measurementUnit;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+    public void setPromoPrice(BigDecimal promoPrice) {
+        this.promoPrice = promoPrice;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public void setMinQuantity(Integer minQuantity) {
+        this.minQuantity = minQuantity;
+    }
+
+    public void setMaxQuantity(Integer maxQuantity) {
+        this.maxQuantity = maxQuantity;
+    }
+
+    public void setLeadTimeDays(Integer leadTimeDays) {
+        this.leadTimeDays = leadTimeDays;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public void setKind(ProductKind kind) {
+        this.kind = kind;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public void setProvince(String province) {
+        this.province = province;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }
