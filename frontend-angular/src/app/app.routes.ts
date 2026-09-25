@@ -249,6 +249,17 @@ export const routes: Routes = [
       },
 
       // --- Company Admin ---------------------------------------------------
+      // Assinatura vive fora do bloco 'empresa' abaixo porque é vista por
+      // DUAS personas (Company Admin escolhe o plano, Financeiro carrega o
+      // comprovativo — a mesma divisão que o servidor aplica), enquanto o
+      // resto de 'empresa' é só para Company Admin (ver comentário em
+      // App.jsx original e em role.guard.ts).
+      {
+        path: 'empresa/assinatura',
+        canActivate: [roleGuard('COMPANY_ADMIN', 'FINANCEIRO')],
+        loadComponent: () =>
+          import('./features/company-admin/assinatura.component').then((m) => m.AssinaturaComponent),
+      },
       {
         path: 'empresa',
         canActivate: [roleGuard('COMPANY_ADMIN')],

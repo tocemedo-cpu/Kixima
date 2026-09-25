@@ -1,0 +1,165 @@
+// Espelha o contrato REAL do Java (backend-java/src/main/java/ao/kixima/cobranca/
+// AssinaturaController.java, AssinaturaService.java, CobrancaDtos.java,
+// CanaisPagamentoService.java) — confirmado por um agente de pesquisa dedicado,
+// NÃO assumido a partir do React/Node. Duas particularidades reais capturadas
+// aqui porque um modelo ingénuo (transcrito directo de Assinatura.jsx) erraria:
+//
+// 1. `valorUsd` tem tipos DIFERENTES em sítios diferentes da mesma resposta:
+//    é STRING em PlanoCobrancaDto (emAberto/historico — BigDecimal serializado
+//    como string pelo customizer global do Jackson, JacksonDecimalConfig.java),
+//    mas é NÚMERO em Preco (opcoes[].preco — anotado
+//    @JsonSerialize(using = Decimais.ComoNumeroJs.class)). Não é inconsistência
+//    a corrigir; é o contrato real, e o componente tem de tratar os dois casos.
+// 2. `POST /pedir` não devolve só {referencia} — devolve o PlanoCobrancaDto
+//    completo (19 campos, sem `company`). Idem para pagar-com/comprovativo/
+//    cancelar: todos devolvem o PlanoCobrancaDto actualizado dessa cobrança,
+//    nunca um "ack" nem o objecto `estado()` completo — por isso o componente
+//    sempre recarrega `GET /api/assinatura` a seguir, tal como o React.
+export type EstadoSubscricao = 'ATIVA' | 'A_EXPIRAR' | 'GRACE' | 'RESTRITA';
+export type EstadoCobranca = 'PENDENTE' | 'COMPROVATIVO_ENVIADO' | 'CONFIRMADA' | 'CANCELADA';
+export type PeriodoCobranca = 'MENSAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
+export type DirecaoPlano = 'SUBIR' | 'DESCER' | 'RENOVAR';
+export type CanalGateway = 'EMIS_MULTICAIXA' | 'PAYPAY' | 'BAI' | 'BFA' | 'STANDARD_BANK_ANGOLA';
+
+export interface DadosBancarios {
+  titular?: string | null;
+  banco?: string | null;
+  iban: string;
+  swift?: string | null;
+  moeda: string;
+  configurado: boolean;
+}
+
+// PlanoCobrancaDto (CobrancaDtos.java) — a mesma forma para `emAberto`,
+// cada item de `historico`, e o retorno de pedir/pagar-com/comprovativo/
+// cancelar. `company` é omitido pelo Java nas rotas do lado da empresa
+// (@JsonInclude(NON_NULL), estado() chama sempre PlanoCobrancaDto.de(c, false)).
+export interface PlanoCobrancaDto {
+  id: string;
+  referencia: string;
+  companyId: string;
+  planoAtual: string;
+  planoNovo: string;
+  // STRING — ver nota no topo do ficheiro.
+  valorUsd: string;
+  periodo: PeriodoCobranca;
+  meses: number;
+  status: EstadoCobranca;
+  comprovativoUrl?: string | null;
+  submetidoEm?: string | null;
+  confirmadaPor?: string | null;
+  confirmadaEm?: string | null;
+  validoAte?: string | null;
+  notas?: string | null;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  canal?: string | null;
+  referenciaExterna?: string | null;
+  telemovel?: string | null;
+}
+
+export interface PrecoPlano {
+  // NÚMERO — ver nota no topo do ficheiro (ao contrário de PlanoCobrancaDto.valorUsd).
+  valorUsd: number;
+  periodo: PeriodoCobranca;
+  meses: number;
+  porMesUsd: number;
+}
+
+// PlanFeatures.java — 17 campos reais (o React só lê os 11 que mostra na UI;
+// os outros 6 ficam aqui modelados por completude do contrato, mesmo sem uso
+// nesta página ainda).
+export interface PlanFeatures {
+  lugaresIncluidos: number | null;
+  cotacoesPorMes: number | null;
+  imagensPorItem: number;
+  documentosPorItem: number;
+  historicoRelatoriosMeses: number | null;
+  kits: boolean;
+  carregamentoEmMassa: boolean;
+  erpIntegration: boolean;
+  frameworkContracts: boolean;
+  relatorioConteudoLocal: boolean;
+  apiCatalogo: boolean;
+  itensNoCatalogo: number | null;
+  posicaoNaPesquisa?: string | null;
+  selo?: string | null;
+  supplierComparison: boolean;
+  auditTrail: boolean;
+  categoryManagement: boolean;
+}
+
+export interface ImpedimentoPlano {
+  codigo: string;
+  dimensao?: string | null;
+  minimo?: string | null;
+  plano?: string | null;
+  lugares?: number | null;
+  ocupados?: number | null;
+}
+
+export interface PerdaPlano {
+  label: string;
+  quantidade: number;
+  consequencia: string;
+}
+
+export interface OpcaoPlano {
+  plano: string;
+  preco: PrecoPlano;
+  features: PlanFeatures;
+  atual: boolean;
+  direcao: DirecaoPlano;
+  impedimento?: ImpedimentoPlano | null;
+  perdas?: PerdaPlano[] | null;
+}
+
+export interface EmpresaResumo {
+  id: string;
+  name: string;
+  size?: string | null;
+}
+
+// GET /api/assinatura (AssinaturaService.estado()).
+export interface AssinaturaEstado {
+  empresa: EmpresaResumo;
+  banco: DadosBancarios;
+  planoAtual: string;
+  validoAte?: string | null;
+  diasAteExpirar?: number | null;
+  expirada: boolean;
+  estadoSubscricao: EstadoSubscricao;
+  graceDiasRestantes?: number | null;
+  lugaresOcupados: number;
+  lugaresIncluidos: number | null;
+  emAberto: PlanoCobrancaDto | null;
+  historico: PlanoCobrancaDto[];
+  opcoes: OpcaoPlano[];
+}
+
+// GET /api/assinatura/canais — cada canal devolve mais do que {disponivel}
+// (HttpGatewayAdapter.estado()); `emFalta`/`nota` úteis para explicar porque
+// um canal está indisponível, não só escondê-lo.
+export interface CanalPagamentoEstado {
+  canal: string;
+  disponivel: boolean;
+  emFalta: string[];
+  nota?: string | null;
+}
+
+export type CanaisPagamento = Partial<Record<CanalGateway, CanalPagamentoEstado>>;
+
+export interface PedirPlanoBody {
+  plano: string;
+  aceitaPerdas?: boolean;
+}
+
+export interface PagarComBody {
+  canal: CanalGateway;
+  telemovel?: string;
+}
+
+export interface CancelarCobrancaBody {
+  motivo: string;
+}

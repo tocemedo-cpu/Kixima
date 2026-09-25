@@ -1,0 +1,214 @@
+@if (!data()) {
+  <div>
+    <app-crumbs [trail]="['Configurações', 'Subscrição']"></app-crumbs>
+    @if (error()) {
+      <app-error-banner [message]="error()"></app-error-banner>
+    } @else {
+      <p class="loading-text">A carregar…</p>
+    }
+  </div>
+} @else {
+  <div>
+    <app-crumbs [trail]="['Configurações', 'Subscrição']"></app-crumbs>
+    <app-buyer-page-head
+      title="Subscrição"
+      subtitle="O plano da sua empresa, o que cada plano inclui e como se paga. O pagamento é por transferência bancária com comprovativo — o plano muda quando a KIXIMA confirma a entrada do valor."
+    ></app-buyer-page-head>
+
+    <app-error-banner [message]="error()"></app-error-banner>
+    <app-success-banner [message]="aviso()"></app-success-banner>
+
+    @if (data()!.emAberto; as aberta) {
+      <div class="bz-card card-pad" style="margin-bottom:18px;border-left:4px solid var(--brand-600)">
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
+          <div>
+            <h3 style="margin:0">
+              Cobrança {{ aberta.referencia }}
+              <app-pill [tone]="ESTADO_PILL[aberta.status]">{{ ESTADO_TEXTO[aberta.status] }}</app-pill>
+            </h3>
+            <p style="margin:6px 0 0;font-size:14px">
+              Plano {{ aberta.planoNovo }} — {{ formatUsd(aberta.valorUsd) }} {{ periodoLabel(aberta.periodo) }}
+            </p>
+            <p class="helptext" style="margin-top:6px">
+              Este valor está fixado nesta cobrança e não muda, mesmo que a tabela de preços mude.
+            </p>
+          </div>
+          @if (podeEscolherPlano) {
+            <button class="btn btn-ghost" (click)="cancelar(aberta.id)" [disabled]="busy()">Cancelar cobrança</button>
+          }
+        </div>
+
+        @if (aberta.status === 'PENDENTE' && podeEscolherPlano && PLANOS_COM_GATEWAY.includes(aberta.planoNovo) && temCanalDisponivel()) {
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+            <p style="margin:0 0 10px;font-size:14px">
+              <strong>Pagar agora:</strong> o plano ativa-se automaticamente assim que o pagamento for confirmado — sem esperar pela KIXIMA.
+            </p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+              @for (par of canaisDisponiveis(); track par[0]) {
+                <button class="btn btn-accent btn-sm" [disabled]="busy()" (click)="pagarComGateway(aberta.id, par[0])">
+                  Pagar com {{ nomeCanal(par[0]) }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        @if (aberta.status === 'PENDENTE') {
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+            <p style="margin:0 0 10px;font-size:14px">
+              <strong>Como pagar:</strong> transfira o valor indicando a referência {{ aberta.referencia }} e carregue aqui o comprovativo (PDF ou imagem).
+            </p>
+
+            @if (data()!.banco.configurado) {
+              <div class="bz-card card-pad" style="background:var(--bg-soft, var(--canvas));margin-bottom:12px">
+                <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:14px">
+                  @if (data()!.banco.titular) {
+                    <div><div class="helptext" style="margin-bottom:2px">Titular</div><div style="font-weight:600">{{ data()!.banco.titular }}</div></div>
+                  }
+                  @if (data()!.banco.banco) {
+                    <div><div class="helptext" style="margin-bottom:2px">Banco</div><div style="font-weight:600">{{ data()!.banco.banco }}</div></div>
+                  }
+                  <div><div class="helptext" style="margin-bottom:2px">IBAN</div><div style="font-weight:600">{{ data()!.banco.iban }}</div></div>
+                  @if (data()!.banco.swift) {
+                    <div><div class="helptext" style="margin-bottom:2px">SWIFT</div><div style="font-weight:600">{{ data()!.banco.swift }}</div></div>
+                  }
+                  <div><div class="helptext" style="margin-bottom:2px">Moeda</div><div style="font-weight:600">{{ data()!.banco.moeda }}</div></div>
+                </div>
+                <p class="helptext" style="margin:10px 0 0">
+                  Indique a referência {{ aberta.referencia }} na descrição da transferência — é assim que a KIXIMA a associa à sua empresa.
+                </p>
+              </div>
+            } @else {
+              <p class="error-text" style="margin-top:0">
+                Os dados bancários da KIXIMA ainda não estão publicados na plataforma. Contacte o suporte para os obter antes de transferir.
+              </p>
+            }
+            <input type="file" accept="application/pdf,image/png,image/jpeg" [disabled]="busy()" (change)="enviarComprovativo(aberta.id, $event)" />
+          </div>
+        } @else {
+          <p style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:14px">
+            Comprovativo enviado em {{ formatDate(aberta.submetidoEm) }}. O plano fica ativo assim que a KIXIMA confirmar a entrada do valor.
+          </p>
+        }
+      </div>
+    }
+
+    <div class="bz-card card-pad" style="margin-bottom:18px">
+      <h3 style="margin-top:0">Plano atual</h3>
+      <div style="display:flex;gap:28px;flex-wrap:wrap">
+        <div><div class="helptext" style="margin-bottom:2px">Plano</div><div style="font-size:22px;font-weight:700">{{ data()!.planoAtual }}</div></div>
+        <div>
+          <div class="helptext" style="margin-bottom:2px">Válido até</div>
+          <div style="font-size:16px;font-weight:600">{{ data()!.validoAte ? formatDate(data()!.validoAte) : 'Sem cobrança registada' }}</div>
+        </div>
+        <div>
+          <div class="helptext" style="margin-bottom:2px">Lugares</div>
+          <div style="font-size:16px;font-weight:600">
+            @if (data()!.lugaresIncluidos === null) {
+              {{ data()!.lugaresOcupados }} ocupados, sem limite
+            } @else {
+              {{ data()!.lugaresOcupados }} de {{ data()!.lugaresIncluidos }}
+            }
+          </div>
+        </div>
+      </div>
+
+      @if (data()!.estadoSubscricao !== 'ATIVA') {
+        <div style="margin-top:12px">
+          <app-subscription-banner [data]="data()" [mostrarBotao]="false"></app-subscription-banner>
+        </div>
+      }
+    </div>
+
+    <h3 style="margin:0 0 12px">Mudar de plano</h3>
+    <div class="plan-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:14px">
+      @for (o of data()!.opcoes; track o.plano) {
+        <div class="bz-card card-pad" [style.border-color]="o.atual ? 'var(--brand-600)' : null" style="display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h4 style="margin:0">{{ o.plano }}</h4>
+            @if (o.atual) {
+              <app-pill tone="success">Atual</app-pill>
+            }
+          </div>
+
+          <div style="margin:10px 0 4px;font-size:26px;font-weight:700">{{ formatUsd(o.preco.valorUsd) }}</div>
+          <div class="helptext">{{ periodoLabel(o.preco.periodo) }}</div>
+          @if (o.preco.meses > 1) {
+            <div class="helptext" style="margin-top:2px">equivale a {{ formatUsd(o.preco.porMesUsd, 2) }} por mês</div>
+          }
+
+          <ul style="margin:12px 0 auto;padding-left:18px;font-size:13.5px;line-height:1.7">
+            <li>{{ o.features.lugaresIncluidos === null ? 'Utilizadores sem limite' : o.features.lugaresIncluidos + ' utilizadores' }}</li>
+            <li>{{ o.features.cotacoesPorMes === null ? 'Cotações sem limite' : o.features.cotacoesPorMes + ' cotações por mês' }}</li>
+            <li>{{ documentosLabel(o) }}</li>
+            <li>{{ o.features.historicoRelatoriosMeses === null ? 'Histórico de relatórios sem limite' : 'Histórico de relatórios de ' + o.features.historicoRelatoriosMeses + ' meses' }}</li>
+            @if (o.features.kits) { <li>Kits e pacotes de produtos</li> }
+            @if (o.features.carregamentoEmMassa) { <li>Carregamento de catálogo em massa</li> }
+            @if (o.features.erpIntegration) { <li>Integração com ERPs</li> }
+            @if (o.features.frameworkContracts) { <li>Contratos-quadro</li> }
+            @if (o.features.relatorioConteudoLocal) { <li>Relatório de conteúdo local</li> }
+            @if (o.features.apiCatalogo) { <li>API de catálogo</li> }
+          </ul>
+
+          @if (o.impedimento) {
+            <p class="helptext" style="color:var(--danger-600, var(--al-fg))">{{ textoImpedimento(o) }}</p>
+          }
+          @if (!o.impedimento && o.perdas?.length) {
+            <p class="helptext">Ao descer perde: {{ textoPerdas(o) }}.</p>
+          }
+          @if (data()!.emAberto && !o.impedimento) {
+            <p class="helptext">Conclua ou cancele a cobrança em aberto para pedir outro plano.</p>
+          }
+          @if (!podeEscolherPlano && !o.impedimento && !data()!.emAberto) {
+            <p class="helptext">Só o administrador da empresa escolhe o plano. Pode carregar o comprovativo de uma cobrança já emitida.</p>
+          }
+
+          <button
+            [class]="o.direcao === 'SUBIR' ? 'btn btn-accent' : 'btn btn-ghost'"
+            style="width:100%;margin-top:12px"
+            [disabled]="busy() || !!data()!.emAberto || !podeEscolherPlano || !!o.impedimento"
+            (click)="pedirComAviso(o)"
+          >
+            {{ ROTULO_DIRECAO[o.direcao] }}
+          </button>
+        </div>
+      }
+    </div>
+
+    <h3 style="margin:22px 0 12px">Histórico de cobranças</h3>
+    <div class="bz-card">
+      <div class="bz-scroll-x">
+        <table class="bz-table">
+          <thead>
+            <tr>
+              <th>Referência</th>
+              <th>Plano</th>
+              <th>Valor</th>
+              <th>Canal</th>
+              <th>Estado</th>
+              <th>Confirmada em</th>
+              <th>Válido até</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (data()!.historico.length === 0) {
+              <tr><td colspan="7"><app-empty-row>Ainda não há cobranças.</app-empty-row></td></tr>
+            } @else {
+              @for (c of data()!.historico; track c.id) {
+                <tr>
+                  <td>{{ c.referencia }}</td>
+                  <td>{{ c.planoNovo }}</td>
+                  <td>{{ formatUsd(c.valorUsd) }}</td>
+                  <td>{{ c.canal === 'TRANSFERENCIA_MANUAL' ? 'Transferência' : nomeCanal(c.canal || '') }}</td>
+                  <td><app-pill [tone]="ESTADO_PILL[c.status]">{{ ESTADO_TEXTO[c.status] }}</app-pill></td>
+                  <td>{{ c.confirmadaEm ? formatDate(c.confirmadaEm) : '—' }}</td>
+                  <td>{{ c.validoAte ? formatDate(c.validoAte) : '—' }}</td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+}
