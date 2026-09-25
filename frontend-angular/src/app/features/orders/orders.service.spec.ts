@@ -24,6 +24,20 @@ describe('OrdersService', () => {
     req.flush({ kpis: {}, items: [], total: 0, page: 2, pages: 1 });
   });
 
+  it('buyerPayments() chama GET /api/buyer/payments com status e q opcionais', () => {
+    service.buyerPayments('ATRASADO', 'kianda').subscribe();
+    const req = http.expectOne((r) => r.url === '/api/buyer/payments');
+    expect(req.request.params.get('status')).toBe('ATRASADO');
+    expect(req.request.params.get('q')).toBe('kianda');
+    req.flush({ kpis: {}, items: [] });
+
+    service.buyerPayments().subscribe();
+    const semFiltro = http.expectOne((r) => r.url === '/api/buyer/payments');
+    expect(semFiltro.request.params.has('status')).toBeFalse();
+    expect(semFiltro.request.params.has('q')).toBeFalse();
+    semFiltro.flush({ kpis: {}, items: [] });
+  });
+
   it('create() envia POST /api/purchase-orders com o corpo exacto (createPoSchema)', () => {
     const body = { supplierCompanyId: 's1', items: [{ productId: 'p1', quantity: 2 }] };
     service.create(body).subscribe();

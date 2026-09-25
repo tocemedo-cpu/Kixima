@@ -1,0 +1,65 @@
+<app-crumbs [trail]="[{ label: 'Home', to: '/comprador' }, 'Pagamento']"></app-crumbs>
+<app-buyer-page-head title="Pagamentos" subtitle="Acompanhe e gerencie todos os pagamentos das suas ordens de compra."></app-buyer-page-head>
+
+<app-kpi-row [cards]="kpiCards()"></app-kpi-row>
+
+<div class="bz-layout">
+  <div>
+    <app-tabs [tabs]="tabs" [value]="tab()" (onChange)="setTab($event)"></app-tabs>
+    <app-toolbar placeholder="Pesquisar por nº da PO, fornecedor…" [q]="q()" (onQ)="onQ($event)"></app-toolbar>
+    @if (error()) {
+      <div class="empty-state"><p>{{ error() }}</p></div>
+    } @else {
+      <div class="bz-card bz-tablewrap">
+        <table class="bz-table">
+          <thead>
+            <tr>
+              <th>Nº da PO</th><th>Fornecedor</th><th>Vencimento</th>
+              <th class="r">Valor da PO</th><th class="r">Valor Pago</th><th class="r">Em Aberto</th>
+              <th>Estado</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (!data()) {
+              <tr><td colspan="8"><app-empty-row>A carregar…</app-empty-row></td></tr>
+            } @else if (items().length === 0) {
+              <tr><td colspan="8"><app-empty-row>Sem pagamentos.</app-empty-row></td></tr>
+            } @else {
+              @for (r of items(); track r.id) {
+                <tr>
+                  <td><span class="bz-mono">{{ r.reference }}</span><span class="bz-sub2">{{ r.origin }}</span></td>
+                  <td><app-supplier-cell [supplier]="r.supplier"></app-supplier-cell></td>
+                  <td>{{ formatDate(r.dueAt) }}</td>
+                  <td class="r">{{ formatMoney(r.amount, r.currency) }}</td>
+                  <td class="r">{{ formatMoney(r.paid, r.currency) }}</td>
+                  <td class="r"><strong [style.color]="r.open > 0 ? 'var(--al-fg)' : 'var(--ok-700)'">{{ formatMoney(r.open, r.currency) }}</strong></td>
+                  <td><app-pill [tone]="INVOICE_STATUS[r.status]?.tone">{{ INVOICE_STATUS[r.status]?.label || r.status }}</app-pill></td>
+                  <td>
+                    <div class="bz-actions">
+                      <button class="bz-iconbtn" title="Ver ordem" (click)="verOrdem(r.poId)"><app-icon name="search" [size]="14"></app-icon></button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <div class="bz-side">
+    <div class="bz-panel">
+      <h3>Resumo Financeiro</h3>
+      <div class="bz-panel-row"><span>Valor Total das PO</span><strong>{{ data() ? formatMoney(data()!.kpis.totalPO) : '—' }}</strong></div>
+      <div class="bz-panel-row"><span>Total Pago</span><strong>{{ data() ? formatMoney(data()!.kpis.concluidos) : '—' }}</strong></div>
+      <div class="bz-panel-row"><span>Total em Aberto</span><strong style="color:var(--al-fg)">{{ data() ? formatMoney(data()!.kpis.aPagar) : '—' }}</strong></div>
+      <div class="bz-panel-row"><span>Total Atrasado</span><strong style="color:var(--al-fg)">{{ data() ? formatMoney(data()!.kpis.atrasados) : '—' }}</strong></div>
+    </div>
+    <div class="bz-panel">
+      <h3>Precisa de Ajuda?</h3>
+      <p class="bz-sub">Fale com a nossa equipa de suporte para qualquer questão sobre pagamentos.</p>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px" (click)="irParaAjuda()"><app-icon name="help" [size]="14"></app-icon> Contactar Suporte</button>
+    </div>
+  </div>
+</div>

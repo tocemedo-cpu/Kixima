@@ -30,6 +30,19 @@ export const routes: Routes = [
     'parcerias', 'planos', 'convite', 'convite-admin',
   ].map((path) => ({ path, component: PendingPageComponent })),
 
+  // Documentos imprimíveis (folha A4, sem a moldura da app) — fora do Shell,
+  // exactamente como em frontend/src/App.jsx:164-168 (dentro de RequireAuth,
+  // mas fora do layout <Shell>). Ainda não migrados — ver PLANO.md.
+  {
+    path: 'documento',
+    canActivate: [authGuard],
+    children: [
+      { path: 'po/:id', component: PendingPageComponent, data: { titulo: 'Documento — Ordem de Compra' } },
+      { path: 'fatura/:id', component: PendingPageComponent, data: { titulo: 'Documento — Fatura' } },
+      { path: 'taxas/:companyId', component: PendingPageComponent, data: { titulo: 'Extrato de Taxas KIXIMA' } },
+    ],
+  },
+
   {
     path: '',
     canActivate: [authGuard],
@@ -74,6 +87,10 @@ export const routes: Routes = [
           {
             path: 'ordens/:id',
             loadComponent: () => import('./features/orders/order-detail.component').then((m) => m.OrderDetailComponent),
+          },
+          {
+            path: 'pagamentos',
+            loadComponent: () => import('./features/orders/buyer-payments.component').then((m) => m.BuyerPaymentsComponent),
           },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Comprador' } },
         ],
@@ -150,6 +167,16 @@ export const routes: Routes = [
         children: [
           { path: '', component: PendingPageComponent, data: { titulo: 'Início — Financeiro' } },
           {
+            path: 'faturas',
+            loadComponent: () =>
+              import('./features/financeiro/pending-invoices.component').then((m) => m.PendingInvoicesComponent),
+          },
+          {
+            path: 'historico',
+            loadComponent: () =>
+              import('./features/financeiro/payment-history.component').then((m) => m.PaymentHistoryComponent),
+          },
+          {
             path: 'ordens/:id',
             loadComponent: () => import('./features/orders/order-detail.component').then((m) => m.OrderDetailComponent),
           },
@@ -179,6 +206,7 @@ export const routes: Routes = [
       { path: 'perfil', component: PendingPageComponent, data: { titulo: 'Perfil' } },
       { path: 'notificacoes', component: PendingPageComponent, data: { titulo: 'Notificações' } },
       { path: 'suporte', component: PendingPageComponent, data: { titulo: 'Suporte' } },
+      { path: 'ajuda', component: PendingPageComponent, data: { titulo: 'Ajuda' } },
     ],
   },
 

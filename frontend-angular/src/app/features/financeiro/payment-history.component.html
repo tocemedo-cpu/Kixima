@@ -1,0 +1,49 @@
+<app-crumbs [trail]="['Financeiro', 'Pagamentos']"></app-crumbs>
+<app-buyer-page-head title="Pagamentos" subtitle="Gerencie e acompanhe todos os pagamentos das faturas da empresa."></app-buyer-page-head>
+
+<app-kpi-row [cards]="kpiCards()"></app-kpi-row>
+
+<app-tabs [tabs]="tabs" [value]="tab()" (onChange)="setTab($event)"></app-tabs>
+<app-toolbar placeholder="Pesquisar por nº ou fornecedor…" [q]="q()" (onQ)="q.set($event)"></app-toolbar>
+
+@if (error()) {
+  <div class="empty-state"><p>{{ error() }}</p></div>
+} @else {
+  <div class="bz-card bz-tablewrap">
+    <table class="bz-table">
+      <thead>
+        <tr>
+          <th>Nº da Fatura</th><th>Fornecedor</th><th>PO</th><th class="r">Valor</th>
+          <th>Vencimento</th><th>Pago em</th><th>Status</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (!data()) {
+          <tr><td colspan="8"><app-empty-row>A carregar…</app-empty-row></td></tr>
+        } @else if (items().length === 0) {
+          <tr><td colspan="8"><app-empty-row>Sem pagamentos.</app-empty-row></td></tr>
+        } @else {
+          @for (i of items(); track i.id) {
+            <tr>
+              <td><span class="bz-mono">{{ i.reference }}</span></td>
+              <td><app-supplier-cell [supplier]="{ name: i.supplier }"></app-supplier-cell></td>
+              <td class="bz-muted bz-mono">{{ i.poReference || '—' }}</td>
+              <td class="r"><strong>{{ formatMoney(i.amount, i.currency) }}</strong></td>
+              <td>{{ formatDate(i.dueAt) }}</td>
+              <td class="bz-muted">{{ i.paidAt ? formatDate(i.paidAt) : '—' }}</td>
+              <td><app-pill [tone]="i.status === 'PAGA' ? 'success' : vencida(i) ? 'danger' : 'pending'">{{ vencida(i) ? 'Vencida' : (INVOICE_STATUS[i.status]?.label || i.status) }}</app-pill></td>
+              <td class="r" style="white-space:nowrap">
+                @if (i.poId) {
+                  <button class="btn btn-ghost btn-sm" title="Ver fatura" (click)="verFatura(i.poId)"><app-icon name="report" [size]="14"></app-icon> Fatura</button>
+                  <button class="btn btn-ghost btn-sm" style="margin-left:6px" title="Ver ordem de compra" (click)="verPo(i.poId)"><app-icon name="report" [size]="14"></app-icon> PO</button>
+                } @else {
+                  <span class="bz-muted">—</span>
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+}

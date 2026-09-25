@@ -1,5 +1,5 @@
-// Porta das chamadas a /api/purchase-orders, /api/buyer/orders e das duas
-// acções de fatura usadas em OrderDetail.jsx (/api/payments/invoices/:id/…)
+// Porta das chamadas a /api/purchase-orders, /api/buyer/{orders,payments} e
+// das duas acções de fatura usadas em OrderDetail.jsx (/api/payments/invoices/:id/…)
 // — ver poRoutes.js, poService.js, buyerService.js e paymentRoutes.js.
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -14,6 +14,7 @@ import {
   RejectPoBody,
   ResolveDivergenceBody,
 } from '../../core/models/purchase-order.model';
+import { BuyerPaymentsResponse } from '../../core/models/buyer-payments.model';
 
 export interface BuyerOrdersParams {
   status?: string;
@@ -46,6 +47,11 @@ export class OrdersService {
   // GET /api/buyer/orders — lista com KPIs, usada por Orders.jsx (comprador).
   buyerOrders(params: BuyerOrdersParams): Observable<BuyerOrdersResult> {
     return this.api.get<BuyerOrdersResult>('/api/buyer/orders', params as Record<string, string | number | undefined>);
+  }
+
+  // GET /api/buyer/payments — faturas das PO do comprador, usada por comprador/Payments.jsx.
+  buyerPayments(status?: string, q?: string): Observable<BuyerPaymentsResponse> {
+    return this.api.get<BuyerPaymentsResponse>('/api/buyer/payments', { status, q });
   }
 
   // GET /api/purchase-orders (sem page) — array puro, usado por Approvals.jsx

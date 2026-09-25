@@ -61,6 +61,9 @@ neste repositório.
 | Pagamentos Recebidos — Fornecedor/Financeiro | `features/orders/supplier-payments.component.ts` | `pages/fornecedor/Payments.jsx` (mesmo componente React em `/fornecedor/pagamentos` e `/financeiro/recebidos`) | `GET /api/purchase-orders` (array puro, filtrado no cliente), `PATCH /api/payments/:paymentId/confirm-received` |
 | Ordens de Compra Recebidas — Fornecedor | `features/orders/orders-received.component.ts` | `pages/fornecedor/OrdersReceived.jsx` | `GET /api/purchase-orders?status=` (filtro de estado opcional) |
 | Contratos-quadro — Company Admin | `features/contracts/contracts.component.ts` | `pages/companyAdmin/Contracts.jsx` | `GET /api/contracts` |
+| Faturas Pendentes — Financeiro | `features/financeiro/pending-invoices.component.ts` | `pages/financeiro/PendingInvoices.jsx` | `GET /api/financeiro/invoices`, `POST /api/payments/invoices/:id/pay` (multipart, comprovativo obrigatório) |
+| Pagamentos — Financeiro | `features/financeiro/payment-history.component.ts` | `pages/financeiro/PaymentHistory.jsx` | `GET /api/financeiro/payments?status=` |
+| Pagamentos — Comprador | `features/orders/buyer-payments.component.ts` | `pages/comprador/Payments.jsx` | `GET /api/buyer/payments?status=&q=` |
 
 **Verificação ao vivo desta etapa** (Postgres + backend Java a correr localmente, Angular com o seu proxy): login como Comprador → pesquisa no catálogo → produto → cesta → checkout (gera PO) → lista de ordens com KPIs → detalhe da PO → aprovação pelo Company Admin → aceitação pelo Fornecedor (gera fatura com os campos AGT presentes, correctamente vazios sem credenciais) → guarda de máquina de estados (despachar antes de pago devolve 400) → fluxo de rejeição com motivo. RBAC confirmado com 403 em cada ponto errado: Comprador não aprova nem aceita a própria PO, Fornecedor não aprova, Fornecedor não lê `/api/buyer/orders` (403), pedido sem sessão dá 401. Um bug de routing desta sessão anterior foi encontrado e corrigido: a rota de Cotações do Comprador estava em `/comprador/pedidos`, mas a real (`frontend/src/App.jsx:191`) é `/comprador/cotacoes` — nunca teria sido alcançável pela navegação real da aplicação.
 
@@ -69,6 +72,10 @@ neste repositório.
 **Bug de paridade Node↔Java encontrado e corrigido nesta etapa** (fora do Angular, no backend Java): `GET /api/purchase-orders` no `backend-java` (`PoController.list`) só aceitava `status` — ignorava silenciosamente `invoiced`/`page`/`limit`, devolvendo sempre o array completo sem filtrar nem paginar. O Node (`poService.listPurchaseOrders`, `backend/src/services/poService.js:245-268`) filtra por `invoiced` e, quando `page` está presente, devolve o envelope `{items,total,page,pages,limit}`. Corrigido em `PoController`/`PoDtoService`/`PurchaseOrderSpecifications` para reproduzir exactamente os dois ramos do Node (mesmo tecto `min(max(1,limit||15),50)`, mesmo `pages=max(1,ceil(total/take))`), com teste de contrato adicionado em `PoControllerTest` e verificado ao vivo (a diferença foi vista primeiro por HTTP directo, antes de qualquer suposição). Sem esta correcção, o ecrã de Faturas do Fornecedor teria mostrado todas as POs (faturadas ou não) sem paginação real.
 
 **Verificação ao vivo — Ordens Recebidas/Contratos**: `GET /api/contracts` e `GET /api/purchase-orders` (sem `page`) já estavam correctos e completos no Java — nenhuma correcção necessária desta vez. Confirmado por HTTP directo (Company Admin lê os 3 contratos reais de demonstração, com `clientCompany`/`supplierCompany` presentes) e por browser headless: Company Admin em `/empresa/contratos` vê os KPIs correctos (total, ativos, a vencer em 30 dias, vencidos, valor somado — mesmo cálculo do React) e a lista lateral "Próximos a Vencer"; Fornecedor em `/fornecedor/ordens` vê o filtro de estado e a lista de POs recebidas. RBAC do lado do cliente confirmado nos dois sentidos: Fornecedor bloqueado de `/empresa/contratos` (`roleGuard('COMPANY_ADMIN')`) e Comprador bloqueado de `/fornecedor/ordens` (`roleGuard('FORNECEDOR')`), ambos redireccionados para a sua própria área inicial.
+
+**Verificação ao vivo — Financeiro (Faturas Pendentes/Pagamentos)**: `/api/financeiro/{invoices,payments}` já estavam correctos e completos no Java (mesmos KPIs, mesma forma `shapeInvoice`). Fluxo de pagamento completo testado ao vivo, por HTTP directo e pela UI real (browser headless, upload de ficheiro pelo `<input type=file>` e clique em "Confirmar pagamento"): Financeiro paga uma fatura pendente anexando um comprovativo real (PNG) — `POST /api/payments/invoices/:id/pay` devolve o pagamento criado, com o campo `agtInvoiceResubmission` a mostrar honestamente que a submissão à AGT falha por falta de credenciais (nunca finge sucesso); a fatura sai de "pendentes" (2→1→0 ao longo do teste) e passa a aparecer em `/financeiro/historico?status=PAGO` com `paidAt` preenchido. RBAC confirmado: Fornecedor recebe 403 em `/api/financeiro/invoices` e ao tentar pagar uma fatura alheia; Company Admin tem acesso ao endpoint no servidor (`requireRole('FINANCEIRO','COMPANY_ADMIN')`) mas a UI React não expõe estas rotas a esse papel — o `roleGuard('FINANCEIRO')` do Angular reproduz exactamente essa mesma restrição do lado do cliente, não a do servidor. Também adicionado: o grupo de rotas `/documento/*` (fora do `ShellComponent`, tal como em `App.jsx:164-168`) para os links "Ver fatura"/"Ver PO" destas páginas não caírem no wildcard `redirectTo: '/'` — apontam para `PendingPageComponent` até `PrintableDocument.jsx`/`FeeStatement.jsx` serem migrados.
+
+**Verificação ao vivo — Pagamentos do Comprador**: `GET /api/buyer/payments` já estava correcto e completo no Java (mesma forma, mesmos KPIs). Confirmado por HTTP directo (Comprador lê o `aPagar`/`concluidos`/`atrasados`/`totalPO` reais, incluindo a fatura paga no teste anterior) e por browser headless em `/comprador/pagamentos`. RBAC confirmado nos dois sentidos: `GET /api/buyer/payments` devolve 403 a um Fornecedor no servidor, e o `roleGuard('COMPRADOR')` do Angular já bloqueia essa rota no cliente antes mesmo do pedido à API. Dois ícones que faltavam (`help`, `wallet`) portados para `IconComponent`, e o grupo de rotas partilhadas ganhou `ajuda` (antes só existia `suporte`, mas o botão "Contactar Suporte" desta página navega para `/ajuda`, como no React).
 
 ## Inventário completo das 97 páginas React e prioridade sugerida
 
@@ -111,7 +118,7 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 | `Cart.jsx` / `CartContext.jsx` | 1 | **Migrado** |
 | `Checkout.jsx` | 1 | **Migrado** |
 | `Orders.jsx` | 1 | **Migrado** |
-| `Payments.jsx` | 1 | Pendente |
+| `Payments.jsx` | 1 | **Migrado** |
 | `Deliveries.jsx` | 2 | Pendente |
 | `Receptions.jsx` | 2 | Pendente |
 | `Home.jsx` | 2 | Pendente |
@@ -168,8 +175,8 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 
 | Página | Prioridade | Estado |
 |---|---|---|
-| `PendingInvoices.jsx` | 1 | Pendente |
-| `PaymentHistory.jsx` | 1 | Pendente |
+| `PendingInvoices.jsx` | 1 | **Migrado** |
+| `PaymentHistory.jsx` | 1 | **Migrado** |
 | `Home.jsx` | 2 | Pendente |
 
 ### Admin do Sistema (`pages/adminSistema/`) — 20 páginas

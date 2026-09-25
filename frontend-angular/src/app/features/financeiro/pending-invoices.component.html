@@ -1,0 +1,81 @@
+@if (toast()) {
+  <div class="svc-toast">{{ toast() }}</div>
+}
+<app-crumbs [trail]="['Financeiro', 'Faturas Pendentes']"></app-crumbs>
+<app-buyer-page-head title="Faturas Pendentes" subtitle="Analise e pague as faturas recebidas dentro do prazo (SLA de 7 dias)."></app-buyer-page-head>
+
+<app-kpi-row [cards]="kpiCards()"></app-kpi-row>
+
+<app-toolbar placeholder="Pesquisar por nº da fatura ou fornecedor…" [q]="q()" (onQ)="q.set($event)"></app-toolbar>
+@if (error()) {
+  <div class="empty-state" style="padding:14px"><p>{{ error() }}</p></div>
+}
+
+<div class="bz-card bz-tablewrap">
+  <table class="bz-table">
+    <thead>
+      <tr>
+        <th>Nº da Fatura</th><th>Fornecedor</th><th>PO</th><th class="r">Valor</th>
+        <th>Emissão</th><th>Vencimento</th><th>Status</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (!data()) {
+        <tr><td colspan="8"><app-empty-row>A carregar…</app-empty-row></td></tr>
+      } @else if (items().length === 0) {
+        <tr><td colspan="8"><app-empty-row>Sem faturas pendentes.</app-empty-row></td></tr>
+      } @else {
+        @for (i of items(); track i.id) {
+          <tr>
+            <td><span class="bz-mono">{{ i.reference }}</span></td>
+            <td><app-supplier-cell [supplier]="{ name: i.supplier }"></app-supplier-cell></td>
+            <td class="bz-muted bz-mono">{{ i.poReference || '—' }}</td>
+            <td class="r"><strong>{{ formatMoney(i.amount, i.currency) }}</strong></td>
+            <td>{{ formatDate(i.issuedAt) }}</td>
+            <td [style.color]="vencida(i) ? 'var(--al-fg)' : undefined">{{ formatDate(i.dueAt) }}</td>
+            <td><app-pill [tone]="vencida(i) ? 'danger' : 'pending'">{{ vencida(i) ? 'Vencida' : 'Pendente' }}</app-pill></td>
+            <td class="r" style="white-space:nowrap">
+              @if (i.poId) {
+                <button class="btn btn-ghost btn-sm" title="Ver fatura" (click)="verFatura(i.poId)">
+                  <app-icon name="report" [size]="14"></app-icon> Ver
+                </button>
+              }
+              <button class="btn btn-accent btn-sm" style="margin-left:6px" [disabled]="paying() === i.id" (click)="abrirModal(i)">
+                {{ paying() === i.id ? 'A pagar…' : 'Pagar' }}
+              </button>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (payModal(); as inv) {
+  <div class="av-modal" (click)="fecharModal()">
+    <div class="hs-modal" (click)="$event.stopPropagation()" style="max-width:460px">
+      <div class="hs-modal-head">
+        <h3>Pagar fatura {{ inv.reference }}</h3>
+        <button class="hs-modal-x" (click)="fecharModal()" aria-label="Fechar">✕</button>
+      </div>
+      <p class="bz-sub" style="margin-top:4px">
+        Valor: <strong>{{ formatMoney(inv.amount, inv.currency) }}</strong> · Fornecedor: {{ inv.supplier }}
+      </p>
+      <p class="bz-sub" style="margin-top:8px">
+        Faça a transferência bancária e anexe o <strong>comprovativo</strong> (PDF ou imagem). Ele fica visível ao fornecedor como prova do pagamento.
+      </p>
+      <app-field label="Comprovativo da transferência" [obrigatorio]="true" style="margin-top:12px" #campo="appField">
+        <input [id]="campo.id" type="file" accept=".pdf,image/*" (change)="onProofChange($event)">
+        @if (proof(); as f) {
+          <small class="helptext">Selecionado: {{ f.name }} ({{ tamanhoKb(f) }} KB)</small>
+        }
+      </app-field>
+      <div class="hs-form-actions">
+        <button class="btn btn-ghost" (click)="fecharModal()">Cancelar</button>
+        <button class="btn btn-accent" [disabled]="!proof() || paying() === inv.id" (click)="confirmarPagamento()">
+          {{ paying() === inv.id ? 'A pagar…' : 'Confirmar pagamento' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
