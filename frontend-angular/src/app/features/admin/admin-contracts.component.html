@@ -1,0 +1,123 @@
+<div>
+  <app-page-header title="Contratos-Quadro" subtitle="Contratos ativos geram Call-offs automáticos, com faturação consolidada e prazo próprio.">
+    <button action class="btn btn-accent" (click)="toggleForm()">{{ showForm() ? 'Cancelar' : 'Novo contrato-quadro' }}</button>
+  </app-page-header>
+
+  <app-error-banner [message]="error()"></app-error-banner>
+  <app-success-banner [message]="success()"></app-success-banner>
+
+  @if (showForm()) {
+    <form class="card card-pad" style="margin-bottom:16px" (submit)="$event.preventDefault(); submit()">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <app-field label="Empresa cliente" [obrigatorio]="true" #fCliente="appField">
+          <select [id]="fCliente.id" [value]="form().clientCompanyId" (change)="setCampo('clientCompanyId', $any($event.target).value)" required>
+            <option value="">Selecione o cliente…</option>
+            @for (c of clients(); track c.id) {
+              <option [value]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </app-field>
+        <app-field label="Empresa fornecedora" [obrigatorio]="true" #fFornecedor="appField">
+          <select [id]="fFornecedor.id" [value]="form().supplierCompanyId" (change)="setCampo('supplierCompanyId', $any($event.target).value)" required>
+            <option value="">Selecione o fornecedor…</option>
+            @for (s of suppliers(); track s.id) {
+              <option [value]="s.id">{{ s.name }}</option>
+            }
+          </select>
+        </app-field>
+      </div>
+
+      <app-field
+        label="Categorias cobertas"
+        [obrigatorio]="true"
+        hint="Uma PO só vira Call-off se todas as categorias dos seus itens estiverem cobertas."
+        #fCategorias="appField"
+        style="margin-top:16px"
+      >
+        <input
+          [id]="fCategorias.id"
+          type="text"
+          [value]="form().categoriesCovered"
+          (input)="setCampo('categoriesCovered', $any($event.target).value)"
+          placeholder="Ex.: Válvulas, Tubagem, Bombas (separadas por vírgula)"
+          required
+        />
+      </app-field>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px">
+        <app-field label="Valor total do contrato" [obrigatorio]="true" #fValor="appField">
+          <input [id]="fValor.id" type="number" min="0" step="0.01" [value]="form().totalValue" (input)="setCampo('totalValue', $any($event.target).value)" required />
+        </app-field>
+        <app-field label="Moeda" #fMoeda="appField">
+          <input [id]="fMoeda.id" type="text" [value]="form().currency" (input)="setCampo('currency', $any($event.target).value)" />
+        </app-field>
+        <app-field label="Periodicidade de faturação" #fPeriodicidade="appField">
+          <select [id]="fPeriodicidade.id" [value]="form().billingPeriodicity" (change)="setCampo('billingPeriodicity', $any($event.target).value)">
+            @for (key of BILLING_PERIODICITY_KEYS; track key) {
+              <option [value]="key">{{ BILLING_PERIODICITY[key] }}</option>
+            }
+          </select>
+        </app-field>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px">
+        <app-field
+          label="Prazo de pagamento (dias)"
+          [obrigatorio]="true"
+          hint="Substitui os 7 dias padrão para os call-offs deste contrato."
+          #fPrazo="appField"
+        >
+          <input [id]="fPrazo.id" type="number" min="1" step="1" [value]="form().paymentTermDays" (input)="setCampo('paymentTermDays', $any($event.target).value)" required />
+        </app-field>
+        <app-field label="Válido de" [obrigatorio]="true" #fDe="appField">
+          <input [id]="fDe.id" type="date" [value]="form().validFrom" (input)="setCampo('validFrom', $any($event.target).value)" required />
+        </app-field>
+        <app-field label="Válido até" [obrigatorio]="true" #fAte="appField">
+          <input [id]="fAte.id" type="date" [value]="form().validUntil" (input)="setCampo('validUntil', $any($event.target).value)" required />
+        </app-field>
+      </div>
+
+      <div style="margin-top:20px">
+        <button class="btn btn-accent" type="submit" [disabled]="saving()">{{ saving() ? 'A criar…' : 'Criar contrato-quadro' }}</button>
+      </div>
+    </form>
+  }
+
+  @if (!contracts()) {
+    <app-loading></app-loading>
+  } @else {
+    <div class="card">
+      <app-data-table
+        [rows]="contracts()"
+        rowKey="id"
+        emptyTitle="Ainda não há contratos-quadro"
+        emptyBody="Crie o primeiro para habilitar call-offs automáticos entre um cliente e um fornecedor."
+      >
+        <ng-template appTableColumn key="reference" header="Referência" let-r>
+          <span class="mono">{{ r.reference }}</span>
+        </ng-template>
+        <ng-template appTableColumn key="client" header="Cliente" let-r>
+          {{ nomeEmpresa(r, 'client') }}
+        </ng-template>
+        <ng-template appTableColumn key="supplier" header="Fornecedor" let-r>
+          {{ nomeEmpresa(r, 'supplier') }}
+        </ng-template>
+        <ng-template appTableColumn key="categoriesCovered" header="Categorias" let-r>
+          {{ (r.categoriesCovered || []).join(', ') }}
+        </ng-template>
+        <ng-template appTableColumn key="totalValue" header="Valor" let-r>
+          {{ formatMoney(r.totalValue, r.currency) }}
+        </ng-template>
+        <ng-template appTableColumn key="paymentTermDays" header="Prazo" let-r>
+          {{ periodicidadeLabel(r) }}
+        </ng-template>
+        <ng-template appTableColumn key="validity" header="Vigência" let-r>
+          {{ vigenciaLabel(r) }}
+        </ng-template>
+        <ng-template appTableColumn key="status" header="Estado" let-r>
+          <app-badge [tone]="$any(CONTRACT_STATUS)[r.status]?.tone">{{ $any(CONTRACT_STATUS)[r.status]?.label || r.status }}</app-badge>
+        </ng-template>
+      </app-data-table>
+    </div>
+  }
+</div>

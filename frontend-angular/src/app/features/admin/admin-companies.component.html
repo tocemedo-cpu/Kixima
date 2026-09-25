@@ -1,0 +1,66 @@
+<div>
+  <app-page-header title="Empresas" subtitle="Lista de empresas credenciadas, estado e tipo."></app-page-header>
+  <app-error-banner [message]="error()"></app-error-banner>
+
+  <div style="display:flex;gap:12px;margin-bottom:16px">
+    <div class="field" style="max-width:200px">
+      <select aria-label="Filtrar por tipo" [value]="typeFilter()" (change)="setType($any($event.target).value)">
+        <option value="">Todos os tipos</option>
+        <option value="CLIENTE">Cliente</option>
+        <option value="FORNECEDOR">Fornecedor</option>
+      </select>
+    </div>
+    <div class="field" style="max-width:220px">
+      <select aria-label="Filtrar por estado" [value]="statusFilter()" (change)="setStatus($any($event.target).value)">
+        <option value="">Todos os estados</option>
+        @for (key of COMPANY_STATUS_KEYS; track key) {
+          <option [value]="key">{{ COMPANY_STATUS[key].label }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (!companies()) {
+    <app-loading></app-loading>
+  } @else {
+    <div class="card">
+      <app-data-table
+        [rows]="companies()"
+        rowKey="id"
+        (rowClick)="toggle($event)"
+        emptyTitle="Nenhuma empresa encontrada"
+        emptyBody="Ajuste os filtros ou aguarde novos cadastros."
+      >
+        <ng-template appTableColumn key="name" header="Empresa" let-r>
+          <strong>{{ r.name }}</strong>
+        </ng-template>
+        <ng-template appTableColumn key="type" header="Tipo" let-r>
+          {{ r.type === 'CLIENTE' ? 'Cliente' : 'Fornecedor' }}
+        </ng-template>
+        <ng-template appTableColumn key="taxId" header="NIF" let-r>
+          <span class="mono">{{ r.taxId }}</span>
+        </ng-template>
+        <ng-template appTableColumn key="status" header="Estado" let-r>
+          <app-badge [tone]="$any(COMPANY_STATUS)[r.status]?.tone">{{ $any(COMPANY_STATUS)[r.status]?.label }}</app-badge>
+        </ng-template>
+        <ng-template appTableColumn key="createdAt" header="Cadastrada em" let-r>
+          {{ formatDate(r.createdAt) }}
+        </ng-template>
+      </app-data-table>
+    </div>
+  }
+
+  @if (expanded() && expandedCompany(); as company) {
+    <div class="card card-pad" style="margin-top:16px">
+      <strong style="font-size:13.5px">{{ company.name }}</strong>
+      <div style="margin-top:12px;display:grid;gap:8px;font-size:13px">
+        <span>Contacto: {{ company.contactEmail }} {{ company.contactPhone ? '· ' + company.contactPhone : '' }}</span>
+        @if (company.address) {
+          <span>Morada: {{ company.address }}</span>
+        }
+        <span>Apólices Fornecedor→KIXIMA: {{ company.supplierPolicies?.length || 0 }}</span>
+        <span>Apólices KIXIMA→Cliente: {{ company.clientPolicies?.length || 0 }}</span>
+      </div>
+    </div>
+  }
+</div>

@@ -62,4 +62,26 @@ describe('AssinaturaService', () => {
     expect(req.request.body).toEqual({ motivo: 'Pedido por engano' });
     req.flush({});
   });
+
+  it('fila() chama GET /api/assinatura/fila', () => {
+    service.fila().subscribe();
+    const req = http.expectOne('/api/assinatura/fila');
+    expect(req.request.method).toBe('GET');
+    req.flush({ emAberto: [], vencidas: [], emGrace: [], restritas: [], porConfirmar: 0, porPagar: 0 });
+  });
+
+  it('confirmar() chama POST /api/assinatura/:id/confirmar com notas', () => {
+    service.confirmar('c1', { notas: 'Confirmado via BAI' }).subscribe();
+    const req = http.expectOne('/api/assinatura/c1/confirmar');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ notas: 'Confirmado via BAI' });
+    req.flush({});
+  });
+
+  it('confirmar() envia corpo vazio quando não há notas', () => {
+    service.confirmar('c1').subscribe();
+    const req = http.expectOne('/api/assinatura/c1/confirmar');
+    expect(req.request.body).toEqual({});
+    req.flush({});
+  });
 });

@@ -1,6 +1,7 @@
 // Porta do troço de leitura/decisão de companyRoutes.js usado por
 // DueDiligence.jsx — GET /api/companies?status=, GET /api/companies/:id,
-// PATCH /api/companies/:id/decision.
+// PATCH /api/companies/:id/decision — e, desde Companies.jsx/Contracts.jsx
+// (Admin Sistema), também o filtro `type`.
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
@@ -10,8 +11,8 @@ import { CompanyDetail, CompanyListItem, DecideCompanyBody } from '../../core/mo
 export class CompaniesService {
   constructor(private readonly api: ApiService) {}
 
-  list(status?: string): Observable<CompanyListItem[]> {
-    return this.api.get<CompanyListItem[]>('/api/companies', status ? { status } : undefined);
+  list(status?: string, type?: string): Observable<CompanyListItem[]> {
+    return this.api.get<CompanyListItem[]>('/api/companies', { status: status || undefined, type: type || undefined });
   }
 
   get(id: string): Observable<CompanyDetail> {

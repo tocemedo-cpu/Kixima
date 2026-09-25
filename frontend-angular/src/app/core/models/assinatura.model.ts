@@ -57,6 +57,18 @@ export interface PlanoCobrancaDto {
   canal?: string | null;
   referenciaExterna?: string | null;
   telemovel?: string | null;
+  // Só presente em GET /api/assinatura/fila (lado KIXIMA, comEmpresa=true) —
+  // omitido (@JsonInclude(NON_NULL)) em todas as respostas do lado da
+  // empresa (estado()/pedir/pagar-com/comprovativo/cancelar chamam sempre
+  // .de(c, false)). {id,name,plan} — não só {name}, confirmado contra
+  // CobrancaDtos.CompanyRef.
+  company?: EmpresaRefPlano | null;
+}
+
+export interface EmpresaRefPlano {
+  id: string;
+  name: string;
+  plan?: string | null;
 }
 
 export interface PrecoPlano {
@@ -162,4 +174,89 @@ export interface PagarComBody {
 
 export interface CancelarCobrancaBody {
   motivo: string;
+}
+
+// POST /api/assinatura/:id/confirmar (AssinaturaController.java) — `notas` é
+// inteiramente opcional (@RequestBody(required=false), branco/omisso vira
+// null no servidor); o React envia sempre '' quando o prompt é cancelado, o
+// que o servidor trata exactamente como se `notas` não tivesse sido enviado.
+export interface ConfirmarCobrancaBody {
+  notas?: string;
+}
+
+// Item de `vencidas`/`emGrace`/`restritas` em GET /api/assinatura/fila —
+// note que o campo chama-se `plan`, não `planoAtual` (nome diferente do
+// resto do contrato, confirmado contra AssinaturaService.fila()).
+export interface EmpresaVencidaResumo {
+  id: string;
+  name: string;
+  plan?: string | null;
+  planoValidoAte: string;
+  diasVencida: number;
+  estadoSubscricao: EstadoSubscricao;
+}
+
+// GET /api/assinatura/fila (AssinaturaService.fila(), Admin Sistema —
+// ADMIN_SISTEMA + AdminArea.FINANCEIRO). `emAberto[]` aqui TEM `company`
+// preenchido (ao contrário do estado() do lado da empresa). `vencidas` é o
+// conjunto completo antes de se dividir em emGrace/restritas — o React só
+// usa os dois subconjuntos, mas o campo existe e fica modelado por
+// completude do contrato.
+export interface AssinaturaFila {
+  emAberto: PlanoCobrancaDto[];
+  vencidas: EmpresaVencidaResumo[];
+  emGrace: EmpresaVencidaResumo[];
+  restritas: EmpresaVencidaResumo[];
+  porConfirmar: number;
+  porPagar: number;
+}
+
+// --- Add-ons (AddonController.java/AddonCobrancaService.java) --------------
+// Mesmo mecanismo dos planos (transferência com comprovativo, confirmada
+// pelo Admin Sistema), para funcionalidades pagas à parte (ex.: Automatic PO
+// Robot). Modelo próprio porque AddonCobrancaDto não é o mesmo tipo de
+// PlanoCobrancaDto no Java, apesar da forma semelhante.
+export interface AddonCobrancaDto {
+  id: string;
+  referencia: string;
+  companyId: string;
+  addonKey: string;
+  // STRING — mesma particularidade global do Jackson que PlanoCobrancaDto.valorUsd.
+  valorUsd: string;
+  periodo: PeriodoCobranca;
+  meses: number;
+  status: EstadoCobranca;
+  comprovativoUrl?: string | null;
+  submetidoEm?: string | null;
+  confirmadaPor?: string | null;
+  confirmadaEm?: string | null;
+  validoAte?: string | null;
+  notas?: string | null;
+  canal?: string | null;
+  referenciaExterna?: string | null;
+  telemovel?: string | null;
+  createdById?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  // Só em GET /api/addons/fila — omitido em confirmar/cancelar, tal como em PlanoCobrancaDto.
+  company?: EmpresaRefPlano | null;
+}
+
+// GET /api/addons/fila — ADMIN_SISTEMA + AdminArea.FINANCEIRO. Sem
+// vencidas/emGrace/restritas (add-ons não têm período de tolerância).
+export interface AddonsFila {
+  emAberto: AddonCobrancaDto[];
+  porConfirmar: number;
+  porPagar: number;
+}
+
+// GET /api/addons/catalogo — sem restrição de papel (qualquer sessão
+// autenticada). `preco.valorUsd`/`porMesUsd` são NÚMEROS (Preco tem o mesmo
+// serializador próprio que opcoes[].preco em PrecoPlano), ao contrário de
+// AddonCobrancaDto.valorUsd (string).
+export interface AddonCatalogoItem {
+  addonKey: string;
+  label: string;
+  requerPlano: string;
+  preco: PrecoPlano;
 }

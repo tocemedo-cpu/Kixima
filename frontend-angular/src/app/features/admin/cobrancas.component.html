@@ -1,0 +1,271 @@
+@if (!data()) {
+  <div>
+    <app-crumbs [trail]="['Planos e Subscrições', 'Cobranças']"></app-crumbs>
+    @if (error()) {
+      <app-error-banner [message]="error()"></app-error-banner>
+    } @else {
+      <p class="loading-text">A carregar…</p>
+    }
+  </div>
+} @else {
+  <div>
+    <app-crumbs [trail]="['Planos e Subscrições', 'Cobranças']"></app-crumbs>
+    <app-buyer-page-head
+      title="Cobranças de subscrição"
+      subtitle="O plano de uma empresa só muda quando a entrada do valor é confirmada aqui. Confirme apenas o que já viu na conta bancária."
+    ></app-buyer-page-head>
+
+    <app-error-banner [message]="error()"></app-error-banner>
+    <app-success-banner [message]="aviso()"></app-success-banner>
+
+    <app-kpi-row [cards]="kpis()"></app-kpi-row>
+
+    <h3 style="margin:18px 0 10px">Por confirmar</h3>
+    <div class="bz-card">
+      <div class="bz-scroll-x">
+        <table class="bz-table">
+          <thead>
+            <tr>
+              <th>Referência</th>
+              <th>Empresa</th>
+              <th>Mudança</th>
+              <th>Valor</th>
+              <th>Comprovativo</th>
+              <th>Enviado em</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (porConfirmar().length === 0) {
+              <tr><td colspan="7"><app-empty-row>Nada por confirmar. As cobranças aparecem aqui quando uma empresa carrega o comprovativo da transferência.</app-empty-row></td></tr>
+            } @else {
+              @for (c of porConfirmar(); track c.id) {
+                <tr>
+                  <td>{{ c.referencia }}</td>
+                  <td>{{ c.company?.name }}</td>
+                  <td>{{ c.planoAtual }} → <strong>{{ c.planoNovo }}</strong></td>
+                  <td>{{ formatUsd(c.valorUsd) }}</td>
+                  <td>
+                    @if (c.comprovativoUrl) {
+                      <a [href]="c.comprovativoUrl" target="_blank" rel="noreferrer" style="color:var(--brand-600);font-weight:600">Abrir</a>
+                    }
+                  </td>
+                  <td>{{ formatDate(c.submetidoEm) }}</td>
+                  <td style="display:flex;gap:8px">
+                    <button class="btn btn-accent btn-sm" [disabled]="busy() === c.id" (click)="confirmar(c)">Confirmar</button>
+                    <button class="btn btn-ghost btn-sm" [disabled]="busy() === c.id" (click)="cancelar(c)">Cancelar</button>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3 style="margin:22px 0 10px">Por pagar</h3>
+    <div class="bz-card">
+      <div class="bz-scroll-x">
+        <table class="bz-table">
+          <thead>
+            <tr>
+              <th>Referência</th>
+              <th>Empresa</th>
+              <th>Mudança</th>
+              <th>Valor</th>
+              <th>Canal</th>
+              <th>Emitida em</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (porPagar().length === 0) {
+              <tr><td colspan="7"><app-empty-row>Nenhuma cobrança por liquidar. Aparecem aqui as que foram emitidas e ainda não foram pagas.</app-empty-row></td></tr>
+            } @else {
+              @for (c of porPagar(); track c.id) {
+                <tr>
+                  <td>{{ c.referencia }}</td>
+                  <td>{{ c.company?.name }}</td>
+                  <td>{{ c.planoAtual }} → <strong>{{ c.planoNovo }}</strong></td>
+                  <td>{{ formatUsd(c.valorUsd) }}</td>
+                  <td>
+                    @if (c.canal === 'TRANSFERENCIA_MANUAL') {
+                      Transferência
+                    } @else {
+                      <app-pill tone="info">{{ nomeCanal(c.canal) }} — a aguardar</app-pill>
+                    }
+                  </td>
+                  <td>{{ formatDate(c.createdAt) }}</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm" [disabled]="busy() === c.id" (click)="cancelar(c)">Cancelar</button>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3 style="margin:28px 0 10px">Add-ons</h3>
+    <p class="helptext" style="margin-top:-4px">
+      Cobranças de add-ons pagos (ex.: Automatic PO Robot) — mesmo mecanismo dos planos: transferência com comprovativo, confirmada aqui.
+    </p>
+    @if (addons(); as addonsData) {
+      <app-kpi-row [cards]="addonsKpis()"></app-kpi-row>
+
+      <h4 style="margin:14px 0 8px">Por confirmar</h4>
+      <div class="bz-card">
+        <div class="bz-scroll-x">
+          <table class="bz-table">
+            <thead>
+              <tr>
+                <th>Referência</th>
+                <th>Empresa</th>
+                <th>Add-on</th>
+                <th>Valor</th>
+                <th>Comprovativo</th>
+                <th>Enviado em</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (addonsPorConfirmar().length === 0) {
+                <tr><td colspan="7"><app-empty-row>Nada por confirmar. As cobranças aparecem aqui quando uma empresa carrega o comprovativo da transferência.</app-empty-row></td></tr>
+              } @else {
+                @for (c of addonsPorConfirmar(); track c.id) {
+                  <tr>
+                    <td>{{ c.referencia }}</td>
+                    <td>{{ c.company?.name }}</td>
+                    <td>{{ nomeAddon(c.addonKey) }}</td>
+                    <td>{{ formatUsd(c.valorUsd) }}</td>
+                    <td>
+                      @if (c.comprovativoUrl) {
+                        <a [href]="c.comprovativoUrl" target="_blank" rel="noreferrer" style="color:var(--brand-600);font-weight:600">Abrir</a>
+                      }
+                    </td>
+                    <td>{{ formatDate(c.submetidoEm) }}</td>
+                    <td style="display:flex;gap:8px">
+                      <button class="btn btn-accent btn-sm" [disabled]="busy() === c.id" (click)="confirmarAddon(c)">Confirmar</button>
+                      <button class="btn btn-ghost btn-sm" [disabled]="busy() === c.id" (click)="cancelarAddon(c)">Cancelar</button>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h4 style="margin:18px 0 8px">Por pagar</h4>
+      <div class="bz-card">
+        <div class="bz-scroll-x">
+          <table class="bz-table">
+            <thead>
+              <tr>
+                <th>Referência</th>
+                <th>Empresa</th>
+                <th>Add-on</th>
+                <th>Valor</th>
+                <th>Canal</th>
+                <th>Emitida em</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (addonsPorPagar().length === 0) {
+                <tr><td colspan="7"><app-empty-row>Nenhuma cobrança por liquidar. Aparecem aqui as que foram emitidas e ainda não foram pagas.</app-empty-row></td></tr>
+              } @else {
+                @for (c of addonsPorPagar(); track c.id) {
+                  <tr>
+                    <td>{{ c.referencia }}</td>
+                    <td>{{ c.company?.name }}</td>
+                    <td>{{ nomeAddon(c.addonKey) }}</td>
+                    <td>{{ formatUsd(c.valorUsd) }}</td>
+                    <td>
+                      @if (c.canal === 'TRANSFERENCIA_MANUAL') {
+                        Transferência
+                      } @else {
+                        <app-pill tone="info">{{ nomeCanal(c.canal) }} — a aguardar</app-pill>
+                      }
+                    </td>
+                    <td>{{ formatDate(c.createdAt) }}</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm" [disabled]="busy() === c.id" (click)="cancelarAddon(c)">Cancelar</button>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <h3 style="margin:22px 0 10px">Em período de tolerância</h3>
+    <p class="helptext" style="margin-top:-4px">
+      Já venceram, mas ainda dentro do período de tolerância — acesso total mantido, nada bloqueado. Contacte-as para regularizar ou emita uma nova cobrança.
+    </p>
+    <div class="bz-card">
+      <div class="bz-scroll-x">
+        <table class="bz-table">
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Plano</th>
+              <th>Válido até</th>
+              <th>Dias em atraso</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (data()!.emGrace.length === 0) {
+              <tr><td colspan="4"><app-empty-row>Nenhuma empresa em período de tolerância neste momento.</app-empty-row></td></tr>
+            } @else {
+              @for (c of data()!.emGrace; track c.id) {
+                <tr>
+                  <td>{{ c.name }}</td>
+                  <td><app-pill tone="info">{{ c.plan }}</app-pill></td>
+                  <td>{{ formatDate(c.planoValidoAte) }}</td>
+                  <td><app-pill tone="pending">{{ c.diasVencida }}</app-pill></td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3 style="margin:22px 0 10px">Restritas</h3>
+    <p class="helptext" style="margin-top:-4px">
+      Passaram o período de tolerância: recursos premium (novos utilizadores, kits, API, ERP, contratos-quadro) já bloqueados. Os dados e o histórico continuam intactos.
+    </p>
+    <div class="bz-card">
+      <div class="bz-scroll-x">
+        <table class="bz-table">
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Plano</th>
+              <th>Válido até</th>
+              <th>Dias em atraso</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (data()!.restritas.length === 0) {
+              <tr><td colspan="4"><app-empty-row>Nenhuma empresa restrita neste momento.</app-empty-row></td></tr>
+            } @else {
+              @for (c of data()!.restritas; track c.id) {
+                <tr>
+                  <td>{{ c.name }}</td>
+                  <td><app-pill tone="info">{{ c.plan }}</app-pill></td>
+                  <td>{{ formatDate(c.planoValidoAte) }}</td>
+                  <td><app-pill tone="danger">{{ c.diasVencida }}</app-pill></td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+}

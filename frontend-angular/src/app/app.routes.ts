@@ -353,6 +353,18 @@ export const routes: Routes = [
             loadComponent: () => import('./features/admin/due-diligence.component').then((m) => m.DueDiligenceComponent),
           },
           {
+            path: 'empresas',
+            loadComponent: () => import('./features/admin/admin-companies.component').then((m) => m.AdminCompaniesComponent),
+          },
+          {
+            path: 'contratos',
+            loadComponent: () => import('./features/admin/admin-contracts.component').then((m) => m.AdminContractsComponent),
+          },
+          {
+            path: 'cobrancas',
+            loadComponent: () => import('./features/admin/cobrancas.component').then((m) => m.CobrancasComponent),
+          },
+          {
             path: 'taxas',
             loadComponent: () => import('./features/admin/platform-fees.component').then((m) => m.PlatformFeesComponent),
           },

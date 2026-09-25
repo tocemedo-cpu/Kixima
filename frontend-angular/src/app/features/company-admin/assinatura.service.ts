@@ -6,8 +6,10 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import {
   AssinaturaEstado,
+  AssinaturaFila,
   CanaisPagamento,
   CancelarCobrancaBody,
+  ConfirmarCobrancaBody,
   PagarComBody,
   PedirPlanoBody,
   PlanoCobrancaDto,
@@ -40,5 +42,16 @@ export class AssinaturaService {
 
   cancelar(cobrancaId: string, body: CancelarCobrancaBody): Observable<PlanoCobrancaDto> {
     return this.api.post<PlanoCobrancaDto>(`/api/assinatura/${cobrancaId}/cancelar`, body);
+  }
+
+  // GET /api/assinatura/fila e POST /:id/confirmar — lado KIXIMA (Admin
+  // Sistema), usados por Cobrancas.jsx. ADMIN_SISTEMA + AdminArea.FINANCEIRO
+  // no servidor.
+  fila(): Observable<AssinaturaFila> {
+    return this.api.get<AssinaturaFila>('/api/assinatura/fila');
+  }
+
+  confirmar(cobrancaId: string, body: ConfirmarCobrancaBody = {}): Observable<PlanoCobrancaDto> {
+    return this.api.post<PlanoCobrancaDto>(`/api/assinatura/${cobrancaId}/confirmar`, body);
   }
 }

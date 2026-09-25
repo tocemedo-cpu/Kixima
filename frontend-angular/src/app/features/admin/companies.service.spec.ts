@@ -22,6 +22,14 @@ describe('CompaniesService', () => {
     req.flush([]);
   });
 
+  it('list() chama GET /api/companies com os filtros de tipo e status juntos', () => {
+    service.list('APROVADA', 'CLIENTE').subscribe();
+    const req = http.expectOne((r) => r.url === '/api/companies');
+    expect(req.request.params.get('status')).toBe('APROVADA');
+    expect(req.request.params.get('type')).toBe('CLIENTE');
+    req.flush([]);
+  });
+
   it('get() chama GET /api/companies/:id', () => {
     service.get('c1').subscribe();
     http.expectOne({ url: '/api/companies/c1', method: 'GET' }).flush({});
