@@ -18,6 +18,10 @@ WORKDIR /fe
 # este build-arg no Render (Environment) para ativar o rastreio no browser.
 ARG VITE_SENTRY_DSN=""
 ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
+# O backend Java só fala STOMP (WebSocketConfig): o SPA desta imagem tem de
+# ser compilado com o transporte STOMP — o Vite embute a flag no build. A
+# imagem do Node (Dockerfile da raiz) fica com o Socket.IO por omissão.
+ENV VITE_REALTIME=stomp
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ ./
