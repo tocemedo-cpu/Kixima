@@ -39,17 +39,13 @@ import java.util.UUID;
  * notificação falhar por erro de base de dados, que aqui reverteria também
  * a operação de negócio, e no Node não.
  *
- * NÃO PORTADO NESTE MARCO (M5):
- * <ul>
- *   <li>({@code realtimeService.emitToUser} — portado no M6: push via STOMP
- *   em {@link ao.kixima.realtime.RealtimeService}, adiado para depois do
- *   commit; a notificação continua a ser a fonte da verdade.)</li>
- *   <li>Eventos de domínios ainda não portados (subscrição, ERP,
- *   Supplier Development, nota de crédito, apólices, cadastro de
- *   empresa) — os métodos existem no Node mas não têm chamador em Java
- *   enquanto esses domínios não existirem; não são replicados aqui até
- *   terem quem os invoque.</li>
- * </ul>
+ * Push em tempo real: {@code realtimeService.emitToUser} está portado
+ * (M6, STOMP em {@link ao.kixima.realtime.RealtimeService}); a notificação
+ * gravada continua a ser a fonte da verdade, o push é só o aviso.
+ *
+ * Todos os métodos de domínio do Node têm hoje chamador em Java (subscrição,
+ * ERP, Supplier Development, nota de crédito, apólices, cadastro de empresa
+ * entraram no M6.5) — ver {@link NotificationType}, que é o inventário.
  */
 @Service
 public class NotificationService {

@@ -1,5 +1,6 @@
 package ao.kixima.conversation;
 
+import ao.kixima.catalog.UploadFilters;
 import ao.kixima.common.error.NotFoundException;
 import ao.kixima.common.error.ValidationException;
 import ao.kixima.company.Company;
@@ -54,7 +55,6 @@ public class ConversationController {
 
     private static final Set<String> RECLASSIFY_STATUSES =
             Set.of("ABERTO", "EM_ANALISE", "FALSO_POSITIVO", "RESOLVIDO");
-    private static final long ANEXO_TAMANHO_MAXIMO = 10L * 1024 * 1024;
 
     private final ConversationService conversationService;
     private final RiskAlertService riskAlertService;
@@ -116,12 +116,10 @@ public class ConversationController {
         String attachmentUrl = null;
         String attachmentName = null;
         if (attachment != null && !attachment.isEmpty()) {
-            if (attachment.getSize() > ANEXO_TAMANHO_MAXIMO) {
-                throw new ValidationException("O anexo é demasiado grande (máximo 10 MB).");
-            }
             String tipo = attachment.getContentType();
             boolean valido = tipo != null && (tipo.matches("^image/(png|jpe?g|webp|gif)$") || tipo.equals("application/pdf"));
             if (!valido) throw new ValidationException("Documento inválido — use PDF ou imagem (PNG/JPG).");
+            UploadFilters.tamanho(attachment, UploadFilters.LIMITE_DOCUMENTO); // 10MB do uploadDocuments — DEPOIS do tipo, como o fileFilter do multer
             try {
                 attachmentUrl = storageService.saveFile(attachment.getBytes(), attachment.getOriginalFilename(), tipo, "conversation-msg-" + id, "chat-comercial");
             } catch (IOException e) {

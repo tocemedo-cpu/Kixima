@@ -124,6 +124,7 @@ passado por cima de todos eles.
 | `GET /api/marketplace/facets` | Ordem das categorias/tipos/certificações com a mesma contagem | O Node ordena só por contagem (`kinds` nem isso) e os empates saem na ordem física do Postgres — **não determinístico no próprio Node**, muda com um `UPDATE` qualquer. O Java desempata por nome. Nos dados de semente todos os produtos têm o mesmo `createdAt`, o que exagera o efeito. |
 | `GET /api/reports/fornecedor` | Ordem de `topProducts` com a mesma quantidade | Idem: o Node ordena só por quantidade e os empates ficam na ordem de inserção do `findMany` sem `orderBy`. |
 | `POST …/pay`, `GET /api/payments/history`, `GET /api/purchase-orders[/{id}]` (4 passos) | `invoice.agtErro.code`: `null` no Node, `"SERVICO_INDISPONIVEL"` no Java; `message` difere só no parêntese que descreve o ficheiro alternativo da chave | O Node lança um `Error` sem código quando a assinatura AGT não está configurada; o Java lança `ServiceUnavailableException` (503, decisão do M4: "recusa-se a fingir" com um código diagnosticável em vez de um 500). O texto refere a configuração centralizada (`kixima.agt.jws-private-key-path`) em vez de dois caminhos fixos. Fica. |
+| `GET /api/marketplace/search` (auditoria pré-M8) | O Java desempata a ordenação por `id` no fim do `ORDER BY`; o Node não desempata | Nos empates (a mesma classificação, o mesmo preço) o Node devolve a ordem física do Postgres, que pode repetir ou saltar itens entre páginas; o desempate estável evita-o. Fica. |
 
 Desvios deliberados que o comparador já não vê porque estão em `ignorar.json`:
 
@@ -184,16 +185,17 @@ acesso a essa réplica a partir deste ambiente. Quando houver:
 
 ## 5. O que ainda não está em Java (deferido, não omitido)
 
-- **SMTP** como provider de email — só `console`/`brevo`.
-- **i18n dos emails** — o email sai sempre em português.
-- **Interceptor genérico de tecto de linhas** (`DB_MAX_ROWS`) — só no catálogo.
+Depois da auditoria pré-M8 (ver `AUDITORIA-PRE-M8.md`) ficaram fechados o
+provider **SMTP**, a **i18n dos emails**, o **tecto de linhas** transversal,
+o Sentry, os cabeçalhos do helmet/CSP, a allow-list de CORS, o reset de senha
+por email, o MFA por email e o pagamento de facturas consolidadas. Continua
+por fazer:
+
 - **Teste de carga contra staging** (secção 3).
 - **S3 de ponta a ponta** contra um bucket real (o adaptador está portado e
   testado sem rede).
-
-Nenhum destes bloqueia o replay de contrato; os dois primeiros bloqueiam o
-cutover do domínio de email se a produção usar SMTP ou emails noutra língua —
-a confirmar antes do M8.
+- Confirmar na configuração de produção `SPRING_PROFILES_ACTIVE` (nunca
+  `dev`), o provider de email e `SENTRY_DSN`.
 
 ## 6. Como repetir
 

@@ -15,10 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
+import org.springframework.mock.web.MockMultipartFile;
+import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -112,6 +115,25 @@ class ConversationControllerTest {
         // Um utilizador da MESMA empresa (mas que não iniciou a conversa) já é participante — isolamento é por empresa, não por pessoa.
         mockMvc.perform(get("/api/conversations/" + conversationId).header("Authorization", "Bearer " + financeiroToken))
                 .andExpect(status().isOk());
+
+        // Acima de 10MB o multer aborta com LIMIT_FILE_SIZE, que o errorHandler.js
+        // traduz em 413 com esta frase. O fileFilter (tipo) corre ANTES do limite,
+        // por isso um ficheiro grande do tipo errado continua a ser 422.
+        byte[] enorme = new byte[10 * 1024 * 1024 + 1];
+        System.arraycopy("%PDF-1.4\n".getBytes(StandardCharsets.UTF_8), 0, enorme, 0, 9);
+        mockMvc.perform(multipart("/api/conversations/" + conversationId + "/messages")
+                        .file(new MockMultipartFile("attachment", "enorme.pdf", "application/pdf", enorme))
+                        .param("body", "Segue o anexo.")
+                        .header("Authorization", "Bearer " + compradorToken))
+                .andExpect(status().is(413))
+                .andExpect(jsonPath("$.error.code").value("LIMIT_FILE_SIZE"))
+                .andExpect(jsonPath("$.error.message").value("O ficheiro é demasiado grande. Reduza o tamanho da imagem e tente novamente."));
+        mockMvc.perform(multipart("/api/conversations/" + conversationId + "/messages")
+                        .file(new MockMultipartFile("attachment", "enorme.txt", "text/plain", enorme))
+                        .param("body", "Segue o anexo.")
+                        .header("Authorization", "Bearer " + compradorToken))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.message").value("Documento inválido — use PDF ou imagem (PNG/JPG)."));
 
         // 3. Mensagem inócua — sem alerta.
         mockMvc.perform(post("/api/conversations/" + conversationId + "/messages")

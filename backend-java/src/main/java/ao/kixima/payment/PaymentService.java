@@ -4,6 +4,7 @@ import ao.kixima.agt.AgtPayloadService;
 import ao.kixima.agt.AgtSandboxSubmissionService;
 import ao.kixima.audit.Actor;
 import ao.kixima.audit.AuditService;
+import ao.kixima.catalog.UploadFilters;
 import ao.kixima.common.error.AppException;
 import ao.kixima.common.error.ConflictException;
 import ao.kixima.common.error.ForbiddenException;
@@ -60,7 +61,6 @@ import java.util.UUID;
 public class PaymentService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
-    private static final long COMPROVATIVO_TAMANHO_MAXIMO = 10L * 1024 * 1024;
 
     private final PaymentRepository paymentRepository;
     private final InvoiceRepository invoiceRepository;
@@ -118,10 +118,10 @@ public class PaymentService {
         if (proof == null || proof.isEmpty()) {
             throw new ValidationException("Anexe o comprovativo da transferência (PDF ou imagem) para confirmar o pagamento.");
         }
-        if (proof.getSize() > COMPROVATIVO_TAMANHO_MAXIMO) throw new ValidationException("O comprovativo é demasiado grande (máximo 10 MB).");
         String tipo = proof.getContentType();
         boolean valido = tipo != null && (tipo.matches("^image/(png|jpe?g|webp|gif)$") || tipo.equals("application/pdf"));
         if (!valido) throw new ValidationException("Documento inválido — use PDF ou imagem (PNG/JPG).");
+        UploadFilters.tamanho(proof, UploadFilters.LIMITE_DOCUMENTO); // 10MB do uploadDocuments — DEPOIS do tipo, como o fileFilter do multer
 
         FaturaAPagar fatura = tx.execute(s -> {
             Invoice invoice = invoiceRepository.findById(invoiceId).orElseThrow(() -> new NotFoundException("Fatura"));

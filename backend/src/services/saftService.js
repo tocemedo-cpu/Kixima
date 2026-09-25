@@ -21,6 +21,7 @@
 const prisma = require('../config/database');
 const config = require('../config/env');
 const faturacaoService = require('./faturacaoService');
+const { ValidationError } = require('../utils/errors');
 
 // Escapar é obrigatório e não decorativo: o nome de uma empresa com "&" — e há
 // muitas — produz um XML inválido, que a AGT recusa sem dizer porquê.
@@ -48,13 +49,16 @@ const data = (d) => new Date(d).toISOString().slice(0, 10);
  * declaração nenhuma — e que, com o catálogo a crescer, ninguém conseguiria
  * abrir.
  */
+// Um período ilegível ou uma empresa em falta são erros do PEDIDO (422), não
+// avarias do servidor: com `Error` cru o errorHandler devolvia 500 e escondia
+// do cliente o que tinha de corrigir.
 function validarPeriodo({ de, ate }) {
   const ini = new Date(de);
   const fim = new Date(ate);
   if (Number.isNaN(ini.getTime()) || Number.isNaN(fim.getTime())) {
-    throw new Error('Indique o período no formato AAAA-MM-DD (de e até).');
+    throw new ValidationError('Indique o período no formato AAAA-MM-DD (de e até).');
   }
-  if (fim < ini) throw new Error('A data final tem de ser posterior à inicial.');
+  if (fim < ini) throw new ValidationError('A data final tem de ser posterior à inicial.');
   fim.setHours(23, 59, 59, 999);
   return { ini, fim };
 }
@@ -68,13 +72,13 @@ async function gerar({ de, ate, supplierCompanyId }) {
   // sob um único CompanyID declararia como emitidas por uma empresa faturas
   // que são, na realidade, de outra.
   if (!supplierCompanyId) {
-    throw new Error('Indique a empresa fornecedora (supplierCompanyId) — o SAF-T é sempre de uma só empresa.');
+    throw new ValidationError('Indique a empresa fornecedora (supplierCompanyId) — o SAF-T é sempre de uma só empresa.');
   }
   const fornecedor = await prisma.company.findUnique({
     where: { id: supplierCompanyId },
     select: { id: true, name: true, taxId: true, serieFiscal: true },
   });
-  if (!fornecedor) throw new Error('Empresa fornecedora não encontrada.');
+  if (!fornecedor) throw new ValidationError('Empresa fornecedora não encontrada.');
 
   const incluirCliente = {
     select: {

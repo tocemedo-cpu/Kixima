@@ -34,8 +34,8 @@ import java.util.Map;
  * inventado: um número de certificado falso num ficheiro fiscal é uma
  * declaração falsa).
  *
- * Diferença deliberada face ao Node: um período ilegível é um erro do
- * pedido (422), não um `Error` cru que o errorHandler devolvia como 500.
+ * Um período ilegível ou uma empresa em falta são erros do pedido (422) nos
+ * dois backends — o Node devolvia 500 com um `Error` cru e foi alinhado.
  */
 @Service
 public class SaftService {

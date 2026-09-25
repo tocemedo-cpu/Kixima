@@ -65,6 +65,15 @@ public class CorsOrigins {
         return lista.stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
     }
 
+    /**
+     * `config.isDevelopment || config.isTest` — em desenvolvimento/teste
+     * aceita-se qualquer origem (o Vite está noutra porta). É o que permite ao
+     * STOMP, que só aceita listas estáticas, usar o padrão "*" nesses perfis.
+     */
+    public boolean aceitaQualquerOrigem() {
+        return desenvolvimentoOuTeste;
+    }
+
     /** Espelha `origin(origemDoPedido, cb)` — {@code true} quando o pedido é autorizado. */
     public boolean origin(String origemDoPedido) {
         if (origemDoPedido == null || origemDoPedido.isEmpty()) return true; // same-origin, curl

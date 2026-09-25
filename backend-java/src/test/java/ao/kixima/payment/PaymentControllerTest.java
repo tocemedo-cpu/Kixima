@@ -91,6 +91,24 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.error.message").value(containsString("comprovativo")));
         assertThat(jdbcTemplate.queryForObject("SELECT status::text FROM invoices WHERE id = ?", String.class, invoiceId)).isEqualTo("PENDENTE");
 
+        // Acima de 10MB o multer aborta com LIMIT_FILE_SIZE, que o errorHandler.js
+        // traduz em 413 com esta frase. O fileFilter (tipo) corre ANTES do limite,
+        // por isso um ficheiro grande do tipo errado continua a ser 422.
+        byte[] enorme = new byte[10 * 1024 * 1024 + 1];
+        System.arraycopy("%PDF-1.4\n".getBytes(StandardCharsets.UTF_8), 0, enorme, 0, 9);
+        mockMvc.perform(multipart("/api/payments/invoices/" + invoiceId + "/pay")
+                        .file(new MockMultipartFile("proof", "enorme.pdf", "application/pdf", enorme))
+                        .header("Authorization", "Bearer " + financeiroToken))
+                .andExpect(status().is(413))
+                .andExpect(jsonPath("$.error.code").value("LIMIT_FILE_SIZE"))
+                .andExpect(jsonPath("$.error.message").value("O ficheiro é demasiado grande. Reduza o tamanho da imagem e tente novamente."));
+        mockMvc.perform(multipart("/api/payments/invoices/" + invoiceId + "/pay")
+                        .file(new MockMultipartFile("proof", "enorme.txt", "text/plain", enorme))
+                        .header("Authorization", "Bearer " + financeiroToken))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.message").value("Documento inválido — use PDF ou imagem (PNG/JPG)."));
+        assertThat(jdbcTemplate.queryForObject("SELECT status::text FROM invoices WHERE id = ?", String.class, invoiceId)).isEqualTo("PENDENTE");
+
         MockMultipartFile proof = new MockMultipartFile("proof", "transferencia-bai.pdf", "application/pdf",
                 "%PDF-1.4\n%comprovativo de teste\n".getBytes(StandardCharsets.UTF_8));
         var payRes = mockMvc.perform(multipart("/api/payments/invoices/" + invoiceId + "/pay").file(proof)

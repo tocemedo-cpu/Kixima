@@ -42,9 +42,9 @@ import java.util.UUID;
  * — convite self-service com aprovação do Company Admin, e a gestão da
  * equipa que o acompanha (activar/bloquear/remover).
  *
- * NÃO PORTADO (fora do âmbito deste lote): o fluxo de convite de
- * assessor ADMIN_SISTEMA (adminService.js: createAdminInvite/... — mesma
- * tabela, controller próprio, não portado).
+ * O convite de assessor ADMIN_SISTEMA (adminService.js:
+ * createAdminInvite/resendAdminInvite/...) usa a mesma tabela mas vive em
+ * {@link ao.kixima.admin.AdminService}, com controller próprio, como no Node.
  */
 @Service
 public class InviteService {
@@ -269,9 +269,9 @@ public class InviteService {
         String erroSenha = passwordPolicy.validar(password, c.role(), finalEmail);
         if (erroSenha != null) throw new ValidationException(erroSenha);
 
-        // Convites normais ficam inativos até o Company Admin aceitar — um
-        // convite de FUNDAÇÃO (ainda não portado, ver javadoc da classe) É o
-        // próprio primeiro Company Admin e nasce ativo.
+        // Convites normais ficam inativos até o Company Admin aceitar — o
+        // primeiro Company Admin de uma empresa (cadastro, CompanyService.
+        // registerCompany) É quem aprova, por isso nasce ativo.
         boolean active = c.role() == PersonaRole.COMPANY_ADMIN;
         User user = new User(UUID.randomUUID().toString(), finalName, finalEmail, passwordEncoder.encode(password),
                 c.role(), c.companyId(), active, Instant.now(), Instant.now());

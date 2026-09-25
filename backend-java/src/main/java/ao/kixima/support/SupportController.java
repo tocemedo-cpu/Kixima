@@ -65,7 +65,6 @@ import static org.springframework.http.HttpStatus.CREATED;
 public class SupportController {
 
     private static final Set<String> STATUSES = Set.of("ABERTO", "EM_ANDAMENTO", "AGUARDANDO_RESPOSTA", "RESOLVIDO", "FECHADO");
-    private static final long ANEXO_TAMANHO_MAXIMO = 10L * 1024 * 1024;
 
     private final SupportTicketRepository ticketRepository;
     private final SupportChatService supportChatService;
@@ -250,12 +249,10 @@ public class SupportController {
         String attachmentUrl = null;
         String attachmentName = null;
         if (attachment != null && !attachment.isEmpty()) {
-            if (attachment.getSize() > ANEXO_TAMANHO_MAXIMO) {
-                throw new ValidationException("O anexo é demasiado grande (máximo 10 MB).");
-            }
             String tipo = attachment.getContentType();
             boolean valido = tipo != null && (tipo.matches("^image/(png|jpe?g|webp|gif)$") || tipo.equals("application/pdf"));
             if (!valido) throw new ValidationException("Documento inválido — use PDF ou imagem (PNG/JPG).");
+            UploadFilters.tamanho(attachment, UploadFilters.LIMITE_DOCUMENTO); // 10MB do uploadDocuments — DEPOIS do tipo, como o fileFilter do multer
             try {
                 attachmentUrl = storageService.saveFile(attachment.getBytes(), attachment.getOriginalFilename(), tipo, "support-msg-" + id, "support-chat");
             } catch (java.io.IOException e) {

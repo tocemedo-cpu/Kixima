@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import java.nio.charset.StandardCharsets;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -104,6 +105,25 @@ class SupportControllerTest {
         mockMvc.perform(post("/api/support/admin/tickets/" + ticketId + "/assume").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("EM_ANDAMENTO"));
+
+        // Acima de 10MB o multer aborta com LIMIT_FILE_SIZE, que o errorHandler.js
+        // traduz em 413 com esta frase. O fileFilter (tipo) corre ANTES do limite,
+        // por isso um ficheiro grande do tipo errado continua a ser 422.
+        byte[] enorme = new byte[10 * 1024 * 1024 + 1];
+        System.arraycopy("%PDF-1.4\n".getBytes(StandardCharsets.UTF_8), 0, enorme, 0, 9);
+        mockMvc.perform(multipart("/api/support/tickets/" + ticketId + "/messages")
+                        .file(new MockMultipartFile("attachment", "enorme.pdf", "application/pdf", enorme))
+                        .param("body", "Segue o anexo.")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().is(413))
+                .andExpect(jsonPath("$.error.code").value("LIMIT_FILE_SIZE"))
+                .andExpect(jsonPath("$.error.message").value("O ficheiro é demasiado grande. Reduza o tamanho da imagem e tente novamente."));
+        mockMvc.perform(multipart("/api/support/tickets/" + ticketId + "/messages")
+                        .file(new MockMultipartFile("attachment", "enorme.txt", "text/plain", enorme))
+                        .param("body", "Segue o anexo.")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.message").value("Documento inválido — use PDF ou imagem (PNG/JPG)."));
 
         // 5. Admin responde com um anexo — o pedido passa a aguardar o cliente.
         var msgRes = mockMvc.perform(multipart("/api/support/tickets/" + ticketId + "/messages")

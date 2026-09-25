@@ -13,7 +13,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
@@ -38,11 +37,12 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationFilter authenticationFilter,
-                                           RateLimitFilter rateLimitFilter, ContentSecurityPolicy csp) throws Exception {
+                                           RateLimitFilter rateLimitFilter, ContentSecurityPolicy csp,
+                                           CorsOrigins origens) throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // API sem estado de sessão do lado do Spring; CSRF mitigado por SameSite=Lax no cookie (ver SessionCookieUtil).
                 .headers(headers -> cabecalhosDoHelmet(headers, csp))
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource(origens)))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
@@ -81,17 +81,30 @@ public class SecurityConfig {
                 .addHeaderWriter(new StaticHeadersWriter("X-XSS-Protection", "0"));
     }
 
-    /** Espelha backend/src/config/cors.js — origem da app + origens fixas do Capacitor + CORS_ORIGINS. */
+    /**
+     * Espelha `app.use(cors({ origin: corsConfig.origin, credentials: true }))`
+     * em app.js, com a decisão por pedido de {@link CorsOrigins#origin(String)}
+     * (allow-list de config/cors.js: APP_URL + Capacitor + CORS_ORIGINS; tudo
+     * em desenvolvimento/teste). Com credenciais a origem devolvida nunca pode
+     * ser "*" — é a origem concreta do pedido ou nada.
+     *
+     * Uma origem não autorizada não é um erro no Node: o pedido segue sem
+     * cabeçalhos Access-Control-* e o browser bloqueia do lado dele. Aqui,
+     * devolver {@code null} faz o mesmo num pedido normal; só o preflight
+     * dessa origem recebe 403 em vez do 204 vazio do pacote `cors` — para o
+     * browser o resultado é o mesmo (bloqueado).
+     */
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("https://localhost", "capacitor://localhost"));
-        config.setAllowedOriginPatterns(List.of("*")); // TODO (M2+): restringir com kixima.cors.origins tal como allowList() em cors.js.
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
+    public CorsConfigurationSource corsConfigurationSource(CorsOrigins origens) {
+        return request -> {
+            String origem = request.getHeader("Origin");
+            if (origem == null || origem.isEmpty() || !origens.origin(origem)) return null;
+            CorsConfiguration config = new CorsConfiguration();
+            config.setAllowedOrigins(List.of(origem));
+            config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+            config.setAllowedHeaders(List.of("*"));
+            config.setAllowCredentials(true);
+            return config;
+        };
     }
 }

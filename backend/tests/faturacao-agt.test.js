@@ -435,10 +435,14 @@ describe('SAF-T (AO)', () => {
   test('exige um período, e recusa datas invertidas', async () => {
     await expect(saft.gerar({ de: 'ontem', ate: 'hoje', supplierCompanyId: fornecedorId })).rejects.toThrow(/AAAA-MM-DD/);
     await expect(saft.gerar({ de: '2030-01-01', ate: '2020-01-01', supplierCompanyId: fornecedorId })).rejects.toThrow(/posterior/);
+    // É um erro do pedido, não do servidor: 422, nunca 500.
+    await expect(saft.gerar({ de: 'ontem', ate: 'hoje', supplierCompanyId: fornecedorId })).rejects.toMatchObject({ statusCode: 422 });
   });
 
   test('exige a empresa fornecedora — o SAF-T nunca é de "todos"', async () => {
     await expect(saft.gerar({ de: '2020-01-01', ate: '2035-12-31' })).rejects.toThrow(/supplierCompanyId/);
+    await expect(saft.gerar({ de: '2020-01-01', ate: '2035-12-31' })).rejects.toMatchObject({ statusCode: 422 });
+    await expect(saft.gerar({ de: '2020-01-01', ate: '2035-12-31', supplierCompanyId: 'nao-existe' })).rejects.toMatchObject({ statusCode: 422 });
   });
 
   test('produz XML bem formado com o cabeçalho e os totais', async () => {

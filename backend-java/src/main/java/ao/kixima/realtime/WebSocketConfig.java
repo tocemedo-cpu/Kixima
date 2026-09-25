@@ -4,7 +4,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
+import ao.kixima.security.CorsOrigins;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.StompWebSocketEndpointRegistration;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 /**
@@ -25,8 +27,9 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
  * subscrição, autorizada em {@link RealtimeAuthInterceptor}.
  *
  * Endpoint {@code /ws} (WebSocket nativo) e {@code /ws/sockjs} (fallback,
- * o "polling" do Socket.IO). CORS: as mesmas origens que o REST
- * (SecurityConfig.corsConfigurationSource — hoje qualquer, com o mesmo TODO).
+ * o "polling" do Socket.IO). CORS: as MESMAS origens que o REST, vindas de
+ * {@link CorsOrigins} — a cópia própria desta lista foi exactamente o bug
+ * que o Node teve (login a funcionar no Android, chat mudo).
  */
 @Configuration
 @EnableWebSocketMessageBroker
@@ -34,23 +37,31 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final RealtimeAuthInterceptor realtimeAuthInterceptor;
     private final RealtimeHandshakeInterceptor realtimeHandshakeInterceptor;
+    private final CorsOrigins origens;
 
     public WebSocketConfig(RealtimeAuthInterceptor realtimeAuthInterceptor,
-                            RealtimeHandshakeInterceptor realtimeHandshakeInterceptor) {
+                            RealtimeHandshakeInterceptor realtimeHandshakeInterceptor,
+                            CorsOrigins origens) {
         this.realtimeAuthInterceptor = realtimeAuthInterceptor;
         this.realtimeHandshakeInterceptor = realtimeHandshakeInterceptor;
+        this.origens = origens;
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.setErrorHandler(new RealtimeErrorHandler());
-        registry.addEndpoint("/ws")
-                .addInterceptors(realtimeHandshakeInterceptor)
-                .setAllowedOriginPatterns("*");
-        registry.addEndpoint("/ws/sockjs")
-                .addInterceptors(realtimeHandshakeInterceptor)
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+        comOrigens(registry.addEndpoint("/ws").addInterceptors(realtimeHandshakeInterceptor));
+        comOrigens(registry.addEndpoint("/ws/sockjs").addInterceptors(realtimeHandshakeInterceptor)).withSockJS();
+    }
+
+    /**
+     * `cors: { origin: corsConfig.origin }` do Socket.IO. O STOMP só aceita
+     * listas estáticas, por isso: qualquer origem em desenvolvimento/teste
+     * (como `origin()` devolve nesses ambientes), a allow-list nos restantes.
+     */
+    private StompWebSocketEndpointRegistration comOrigens(StompWebSocketEndpointRegistration endpoint) {
+        if (origens.aceitaQualquerOrigem()) return endpoint.setAllowedOriginPatterns("*");
+        return endpoint.setAllowedOrigins(origens.allowList().toArray(String[]::new));
     }
 
     @Override
