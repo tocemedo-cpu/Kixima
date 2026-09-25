@@ -19,3 +19,6 @@ build/
 *.log
 .DS_Store
 coverage/
+
+# Dumps e relatórios da migração Supabase → PostgreSQL próprio (scripts/migracao) — nunca versionar
+backup/
