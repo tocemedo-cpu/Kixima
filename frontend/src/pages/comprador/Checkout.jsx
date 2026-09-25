@@ -53,7 +53,7 @@ export default function Checkout() {
       <div>
         <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Minha Cesta', 'Checkout']} />
         <div className="empty-state">
-          <div className="pf-avatar" style={{ margin: '0 auto 14px', background: '#16a066' }}><Icon name="reception" size={26} /></div>
+          <div className="pf-avatar" style={{ margin: '0 auto 14px', background: 'var(--verde)' }}><Icon name="reception" size={26} /></div>
           <h3>{done.length} {done.length === 1 ? t('Ordem de Compra gerada') : t('Ordens de Compra geradas')}</h3>
           <p>{t('Referências')}: {done.join(', ')}. {t('Cada fornecedor recebeu uma PO distinta.')}</p>
           <button className="btn btn-accent" onClick={() => nav('/comprador/ordens')}>{t('Ver Ordens de Compra')}</button>

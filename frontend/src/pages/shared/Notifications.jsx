@@ -62,7 +62,7 @@ export default function Notifications() {
               style={{
                 padding: '16px 20px',
                 borderBottom: i === notifications.length - 1 ? 'none' : '1px solid var(--paper-100)',
-                background: n.readAt ? '#fff' : 'var(--paper-050)',
+                background: n.readAt ? 'var(--branco)' : 'var(--paper-050)',
                 cursor: clicavel ? 'pointer' : 'default',
                 display: 'flex',
                 justifyContent: 'space-between',

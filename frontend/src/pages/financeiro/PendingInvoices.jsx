@@ -78,7 +78,7 @@ export default function PendingInvoices() {
                     <td className="bz-muted bz-mono">{i.poReference || '—'}</td>
                     <td className="r"><strong>{formatMoney(i.amount, i.currency)}</strong></td>
                     <td>{formatDate(i.issuedAt)}</td>
-                    <td style={{ color: overdue ? '#c0392b' : undefined }}>{formatDate(i.dueAt)}</td>
+                    <td style={{ color: overdue ? 'var(--al-fg)' : undefined }}>{formatDate(i.dueAt)}</td>
                     <td><Pill tone={overdue ? 'danger' : 'pending'}>{overdue ? 'Vencida' : 'Pendente'}</Pill></td>
                     <td className="r" style={{ whiteSpace: 'nowrap' }}>
                       {i.poId ? (

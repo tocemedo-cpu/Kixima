@@ -230,7 +230,7 @@ export default function Assinatura() {
                   serve de nada — e o problema aparece por escrito em vez de a
                   pessoa ficar a olhar para um espaço vazio. */}
               {data.banco?.configurado ? (
-                <div className="bz-card card-pad" style={{ background: 'var(--bg-soft, #f8fafc)', marginBottom: 12 }}>
+                <div className="bz-card card-pad" style={{ background: 'var(--bg-soft, var(--canvas))', marginBottom: 12 }}>
                   <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 14 }}>
                     {data.banco.titular ? <Dado label="Titular" valor={data.banco.titular} /> : null}
                     {data.banco.banco ? <Dado label="Banco" valor={data.banco.banco} /> : null}
@@ -419,7 +419,7 @@ function Opcao({ opcao, busy, temCobrancaAberta, podeEscolherPlano, onPedir }) {
       {/* Um botão desativado sem explicação manda a pessoa adivinhar. O motivo
           vem do servidor, com números reais. */}
       {opcao.impedimento ? (
-        <p className="helptext" style={{ color: 'var(--danger-600, #b91c1c)' }}>{textoDoImpedimento(opcao.impedimento, t)}</p>
+        <p className="helptext" style={{ color: 'var(--danger-600, var(--al-fg))' }}>{textoDoImpedimento(opcao.impedimento, t)}</p>
       ) : null}
       {!opcao.impedimento && opcao.perdas?.length ? (
         <p className="helptext">

@@ -35,7 +35,7 @@ export default function NotificationPanel({ notifications, onClose, onRead }) {
         width: 360,
         maxHeight: '70vh',
         overflowY: 'auto',
-        background: '#fff',
+        background: 'var(--branco)',
         border: '1px solid var(--line)',
         borderRadius: 'var(--radius-lg)',
         boxShadow: 'var(--shadow-card)',
@@ -60,7 +60,7 @@ export default function NotificationPanel({ notifications, onClose, onRead }) {
               style={{
                 padding: '12px 16px',
                 borderBottom: '1px solid var(--paper-100)',
-                background: n.readAt ? '#fff' : 'var(--paper-050)',
+                background: n.readAt ? 'var(--branco)' : 'var(--paper-050)',
                 cursor: clicavel ? 'pointer' : 'default',
               }}
             >

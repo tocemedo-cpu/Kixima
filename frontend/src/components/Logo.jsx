@@ -8,7 +8,7 @@ import { useI18n } from '../i18n';
 import kiximaMark from '../assets/brand/kixima-mark.png';
 import kiximaMarkReversed from '../assets/brand/kixima-mark-reversed.png';
 
-export default function Logo({ size = 22, subtitle = false, light = false, mark }) {
+export default function Logo({ size = 22, subtitle = false, light = false, mark, net = false }) {
   const { t } = useI18n();
   // O logótipo (a marca) fica bem maior que o texto para ser bem visível.
   const box = mark || Math.round(size * 2.4);
@@ -24,7 +24,7 @@ export default function Logo({ size = 22, subtitle = false, light = false, mark 
       </span>
       <span className="brand-text">
         <span className={`brand-word${light ? ' brand-word-light' : ''}`} style={{ fontSize: size }}>
-          KIXIMA
+          KIXIMA{net ? <i className="brand-net">.NET</i> : null}
         </span>
         {subtitle ? (
           <span className={`brand-sub${light ? ' brand-sub-light' : ''}`}>{t('Plataforma de Procurement Garantido')}</span>

@@ -15,7 +15,7 @@ const TABS = [
   { key: 'CANCELADA', label: 'Canceladas' },
 ];
 const STAGE_TONE = { EM_TRANSITO: 'info', EM_PREPARACAO: 'pending', ENTREGUE: 'success', CANCELADA: 'danger' };
-const BAR_COLOR = { EM_TRANSITO: '#2f6fd6', EM_PREPARACAO: '#d98a1f', ENTREGUE: '#16a066', CANCELADA: '#d94f4f' };
+const BAR_COLOR = { EM_TRANSITO: 'var(--ocre)', EM_PREPARACAO: 'var(--aviso)', ENTREGUE: 'var(--verde)', CANCELADA: 'var(--vermelho)' };
 
 export default function Deliveries() {
   const { t } = useI18n();

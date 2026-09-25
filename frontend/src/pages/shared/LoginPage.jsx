@@ -7,6 +7,7 @@ import { ROLE_HOME } from '../../domain';
 import AuthHero from '../../components/AuthHero';
 import { Icon } from '../../components/icons';
 import { useI18n, LANGS } from '../../i18n';
+import { SeletorDeFundo } from '../../tema/TemaContext';
 
 export default function LoginPage() {
   const { user, login, verify2fa } = useAuth();
@@ -205,6 +206,11 @@ export default function LoginPage() {
                 {l.flag} {l.label}
               </button>
             ))}
+          </div>
+          {/* Os três fundos da proposta — a escolha fica guardada neste navegador. */}
+          <div className="login-fundo">
+            <span>{t('Fundo')}</span>
+            <SeletorDeFundo compacto />
           </div>
         </div>
       </div>

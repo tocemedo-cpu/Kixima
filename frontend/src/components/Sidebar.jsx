@@ -1,12 +1,16 @@
 // src/components/Sidebar.jsx
-// Menu lateral escuro e numerado (estilo do mockup). Gera-se a partir do array
-// data/sidebar.js. Os itens principais são numerados (1., 2., …); Ajuda e Sair
-// aparecem sem número no fundo. O logótipo e o utilizador vivem na navbar.
+// Navegação lateral da Proposta 04 · Bancada: fundo branco, rótulos de grupo em
+// mono, o item activo com fundo areia e a barra vermelha à esquerda. Gera-se a
+// partir do array data/sidebar.js — os itens, os acordeões, os contadores e o
+// bloco final (Suporte, Chat Comercial, Ajuda, Sair) são exactamente os que já
+// existiam. O logótipo e a conta vivem na barra de aplicação (Navbar).
 import SidebarItem from './SidebarItem';
+import { useI18n } from '../i18n';
 
 const TAIL_PATHS = new Set(['/ajuda', '/suporte/chat', '/suporte/feedback', '/mensagens/chat-comercial']);
 
-export default function Sidebar({ items, cartCount = 0, badges = {}, onLogout, onNavigate }) {
+export default function Sidebar({ items, cartCount = 0, badges = {}, grupo, onLogout, onNavigate }) {
+  const { t } = useI18n();
   const badgeFor = (item) => {
     if (item.badge === 'cart') return cartCount > 0 ? cartCount : null;
     const n = badges[item.badge];
@@ -17,8 +21,9 @@ export default function Sidebar({ items, cartCount = 0, badges = {}, onLogout, o
   const tail = items.filter(isTail);
 
   return (
-    <aside className="sb">
-      <nav className="sb-nav">
+    <aside className="sb lateral">
+      <nav className="sb-nav" aria-label={t('Navegação')}>
+        {grupo ? <div className="sb-grupo g">{t(grupo)}</div> : null}
         {main.map((item, i) => (
           <SidebarItem
             key={`${item.to || item.label}-${i}`}
@@ -32,8 +37,9 @@ export default function Sidebar({ items, cartCount = 0, badges = {}, onLogout, o
       </nav>
 
       <div className="sb-tail">
+        <div className="sb-grupo g">{t('Apoio')}</div>
         {tail.map((item, i) => (
-          <SidebarItem key={item.to || item.label || i} item={item} onLogout={onLogout} onNavigate={onNavigate} />
+          <SidebarItem key={item.to || item.label || i} item={item} badge={badgeFor(item)} onLogout={onLogout} onNavigate={onNavigate} />
         ))}
       </div>
     </aside>

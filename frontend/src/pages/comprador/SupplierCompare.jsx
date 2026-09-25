@@ -12,8 +12,8 @@ import { Stars } from '../../components/icons';
 import { formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
 
-const BAR = '#5b8def';   // barra (uma só cor por gráfico — série única)
-const BEST = '#16a34a';  // melhor valor (destaque + rótulo, nunca só cor)
+const BAR = 'var(--ocre)';   // barra (uma só cor por gráfico — série única)
+const BEST = 'var(--verde)';  // melhor valor (destaque + rótulo, nunca só cor)
 const priceOf = (o) => Number(o.promoPrice ?? o.unitPrice) || 0;
 
 // Gráfico de barras horizontais para UMA medida (série única, menor = melhor).

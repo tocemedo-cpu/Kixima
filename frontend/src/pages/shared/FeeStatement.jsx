@@ -92,7 +92,7 @@ export default function FeeStatement() {
           </thead>
           <tbody>
             {fees.length === 0 ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', color: '#888' }}>{t('Ainda não há taxas geradas para esta empresa.')}</td></tr>
+              <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--ténue)' }}>{t('Ainda não há taxas geradas para esta empresa.')}</td></tr>
             ) : fees.map((f) => (
               <tr key={f.id}>
                 <td>{d(f.createdAt)}</td>

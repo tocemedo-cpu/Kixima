@@ -16,10 +16,19 @@
     <meta name="twitter:image" content="/images/kixima-og.png" />
     <!-- Tipos de letra (Sora / Inter / IBM Plex Mono) são self-hosted via
          @fontsource, importados em src/main.jsx — sem dependência de CDN externo. -->
-    <script type="module" crossorigin src="/assets/index-Bgc12A8S.js"></script>
+    <!-- Fundo escolhido (Claro / Escuro 1 / Escuro 2) aplicado antes do primeiro
+         paint, para não haver um clarão do fundo errado; sem escolha guardada o
+         CSS segue o sistema (prefers-color-scheme). Ver src/tema/TemaContext.jsx. -->
+    <script>
+      try {
+        var t = localStorage.getItem('kixima.tema');
+        if (t === 'claro' || t === 'escuro-1' || t === 'escuro-2') document.documentElement.setAttribute('data-tema', t);
+      } catch (e) {}
+    </script>
+    <script type="module" crossorigin src="/assets/index-C5dUu7pA.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/vendor-react-E8CsIMwq.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-sentry-AtTNRyVs.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CftQ3Dhq.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-uyOtlIVz.css">
   </head>
   <body>
     <div id="root"></div>

@@ -33,6 +33,10 @@ export default function AppLayout() {
   const [comercialNaoLidas, setComercialNaoLidas] = useState(0);
   const [alertasAbertos, setAlertasAbertos] = useState(0);
   const [subscricao, setSubscricao] = useState(null);
+  // A barra de aplicação mostra a EMPRESA (como na proposta). O login já traz
+  // `companyName`; ao recarregar a página, /api/auth/me não o traz — lê-se uma
+  // vez por sessão do perfil, sem tocar no servidor.
+  const [empresa, setEmpresa] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +59,9 @@ export default function AppLayout() {
     if (!user) return undefined;
     let cancelled = false;
     api.get('/api/support/unread-count').then((d) => { if (!cancelled) setSuporteNaoLidas(d.count || 0); }).catch(() => {});
+    if (!user.companyName && user.companyId) {
+      api.get('/api/users/profile').then((d) => { if (!cancelled) setEmpresa(d?.company?.name || null); }).catch(() => {});
+    }
     api.get('/api/conversations/unread-count').then((d) => { if (!cancelled) setComercialNaoLidas(d.count || 0); }).catch(() => {});
     // O aviso de subscrição a vencer tem de se ver em QUALQUER página, não só
     // para quem visita /empresa/assinatura por iniciativa própria — é a
@@ -118,6 +125,7 @@ export default function AppLayout() {
 
       <Navbar
         user={user}
+        empresa={user.companyName || empresa}
         roleLabel={ROLE_LABELS[user.role]}
         cartCount={cartCount}
         unread={unread}
@@ -129,11 +137,12 @@ export default function AppLayout() {
       <Sidebar
         items={items} cartCount={cartCount}
         badges={{ suporte: suporteNaoLidas, chatComercial: comercialNaoLidas, alertas: alertasAbertos }}
+        grupo={ROLE_LABELS[user.role]}
         onLogout={logout} onNavigate={() => setMenuOpen(false)}
       />
       <div className="sb-scrim" onClick={() => setMenuOpen(false)} />
 
-      <main className="content" id="conteudo" tabIndex={-1}>
+      <main className="content conteudo" id="conteudo" tabIndex={-1}>
         {notifOpen ? (
           <NotificationPanel
             notifications={notifications}

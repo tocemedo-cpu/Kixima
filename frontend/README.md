@@ -13,13 +13,35 @@ personas descritas em `kixima-telas-mvp.md`.
 
 ## Identidade visual
 
-Pensada como uma consola operacional do setor petrolífero, não como um SaaS
-genérico: azul petróleo profundo (`--navy-900`) para a navegação, âmbar de
-sinalização (`--amber-500`) para ações primárias e estados de energia,
-verde-azulado (`--teal-600`) para "pagamento garantido", terracota para
-divergências/erros. Tipografia técnica: **Space Grotesk** para display,
-**IBM Plex Sans** para o corpo, **IBM Plex Mono** para referências (POs,
-faturas, apólices).
+A identidade é a da **Proposta 04 · Bancada** (Manual v1.0 da KIXIMA), com os
+**três fundos** do HTML de referência, cada um com a sua identidade própria:
+
+| Fundo | Carácter | Tokens |
+|---|---|---|
+| **Claro** | O marfim do manual — o fundo por omissão | F7F3EA · FFFFFF · EBE4D6 · 111111 · B8202E · D99A05 |
+| **Escuro 1** | O mesmo sistema invertido, neutros quentes | 131210 · 201E1A · 2A2723 · F2EFE8 · E0656D · E5A821 |
+| **Escuro 2** | Casco, âmbar de segurança e ciano de instrumento | 0C1219 · 17222C · 1F2C37 · DCE5EC · F2A007 · 35A7B8 |
+
+- `src/styles/tema.css` — as variáveis dos três fundos, com os valores exactos
+  da proposta (`:root`, `prefers-color-scheme: dark` → Escuro 1,
+  `html[data-tema="…"]`). As folhas imprimíveis (`.folha-clara`) ficam sempre
+  em papel claro.
+- `src/styles/global.css` — os tokens históricos (`--brand-*`, `--ink-*`,
+  `--paper-*`, `--navy-*`, `--amber-*`, `--teal-*`, `--line`…) lêem agora
+  essas variáveis: todos os ecrãs mudam de fundo sem tocar no seu CSS.
+- `src/styles/bancada.css` — os componentes da proposta (barra preta com o fio
+  Samakaka, lateral branca com o item activo em areia e barra vermelha,
+  mosaicos, tabelas com cabeçalho mono, selos `.est`, botões `.bt`, facetas,
+  campo de pesquisa) aplicados às classes que a aplicação já usa.
+- `src/tema/TemaContext.jsx` — a escolha do fundo (`localStorage`
+  `kixima.tema`, aplicada em `index.html` antes do primeiro paint) e o grupo
+  de botões **Claro · Escuro 1 · Escuro 2**, presente no menu da conta, no
+  login e no cabeçalho do site corporativo.
+
+Tipografia: **Sora** (títulos e números), **Inter** (texto), **IBM Plex Mono**
+(referências, rótulos, cabeçalhos de tabela) — self-hosted via @fontsource.
+Cantos a 10 px nos cartões e 6 px nos botões, como no manual. O símbolo, o
+losango Samakaka e as fotografias/ícones existentes mantêm-se em todos os fundos.
 
 **Elemento de assinatura**: o anel de SLA de pagamento
 (`src/components/PaymentSlaRing.jsx`) — visualiza a promessa central do

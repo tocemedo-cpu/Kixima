@@ -19,7 +19,7 @@ const ST = {
   EM_ANDAMENTO: { tone: 'info', label: 'Em Andamento' }, CONCLUIDA: { tone: 'success', label: 'Concluída' },
   ATRASADA: { tone: 'danger', label: 'Atrasada' },
 };
-const PRIO = { ALTA: '#d94f4f', MEDIA: '#d98a1f', BAIXA: '#16a066' };
+const PRIO = { ALTA: 'var(--vermelho)', MEDIA: 'var(--aviso)', BAIXA: 'var(--verde)' };
 const ICON = { APROVAR: 'approvals', PAGAR: 'payment', RECEBER: 'reception', ENTREGA: 'truck', DIVERGENCIA: 'shield', CONCLUIDA: 'certification' };
 
 export default function Activities() {

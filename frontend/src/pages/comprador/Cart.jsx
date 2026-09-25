@@ -90,7 +90,7 @@ export default function Cart() {
             <button className="btn btn-accent" style={{ width: '100%', marginTop: 12 }} onClick={() => nav('/comprador/checkout')}>{t('Avançar para Checkout')} →</button>
             <button className="btn btn-ghost" style={{ width: '100%', marginTop: 8 }} onClick={() => nav('/comprador/cotacoes')}><Icon name="invoice" size={14} /> {t('Solicitar Cotação')}</button>
           </div>
-          <div className="bz-panel co-note" style={{ background: '#f3faf4', borderColor: '#cfe8d4', color: '#1c6b2e' }}>
+          <div className="bz-panel co-note" style={{ background: 'var(--ok-bg)', borderColor: 'var(--ok-bd)', color: 'var(--ok-fg)' }}>
             <Icon name="shield" size={16} /> {t('Compra 100% Segura — todos os dados são protegidos pela KIXIMA.')}
           </div>
         </div>

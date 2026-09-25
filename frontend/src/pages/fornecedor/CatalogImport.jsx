@@ -73,7 +73,7 @@ export default function CatalogImport() {
             <div style={{ marginTop: 18 }}>
               <SuccessBanner message={t('Importação concluída: {created} criados, {updated} atualizados, {withImages} com imagem (de {total} linhas).', { created: result.created, updated: result.updated, withImages: result.withImages, total: result.total })} />
               {(result.precosEstimados || result.stockPorOmissao || result.localizacaoPorOmissao) ? (
-                <div className="card card-pad" style={{ marginTop: 10, background: 'var(--surface-2, #fff)' }}>
+                <div className="card card-pad" style={{ marginTop: 10, background: 'var(--surface-2, var(--branco))' }}>
                   <strong style={{ fontSize: 13 }}>{t('Valores preenchidos automaticamente')}</strong>
                   <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12.5, color: 'var(--ink-400)' }}>
                     {result.precosEstimados ? <li>{t('{n} preço(s) estimado(s) por categoria — sem coluna Preço no ficheiro. Reveja-os no catálogo.', { n: result.precosEstimados })}</li> : null}
@@ -83,7 +83,7 @@ export default function CatalogImport() {
                 </div>
               ) : null}
               {result.warnings?.length ? (
-                <div className="card card-pad" style={{ marginTop: 10, background: 'var(--surface-2, #fff)' }}>
+                <div className="card card-pad" style={{ marginTop: 10, background: 'var(--surface-2, var(--branco))' }}>
                   <strong style={{ fontSize: 13 }}>{t('Avisos')}</strong>
                   <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12.5, color: 'var(--ink-400)' }}>
                     {result.warnings.map((w, i) => (<li key={i}>{w}</li>))}
@@ -91,7 +91,7 @@ export default function CatalogImport() {
                 </div>
               ) : null}
               {result.errors?.length ? (
-                <div className="card card-pad" style={{ marginTop: 10, background: 'var(--surface-2, #fff)' }}>
+                <div className="card card-pad" style={{ marginTop: 10, background: 'var(--surface-2, var(--branco))' }}>
                   <strong style={{ fontSize: 13 }}>{t('Linhas com problemas')} ({result.errors.length})</strong>
                   <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12.5, color: 'var(--ink-400)' }}>
                     {result.errors.slice(0, 10).map((er, i) => (<li key={i}>{t('Linha {n}', { n: er.row })}: {er.error}</li>))}

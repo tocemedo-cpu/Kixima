@@ -63,7 +63,7 @@ export default function Payments() {
                         <td>{formatDate(r.dueAt)}</td>
                         <td className="r">{formatMoney(r.amount, r.currency)}</td>
                         <td className="r">{formatMoney(r.paid, r.currency)}</td>
-                        <td className="r"><strong style={{ color: r.open > 0 ? '#c0392b' : 'var(--ok-700)' }}>{formatMoney(r.open, r.currency)}</strong></td>
+                        <td className="r"><strong style={{ color: r.open > 0 ? 'var(--al-fg)' : 'var(--ok-700)' }}>{formatMoney(r.open, r.currency)}</strong></td>
                         <td><Pill tone={INVOICE_STATUS[r.status]?.tone}>{INVOICE_STATUS[r.status]?.label || r.status}</Pill></td>
                         <td>
                           <div className="bz-actions">
@@ -83,8 +83,8 @@ export default function Payments() {
             <h3>{t('Resumo Financeiro')}</h3>
             <div className="bz-panel-row"><span>{t('Valor Total das PO')}</span><strong>{k ? formatMoney(k.totalPO) : '—'}</strong></div>
             <div className="bz-panel-row"><span>{t('Total Pago')}</span><strong>{k ? formatMoney(k.concluidos) : '—'}</strong></div>
-            <div className="bz-panel-row"><span>{t('Total em Aberto')}</span><strong style={{ color: '#c0392b' }}>{k ? formatMoney(k.aPagar) : '—'}</strong></div>
-            <div className="bz-panel-row"><span>{t('Total Atrasado')}</span><strong style={{ color: '#c0392b' }}>{k ? formatMoney(k.atrasados) : '—'}</strong></div>
+            <div className="bz-panel-row"><span>{t('Total em Aberto')}</span><strong style={{ color: 'var(--al-fg)' }}>{k ? formatMoney(k.aPagar) : '—'}</strong></div>
+            <div className="bz-panel-row"><span>{t('Total Atrasado')}</span><strong style={{ color: 'var(--al-fg)' }}>{k ? formatMoney(k.atrasados) : '—'}</strong></div>
           </div>
           <div className="bz-panel">
             <h3>{t('Precisa de Ajuda?')}</h3>

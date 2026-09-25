@@ -146,13 +146,13 @@ export default function FinanceiroHome() {
       <div className="bz-layout">
         <div className="bz-panel">
           <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>{t('Visão Geral Financeira')}</h3><span className="bz-muted">{t('Últimos 6 meses')}</span></div>
-          <div className="rp-legend"><span><i style={{ background: '#2f6fd6' }} /> {t('Faturas')}</span><span><i style={{ background: '#16a066' }} /> {t('Pagamentos')}</span></div>
+          <div className="rp-legend"><span><i style={{ background: 'var(--ocre)' }} /> {t('Faturas')}</span><span><i style={{ background: 'var(--verde)' }} /> {t('Pagamentos')}</span></div>
           <div className="ca-bars">
             {d.series.map((s) => (
               <div className="ca-bar" key={s.label}>
                 <div className="rp-barpair">
-                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.faturas / max) * 100)}%`, background: '#2f6fd6' }} title={`${t('Faturas')} ${formatMoney(s.faturas)}`} /></div>
-                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.pagamentos / max) * 100)}%`, background: '#16a066' }} title={`${t('Pagamentos')} ${formatMoney(s.pagamentos)}`} /></div>
+                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.faturas / max) * 100)}%`, background: 'var(--ocre)' }} title={`${t('Faturas')} ${formatMoney(s.faturas)}`} /></div>
+                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.pagamentos / max) * 100)}%`, background: 'var(--verde)' }} title={`${t('Pagamentos')} ${formatMoney(s.pagamentos)}`} /></div>
                 </div>
                 <span className="bz-muted">{s.label}</span>
               </div>

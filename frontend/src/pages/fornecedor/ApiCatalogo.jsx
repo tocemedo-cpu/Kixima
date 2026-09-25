@@ -64,7 +64,7 @@ export default function ApiCatalogo() {
           <strong style={{ fontSize: 13.5 }}>{t('Chave criada — copie-a agora')}</strong>
           <p className="error-text" style={{ margin: '6px 0 10px', fontSize: 12.5 }}>{nova.aviso}</p>
           <pre style={{
-            background: 'var(--code-bg, #f4f1f0)', border: '1px solid var(--line, #e6e1e0)',
+            background: 'var(--code-bg, var(--areia))', border: '1px solid var(--line, var(--linha))',
             borderRadius: 4, padding: '10px 12px', overflowX: 'auto', margin: 0, fontSize: 12.5,
           }}><code>{nova.chave}</code></pre>
           <button
@@ -142,7 +142,7 @@ export default function ApiCatalogo() {
           {t('A chave só alcança o catálogo da sua empresa. Não dá acesso a ordens, pagamentos, faturas nem utilizadores.')}
         </p>
         <pre style={{
-          background: 'var(--code-bg, #f4f1f0)', border: '1px solid var(--line, #e6e1e0)',
+          background: 'var(--code-bg, var(--areia))', border: '1px solid var(--line, var(--linha))',
           borderRadius: 4, padding: '10px 12px', overflowX: 'auto', margin: 0, fontSize: 12,
         }}><code>{`# Ler o catálogo
 curl -H "Authorization: Bearer kxm_...." \\

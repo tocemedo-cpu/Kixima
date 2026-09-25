@@ -126,11 +126,11 @@ export default function Prontidao() {
 
       {data?.grupos.map((g) => (
         <div key={g.grupo} className="bz-card" style={{ marginTop: 16, padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line, #e6e6e6)' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line, var(--linha))' }}>
             <strong style={{ fontSize: 13.5 }}>{t(g.grupo)}</strong>
           </div>
           {g.checks.map((c) => (
-            <div key={c.id} style={{ padding: '12px 16px', borderTop: '1px solid var(--line, #f0f0f0)' }}>
+            <div key={c.id} style={{ padding: '12px 16px', borderTop: '1px solid var(--line, var(--linha))' }}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
                 {/* O Pill já traduz o que recebe — passa-se o texto em PT. */}
                 <Pill tone={TOM[c.estado] || 'neutral'}>{ROTULO[c.estado] || c.estado}</Pill>
@@ -143,7 +143,7 @@ export default function Prontidao() {
           ))}
 
           {g.grupo === 'Cópias de segurança' ? (
-            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--line, #f0f0f0)', background: 'var(--surface-2, #fafafa)' }}>
+            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--line, var(--linha))', background: 'var(--surface-2, var(--canvas))' }}>
               <button className="btn btn-accent btn-sm" onClick={copiarAgora} disabled={aCopiar}>
                 {aCopiar ? t('A copiar… (pode demorar)') : t('Fazer cópia agora')}
               </button>
@@ -157,7 +157,7 @@ export default function Prontidao() {
               ) : null}
               {erroCopia ? <p className="error-text" style={{ margin: '8px 0 0', fontSize: 12.5 }}>{erroCopia}</p> : null}
 
-              <div style={{ borderTop: '1px solid var(--line, #f0f0f0)', marginTop: 14, paddingTop: 14 }}>
+              <div style={{ borderTop: '1px solid var(--line, var(--linha))', marginTop: 14, paddingTop: 14 }}>
                 <button className="btn btn-ghost btn-sm" onClick={verificarCopia} disabled={aVerificar}>
                   {aVerificar ? t('A ler a cópia…') : t('Verificar a última cópia')}
                 </button>
@@ -179,7 +179,7 @@ export default function Prontidao() {
           ) : null}
 
           {g.grupo === 'Autenticação de dois fatores' && pendentes?.length ? (
-            <div style={{ borderTop: '1px solid var(--line, #f0f0f0)', background: 'var(--surface-2, #fafafa)' }}>
+            <div style={{ borderTop: '1px solid var(--line, var(--linha))', background: 'var(--surface-2, var(--canvas))' }}>
               <div style={{ overflowX: 'auto' }}>
                 <div className="bz-scroll-x">
                 <table className="bz-table" style={{ margin: 0 }}>
@@ -245,7 +245,7 @@ export default function Prontidao() {
           ) : null}
 
           {g.grupo === 'Email' ? (
-            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--line, #f0f0f0)', background: 'var(--surface-2, #fafafa)' }}>
+            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--line, var(--linha))', background: 'var(--surface-2, var(--canvas))' }}>
               <button className="btn btn-accent btn-sm" onClick={emailDeTeste} disabled={aEnviar}>
                 {aEnviar ? t('A enviar…') : t('Enviar email de teste para mim')}
               </button>

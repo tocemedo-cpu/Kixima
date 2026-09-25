@@ -33,13 +33,13 @@ export default function Reports() {
       <div className="bz-layout">
         <div className="bz-panel">
           <div className="bz-head" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>{t('Visão Geral de Indicadores')}</h3><span className="bz-muted">{t('Últimos 6 meses')}</span></div>
-          <div className="rp-legend"><span><i style={{ background: '#16a066' }} /> {t('Receitas')}</span><span><i style={{ background: '#d94f4f' }} /> {t('Despesas')}</span></div>
+          <div className="rp-legend"><span><i style={{ background: 'var(--verde)' }} /> {t('Receitas')}</span><span><i style={{ background: 'var(--vermelho)' }} /> {t('Despesas')}</span></div>
           <div className="ca-bars">
             {d.series.map((s) => (
               <div className="ca-bar" key={s.label}>
                 <div className="rp-barpair">
-                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.receitas / max) * 100)}%`, background: '#16a066' }} title={`${t('Receitas')} ${formatMoney(s.receitas)}`} /></div>
-                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.despesas / max) * 100)}%`, background: '#d94f4f' }} title={`${t('Despesas')} ${formatMoney(s.despesas)}`} /></div>
+                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.receitas / max) * 100)}%`, background: 'var(--verde)' }} title={`${t('Receitas')} ${formatMoney(s.receitas)}`} /></div>
+                  <div className="ca-bar-track"><div className="ca-bar-fill" style={{ height: `${Math.round((s.despesas / max) * 100)}%`, background: 'var(--vermelho)' }} title={`${t('Despesas')} ${formatMoney(s.despesas)}`} /></div>
                 </div>
                 <span className="bz-muted">{s.label}</span>
               </div>

@@ -20,6 +20,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n, LANGS } from '../../i18n';
+import { SeletorDeFundo } from '../../tema/TemaContext';
 import kiximaMark from '../../assets/brand/kixima-mark.png';
 import kiximaMarkReversed from '../../assets/brand/kixima-mark-reversed.png';
 
@@ -140,12 +141,12 @@ function DesktopNavigation() {
 function MobileNavigation() {
   const { t } = useI18n();
   const navGroups = buildNavGroups(t);
-  return <details className="mobile-nav"><summary aria-label={t('Abrir menu')}><span></span><span></span><span></span></summary><div className="mobile-panel">{navGroups.map((group) => <details key={group.label}><summary>{group.label}<span>+</span></summary><div>{group.links.map(([label, href]) => <NavLink href={href} key={label}>{label}</NavLink>)}</div></details>)}<LanguageDropdown /><Link className="mobile-login" to="/login">{t('Entrar')}</Link><Link className="button button-primary" to="/cadastro">{t('Registar empresa')}</Link></div></details>;
+  return <details className="mobile-nav"><summary aria-label={t('Abrir menu')}><span></span><span></span><span></span></summary><div className="mobile-panel">{navGroups.map((group) => <details key={group.label}><summary>{group.label}<span>+</span></summary><div>{group.links.map(([label, href]) => <NavLink href={href} key={label}>{label}</NavLink>)}</div></details>)}<LanguageDropdown /><SeletorDeFundo compacto /><Link className="mobile-login" to="/login">{t('Entrar')}</Link><Link className="button button-primary" to="/cadastro">{t('Registar empresa')}</Link></div></details>;
 }
 
 export function CorporateHeader({ isHome = false }) {
   const { t } = useI18n();
-  return <><TopStrip /><header className="site-header"><Brand compact isHome={isHome} /><DesktopNavigation /><Link className="login-link" to="/login">{t('Entrar')}</Link><Link className="button button-primary" to="/cadastro">{t('Registar empresa')}</Link><div className="header-actions"><LanguageDropdown /></div><MobileNavigation /></header></>;
+  return <><TopStrip /><header className="site-header"><Brand compact isHome={isHome} /><DesktopNavigation /><Link className="login-link" to="/login">{t('Entrar')}</Link><Link className="button button-primary" to="/cadastro">{t('Registar empresa')}</Link><div className="header-actions"><SeletorDeFundo compacto /><LanguageDropdown /></div><MobileNavigation /></header></>;
 }
 
 export function CorporateFooter({ isHome = false }) {

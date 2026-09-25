@@ -179,7 +179,7 @@ export default function PermissionsPanel({
                       </tr>
                       {podeEditarAreas && expandido === u.id ? (
                         <tr>
-                          <td colSpan={colunas} style={{ background: 'var(--surface-2, #f7f8fa)' }}>
+                          <td colSpan={colunas} style={{ background: 'var(--surface-2, var(--canvas))' }}>
                             <AreasEditor user={u} onToggle={toggleArea} busy={busy === u.id} podeEditar />
                           </td>
                         </tr>
