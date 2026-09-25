@@ -62,6 +62,112 @@ class SupplierDevControllerTest {
         return objectMapper.readTree(res.getResponse().getContentAsString()).get("token").asText();
     }
 
+    /**
+     * `validate(supplierDevSchema)` — tests/pricing-plans.test.js "a candidatura
+     * é validada" e "não se submete sem aceitar a taxa", mais todos os limites
+     * do schema (max por campo, employees inteiro não negativo, track do enum),
+     * com os textos por omissão do zod e os campos todos reportados de uma vez.
+     */
+    @Test
+    void aCandidaturaEValidadaComOsTextosDoZod() throws Exception {
+        // { companyName: 'X', contactName: 'Y', contactEmail: 'nao-e-email', feeAccepted: true } → 422
+        mockMvc.perform(post("/api/supplier-development/requests")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "companyName", "X", "contactName", "Y", "contactEmail", "nao-e-email", "feeAccepted", true))))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.error.message").value("Dados inválidos."))
+                .andExpect(jsonPath("$.error.details.formErrors").isEmpty())
+                .andExpect(jsonPath("$.error.details.fieldErrors.companyName[0]").value("Indique o nome da empresa."))
+                .andExpect(jsonPath("$.error.details.fieldErrors.contactName[0]").value("Indique o nome do contacto."))
+                .andExpect(jsonPath("$.error.details.fieldErrors.contactEmail[0]").value("Indique um email válido."))
+                .andExpect(jsonPath("$.error.details.fieldErrors.feeAccepted").doesNotExist());
+
+        // Sem aceitar a taxa (ausente) — só esse campo falha, com a frase do errorMap do schema.
+        mockMvc.perform(post("/api/supplier-development/requests")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "companyName", "Sem Aceite, Lda", "contactName", "Ana", "contactEmail", "ana@semaceite.co.ao"))))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.details.fieldErrors.length()").value(1))
+                .andExpect(jsonPath("$.error.details.fieldErrors.feeAccepted[0]").value("Confirme que aceita a taxa de acesso cobrada na submissão."));
+        // z.literal(true): "true" em texto e false também não servem.
+        mockMvc.perform(post("/api/supplier-development/requests")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "companyName", "Sem Aceite, Lda", "contactName", "Ana", "contactEmail", "ana@semaceite.co.ao", "feeAccepted", "true"))))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.details.fieldErrors.feeAccepted[0]").value("Confirme que aceita a taxa de acesso cobrada na submissão."));
+
+        // Campos obrigatórios ausentes → "Required" (não as mensagens de min(2)).
+        mockMvc.perform(post("/api/supplier-development/requests")
+                        .contentType("application/json")
+                        .content("{}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.details.fieldErrors.companyName[0]").value("Required"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.contactName[0]").value("Required"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.contactEmail[0]").value("Required"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.feeAccepted[0]").value("Confirme que aceita a taxa de acesso cobrada na submissão."));
+
+        // Limites dos opcionais: taxId ≤ 40, contactPhone ≤ 40, province ≤ 60, sector ≤ 120, needs ≤ 2000,
+        // employees inteiro ≥ 0, track no enum.
+        Map<String, Object> demais = new java.util.LinkedHashMap<>();
+        demais.put("companyName", "Metalúrgica do Kwanza, Lda");
+        demais.put("contactName", "Joana Silva");
+        demais.put("contactEmail", "joana@metalkwanza.co.ao");
+        demais.put("feeAccepted", true);
+        demais.put("taxId", "9".repeat(41));
+        demais.put("contactPhone", "9".repeat(41));
+        demais.put("province", "L".repeat(61));
+        demais.put("sector", "M".repeat(121));
+        demais.put("needs", "n".repeat(2001));
+        demais.put("employees", -1);
+        demais.put("track", "OUTRO");
+        mockMvc.perform(post("/api/supplier-development/requests")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(demais)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.details.fieldErrors.taxId[0]").value("String must contain at most 40 character(s)"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.contactPhone[0]").value("String must contain at most 40 character(s)"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.province[0]").value("String must contain at most 60 character(s)"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.sector[0]").value("String must contain at most 120 character(s)"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.needs[0]").value("String must contain at most 2000 character(s)"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.employees[0]").value("Number must be greater than or equal to 0"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.track[0]")
+                        .value("Invalid enum value. Expected 'BUROCRACIA' | 'PARCERIA' | 'AMBOS', received 'OUTRO'"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.companyName").doesNotExist());
+
+        // z.coerce.number().int(): 1.5 é float; "abc" é NaN — o zod acumula as verificações de número.
+        demais.put("employees", 1.5);
+        mockMvc.perform(post("/api/supplier-development/requests").contentType("application/json").content(objectMapper.writeValueAsString(demais)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.details.fieldErrors.employees[0]").value("Expected integer, received float"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.employees.length()").value(1));
+        demais.put("employees", -1.5);
+        mockMvc.perform(post("/api/supplier-development/requests").contentType("application/json").content(objectMapper.writeValueAsString(demais)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.details.fieldErrors.employees[0]").value("Expected integer, received float"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.employees[1]").value("Number must be greater than or equal to 0"));
+        demais.put("employees", "abc");
+        mockMvc.perform(post("/api/supplier-development/requests").contentType("application/json").content(objectMapper.writeValueAsString(demais)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.details.fieldErrors.employees[0]").value("Expected number, received nan"));
+
+        // Tudo no limite (e "24" coagido para número) passa — 201.
+        Map<String, Object> valido = new java.util.LinkedHashMap<>(demais);
+        valido.put("taxId", "9".repeat(40));
+        valido.put("contactPhone", "9".repeat(40));
+        valido.put("province", "L".repeat(60));
+        valido.put("sector", "M".repeat(120));
+        valido.put("needs", "n".repeat(2000));
+        valido.put("employees", "24");
+        valido.put("track", "PARCERIA");
+        mockMvc.perform(post("/api/supplier-development/requests").contentType("application/json").content(objectMapper.writeValueAsString(valido)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("RECEBIDA"));
+    }
+
     @Test
     void candidaturaPublicaAcompanhamentoEGestaoPeloAdminDoSistema() throws Exception {
         // Taxa de acesso — pública, antes de qualquer candidatura.

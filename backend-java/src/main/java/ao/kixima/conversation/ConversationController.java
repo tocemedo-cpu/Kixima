@@ -33,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static ao.kixima.security.AdminArea.SUPORTE;
@@ -146,9 +147,10 @@ public class ConversationController {
     @RequirePermission(SUPORTE)
     public List<RiskAlertDto> alertas(@RequestParam(required = false) String status) {
         RiskAlertStatus filtro = status != null && RECLASSIFY_STATUSES.contains(status) ? RiskAlertStatus.valueOf(status) : null;
-        return riskAlertService.listarAlertas(filtro).stream().map(a -> toDto(a.alerta(), a.conversation() == null ? null
+        // `conversation` sai sempre na listagem — a null quando a conversa já não existe (Optional.empty()).
+        return riskAlertService.listarAlertas(filtro).stream().map(a -> toDto(a.alerta(), Optional.ofNullable(a.conversation() == null ? null
                 : new RiskAlertDto.ConversationRef(a.conversation().getId(), a.conversation().getBuyerCompanyId(),
-                a.conversation().getSupplierCompanyId(), a.buyerCompanyName(), a.supplierCompanyName()))).toList();
+                a.conversation().getSupplierCompanyId(), a.buyerCompanyName(), a.supplierCompanyName())))).toList();
     }
 
     @GetMapping("/admin/conversations/{id}")
@@ -174,7 +176,8 @@ public class ConversationController {
         return toDto(alerta, null);
     }
 
-    private RiskAlertDto toDto(RiskAlert a, RiskAlertDto.ConversationRef conversationRef) {
+    /** {@code conversationRef} a Java null → sem a chave (linha crua do Prisma, como reclassificar/acederConversaSinalizada). */
+    private RiskAlertDto toDto(RiskAlert a, Optional<RiskAlertDto.ConversationRef> conversationRef) {
         JsonNode signals = lerJsonSilencioso(a.getSignals());
         JsonNode context = lerJsonSilencioso(a.getContext());
         return new RiskAlertDto(a.getId(), a.getConversationId(), a.getMessageId(), a.getLevel().name(), a.getReason(),

@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -267,7 +268,8 @@ public class CompanyService {
         // A subscrição só vem quando é pedida — quem só quer a lista não paga a contagem.
         if (!"true".equals(comSubscricao)) return companies.stream().map(CompanyDto::de).toList();
         Map<String, SubscriptionDto> subs = subscriptionsFor(companies);
-        return companies.stream().map(c -> CompanyDto.de(c, null, null, null, null, subs.get(c.getId()))).toList();
+        // `subscricao: subs.get(c.id) || null` — a chave sai sempre nesta listagem.
+        return companies.stream().map(c -> CompanyDto.de(c, null, null, null, null, Optional.ofNullable(subs.get(c.getId())))).toList();
     }
 
     private static <E extends Enum<E>> E enumOu(Class<E> tipo, String v, String campo) {
@@ -284,7 +286,8 @@ public class CompanyService {
         Company c = companyRepository.findById(id).orElseThrow(() -> new NotFoundException("Empresa"));
         List<SupplierPolicyDto> supplierPolicies = supplierPolicyRepository.findByCompanyId(id).stream().map(SupplierPolicyDto::from).toList();
         List<ClientPolicyDto> clientPolicies = clientPolicyRepository.findByCompanyId(id).stream().map(ClientPolicyDto::from).toList();
-        CompanyDto.BudgetLimitDto budgetLimit = budgetLimitRepository.findByCompanyId(id).map(CompanyDto.BudgetLimitDto::de).orElse(null);
+        // Relação 1:1 no `include`: `budgetLimit: null` quando não há — a chave sai na mesma.
+        Optional<CompanyDto.BudgetLimitDto> budgetLimit = budgetLimitRepository.findByCompanyId(id).map(CompanyDto.BudgetLimitDto::de);
         List<CompanyDto.CompanyDocumentDto> documents = documentRepository.findByCompanyIdOrderByTypeAsc(id).stream()
                 .map(CompanyDto.CompanyDocumentDto::de).toList();
         return CompanyDto.de(c, supplierPolicies, clientPolicies, budgetLimit, documents, null);

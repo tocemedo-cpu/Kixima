@@ -148,6 +148,46 @@ class AssinaturaControllerTest {
         pedir(adminEmpresa, "CORE", 201);
     }
 
+    /**
+     * A rota usa `uploadDocuments` (10MB): acima disso o multer aborta com
+     * LIMIT_FILE_SIZE e o errorHandler.js responde 413 com esta frase — o
+     * `code` do multer viaja tal e qual. O formato é verificado antes do
+     * tamanho (fileFilter primeiro), por isso um ficheiro grande de tipo
+     * errado continua a ser 422.
+     */
+    @Test
+    void comprovativoAcimaDe10MbDa413ComoOMulter() throws Exception {
+        porNoPlano(companyId(), CompanyPlan.CORE);
+        String adminEmpresa = login(COMPANY_ADMIN_EMAIL);
+        String id = pedir(adminEmpresa, "PRO", 201).get("id").asText();
+
+        byte[] grande = new byte[10 * 1024 * 1024 + 1];
+        System.arraycopy(COMPROVATIVO, 0, grande, 0, COMPROVATIVO.length);
+        mockMvc.perform(multipart("/api/assinatura/" + id + "/comprovativo")
+                        .file(new MockMultipartFile("comprovativo", "enorme.pdf", "application/pdf", grande))
+                        .header("Authorization", "Bearer " + adminEmpresa))
+                .andExpect(status().is(413))
+                .andExpect(jsonPath("$.error.code").value("LIMIT_FILE_SIZE"))
+                .andExpect(jsonPath("$.error.message").value("O ficheiro é demasiado grande. Reduza o tamanho da imagem e tente novamente."));
+        mockMvc.perform(multipart("/api/assinatura/" + id + "/comprovativo")
+                        .file(new MockMultipartFile("comprovativo", "enorme.txt", "text/plain", grande))
+                        .header("Authorization", "Bearer " + adminEmpresa))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.message").value("Documento inválido — use PDF ou imagem (PNG/JPG)."));
+
+        // A cobrança continua sem comprovativo; exatamente 10MB ainda passa (o limite do multer é "maior do que").
+        mockMvc.perform(get("/api/assinatura").header("Authorization", "Bearer " + adminEmpresa))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.emAberto.status").value("PENDENTE"));
+        byte[] noLimite = new byte[10 * 1024 * 1024];
+        System.arraycopy(COMPROVATIVO, 0, noLimite, 0, COMPROVATIVO.length);
+        mockMvc.perform(multipart("/api/assinatura/" + id + "/comprovativo")
+                        .file(new MockMultipartFile("comprovativo", "limite.pdf", "application/pdf", noLimite))
+                        .header("Authorization", "Bearer " + adminEmpresa))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("COMPROVATIVO_ENVIADO"));
+    }
+
     @Test
     void aConfirmacaoEOUnicoSitioOndeOPlanoMuda() throws Exception {
         String companyId = companyId();

@@ -2,6 +2,7 @@ package ao.kixima.invite;
 
 import ao.kixima.audit.Actor;
 import ao.kixima.audit.AuditService;
+import ao.kixima.common.error.ErrosDeCampos;
 import ao.kixima.common.error.ValidationException;
 import ao.kixima.invite.dto.AcceptInviteRequest;
 import ao.kixima.invite.dto.CompanyUserDto;
@@ -44,6 +45,9 @@ import static org.springframework.http.HttpStatus.CREATED;
 @RestController
 @RequestMapping("/api/companies")
 public class InviteController {
+
+    /** {@code role: z.enum([...])} de createInviteSchema — COMPANY_ADMIN/ADMIN_SISTEMA ficam de fora logo à entrada. */
+    private static final List<String> PERFIS_CONVIDAVEIS = List.of("COMPRADOR", "FORNECEDOR", "FINANCEIRO");
 
     private final InviteService inviteService;
     private final AuditService auditService;
@@ -103,12 +107,28 @@ public class InviteController {
     @PostMapping("/invites")
     @ResponseStatus(CREATED)
     @RequireRole({COMPANY_ADMIN})
-    public InviteCreatedDto criarConvite(@RequestBody CreateInviteRequest body, HttpServletRequest req) {
-        if (body.role() == null || body.name() == null || body.name().trim().length() < 2 || body.email() == null || body.email().isBlank()) {
-            throw new ValidationException("Indique o perfil, o nome e o email do funcionário.");
-        }
+    public InviteCreatedDto criarConvite(@RequestBody(required = false) CreateInviteRequest body, HttpServletRequest req) {
+        validarConvite(body == null ? new CreateInviteRequest(null, null, null) : body);
         CurrentUser user = CurrentUserHolder.get();
         return inviteService.criar(user.companyId(), body.role(), body.name(), body.email(), publicBaseUrl(req));
+    }
+
+    /**
+     * Espelha {@code validate(createInviteSchema)} (companyRoutes.js): corre ANTES
+     * do controller, reporta todos os campos de uma vez e responde 422 com o
+     * {@code flatten()} do zod. A regra de negócio "este perfil não se convida
+     * para este tipo de empresa" (400) fica onde estava, no InviteService.
+     */
+    private static void validarConvite(CreateInviteRequest body) {
+        ErrosDeCampos erros = new ErrosDeCampos();
+        if (body.role() == null) erros.adicionar("role", ErrosDeCampos.REQUIRED);
+        else if (!PERFIS_CONVIDAVEIS.contains(body.role())) erros.adicionar("role", ErrosDeCampos.enumInvalido(PERFIS_CONVIDAVEIS, body.role()));
+        // z.string().min(2, ...) conta o comprimento tal e qual, sem trim.
+        if (body.name() == null) erros.adicionar("name", ErrosDeCampos.REQUIRED);
+        else if (body.name().length() < 2) erros.adicionar("name", "Indique o nome do funcionário.");
+        if (body.email() == null) erros.adicionar("email", ErrosDeCampos.REQUIRED);
+        else if (!ErrosDeCampos.EMAIL.matcher(body.email()).matches()) erros.adicionar("email", "Indique um email válido.");
+        erros.lancarSeHouver();
     }
 
     @PostMapping("/invites/{id}/resend")

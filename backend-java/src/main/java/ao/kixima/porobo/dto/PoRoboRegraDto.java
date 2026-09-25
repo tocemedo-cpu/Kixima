@@ -8,12 +8,16 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/** Espelha a linha `PoRoboRegra` devolvida por poRoboRoutes.js — com `product` só na listagem (`include`). */
-@JsonInclude(JsonInclude.Include.NON_NULL)
+/**
+ * Espelha a linha `PoRoboRegra` devolvida por poRoboRoutes.js — todos os
+ * escalares, {@code null} incluído ({@code quantidade: null} = sem quantidade
+ * fixa) — com `product` só na listagem (`include`).
+ */
 public record PoRoboRegraDto(String id, String companyId, String productId, PoRoboMediaOrigem mediaOrigem,
                              BigDecimal mediaMensal, PoRoboPeriodicidade periodicidade, Integer quantidade,
                              boolean ativo, BigDecimal limiteMaximoUsd, Instant proximaExecucaoEm,
-                             Instant createdAt, Instant updatedAt, ProductRef product) {
+                             Instant createdAt, Instant updatedAt,
+                             @JsonInclude(JsonInclude.Include.NON_NULL) ProductRef product) {
 
     public record ProductRef(String id, String name, String sku, BigDecimal unitPrice, String currency) {
     }

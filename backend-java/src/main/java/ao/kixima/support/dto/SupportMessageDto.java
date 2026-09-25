@@ -1,10 +1,12 @@
 package ao.kixima.support.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.time.Instant;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
+/**
+ * A linha `SupportMessage` tal como o Prisma a devolve (findMany/create sem
+ * select): todas as colunas, {@code null} incluído — {@code attachmentUrl},
+ * {@code attachmentName} e {@code readAt} saem a {@code null}, não desaparecem.
+ */
 public record SupportMessageDto(String id, String ticketId, String authorId, String authorRole, String body,
                                  String attachmentUrl, String attachmentName, Instant readAt, Instant createdAt) {
 

@@ -4,6 +4,7 @@ import ao.kixima.audit.Actor;
 import ao.kixima.audit.AuditService;
 import ao.kixima.catalog.UploadFilters;
 import ao.kixima.common.error.ErrorResponse;
+import ao.kixima.common.error.InvalidRequestException;
 import ao.kixima.common.error.NotFoundException;
 import ao.kixima.common.error.ValidationException;
 import ao.kixima.company.Company;
@@ -151,15 +152,20 @@ public class SupportController {
                 .map(SupportTicketDto::semExtras).toList();
     }
 
+    /**
+     * A rota do Node não passa pelo zod: valida à mão e responde 400
+     * {@code INVALID} (não 422). O corpo pode nem vir ({@code req.body?.subject}).
+     */
     @PostMapping("/tickets")
     @ResponseStatus(CREATED)
-    public SupportTicketDto criarTicket(@RequestBody CreateTicketRequest body) {
+    public SupportTicketDto criarTicket(@RequestBody(required = false) CreateTicketRequest body) {
         CurrentUser user = CurrentUserHolder.get();
-        String subject = corta(body.subject(), 160);
-        String category = body.category() == null || body.category().isBlank() ? "Geral" : corta(body.category(), 60);
-        String message = corta(body.message(), 2000);
+        String subject = corta(body == null ? null : body.subject(), 160);
+        // `String(category || 'Geral').slice(0, 60)` — sem trim, ao contrário do assunto/mensagem.
+        String category = body == null || body.category() == null || body.category().isEmpty() ? "Geral" : semTrim(body.category(), 60);
+        String message = corta(body == null ? null : body.message(), 2000);
         if (subject.isEmpty() || message.isEmpty()) {
-            throw new ValidationException("Assunto e mensagem são obrigatórios.");
+            throw new InvalidRequestException("Assunto e mensagem são obrigatórios.");
         }
         int ano = Instant.now().atZone(java.time.ZoneOffset.UTC).getYear();
         long count = ticketRepository.count();
@@ -171,8 +177,11 @@ public class SupportController {
     }
 
     private static String corta(String s, int max) {
-        String t = s == null ? "" : s.strip();
-        return t.length() > max ? t.substring(0, max) : t;
+        return semTrim(s == null ? "" : s.strip(), max);
+    }
+
+    private static String semTrim(String s, int max) {
+        return s.length() > max ? s.substring(0, max) : s;
     }
 
     // --- Administração (ADMIN_SISTEMA, área Suporte) ---------------------------
@@ -205,9 +214,10 @@ public class SupportController {
     @PatchMapping("/tickets/{id}")
     @RequireRole({ADMIN_SISTEMA})
     @RequirePermission(SUPORTE)
-    public SupportTicketDto atualizarEstado(@PathVariable String id, @RequestBody UpdateStatusRequest body) {
-        if (body.status() == null || !STATUSES.contains(body.status())) {
-            throw new ValidationException("Estado inválido.");
+    public SupportTicketDto atualizarEstado(@PathVariable String id, @RequestBody(required = false) UpdateStatusRequest body) {
+        // 400 INVALID escrito à mão no Node, não é validação zod (422).
+        if (body == null || body.status() == null || !STATUSES.contains(body.status())) {
+            throw new InvalidRequestException("Estado inválido.");
         }
         SupportTicket ticket = ticketRepository.findById(id).orElseThrow(() -> new NotFoundException("Pedido de suporte"));
         ticket.setStatus(SupportStatus.valueOf(body.status()));
@@ -293,9 +303,10 @@ public class SupportController {
     @PostMapping("/admin/tickets/{id}/transfer")
     @RequireRole({ADMIN_SISTEMA})
     @RequirePermission(SUPORTE)
-    public SupportTicketDto transferir(@PathVariable String id, @RequestBody TransferRequest body, HttpServletRequest req) {
-        if (body.toUserId() == null || body.toUserId().isBlank()) {
-            throw new ValidationException("Indique o assessor de destino.");
+    public SupportTicketDto transferir(@PathVariable String id, @RequestBody(required = false) TransferRequest body, HttpServletRequest req) {
+        // `String(req.body?.toUserId || '')` vazio → 400 INVALID no Node.
+        if (body == null || body.toUserId() == null || body.toUserId().isEmpty()) {
+            throw new InvalidRequestException("Indique o assessor de destino.");
         }
         CurrentUser user = CurrentUserHolder.get();
         String de = ticketRepository.findById(id).map(SupportTicket::getAssignedToId).orElse(null);
