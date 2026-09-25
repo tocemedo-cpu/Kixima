@@ -197,6 +197,8 @@ por fazer:
 - Confirmar na configuração de produção `SPRING_PROFILES_ACTIVE` (nunca
   `dev`), o provider de email e `SENTRY_DSN`.
 
+O procedimento que fecha estes pontos e faz a passagem está em `M8-CUTOVER.md`.
+
 ## 6. Como repetir
 
 ```bash
