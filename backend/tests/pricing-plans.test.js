@@ -16,7 +16,12 @@ beforeAll(async () => {
   const catalog = await auth(tokens.comprador).get('/api/catalog');
   product = catalog.body[0];
 });
-afterAll(async () => { await prisma.$disconnect(); });
+afterAll(async () => {
+  // 'publicar itens NUNCA é limitado' publica um item que ficava na base e,
+  // por ser o mais recente, passava a ser o catalog.body[0] das suites seguintes.
+  await prisma.product.deleteMany({ where: { name: { startsWith: 'Item sem limite ' } } });
+  await prisma.$disconnect();
+});
 
 describe('Taxa KIXIMA (USD, com limiar)', () => {
   test('até 11.500 USD por transação: 8 USD por PO + 15 USD por fatura', () => {

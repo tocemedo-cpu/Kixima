@@ -76,6 +76,10 @@ afterAll(async () => {
           'Válvula com preço de teste', 'Válvula sem preço de teste',
           'Bomba com stock de teste', 'Bomba sem stock de teste',
           'Item com fotos desalinhadas', 'Item com fotos alinhadas',
+          // Os dois seguintes ficavam de fora: o 'Capacete de teste' entra com
+          // stock 0 e, listado em primeiro (createdAt desc), fazia 400 'Stock
+          // insuficiente' em toda a suite que compra catalog.body[0] a seguir.
+          'Bomba de teste', 'Capacete de teste',
         ],
       },
     },
