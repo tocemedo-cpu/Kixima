@@ -97,10 +97,16 @@ public class AuthController {
         return Map.of("ok", true);
     }
 
+    /** Endereço público real do serviço (com trust proxy) — para o link do email. Espelha publicBaseUrl(req). */
+    private String publicBaseUrl(HttpServletRequest req) {
+        String host = req.getHeader("host");
+        return req.getScheme() + "://" + (host != null ? host : req.getServerName());
+    }
+
     @PostMapping("/forgot-password")
     public Map<String, Object> forgotPassword(@Valid @RequestBody ForgotPasswordRequest body, HttpServletRequest req) {
         String email = body.email() == null ? "" : body.email().trim().toLowerCase();
-        authService.requestPasswordReset(email);
+        authService.requestPasswordReset(email, publicBaseUrl(req));
         auditService.recordSafe(new AuditService.Entry(
                 auditService.anonimoFrom(req), "SENHA_RECUPERACAO_PEDIDA", "User", null, email,
                 auditService.contextoFrom(req)));
@@ -117,28 +123,29 @@ public class AuthController {
         return Map.of("ok", true);
     }
 
-    // --- 2FA (TOTP) ------------------------------------------------------
+    // --- 2FA (TOTP / EMAIL) ----------------------------------------------
 
     @GetMapping("/2fa/status")
     public AuthService.TotpStatus totpStatus() {
         return authService.totpStatus(CurrentUserHolder.get().id());
     }
 
+    /** Ativação por email: envia o código de 6 dígitos para o endereço da conta. */
     @PostMapping("/2fa/email/enviar")
-    public void mfaEnviarCodigo() {
-        authService.enviarCodigoAtivacao(CurrentUserHolder.get().id());
+    public MfaEmailService.Envio mfaEnviarCodigo() {
+        return authService.enviarCodigoAtivacao(CurrentUserHolder.get().id());
     }
 
     /** Reenvio a partir do ecrã de login — ainda sem sessão, só com o desafio. */
     @PostMapping("/2fa/reenviar")
-    public void mfaReenviarCodigo(@Valid @RequestBody ReenviarCodigoRequest body) {
-        authService.reenviarCodigoDoDesafio(body.challenge());
+    public MfaEmailService.Envio mfaReenviarCodigo(@Valid @RequestBody ReenviarCodigoRequest body) {
+        return authService.reenviarCodigoDoDesafio(body.challenge());
     }
 
     /** Reenvio já dentro da sessão (para desativar a 2FA por email). */
     @PostMapping("/2fa/email/reenviar")
-    public void mfaReenviarCodigoSessao() {
-        authService.reenviarCodigo(CurrentUserHolder.get().id());
+    public MfaEmailService.Envio mfaReenviarCodigoSessao() {
+        return authService.reenviarCodigo(CurrentUserHolder.get().id());
     }
 
     @PostMapping("/2fa/setup")
