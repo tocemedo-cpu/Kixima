@@ -55,16 +55,34 @@ export interface PlatformFeeStatementKpis {
   currency: string;
 }
 
+// Confirmado ao vivo nesta sessão: os 4 campos são NÚMEROS (não strings,
+// ao contrário da maioria dos valores monetários deste contrato) — o
+// serializador de BigDecimal-como-string não se aplica aqui porque o Java
+// os calcula/expõe como double/BigDecimal com serialização numérica própria.
 export interface PlatformFeeStatementFormula {
-  perPo: string;
-  perInvoice: string;
-  thresholdUsd: string;
-  percentAbove: string;
+  perPo: number;
+  perInvoice: number;
+  thresholdUsd: number;
+  percentAbove: number;
   currency: string;
 }
 
+// `address/city/province/country/contactEmail` confirmados ao vivo nesta
+// sessão (FeeStatement.jsx lê-os para a secção "Fornecedor" do documento) —
+// não estavam modelados porque a página anterior a usar este DTO
+// (SupplierFinanceCenter) só precisava de name/taxId/plan.
 export interface PlatformFeeStatementDto {
-  company: { id: string; name: string; taxId: string; plan?: string | null };
+  company: {
+    id: string;
+    name: string;
+    taxId: string;
+    plan?: string | null;
+    address?: string | null;
+    city?: string | null;
+    province?: string | null;
+    country?: string | null;
+    contactEmail?: string | null;
+  };
   fees: PlatformFeeDto[];
   kpis: PlatformFeeStatementKpis;
   formula: PlatformFeeStatementFormula;

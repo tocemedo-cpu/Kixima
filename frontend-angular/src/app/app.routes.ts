@@ -58,9 +58,21 @@ export const routes: Routes = [
     path: 'documento',
     canActivate: [authGuard],
     children: [
-      { path: 'po/:id', component: PendingPageComponent, data: { titulo: 'Documento — Ordem de Compra' } },
-      { path: 'fatura/:id', component: PendingPageComponent, data: { titulo: 'Documento — Fatura' } },
-      { path: 'taxas/:companyId', component: PendingPageComponent, data: { titulo: 'Extrato de Taxas KIXIMA' } },
+      {
+        path: 'po/:id',
+        loadComponent: () => import('./features/documents/printable-document.component').then((m) => m.PrintableDocumentComponent),
+        data: { titulo: 'Documento — Ordem de Compra', kind: 'po' },
+      },
+      {
+        path: 'fatura/:id',
+        loadComponent: () => import('./features/documents/printable-document.component').then((m) => m.PrintableDocumentComponent),
+        data: { titulo: 'Documento — Fatura', kind: 'invoice' },
+      },
+      {
+        path: 'taxas/:companyId',
+        loadComponent: () => import('./features/documents/fee-statement.component').then((m) => m.FeeStatementComponent),
+        data: { titulo: 'Extrato de Taxas KIXIMA' },
+      },
     ],
   },
 

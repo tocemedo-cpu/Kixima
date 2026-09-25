@@ -37,7 +37,7 @@ describe('SupplierFinanceCenterComponent', () => {
     platformFeesService.forCompany.and.returnValue(of({
       company: { id: 'c1', name: 'Kianda', taxId: 'AO-1' },
       fees: [], kpis: { total: 0, totalAOA: 0, pendingAOA: 0, chargedAOA: 0, pendentes: 0, cobradas: 0, currency: 'USD' },
-      formula: { perPo: '0', perInvoice: '0', thresholdUsd: '0', percentAbove: '0', currency: 'USD' },
+      formula: { perPo: 0, perInvoice: 0, thresholdUsd: 0, percentAbove: 0, currency: 'USD' },
       generatedAt: '2026-01-01',
     }));
     TestBed.configureTestingModule({});

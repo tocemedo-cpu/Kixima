@@ -1,0 +1,244 @@
+@if (error()) {
+  <div style="padding:24px">
+    <app-error-banner [message]="error()"></app-error-banner>
+  </div>
+} @else if (!po()) {
+  <app-loading></app-loading>
+} @else if (isInvoice && !invoice) {
+  <div class="doc-page">
+    <div class="doc-toolbar no-print"><button class="btn btn-ghost" (click)="voltar()">← Voltar</button></div>
+    <div class="pdoc-sheet"><p style="padding:24px">Esta ordem ainda não tem fatura emitida.</p></div>
+  </div>
+} @else {
+  <div class="doc-page">
+    <div class="doc-toolbar no-print">
+      <button class="btn btn-ghost" (click)="voltar()">← Voltar</button>
+      <button class="btn btn-ghost" (click)="imprimir()">Visualizar PDF</button>
+      <button class="btn btn-accent" (click)="imprimir()">Baixar PDF</button>
+    </div>
+    <p class="helptext no-print" style="margin:8px 0 0;text-align:center">
+      Este documento é gerado pelo seu navegador: no diálogo que se abre, escolha "Imprimir" para pré-visualizar ou "Guardar como PDF" para transferir o ficheiro.
+    </p>
+
+    <div class="pdoc-sheet">
+      <header class="pdoc-head">
+        <div class="pdoc-clientlogo">
+          @if ($any(buyer).logoUrl) {
+            <img [src]="$any(buyer).logoUrl" [alt]="$any(buyer).name" />
+          } @else {
+            <span>LOGÓTIPO DO CLIENTE</span>
+          }
+        </div>
+        <div class="pdoc-tagline">Emitido via <strong>KIXIMA</strong> — e-Market Oil &amp; Gas · Angola / África</div>
+      </header>
+
+      <div class="pdoc-titlebar">
+        <h1>{{ isInvoice ? 'FATURA / INVOICE' : 'ORDEM DE COMPRA / PURCHASE ORDER' }}</h1>
+        <div class="pdoc-ref">{{ reference }}</div>
+      </div>
+
+      <section class="pdoc-meta">
+        @if (isInvoice) {
+          <div class="pdoc-meta-item"><div class="pdoc-lbl">ESTADO</div><div class="pdoc-meta-v">{{ $any(INVOICE_STATUS)[invoice!.status]?.label || invoice!.status }}</div></div>
+          <div class="pdoc-meta-item"><div class="pdoc-lbl">DATA DE EMISSÃO</div><div class="pdoc-meta-v">{{ formatDateDoc(invoice!.issuedAt) }}</div></div>
+          <div class="pdoc-meta-item"><div class="pdoc-lbl">DATA DE VENCIMENTO</div><div class="pdoc-meta-v">{{ formatDateDoc(invoice!.dueAt) }}</div></div>
+          <div class="pdoc-meta-item"><div class="pdoc-lbl">MOEDA</div><div class="pdoc-meta-v">{{ currency }}</div></div>
+        } @else {
+          <div class="pdoc-meta-item"><div class="pdoc-lbl">ESTADO</div><div class="pdoc-meta-v">{{ $any(PO_STATUS)[po()!.status]?.label || po()!.status }}</div></div>
+          <div class="pdoc-meta-item"><div class="pdoc-lbl">DATA DE EMISSÃO</div><div class="pdoc-meta-v">{{ formatDateDoc(po()!.createdAt) }}</div></div>
+          <div class="pdoc-meta-item"><div class="pdoc-lbl">MOEDA</div><div class="pdoc-meta-v">{{ currency }}</div></div>
+          <div class="pdoc-meta-item"><div class="pdoc-lbl">REF. CONTRATO</div><div class="pdoc-meta-v">{{ po()!.contract?.reference || 'N/A — PO regular' }}</div></div>
+        }
+      </section>
+
+      <section class="pdoc-parties">
+        @if (isInvoice) {
+          <div class="pdoc-party">
+            <div class="pdoc-lbl">EMITIDO POR / FROM</div>
+            <strong>{{ $any(supplier).name || '—' }}</strong>
+            @if ($any(supplier).taxId) { <div>NIF: {{ $any(supplier).taxId }}</div> }
+            @if ($any(supplier).address) { <div>{{ $any(supplier).address }}</div> }
+            @else if (joinNonEmpty([$any(supplier).city, $any(supplier).province, $any(supplier).country])) {
+              <div>{{ joinNonEmpty([$any(supplier).city, $any(supplier).province, $any(supplier).country]) }}</div>
+            }
+            @if ($any(supplier).contactEmail) { <div>{{ $any(supplier).contactEmail }}</div> }
+            @if ($any(supplier).contactPhone) { <div>{{ $any(supplier).contactPhone }}</div> }
+          </div>
+          <div class="pdoc-party">
+            <div class="pdoc-lbl">FATURADO A / BILL TO</div>
+            <strong>{{ $any(buyer).name || '—' }}</strong>
+            @if ($any(buyer).taxId) { <div>NIF: {{ $any(buyer).taxId }}</div> }
+            @if ($any(buyer).address) { <div>{{ $any(buyer).address }}</div> }
+            @else if (joinNonEmpty([$any(buyer).city, $any(buyer).province, $any(buyer).country])) {
+              <div>{{ joinNonEmpty([$any(buyer).city, $any(buyer).province, $any(buyer).country]) }}</div>
+            }
+            @if ($any(buyer).contactEmail) { <div>{{ $any(buyer).contactEmail }}</div> }
+            @if ($any(buyer).contactPhone) { <div>{{ $any(buyer).contactPhone }}</div> }
+          </div>
+        } @else {
+          <div class="pdoc-party">
+            <div class="pdoc-lbl">COMPRADOR / BUYER</div>
+            <strong>{{ $any(buyer).name || '—' }}</strong>
+            @if ($any(buyer).taxId) { <div>NIF: {{ $any(buyer).taxId }}</div> }
+            @if ($any(buyer).address) { <div>{{ $any(buyer).address }}</div> }
+            @else if (joinNonEmpty([$any(buyer).city, $any(buyer).province, $any(buyer).country])) {
+              <div>{{ joinNonEmpty([$any(buyer).city, $any(buyer).province, $any(buyer).country]) }}</div>
+            }
+            @if ($any(buyer).contactEmail) { <div>{{ $any(buyer).contactEmail }}</div> }
+            @if ($any(buyer).contactPhone) { <div>{{ $any(buyer).contactPhone }}</div> }
+          </div>
+          <div class="pdoc-party">
+            <div class="pdoc-lbl">FORNECEDOR / SUPPLIER</div>
+            <strong>{{ $any(supplier).name || '—' }}</strong>
+            @if ($any(supplier).taxId) { <div>NIF: {{ $any(supplier).taxId }}</div> }
+            @if ($any(supplier).address) { <div>{{ $any(supplier).address }}</div> }
+            @else if (joinNonEmpty([$any(supplier).city, $any(supplier).province, $any(supplier).country])) {
+              <div>{{ joinNonEmpty([$any(supplier).city, $any(supplier).province, $any(supplier).country]) }}</div>
+            }
+            @if ($any(supplier).contactEmail) { <div>{{ $any(supplier).contactEmail }}</div> }
+            @if ($any(supplier).contactPhone) { <div>{{ $any(supplier).contactPhone }}</div> }
+          </div>
+        }
+      </section>
+
+      <section class="pdoc-boxes">
+        @if (isInvoice) {
+          <div class="pdoc-box"><div class="pdoc-lbl">ORDEM DE COMPRA DE ORIGEM</div><strong>{{ po()!.reference }}</strong></div>
+          <div class="pdoc-box"><div class="pdoc-lbl">PRAZO DE PAGAMENTO</div><div>Vencimento em {{ formatDateDoc(invoice!.dueAt) }} (7 dias após aceitação da PO pelo fornecedor).</div></div>
+          @if (invoice!.serie && invoice!.numeroNaSerie) {
+            <div class="pdoc-box pdoc-box-fiscal">
+              <div class="pdoc-lbl">DOCUMENTO FISCAL CERTIFICADO</div>
+              <div>N.º {{ numeroDocumentoAGT(invoice) }}</div>
+              @if (invoice!.hashDocumento) {
+                <div class="pdoc-hash">Hash: {{ invoice!.hashDocumento!.slice(0, 16) }}…</div>
+              }
+            </div>
+          }
+        } @else {
+          <div class="pdoc-box"><div class="pdoc-lbl">LOCAL DE ENTREGA / DELIVERY SITE</div><div>{{ delivery }}</div></div>
+          <div class="pdoc-box pdoc-box-accent"><div class="pdoc-lbl">GARANTIA DE PAGAMENTO KIXIMA</div><div>Pagamento ao fornecedor em até 7 dias após aceitação — coberto por apólice de seguro.</div></div>
+        }
+      </section>
+
+      <table class="pdoc-table">
+        <thead>
+          @if (isInvoice && invoiceLines.length) {
+            <tr><th>#</th><th>DESCRIÇÃO</th><th class="r">QTD</th><th class="r">PREÇO UNIT.</th><th class="r">TOTAL S/ IVA</th><th class="r">IVA</th><th class="r">TOTAL</th></tr>
+          } @else {
+            <tr><th>#</th><th>DESCRIÇÃO</th><th>CATEGORIA</th><th class="r">QTD</th><th class="r">PREÇO UNIT.</th><th class="r">TOTAL</th></tr>
+          }
+        </thead>
+        <tbody>
+          @if (isInvoice && invoiceLines.length) {
+            @for (li of invoiceLines; track li.id) {
+              <tr>
+                <td>{{ li.lineNumber }}</td>
+                <td>{{ li.description }}</td>
+                <td class="r">{{ li.quantity }}</td>
+                <td class="r">{{ formatMoneyDoc(li.unitPrice, currency) }}</td>
+                <td class="r">{{ formatMoneyDoc(li.netAmount, currency) }}</td>
+                <td class="r">{{ formatMoneyDoc(li.ivaAmount, currency) }}</td>
+                <td class="r">{{ formatMoneyDoc((li.netAmount ? +li.netAmount : 0) + (li.ivaAmount ? +li.ivaAmount : 0), currency) }}</td>
+              </tr>
+            }
+          } @else {
+            @for (it of po()!.items; track it.id; let i = $index) {
+              <tr>
+                <td>{{ i + 1 }}</td>
+                <td>{{ it.product?.name || it.productId }}</td>
+                <td>{{ it.product?.category || '—' }}</td>
+                <td class="r">{{ it.quantity }}</td>
+                <td class="r">{{ formatMoneyDoc(it.unitPrice, currency) }}</td>
+                <td class="r">{{ formatMoneyDoc(it.lineTotal, currency) }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+
+      <section class="pdoc-totals">
+        <div class="pdoc-total-row"><span>Subtotal (sem IVA)</span><span>{{ formatMoneyDoc(net, currency) }}</span></div>
+        <div class="pdoc-total-row"><span>IVA (14%){{ estimado ? ' — estimado' : '' }}</span><span>{{ formatMoneyDoc(tax, currency) }}</span></div>
+        <div class="pdoc-total-row pdoc-total-grand"><span>{{ isInvoice || !estimado ? 'TOTAL A PAGAR' : 'TOTAL ESTIMADO (c/ IVA)' }}</span><span>{{ formatMoneyDoc(total, currency) }}</span></div>
+        @if (withheld > 0) {
+          <div class="pdoc-total-row" style="margin-top:6px"><span>Retenção na fonte II (6,5% s/ serviços)</span><span>− {{ formatMoneyDoc(withheld, currency) }}</span></div>
+          <div class="pdoc-total-row pdoc-total-grand"><span>LÍQUIDO A RECEBER (FORNECEDOR)</span><span>{{ formatMoneyDoc(total - withheld, currency) }}</span></div>
+        }
+      </section>
+
+      @if (isInvoice) {
+        <section class="pdoc-legal">
+          <div class="pdoc-lbl">DADOS BANCÁRIOS DO FORNECEDOR / BANK DETAILS</div>
+          <div>Banco: {{ $any(supplier).bankName || '[a preencher]' }} · IBAN: {{ $any(supplier).iban || '[a preencher]' }} · SWIFT/BIC: {{ $any(supplier).swift || '[a preencher]' }}</div>
+        </section>
+        @if (invoice!.payment) {
+          <section class="pdoc-confirm">
+            <div class="pdoc-lbl">PAGAMENTO CONFIRMADO</div>
+            <div>Pagamento processado em {{ formatDateTimeDoc(invoice!.payment!.processedAt) }} — referência {{ invoice!.payment!.reference }}. Protegido pela garantia de pagamento KIXIMA, com fundos do cliente.</div>
+          </section>
+        }
+        @if (invoice!.creditNotes?.length) {
+          <section class="pdoc-legal">
+            <div class="pdoc-lbl">NOTAS DE CRÉDITO</div>
+            @for (n of invoice!.creditNotes; track n.id) {
+              <div>{{ numeroDocumentoAGTCreditNota(n) }} — emitida em {{ formatDateDoc(n.issuedAt) }}: {{ n.motivo }} ({{ formatMoneyDoc(n.amount, invoice!.currency) }})</div>
+            }
+          </section>
+        }
+        <section class="pdoc-terms">
+          <div class="pdoc-lbl">TERMOS DA FATURA</div>
+          <p>1. Emissão automática: esta fatura foi gerada automaticamente pela plataforma KIXIMA na aceitação da ordem de compra pelo fornecedor, sem intervenção manual. 2. Pagamento: processado pelo Financeiro da empresa compradora, com fundos próprios, dentro do prazo indicado. 3. Sinistros: incumprimentos do prazo são cobertos pela apólice de seguro em nome do fornecedor e acompanhados pela KIXIMA junto da seguradora, fora da plataforma. 4. Lei aplicável: leis da República de Angola.</p>
+        </section>
+      } @else {
+        <section class="pdoc-legal">
+          <div class="pdoc-lbl">GARANTIA DE PAGAMENTO / PAYMENT GUARANTEE</div>
+          <div>Como funciona: o fornecedor submete, no credenciamento, uma apólice a favor da KIXIMA; a KIXIMA emite uma apólice a favor do comprador contra não-entrega. O comprador paga sempre com fundos próprios — a KIXIMA nunca adianta capital. O relógio dos 7 dias começa a contar na aceitação desta PO pelo fornecedor.</div>
+        </section>
+        <section class="pdoc-terms">
+          <div class="pdoc-lbl">TERMOS E CONDIÇÕES</div>
+          <p>1. HSE &amp; Qualidade: cumprimento das políticas de Saúde, Segurança e Ambiente do setor e das certificações aplicáveis (API, ISO ou equivalentes). 2. Inspeção: o comprador pode inspecionar os bens/serviços antes de confirmar a receção. 3. Confidencialidade dos termos comerciais desta PO. 4. Força maior: nenhuma das partes responde por atrasos fora do seu controlo razoável. 5. Lei aplicável: leis da República de Angola. 6. Sinistros: divergências na receção são registadas na plataforma e acompanhadas pela KIXIMA junto da seguradora, fora da plataforma.</p>
+        </section>
+      }
+
+      <section class="pdoc-signs">
+        @if (isInvoice) {
+          <div class="pdoc-sign">
+            <div class="pdoc-sign-line"></div>
+            <div class="pdoc-lbl">FATURA EMITIDA POR</div>
+            <strong>Sistema KIXIMA (automático)</strong>
+            <div class="pdoc-muted">{{ formatDateDoc(invoice!.issuedAt) }}</div>
+          </div>
+          <div class="pdoc-sign">
+            <div class="pdoc-sign-line"></div>
+            <div class="pdoc-lbl">PROCESSADO POR (FINANCEIRO)</div>
+            <strong>{{ invoice!.payment?.processedByName || 'Financeiro' }}</strong>
+            <div class="pdoc-muted">{{ invoice!.payment?.processedAt ? formatDateDoc(invoice!.payment!.processedAt) : '' }}</div>
+          </div>
+        } @else {
+          <div class="pdoc-sign">
+            <div class="pdoc-sign-line"></div>
+            <div class="pdoc-lbl">EMITIDO POR (COMPRADOR)</div>
+            <strong>{{ po()!.createdBy?.name || '—' }}</strong>
+            <div class="pdoc-muted">{{ formatDateDoc(po()!.createdAt) }}</div>
+          </div>
+          <div class="pdoc-sign">
+            <div class="pdoc-sign-line"></div>
+            <div class="pdoc-lbl">APROVADO POR (COMPANY ADMIN)</div>
+            <strong>{{ po()!.approvedBy?.name || '—' }}</strong>
+            <div class="pdoc-muted">{{ po()!.approvedAt ? formatDateDoc(po()!.approvedAt) : '' }}</div>
+          </div>
+          <div class="pdoc-sign">
+            <div class="pdoc-sign-line"></div>
+            <div class="pdoc-lbl">ACEITE POR (FORNECEDOR)</div>
+            <strong>{{ $any(supplier).name || '—' }}</strong>
+            <div class="pdoc-muted">{{ po()!.acceptedAt ? formatDateDoc(po()!.acceptedAt) : '' }}</div>
+          </div>
+        }
+      </section>
+
+      <footer class="pdoc-foot">
+        Documento gerado eletronicamente pela plataforma KIXIMA em {{ formatDateTimeDoc(agora) }}. Ref. {{ reference }} · Pág. 1
+      </footer>
+    </div>
+  </div>
+}

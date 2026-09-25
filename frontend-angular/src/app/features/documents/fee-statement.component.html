@@ -1,0 +1,110 @@
+@if (error()) {
+  <div style="padding:24px">
+    <app-error-banner [message]="error()"></app-error-banner>
+  </div>
+} @else if (!data()) {
+  <app-loading></app-loading>
+} @else {
+  <div class="doc-page">
+    <div class="doc-toolbar no-print">
+      <button class="btn btn-ghost" (click)="voltar()">← Voltar</button>
+      <button class="btn btn-accent" (click)="imprimir()">Imprimir / Guardar PDF</button>
+    </div>
+
+    <div class="pdoc-sheet">
+      <header class="pdoc-head">
+        <div class="pdoc-tagline" style="font-size:15px"><strong>KIXIMA</strong> — e-Market Oil &amp; Gas · Angola / África</div>
+        <div class="pdoc-tagline">Plataforma de procurement com pagamento garantido</div>
+      </header>
+
+      <div class="pdoc-titlebar">
+        <h1>EXTRATO DE TAXAS KIXIMA / PLATFORM FEE STATEMENT</h1>
+        <div class="pdoc-ref">{{ formatDateDoc(data()!.generatedAt) }}</div>
+      </div>
+
+      <section class="pdoc-parties">
+        <div class="pdoc-party">
+          <div class="pdoc-lbl">EMITIDO POR / FROM</div>
+          <strong>KIXIMA</strong>
+          <div>Plataforma de procurement Oil &amp; Gas</div>
+          <div>Luanda, Angola</div>
+        </div>
+        <div class="pdoc-party">
+          <div class="pdoc-lbl">FORNECEDOR / SUPPLIER</div>
+          <strong>{{ data()!.company.name }}</strong>
+          @if (data()!.company.taxId) {
+            <div>NIF: {{ data()!.company.taxId }}</div>
+          }
+          @if (data()!.company.address) {
+            <div>{{ data()!.company.address }}</div>
+          } @else if (joinNonEmpty([data()!.company.city, data()!.company.province, data()!.company.country])) {
+            <div>{{ joinNonEmpty([data()!.company.city, data()!.company.province, data()!.company.country]) }}</div>
+          }
+          @if (data()!.company.contactEmail) {
+            <div>{{ data()!.company.contactEmail }}</div>
+          }
+        </div>
+      </section>
+
+      <section class="pdoc-boxes">
+        <div class="pdoc-box">
+          <div class="pdoc-lbl">FÓRMULA DA TAXA</div>
+          <strong>
+            (nº de POs × {{ formatMoneyDoc(data()!.formula.perPo, data()!.formula.currency) }}) + {{ formatMoneyDoc(data()!.formula.perInvoice, data()!.formula.currency) }} por fatura
+            · acima de {{ limiar(data()!.formula.thresholdUsd, data()!.formula.currency) }}: {{ percentAcima(data()!.formula.percentAbove) }} do valor, tudo incluído
+          </strong>
+        </div>
+        <div class="pdoc-box">
+          <div class="pdoc-lbl">TOTAL POR COBRAR</div>
+          <strong>{{ formatMoneyDoc(data()!.kpis.pendingAOA, data()!.formula.currency) }}</strong>
+        </div>
+      </section>
+
+      <table class="pdoc-items">
+        <thead>
+          <tr>
+            <th>Data</th><th>Fatura de origem</th><th>POs</th><th>Composição</th>
+            <th style="text-align:right">Taxa</th><th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (data()!.fees.length === 0) {
+            <tr><td colspan="6" style="text-align:center;color:var(--ink-400)">Ainda não há taxas geradas para esta empresa.</td></tr>
+          } @else {
+            @for (f of data()!.fees; track f.id) {
+              <tr>
+                <td>{{ formatDateDoc(f.createdAt) }}</td>
+                <td>{{ f.invoice?.reference || '—' }}</td>
+                <td>{{ f.poCount }}</td>
+                <td>{{ f.poCount }} × {{ formatMoneyDoc(f.perPo, data()!.formula.currency) }} + {{ formatMoneyDoc(f.perInvoice, data()!.formula.currency) }}</td>
+                <td style="text-align:right">{{ formatMoneyDoc(f.amount, f.currency) }}</td>
+                <td>{{ f.status === 'COBRADO' ? 'Cobrada em ' + formatDateDoc(f.chargedAt) : 'Pendente' }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="text-align:right;font-weight:600">Total gerado</td>
+            <td style="text-align:right;font-weight:600">{{ formatMoneyDoc(data()!.kpis.totalAOA, data()!.formula.currency) }}</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td colspan="4" style="text-align:right">Já cobrado</td>
+            <td style="text-align:right">{{ formatMoneyDoc(data()!.kpis.chargedAOA, data()!.formula.currency) }}</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td colspan="4" style="text-align:right;font-weight:700">POR COBRAR</td>
+            <td style="text-align:right;font-weight:700">{{ formatMoneyDoc(data()!.kpis.pendingAOA, data()!.formula.currency) }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <p class="pdoc-muted" style="margin-top:18px;font-size:11px">
+        A Taxa KIXIMA é gerada automaticamente em cada pagamento processado na plataforma e é cobrada ao fornecedor, à parte da PO/Fatura. Este extrato serve como documento de cobrança; o pagamento é conciliado pela equipa KIXIMA. Dúvidas: suporte via Ajuda.
+      </p>
+    </div>
+  </div>
+}

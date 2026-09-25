@@ -5,6 +5,14 @@ export type PoStatus =
   | 'AGUARDANDO_PAGAMENTO' | 'PAGA' | 'EM_EXECUCAO' | 'ENTREGUE'
   | 'RECEBIDA_CONFORME' | 'RECEBIDA_COM_DIVERGENCIA' | 'CONCLUIDA';
 
+// GET /api/purchase-orders/:id (PoDtoService.detalhe(), CompanyRef.de()) —
+// confirmado por um agente de pesquisa dedicado: 13 campos, todos sempre
+// presentes (nunca omitidos individualmente) quando buyerCompany/
+// supplierCompany está presente, usados por PrintableDocument.jsx (partes/
+// dados bancários do documento oficial). `verified` NÃO existe neste
+// CompanyRef do Java (fica opcional aqui só porque outros sítios do
+// contrato, como a listagem de fornecedores do marketplace, usam uma forma
+// mais rica com esse campo — nunca confundir os dois).
 export interface CompanyRef {
   id: string;
   name: string;
@@ -12,6 +20,14 @@ export interface CompanyRef {
   logoUrl?: string | null;
   city?: string | null;
   country?: string | null;
+  taxId?: string | null;
+  address?: string | null;
+  province?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  bankName?: string | null;
+  iban?: string | null;
+  swift?: string | null;
 }
 
 export interface PurchaseOrderItemDto {
@@ -21,7 +37,11 @@ export interface PurchaseOrderItemDto {
   quantity: number;
   unitPrice: string;
   lineTotal: string;
-  product?: { id: string; name: string } | null;
+  // GET /api/purchase-orders/:id devolve o ProductDto completo (comProduto=
+  // true); category/kind confirmados por um agente de pesquisa dedicado —
+  // usados por PrintableDocument.jsx (coluna Categoria e cálculo da
+  // retenção na fonte, que só se aplica a itens kind === 'SERVICO').
+  product?: { id: string; name: string; category?: string | null; kind?: string | null } | null;
 }
 
 // Espelha o modelo Payment do Prisma (backend/prisma/schema.prisma:1403-1445).
@@ -44,11 +64,18 @@ export interface PaymentDto {
   processedAt: string;
 }
 
+// quantity/unitPrice/netAmount/ivaAmount confirmados por um agente de
+// pesquisa dedicado (InvoiceLineDto.java) — BigDecimal, serializados como
+// string (mesma convenção do resto do contrato).
 export interface InvoiceLineDto {
   id: string;
   invoiceId: string;
   lineNumber: number;
   description?: string | null;
+  quantity?: string | null;
+  unitPrice?: string | null;
+  netAmount?: string | null;
+  ivaAmount?: string | null;
 }
 
 export interface CreditNoteDto {
@@ -68,12 +95,21 @@ export interface InvoiceDto {
   reference: string;
   purchaseOrderId?: string | null;
   amount: string;
+  // Confirmados directamente no Java (InvoiceDto.java) — a mesma tríade de
+  // netAmount/taxAmount/withholdingAmount que já existia em PurchaseOrderDto,
+  // também presente na Fatura (usada por PrintableDocument.jsx).
+  netAmount?: string | null;
+  taxAmount?: string | null;
+  withholdingAmount?: string | null;
   currency: string;
   status: string;
   issuedAt: string;
   dueAt: string;
   serie?: string | null;
   numeroNaSerie?: number | null;
+  // Confirmado por um agente de pesquisa dedicado (InvoiceDto.java) — usado
+  // por PrintableDocument.jsx (hash truncado a 16 caracteres no documento).
+  hashDocumento?: string | null;
   payment?: PaymentDto | null;
   creditNotes: CreditNoteDto[];
   lines: InvoiceLineDto[];
