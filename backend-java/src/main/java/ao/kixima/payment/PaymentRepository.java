@@ -13,12 +13,16 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
 
     List<Payment> findByInvoiceIdIn(java.util.Collection<String> invoiceIds);
 
-    /** Espelha paymentService.listPaymentHistory — só o ramo da PO (o de Contract fica por portar). */
-    @Query("SELECT p FROM Payment p JOIN FETCH p.invoice i JOIN FETCH i.purchaseOrder po "
-            + "WHERE po.buyerCompanyId = :buyerCompanyId ORDER BY p.processedAt DESC")
+    /**
+     * Espelha paymentService.listPaymentHistory — pagamentos das faturas da empresa compradora,
+     * via PO ou via contrato-quadro (faturas consolidadas de call-offs, sem PO).
+     */
+    @Query("SELECT p FROM Payment p JOIN FETCH p.invoice i LEFT JOIN FETCH i.purchaseOrder po LEFT JOIN FETCH i.contract c "
+            + "WHERE po.buyerCompanyId = :buyerCompanyId OR c.clientCompanyId = :buyerCompanyId ORDER BY p.processedAt DESC")
     List<Payment> findHistoricoDoComprador(@Param("buyerCompanyId") String buyerCompanyId);
 
-    @Query("SELECT p FROM Payment p JOIN FETCH p.invoice i JOIN FETCH i.purchaseOrder WHERE p.id = :id")
+    /** `include: { invoice: { include: { purchaseOrder: true, contract: true } } }` — a fatura consolidada não tem PO. */
+    @Query("SELECT p FROM Payment p JOIN FETCH p.invoice i LEFT JOIN FETCH i.purchaseOrder LEFT JOIN FETCH i.contract WHERE p.id = :id")
     Optional<Payment> findByIdComFatura(@Param("id") String id);
 
     /** dadosPessoaisService.exportar — pagamentos autorizados pelo titular. */

@@ -2,6 +2,7 @@ package ao.kixima.invoice;
 
 import org.hibernate.annotations.UpdateTimestamp;
 import ao.kixima.common.persistence.AbstractPersistableEntity;
+import ao.kixima.contract.Contract;
 import ao.kixima.po.PurchaseOrder;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,6 +11,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.OrderBy;
@@ -97,6 +99,11 @@ public class Invoice extends AbstractPersistableEntity<String> {
     @Column(name = "contract_id")
     private String contractId;
 
+    /** O contrato-quadro da fatura consolidada (`include: { contract: true }` do Node) — só de leitura. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contract_id", insertable = false, updatable = false)
+    private Contract contract;
+
     /** ids das call-offs cobertas por esta fatura consolidada — `text[]`. */
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "consolidated_po_ids")
@@ -175,9 +182,33 @@ public class Invoice extends AbstractPersistableEntity<String> {
         return consolidatedPoIds;
     }
 
-    /** Fatura consolidada: liga-a ao contrato e às call-offs que cobre (só na criação). */
-    public void consolidarCallOffs(String contractId, List<String> poIds) {
-        this.contractId = contractId;
+    public Contract getContract() {
+        return contract;
+    }
+
+    /**
+     * Espelha creditNoteService.partesDaFatura: o fornecedor da fatura vem da PO
+     * ou, na fatura consolidada de call-offs, do contrato-quadro.
+     */
+    public String supplierCompanyId() {
+        if (purchaseOrder != null) return purchaseOrder.getSupplierCompanyId();
+        return contract == null ? null : contract.getSupplierCompanyId();
+    }
+
+    /** Idem para o comprador: `purchaseOrder.buyerCompanyId ?? contract.clientCompanyId`. */
+    public String buyerCompanyId() {
+        if (purchaseOrder != null) return purchaseOrder.getBuyerCompanyId();
+        return contract == null ? null : contract.getClientCompanyId();
+    }
+
+    /**
+     * Fatura consolidada: liga-a ao contrato e às call-offs que cobre (só na criação).
+     * Recebe a entidade, não só o id, para a relação {@code contract} ficar disponível
+     * já na mesma transação/sessão em que a fatura nasce (a coluna é só-leitura no JPA).
+     */
+    public void consolidarCallOffs(Contract contract, List<String> poIds) {
+        this.contractId = contract.getId();
+        this.contract = contract;
         this.consolidatedPoIds = new ArrayList<>(poIds);
     }
 

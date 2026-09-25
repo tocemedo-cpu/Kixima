@@ -36,10 +36,15 @@ public record InvoiceDto(String id, String reference, String purchaseOrderId, Bi
     /** Só para ler as colunas JSON (agt_erro/agt_estado) como o Prisma as devolve: objectos, não texto. */
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    /** Linha + {@code purchaseOrder} (escalar) quando o include o traz; sem contrato, pagamento, notas ou linhas. */
+    /**
+     * Linha + {@code purchaseOrder} (escalar) e {@code contract} quando o include os traz
+     * (`include: { purchaseOrder: true, contract: true }` — na fatura consolidada de call-offs
+     * só o contrato existe); sem pagamento, notas ou linhas.
+     */
     public static InvoiceDto de(Invoice i, boolean comPurchaseOrder) {
         PurchaseOrderDto po = comPurchaseOrder && i.getPurchaseOrder() != null ? PurchaseOrderDto.escalar(i.getPurchaseOrder()) : null;
-        return de(i, po, null, null, null, null);
+        ContractDto contract = comPurchaseOrder && i.getContract() != null ? ContractDto.de(i.getContract(), false, null) : null;
+        return de(i, po, contract, null, null, null);
     }
 
     public static InvoiceDto de(Invoice i, PurchaseOrderDto purchaseOrder, ContractDto contract, PaymentDto payment,
