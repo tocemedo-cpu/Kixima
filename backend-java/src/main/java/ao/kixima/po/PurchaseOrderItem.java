@@ -80,4 +80,8 @@ public class PurchaseOrderItem extends AbstractPersistableEntity<String> {
     public BigDecimal getLineTotal() {
         return lineTotal;
     }
+
+    public String getPurchaseOrderId() {
+        return purchaseOrderId;
+    }
 }

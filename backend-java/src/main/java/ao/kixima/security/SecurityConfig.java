@@ -35,7 +35,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationFilter authenticationFilter) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationFilter authenticationFilter,
+                                           RateLimitFilter rateLimitFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // API sem estado de sessão do lado do Spring; CSRF mitigado por SameSite=Lax no cookie (ver SessionCookieUtil).
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -43,7 +44,9 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // Como no app.js: os limitadores correm ANTES da autenticação (e contam à pessoa quando o token é válido).
+                .addFilterBefore(rateLimitFilter, AuthenticationFilter.class);
         return http.build();
     }
 

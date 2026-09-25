@@ -161,7 +161,9 @@ class CatalogWriteControllerTest {
         JsonNode body = json(res.getResponse().getContentAsString());
         String createdId = body.get("id").asText();
         assertThat(body.get("sku").asText()).isEqualTo("VLV-6-API6D");
-        assertThat(body.get("promoPrice").decimalValue().intValue()).isEqualTo(1120000);
+        // Decimal do Prisma sai como texto (JacksonDecimalConfig), tal como no Node.
+        assertThat(body.get("promoPrice").isTextual()).isTrue();
+        assertThat(new java.math.BigDecimal(body.get("promoPrice").asText()).intValue()).isEqualTo(1120000);
         assertThat(body.get("stockQuantity").asInt()).isEqualTo(12);
         assertThat(body.get("imageUrl").asText()).isNotBlank(); // principal reflete no marketplace
         assertThat(body.get("images").size()).isEqualTo(3); // 1 principal + 2 galeria

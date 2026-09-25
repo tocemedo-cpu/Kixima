@@ -1,5 +1,7 @@
 package ao.kixima.painel;
 
+import ao.kixima.common.Decimais;
+
 import ao.kixima.company.CompanyRepository;
 import ao.kixima.company.CompanyStatus;
 import ao.kixima.company.CompanyType;
@@ -84,8 +86,8 @@ public class PaineisController {
                 mapa("label", "Recebidas", "count", sum.apply(RECEIVED)),
                 mapa("label", "Canceladas", "count", sum.apply(CANCELLED))));
         return mapa("kpis", mapa("emAndamento", emAndamento,
-                        "aguardandoPagamento", mapa("count", aguardCount, "total", aguardTotal),
-                        "emEntrega", mapa("count", entregaCount, "total", entregaTotal),
+                        "aguardandoPagamento", mapa("count", aguardCount, "total", Decimais.numero(aguardTotal)),
+                        "emEntrega", mapa("count", entregaCount, "total", Decimais.numero(entregaTotal)),
                         "recebidasMes", recebidasMes),
                 "minhasOrdens", minhasOrdens);
     }

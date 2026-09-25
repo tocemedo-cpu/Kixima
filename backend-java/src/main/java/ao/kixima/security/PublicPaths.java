@@ -40,6 +40,9 @@ public class PublicPaths {
         adicionar("/api/auth/2fa/verify");
         adicionar("/api/auth/2fa/reenviar");
         adicionar("/actuator/health");
+        // app.js — sondas de saúde, sem sessão.
+        adicionar("GET", "/health");
+        adicionar("GET", "/ready");
         // uploadsRoutes.js — `optionalAuthenticate`, não `authenticate`: o mesmo
         // filtro que decide "público" também popula CurrentUserHolder quando um
         // token válido vem no pedido (só os ramos de token AUSENTE/INVÁLIDO é que

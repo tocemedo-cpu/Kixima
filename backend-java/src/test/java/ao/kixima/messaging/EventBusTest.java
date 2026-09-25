@@ -81,7 +81,8 @@ class EventBusTest {
         assertThat(aprovada.get("reference")).isEqualTo("PO-2026-00003");
         assertThat(((Map<?, ?>) aprovada.get("buyer")).get("taxId")).isEqualTo("AO-CLI-0001");
         assertThat(((Map<?, ?>) aprovada.get("supplier")).get("taxId")).isEqualTo("AO-FOR-0001");
-        assertThat((BigDecimal) aprovada.get("totalAmount")).isPositive();
+        // Nos eventos os valores são números (Number(d) no eventBus.js), não o texto Decimal das respostas HTTP.
+        assertThat(((Number) aprovada.get("totalAmount")).doubleValue()).isPositive();
         List<?> lines = (List<?>) aprovada.get("lines");
         assertThat(lines).hasSize(1);
         Map<String, Object> linha = mapa(lines.get(0));

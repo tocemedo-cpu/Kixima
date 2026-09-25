@@ -118,7 +118,7 @@ class AssinaturaControllerTest {
         assertThat(planoAtual(companyId)).isEqualTo("CORE");
         // O preço fica congelado na cobrança.
         PlanService.Preco tabela = planService.preco(CompanyPlan.PRO);
-        assertThat(cobranca.get("valorUsd").decimalValue()).isEqualByComparingTo(tabela.valorUsd());
+        assertThat(new java.math.BigDecimal(cobranca.get("valorUsd").asText())).isEqualByComparingTo(tabela.valorUsd());
         assertThat(cobranca.get("periodo").asText()).isEqualTo(tabela.periodo());
         assertThat(cobranca.get("meses").asInt()).isEqualTo(tabela.meses());
 
@@ -235,7 +235,7 @@ class AssinaturaControllerTest {
         int atuais = 0;
         for (JsonNode o : estado.get("opcoes")) {
             CompanyPlan plano = CompanyPlan.valueOf(o.get("plano").asText());
-            assertThat(o.get("preco").get("valorUsd").decimalValue()).isEqualByComparingTo(planService.preco(plano).valorUsd());
+            assertThat(new java.math.BigDecimal(o.get("preco").get("valorUsd").asText())).isEqualByComparingTo(planService.preco(plano).valorUsd());
             assertThat(o.get("direcao").asText()).isIn("SUBIR", "DESCER", "RENOVAR");
             if (o.get("atual").asBoolean()) atuais++;
             if (plano == CompanyPlan.BASE) {

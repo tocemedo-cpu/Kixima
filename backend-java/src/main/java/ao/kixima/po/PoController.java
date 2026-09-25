@@ -42,10 +42,12 @@ import static org.springframework.http.HttpStatus.CREATED;
 public class PoController {
 
     private final PoService poService;
+    private final PoDtoService poDtoService;
     private final AuditService auditService;
 
-    public PoController(PoService poService, AuditService auditService) {
+    public PoController(PoService poService, PoDtoService poDtoService, AuditService auditService) {
         this.poService = poService;
+        this.poDtoService = poDtoService;
         this.auditService = auditService;
     }
 
@@ -59,20 +61,20 @@ public class PoController {
         PurchaseOrder po = poService.createPurchaseOrder(user.companyId(), body.supplierCompanyId(), user.id(), itens);
         auditService.recordSafe(new AuditService.Entry(auditService.actorFrom(user, req), "PO_CRIADA",
                 "PurchaseOrder", po.getId(), po.getReference(),
-                Map.of("valor", po.getTotalAmount().toPlainString(), "moeda", po.getCurrency(), "fornecedor", po.getSupplierCompanyId())));
-        return toDto(po);
+                Map.of("valor", ao.kixima.common.Decimais.texto(po.getTotalAmount()), "moeda", po.getCurrency(), "fornecedor", po.getSupplierCompanyId())));
+        return poDtoService.criada(po.getId());
     }
 
     @GetMapping
     public List<PurchaseOrderDto> list(@RequestParam(required = false) String status) {
         CurrentUser user = CurrentUserHolder.get();
         PoStatus statusEnum = status == null ? null : PoStatus.valueOf(status);
-        return poService.listPurchaseOrders(user.companyId(), user.role(), statusEnum).stream().map(this::toDto).toList();
+        return poDtoService.listagem(user.companyId(), user.role(), statusEnum);
     }
 
     @GetMapping("/{id}")
     public PurchaseOrderDto getOne(@PathVariable String id) {
-        return toDto(poService.getPurchaseOrder(id, CurrentUserHolder.get()));
+        return poDtoService.detalhe(id, CurrentUserHolder.get());
     }
 
     /** Linha do tempo auditável da PO (quem fez o quê, quando) — mesmo controlo de acesso de GET /{id}. */
@@ -88,7 +90,7 @@ public class PoController {
         PurchaseOrder po = poService.approvePurchaseOrder(id, user.id(), user.companyId());
         auditService.recordSafe(new AuditService.Entry(auditService.actorFrom(user, req), "PO_APROVADA",
                 "PurchaseOrder", po.getId(), po.getReference(),
-                Map.of("valor", po.getTotalAmount().toPlainString(), "moeda", po.getCurrency())));
+                Map.of("valor", ao.kixima.common.Decimais.texto(po.getTotalAmount()), "moeda", po.getCurrency())));
         return toDto(po);
     }
 
@@ -110,7 +112,7 @@ public class PoController {
         PurchaseOrder po = poService.acceptPurchaseOrder(id, user.companyId());
         auditService.recordSafe(new AuditService.Entry(auditService.actorFrom(user, req), "PO_ACEITE",
                 "PurchaseOrder", po.getId(), po.getReference(),
-                Map.of("valor", po.getTotalAmount().toPlainString(), "moeda", po.getCurrency())));
+                Map.of("valor", ao.kixima.common.Decimais.texto(po.getTotalAmount()), "moeda", po.getCurrency())));
         return toDto(po);
     }
 
@@ -150,7 +152,7 @@ public class PoController {
         CurrentUser user = CurrentUserHolder.get();
         PurchaseOrder po = poService.confirmReception(id, user.companyId(), new PoService.ConfirmacaoRececao(body.conforme(), body.notes()));
         auditService.recordSafe(new AuditService.Entry(auditService.actorFrom(user, req), "RECECAO_MERCADORIA",
-                "PurchaseOrder", po.getId(), po.getReference(), Map.of("conforme", body.conforme(), "notas", body.notes() != null ? body.notes() : "")));
+                "PurchaseOrder", po.getId(), po.getReference(), comNotas(Map.of("conforme", body.conforme()), body.notes())));
         // Receção conforme fecha a ordem automaticamente — evento próprio na linha do tempo, distinto da receção em si.
         if (po.getStatus() == PoStatus.CONCLUIDA) {
             auditService.recordSafe(new AuditService.Entry(auditService.actorFrom(user, req), "PO_CONCLUIDA",
@@ -166,8 +168,15 @@ public class PoController {
         PurchaseOrder po = poService.resolveDivergence(id, user.companyId(), new PoService.ResolucaoDivergencia(body.outcome(), body.notes()));
         auditService.recordSafe(new AuditService.Entry(auditService.actorFrom(user, req), "DIVERGENCIA_RESOLVIDA",
                 "PurchaseOrder", po.getId(), po.getReference(),
-                Map.of("desfecho", body.outcome(), "notas", body.notes() != null ? body.notes() : "")));
+                comNotas(Map.of("desfecho", body.outcome()), body.notes())));
         return toDto(po);
+    }
+
+    /** `notas: req.body.notes || null` — vazio conta como ausente. */
+    private static Map<String, Object> comNotas(Map<String, Object> base, String notes) {
+        Map<String, Object> m = new java.util.LinkedHashMap<>(base);
+        m.put("notas", notes == null || notes.isEmpty() ? null : notes);
+        return m;
     }
 
     private Map<String, Object> reasonDetail(String reason) {
@@ -176,7 +185,8 @@ public class PoController {
         return m;
     }
 
+    /** Transições devolvem só a linha, como o `prisma.purchaseOrder.update` sem include do Node. */
     private PurchaseOrderDto toDto(PurchaseOrder po) {
-        return PurchaseOrderDto.de(po);
+        return PurchaseOrderDto.escalar(po);
     }
 }

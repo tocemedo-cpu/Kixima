@@ -1,5 +1,6 @@
 package ao.kixima.invoice;
 
+import org.hibernate.annotations.UpdateTimestamp;
 import ao.kixima.common.persistence.AbstractPersistableEntity;
 import ao.kixima.po.PurchaseOrder;
 import jakarta.persistence.Column;
@@ -121,6 +122,7 @@ public class Invoice extends AbstractPersistableEntity<String> {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 

@@ -155,7 +155,7 @@ public class ContractService {
     public ContractDto getContract(String id, CurrentUser user) {
         Contract contract = contratoComAcesso(id, user);
         List<PurchaseOrderDto> callOffs = purchaseOrderRepository.findByContractIdOrderByCreatedAtDesc(id).stream()
-                .map(PurchaseOrderDto::de).toList();
+                .map(PurchaseOrderDto::escalar).toList();
         return ContractDto.de(contract, false, callOffs);
     }
 

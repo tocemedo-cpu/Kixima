@@ -1,5 +1,6 @@
 package ao.kixima.support;
 
+import org.hibernate.annotations.UpdateTimestamp;
 import ao.kixima.common.persistence.AbstractPersistableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,6 +20,7 @@ public class SupportCategoryImage extends AbstractPersistableEntity<String> {
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 

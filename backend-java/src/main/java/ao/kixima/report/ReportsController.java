@@ -1,5 +1,7 @@
 package ao.kixima.report;
 
+import ao.kixima.common.Decimais;
+
 import ao.kixima.common.error.NotFoundException;
 import ao.kixima.company.Company;
 import ao.kixima.company.CompanyRepository;
@@ -53,6 +55,7 @@ public class ReportsController {
         String companyId = CurrentUserHolder.get().companyId();
         Company empresa = companyRepository.findById(companyId).orElseThrow(() -> new NotFoundException("Empresa"));
         planService.assertFeature(empresa, PlanFeatureFlag.RELATORIO_CONTEUDO_LOCAL, "Relatório de conteúdo local");
-        return conteudoLocalService.gerar(companyId, de, ate);
+        // conteudoLocalService.js faz TODA a aritmética com Number(): os decimais deste relatório são números.
+        return (Map<String, Object>) Decimais.numerosEmProfundidade(conteudoLocalService.gerar(companyId, de, ate));
     }
 }

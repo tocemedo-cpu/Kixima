@@ -1,5 +1,7 @@
 package ao.kixima.report;
 
+import ao.kixima.common.Decimais;
+
 import ao.kixima.catalog.Product;
 import ao.kixima.catalog.ProductRepository;
 import ao.kixima.company.Company;
@@ -121,6 +123,7 @@ public class ReportsService {
         List<Map<String, Object>> topProducts = new ArrayList<>(byProduct.values());
         topProducts.sort(Comparator.comparingInt((Map<String, Object> m) -> (Integer) m.get("quantity")).reversed());
         if (topProducts.size() > 10) topProducts = topProducts.subList(0, 10);
+        for (Map<String, Object> m : topProducts) m.put("total", Decimais.numero((BigDecimal) m.get("total"))); // cur.total += Number(it.lineTotal)
 
         List<Map<String, Object>> topViewed = products.stream().filter(p -> p.getViewCount() > 0)
                 .sorted(Comparator.comparingInt(Product::getViewCount).reversed()).limit(10)
@@ -149,7 +152,7 @@ public class ReportsService {
         out.put("lowStock", lowStock);
         out.put("totalOrders", orders.size());
         out.put("statusCounts", statusCounts);
-        out.put("revenue", revenue);
+        out.put("revenue", Decimais.numero(revenue)); // Number(revenueAgg._sum.totalAmount || 0)
         out.put("totalViews", totalViews);
         out.put("topProducts", topProducts);
         out.put("topViewed", topViewed);

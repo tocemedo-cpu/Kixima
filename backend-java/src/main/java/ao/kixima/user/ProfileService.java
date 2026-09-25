@@ -105,12 +105,12 @@ public class ProfileService {
         List<Card> cards = isSupplier
                 ? List.of(
                 new Card("orders", "info", "Ordens Recebidas", yearOrders.size(), null, "Este ano"),
-                new Card("payment", "success", "Valor Total Vendido", totalValue, true, "Este ano"),
+                new Card("payment", "success", "Valor Total Vendido", ao.kixima.common.Decimais.numero(totalValue), true, "Este ano"),
                 new Card("suppliers", "info", "Clientes", counterpart.size(), null, "Com transações"),
                 new Card("reception", "pending", "Itens Entregues", itemsMoved, null, "Total"))
                 : List.of(
                 new Card("orders", "info", "Ordens de Compra", yearOrders.size(), null, "Este ano"),
-                new Card("payment", "success", "Valor Total Comprado", totalValue, true, "Este ano"),
+                new Card("payment", "success", "Valor Total Comprado", ao.kixima.common.Decimais.numero(totalValue), true, "Este ano"),
                 new Card("suppliers", "info", "Fornecedores", counterpart.size(), null, "Com transações"),
                 new Card("reception", "pending", "Itens Recebidos", itemsMoved, null, "Total"));
 

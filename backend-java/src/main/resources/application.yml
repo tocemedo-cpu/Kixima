@@ -72,6 +72,18 @@ spring.web.resources.add-mappings: false
 # por omissão do Spring.
 
 kixima:
+  # Espelha backend/src/middleware/rateLimit.js — mesmos máximos e variáveis de ambiente.
+  # Desligado no perfil de teste (como NODE_ENV=test no Node); trust-proxy = `app.set('trust proxy', 1)`.
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    trust-proxy: true
+    api: ${API_RATE_LIMIT:600}
+    auth: ${AUTH_RATE_LIMIT:60}
+    forgot-password: ${FORGOT_PASSWORD_RATE_LIMIT:10}
+    sensitive: 30
+    chat: ${CHAT_RATE_LIMIT:60}
+    feedback: 10
+    candidaturas: 10
   # Endereço público usado nos links de email (convite, recuperação de
   # senha, ...). Vazio por omissão: cada chamador usa o endereço real do
   # pedido (protocolo+host) como já faz o Node quando APP_URL não está

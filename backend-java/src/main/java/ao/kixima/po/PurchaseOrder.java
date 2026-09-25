@@ -1,5 +1,6 @@
 package ao.kixima.po;
 
+import org.hibernate.annotations.UpdateTimestamp;
 import ao.kixima.common.persistence.AbstractPersistableEntity;
 import ao.kixima.company.Company;
 import ao.kixima.invoice.Invoice;
@@ -155,6 +156,7 @@ public class PurchaseOrder extends AbstractPersistableEntity<String> {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -432,5 +434,9 @@ public class PurchaseOrder extends AbstractPersistableEntity<String> {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Instant getDivergenceResolvedAt() {
+        return divergenceResolvedAt;
     }
 }

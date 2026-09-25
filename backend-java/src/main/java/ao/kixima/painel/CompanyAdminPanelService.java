@@ -1,5 +1,7 @@
 package ao.kixima.painel;
 
+import ao.kixima.common.Decimais;
+
 import ao.kixima.common.error.NotFoundException;
 import ao.kixima.company.Company;
 import ao.kixima.company.CompanyDocumentRepository;
@@ -91,8 +93,9 @@ public class CompanyAdminPanelService {
         this.objectMapper = objectMapper;
     }
 
-    static BigDecimal soma(List<PurchaseOrder> os, Function<PurchaseOrder, BigDecimal> f) {
-        return os.stream().map(f).filter(v -> v != null).reduce(BigDecimal.ZERO, BigDecimal::add);
+    /** `num()` do companyAdminService.js: as somas saem como número. */
+    static Number soma(List<PurchaseOrder> os, Function<PurchaseOrder, BigDecimal> f) {
+        return Decimais.numero(os.stream().map(f).filter(v -> v != null).reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
     static Map<String, Object> mapa(Object... kv) {

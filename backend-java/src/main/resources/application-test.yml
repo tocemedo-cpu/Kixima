@@ -10,6 +10,9 @@ spring:
       ddl-auto: validate
 
 kixima:
+  # Como no Node (rateLimit.js desliga-se em NODE_ENV=test): a configuração real testa-se em RateLimitFilterTest.
+  rate-limit:
+    enabled: false
   auth:
     jwt-secret: teste-jwt-secret-com-pelo-menos-32-caracteres-000000
   erp:

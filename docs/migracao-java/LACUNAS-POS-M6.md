@@ -94,13 +94,17 @@ adaptadores de gateway (EMIS, PayPay, BAI, BFA, Standard Bank Angola) — todos
   pastas por tipo de ficheiro, 502 com o motivo explicado quando o bucket falha;
   a cópia de segurança passa a correr com S3 configurado. Só testável de ponta a
   ponta contra um bucket real (em M7, no staging).
-- **Rate limiting** (Bucket4j): **portado** para a API externa `/api/v1/catalogo`
-  (120/min por chave). Os restantes limitadores do Node (`rateLimiters.js`:
-  login, chat, uploads) continuam por portar — ver M7.
+- ~~**Rate limiting** (Bucket4j)~~ — **PORTADO** (M7): `/api/v1/catalogo`
+  (120/min por chave) e, em `security/RateLimitFilter`, todos os limitadores
+  de `middleware/rateLimit.js` + os locais de feedback/candidaturas — ver
+  `M7-PARIDADE.md`, secção 4.
 - **SMTP** como provider de email (JavaMail) — só `console`/`brevo` existem.
 - **i18n dos emails** (`i18n/emails.js`) — o email sai sempre em português.
 - **Interceptor genérico de tecto de linhas** (`DB_MAX_ROWS`) — só aplicado
   explicitamente no catálogo.
+
+O estado destes três (SMTP, i18n, `DB_MAX_ROWS`) e o que o replay de contrato
+do M7 encontrou e corrigiu está em `M7-PARIDADE.md`.
 
 ## Ordem proposta (mesma disciplina de M5/M6: um commit + testes por domínio)
 

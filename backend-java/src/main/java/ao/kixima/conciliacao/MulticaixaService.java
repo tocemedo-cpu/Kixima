@@ -41,10 +41,11 @@ public class MulticaixaService {
 
     public List<String> emFalta() {
         List<String> falta = new ArrayList<>();
-        if (baseUrl == null || baseUrl.isBlank()) falta.add("EMIS_BASE_URL");
-        if (posId == null || posId.isBlank()) falta.add("EMIS_POS_ID");
-        if (token == null || token.isBlank()) falta.add("EMIS_TOKEN");
-        if (callbackUrl == null || callbackUrl.isBlank()) falta.add("EMIS_CALLBACK_URL");
+        // As chaves do CONFIG do multicaixaService.js (não os nomes das variáveis de ambiente) — é o que o painel mostra.
+        if (baseUrl == null || baseUrl.isBlank()) falta.add("baseUrl");
+        if (posId == null || posId.isBlank()) falta.add("posId");
+        if (token == null || token.isBlank()) falta.add("token");
+        if (callbackUrl == null || callbackUrl.isBlank()) falta.add("callbackUrl");
         return falta;
     }
 

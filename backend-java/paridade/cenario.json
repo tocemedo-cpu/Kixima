@@ -1,0 +1,516 @@
+[
+  {
+    "nome": "health",
+    "caminho": "/health"
+  },
+  {
+    "nome": "ready",
+    "caminho": "/ready"
+  },
+  {
+    "nome": "planos (público)",
+    "caminho": "/api/planos"
+  },
+  {
+    "nome": "retenção (público)",
+    "caminho": "/api/retencao"
+  },
+  {
+    "nome": "stats públicas",
+    "caminho": "/api/public/stats"
+  },
+  {
+    "nome": "sem sessão → 401",
+    "caminho": "/api/catalog"
+  },
+  {
+    "nome": "auth/me (comprador)",
+    "como": "comprador",
+    "caminho": "/api/auth/me",
+    "guardar": {
+      "compradora": "$.user.companyId"
+    }
+  },
+  {
+    "nome": "auth/me (admin)",
+    "como": "adminSistema",
+    "caminho": "/api/auth/me"
+  },
+  {
+    "nome": "catálogo (comprador)",
+    "como": "comprador",
+    "caminho": "/api/catalog",
+    "guardar": {
+      "produto": "$[name=Mangueira hidráulica de alta pressão 2\"].id",
+      "fornecedora": "$[0].supplierId"
+    }
+  },
+  {
+    "nome": "produto por id",
+    "como": "comprador",
+    "caminho": "/api/catalog/{{produto}}"
+  },
+  {
+    "nome": "avaliações do produto",
+    "como": "comprador",
+    "caminho": "/api/catalog/{{produto}}/reviews"
+  },
+  {
+    "nome": "catálogo (fornecedor, documentos)",
+    "como": "fornecedor",
+    "caminho": "/api/catalog/documents"
+  },
+  {
+    "nome": "movimentos de stock",
+    "como": "fornecedor",
+    "caminho": "/api/catalog/movements"
+  },
+  {
+    "nome": "chaves de API",
+    "como": "fornecedor",
+    "caminho": "/api/catalog/api-keys"
+  },
+  {
+    "nome": "marketplace search",
+    "como": "comprador",
+    "caminho": "/api/marketplace/search?limit=5&sort=preco_asc"
+  },
+  {
+    "nome": "marketplace facets",
+    "como": "comprador",
+    "caminho": "/api/marketplace/facets"
+  },
+  {
+    "nome": "marketplace suppliers",
+    "como": "comprador",
+    "caminho": "/api/marketplace/suppliers"
+  },
+  {
+    "nome": "marketplace compare",
+    "como": "comprador",
+    "caminho": "/api/marketplace/compare?productId={{produto}}"
+  },
+  {
+    "nome": "favoritos",
+    "como": "comprador",
+    "caminho": "/api/marketplace/favorites"
+  },
+  {
+    "nome": "pesquisas guardadas",
+    "como": "comprador",
+    "caminho": "/api/marketplace/saved-searches"
+  },
+  {
+    "nome": "dashboard comprador",
+    "como": "comprador",
+    "caminho": "/api/dashboard/comprador"
+  },
+  {
+    "nome": "buyer orders",
+    "como": "comprador",
+    "caminho": "/api/buyer/orders"
+  },
+  {
+    "nome": "buyer suppliers",
+    "como": "comprador",
+    "caminho": "/api/buyer/suppliers"
+  },
+  {
+    "nome": "buyer profile",
+    "como": "comprador",
+    "caminho": "/api/buyer/profile"
+  },
+  {
+    "nome": "financeiro overview",
+    "como": "financeiro",
+    "caminho": "/api/financeiro/overview"
+  },
+  {
+    "nome": "financeiro invoices",
+    "como": "financeiro",
+    "caminho": "/api/financeiro/invoices"
+  },
+  {
+    "nome": "company-admin dashboard",
+    "como": "companyAdmin",
+    "caminho": "/api/company-admin/dashboard"
+  },
+  {
+    "nome": "company-admin organização",
+    "como": "companyAdmin",
+    "caminho": "/api/company-admin/organizacao"
+  },
+  {
+    "nome": "company-admin settings",
+    "como": "companyAdmin",
+    "caminho": "/api/company-admin/settings"
+  },
+  {
+    "nome": "empresas (admin)",
+    "como": "adminSistema",
+    "caminho": "/api/companies"
+  },
+  {
+    "nome": "empresa por id",
+    "como": "companyAdmin",
+    "caminho": "/api/companies/{{compradora}}"
+  },
+  {
+    "nome": "subscrição da empresa",
+    "como": "companyAdmin",
+    "caminho": "/api/companies/{{compradora}}/subscription"
+  },
+  {
+    "nome": "utilizadores da empresa",
+    "como": "companyAdmin",
+    "caminho": "/api/companies/users"
+  },
+  {
+    "nome": "convites da empresa",
+    "como": "companyAdmin",
+    "caminho": "/api/companies/invites"
+  },
+  {
+    "nome": "assinatura estado",
+    "como": "companyAdmin",
+    "caminho": "/api/assinatura"
+  },
+  {
+    "nome": "assinatura canais",
+    "como": "companyAdmin",
+    "caminho": "/api/assinatura/canais"
+  },
+  {
+    "nome": "add-ons catálogo",
+    "como": "companyAdmin",
+    "caminho": "/api/addons/catalogo"
+  },
+  {
+    "nome": "cotações",
+    "como": "comprador",
+    "caminho": "/api/quotes"
+  },
+  {
+    "nome": "contratos",
+    "como": "comprador",
+    "caminho": "/api/contracts"
+  },
+  {
+    "nome": "apólices da empresa",
+    "como": "fornecedor",
+    "caminho": "/api/policies/company"
+  },
+  {
+    "nome": "perfil do utilizador",
+    "como": "fornecedor",
+    "caminho": "/api/users/profile"
+  },
+  {
+    "nome": "users/me",
+    "como": "fornecedor",
+    "caminho": "/api/users/me"
+  },
+  {
+    "nome": "notificações",
+    "como": "fornecedor",
+    "caminho": "/api/notifications"
+  },
+  {
+    "nome": "relatório fornecedor",
+    "como": "fornecedor",
+    "caminho": "/api/reports/fornecedor"
+  },
+  {
+    "nome": "kits",
+    "como": "fornecedor",
+    "caminho": "/api/kits"
+  },
+  {
+    "nome": "po-robot regras",
+    "como": "companyAdmin",
+    "caminho": "/api/po-robot/regras"
+  },
+  {
+    "nome": "erp config",
+    "como": "companyAdmin",
+    "caminho": "/api/companies/{{compradora}}/erp-config"
+  },
+  {
+    "nome": "support overview",
+    "como": "comprador",
+    "caminho": "/api/support/overview"
+  },
+  {
+    "nome": "support tickets",
+    "como": "comprador",
+    "caminho": "/api/support/tickets"
+  },
+  {
+    "nome": "conversas",
+    "como": "comprador",
+    "caminho": "/api/conversations"
+  },
+  {
+    "nome": "buyer payments",
+    "como": "comprador",
+    "caminho": "/api/buyer/payments"
+  },
+  {
+    "nome": "buyer deliveries",
+    "como": "comprador",
+    "caminho": "/api/buyer/deliveries"
+  },
+  {
+    "nome": "buyer receptions",
+    "como": "comprador",
+    "caminho": "/api/buyer/receptions"
+  },
+  {
+    "nome": "buyer activities",
+    "como": "comprador",
+    "caminho": "/api/buyer/activities"
+  },
+  {
+    "nome": "financeiro payments",
+    "como": "financeiro",
+    "caminho": "/api/financeiro/payments"
+  },
+  {
+    "nome": "company-admin reports",
+    "como": "companyAdmin",
+    "caminho": "/api/company-admin/reports"
+  },
+  {
+    "nome": "company-admin activities",
+    "como": "companyAdmin",
+    "caminho": "/api/company-admin/activities"
+  },
+  {
+    "nome": "taxas da empresa",
+    "como": "adminSistema",
+    "caminho": "/api/companies/{{compradora}}/platform-fees"
+  },
+  {
+    "nome": "assinatura fila (admin)",
+    "como": "adminSistema",
+    "caminho": "/api/assinatura/fila"
+  },
+  {
+    "nome": "add-ons fila (admin)",
+    "como": "adminSistema",
+    "caminho": "/api/addons/fila"
+  },
+  {
+    "nome": "add-on estado",
+    "como": "companyAdmin",
+    "caminho": "/api/addons/PO_ROBOT/estado"
+  },
+  {
+    "nome": "conciliação canais",
+    "como": "adminSistema",
+    "caminho": "/api/conciliacao/canais"
+  },
+  {
+    "nome": "supplier-development pedidos (admin)",
+    "como": "adminSistema",
+    "caminho": "/api/supplier-development/requests"
+  },
+  {
+    "nome": "faturação séries FE",
+    "como": "adminSistema",
+    "caminho": "/api/faturacao/agt-series-fe"
+  },
+  {
+    "nome": "criar PO",
+    "como": "comprador",
+    "metodo": "POST",
+    "caminho": "/api/purchase-orders",
+    "corpo": {
+      "supplierCompanyId": "{{fornecedora}}",
+      "items": [
+        {
+          "productId": "{{produto}}",
+          "quantity": 2
+        }
+      ]
+    },
+    "guardar": {
+      "po": "$.id"
+    }
+  },
+  {
+    "nome": "PO criada",
+    "como": "comprador",
+    "caminho": "/api/purchase-orders/{{po}}"
+  },
+  {
+    "nome": "PO inexistente → 404",
+    "como": "comprador",
+    "caminho": "/api/purchase-orders/00000000-0000-0000-0000-000000000000"
+  },
+  {
+    "nome": "PO inválida → 422",
+    "como": "comprador",
+    "metodo": "POST",
+    "caminho": "/api/purchase-orders",
+    "corpo": {
+      "items": []
+    }
+  },
+  {
+    "nome": "aprovar PO",
+    "como": "companyAdmin",
+    "metodo": "PATCH",
+    "caminho": "/api/purchase-orders/{{po}}/approve"
+  },
+  {
+    "nome": "aceitar PO (gera fatura)",
+    "como": "fornecedor",
+    "metodo": "PATCH",
+    "caminho": "/api/purchase-orders/{{po}}/accept"
+  },
+  {
+    "nome": "PO com fatura",
+    "como": "financeiro",
+    "caminho": "/api/purchase-orders/{{po}}",
+    "guardar": {
+      "fatura": "$.invoice.id"
+    }
+  },
+  {
+    "nome": "faturas pendentes",
+    "como": "financeiro",
+    "caminho": "/api/payments/invoices/pending"
+  },
+  {
+    "nome": "pagar fatura (comprovativo)",
+    "como": "financeiro",
+    "metodo": "POST",
+    "caminho": "/api/payments/invoices/{{fatura}}/pay",
+    "multipart": {
+      "ficheiros": {
+        "proof": {
+          "nome": "comprovativo.pdf",
+          "tipo": "application/pdf",
+          "conteudo": "%PDF-1.4 comprovativo de teste"
+        }
+      }
+    }
+  },
+  {
+    "nome": "histórico de pagamentos",
+    "como": "financeiro",
+    "caminho": "/api/payments/history"
+  },
+  {
+    "nome": "despachar",
+    "como": "fornecedor",
+    "metodo": "PATCH",
+    "caminho": "/api/purchase-orders/{{po}}/dispatch"
+  },
+  {
+    "nome": "entregue",
+    "como": "fornecedor",
+    "metodo": "PATCH",
+    "caminho": "/api/purchase-orders/{{po}}/delivered"
+  },
+  {
+    "nome": "receção conforme",
+    "como": "comprador",
+    "metodo": "PATCH",
+    "caminho": "/api/purchase-orders/{{po}}/reception",
+    "corpo": {
+      "conforme": true
+    }
+  },
+  {
+    "nome": "PO concluída",
+    "como": "comprador",
+    "caminho": "/api/purchase-orders/{{po}}"
+  },
+  {
+    "nome": "histórico da PO",
+    "como": "comprador",
+    "caminho": "/api/purchase-orders/{{po}}/history"
+  },
+  {
+    "nome": "lista de POs (fornecedor)",
+    "como": "fornecedor",
+    "caminho": "/api/purchase-orders"
+  },
+  {
+    "nome": "taxas da plataforma (admin)",
+    "como": "adminSistema",
+    "caminho": "/api/admin/platform-fees"
+  },
+  {
+    "nome": "admin users",
+    "como": "adminSistema",
+    "caminho": "/api/admin/users"
+  },
+  {
+    "nome": "admin users (comprador → 403)",
+    "como": "comprador",
+    "caminho": "/api/admin/users"
+  },
+  {
+    "nome": "admin activities",
+    "como": "adminSistema",
+    "caminho": "/api/admin/activities"
+  },
+  {
+    "nome": "admin audit-logs",
+    "como": "adminSistema",
+    "caminho": "/api/admin/audit-logs?limit=5"
+  },
+  {
+    "nome": "admin prontidão",
+    "como": "adminSistema",
+    "caminho": "/api/admin/prontidao"
+  },
+  {
+    "nome": "admin mfa-pendentes",
+    "como": "adminSistema",
+    "caminho": "/api/admin/mfa-pendentes"
+  },
+  {
+    "nome": "admin feedback",
+    "como": "adminSistema",
+    "caminho": "/api/admin/feedback"
+  },
+  {
+    "nome": "faturação métricas",
+    "como": "adminSistema",
+    "caminho": "/api/faturacao/metricas"
+  },
+  {
+    "nome": "faturação integridade sem série",
+    "como": "adminSistema",
+    "caminho": "/api/faturacao/integridade"
+  },
+  {
+    "nome": "conciliação fila",
+    "como": "adminSistema",
+    "caminho": "/api/conciliacao/por-resolver"
+  },
+  {
+    "nome": "supplier-development fee",
+    "caminho": "/api/supplier-development/fee"
+  },
+  {
+    "nome": "category-management thresholds",
+    "como": "adminSistema",
+    "caminho": "/api/category-management/admin/thresholds"
+  },
+  {
+    "nome": "relatório conteúdo local (CORE → plano)",
+    "como": "companyAdmin",
+    "caminho": "/api/reports/conteudo-local"
+  },
+  {
+    "nome": "logout",
+    "como": "comprador",
+    "metodo": "POST",
+    "caminho": "/api/auth/logout"
+  }
+]

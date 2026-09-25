@@ -1,5 +1,8 @@
 package ao.kixima.plan;
 
+import ao.kixima.common.Decimais;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import ao.kixima.common.error.PlanRequiredException;
 import ao.kixima.company.Company;
 import ao.kixima.company.CompanyPlan;
@@ -44,7 +47,7 @@ public class PlanService {
     private final int limiarAExpirarDias;
 
     /** Espelha `preco()` — com o equivalente mensal CALCULADO, nunca escrito à mão. */
-    public record Preco(BigDecimal valorUsd, String periodo, int meses, BigDecimal porMesUsd) {
+    public record Preco(@JsonSerialize(using = Decimais.ComoNumeroJs.class) BigDecimal valorUsd, String periodo, int meses, @JsonSerialize(using = Decimais.ComoNumeroJs.class) BigDecimal porMesUsd) {
     }
 
     public static final Map<String, Integer> MESES_DO_PERIODO = Map.of("MENSAL", 1, "TRIMESTRAL", 3, "SEMESTRAL", 6, "ANUAL", 12);
@@ -102,7 +105,7 @@ public class PlanService {
         return seatPriceCapUsd;
     }
 
-    public record SupplierDevAccessFee(BigDecimal amountUsd, String currency, boolean dueOnSubmission, boolean remainderCustom) {
+    public record SupplierDevAccessFee(@JsonSerialize(using = Decimais.ComoNumeroJs.class) BigDecimal amountUsd, String currency, boolean dueOnSubmission, boolean remainderCustom) {
     }
 
     /**
@@ -231,7 +234,7 @@ public class PlanService {
         }
     }
 
-    public record MonthlyAccessCost(int seats, BigDecimal seatPriceUsd, BigDecimal amountUsd, String currency) {
+    public record MonthlyAccessCost(int seats, @JsonSerialize(using = Decimais.ComoNumeroJs.class) BigDecimal seatPriceUsd, @JsonSerialize(using = Decimais.ComoNumeroJs.class) BigDecimal amountUsd, String currency) {
     }
 
     public MonthlyAccessCost monthlyAccessCost(int activeUsers, BigDecimal seatPriceUsd) {

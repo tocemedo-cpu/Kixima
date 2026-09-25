@@ -124,4 +124,24 @@ public class InvoiceLine extends AbstractPersistableEntity<String> {
     public String getIvaTaxCode() {
         return ivaTaxCode;
     }
+
+    public String getInvoiceId() {
+        return invoiceId;
+    }
+
+    public BigDecimal getDiscount() {
+        return discount;
+    }
+
+    public BigDecimal getIecAmount() {
+        return iecAmount;
+    }
+
+    public BigDecimal getIsAmount() {
+        return isAmount;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

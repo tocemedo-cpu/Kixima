@@ -1,5 +1,7 @@
 package ao.kixima.painel;
 
+import ao.kixima.common.Decimais;
+
 import ao.kixima.catalog.Product;
 import ao.kixima.catalog.ProductRepository;
 import ao.kixima.company.Company;
@@ -121,7 +123,7 @@ public class BuyerPanelService {
     static Map<String, Object> shapeOrder(PurchaseOrder po) {
         return mapa("id", po.getId(), "reference", po.getReference(), "status", po.getStatus().name(),
                 "supplier", supplier(po.getSupplierCompany()), "itemsCount", itemsCount(po),
-                "totalAmount", po.getTotalAmount(), "currency", po.getCurrency(),
+                "totalAmount", Decimais.numero(po.getTotalAmount()), "currency", po.getCurrency(),
                 "isCallOff", po.isCallOff(), "createdAt", po.getCreatedAt(), "acceptedAt", po.getAcceptedAt(),
                 "paymentDueAt", po.getPaymentDueAt(), "dispatchedAt", po.getDispatchedAt(),
                 "deliveredAt", po.getDeliveredAt(), "receivedAt", po.getReceivedAt(), "receptionStatus", po.getReceptionStatus());
@@ -143,8 +145,8 @@ public class BuyerPanelService {
             Payment pay = pagamentos.get(inv.getId());
             rows.add(mapa("id", inv.getId(), "poId", po.getId(), "reference", po.getReference(), "invoiceRef", inv.getReference(),
                     "supplier", supplier(po.getSupplierCompany()), "poDate", po.getCreatedAt(), "dueAt", inv.getDueAt(),
-                    "amount", inv.getAmount(), "paid", paid ? inv.getAmount() : (pay != null ? pay.getAmount() : BigDecimal.ZERO),
-                    "open", paid ? BigDecimal.ZERO : inv.getAmount(), "status", inv.getStatus().name(), "currency", inv.getCurrency(),
+                    "amount", Decimais.numero(inv.getAmount()), "paid", Decimais.numero(paid ? inv.getAmount() : (pay != null ? pay.getAmount() : BigDecimal.ZERO)),
+                    "open", Decimais.numero(paid ? BigDecimal.ZERO : inv.getAmount()), "status", inv.getStatus().name(), "currency", inv.getCurrency(),
                     "origin", po.isCallOff() ? "Call-off" : "Gerada a partir do Checkout"));
         }
         if ("ABERTO".equals(status)) rows = rows.stream().filter(r -> "PENDENTE".equals(r.get("status"))).toList();
@@ -157,9 +159,9 @@ public class BuyerPanelService {
         Instant monthStart = Meses.inicioDoMes();
         List<Invoice> all = orders.stream().map(PurchaseOrder::getInvoice).toList();
         Map<String, Object> kpis = mapa(
-                "aPagar", somaFaturas(all.stream().filter(i -> i.getStatus() == InvoiceStatus.PENDENTE).toList()),
-                "concluidos", somaFaturas(all.stream().filter(i -> i.getStatus() == InvoiceStatus.PAGA && i.getUpdatedAt() != null && !i.getUpdatedAt().isBefore(monthStart)).toList()),
-                "atrasados", somaFaturas(all.stream().filter(i -> i.getStatus() == InvoiceStatus.VENCIDA).toList()),
+                "aPagar", Decimais.numero(somaFaturas(all.stream().filter(i -> i.getStatus() == InvoiceStatus.PENDENTE).toList())),
+                "concluidos", Decimais.numero(somaFaturas(all.stream().filter(i -> i.getStatus() == InvoiceStatus.PAGA && i.getUpdatedAt() != null && !i.getUpdatedAt().isBefore(monthStart)).toList())),
+                "atrasados", Decimais.numero(somaFaturas(all.stream().filter(i -> i.getStatus() == InvoiceStatus.VENCIDA).toList())),
                 "totalPO", soma(orders, PurchaseOrder::getTotalAmount));
         return mapa("kpis", kpis, "items", rows);
     }

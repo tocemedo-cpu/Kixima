@@ -1,0 +1,56 @@
+{
+  "_nota": "Só o genuinamente não-determinístico entre duas execuções sobre a MESMA cópia da base: ids gerados, carimbos, tokens, latências. UUIDs, datas ISO e JWTs já são tratados como equivalentes pelo comparador quando ambos os lados têm essa forma. `referenciaPagamento` é gerada aleatoriamente na primeira leitura de uma fatura sem referência (nos dois backends). `searchText` é a coluna interna de pesquisa que o Node deixa escapar nas linhas Product/Company e o Java omite de propósito (o frontend não a usa — desvio documentado em M7-PARIDADE.md).",
+  "global": [
+    "id",
+    "token",
+    "latencyMs",
+    "verificadoEm",
+    "gravadoEm",
+    "ms",
+    "at",
+    "createdAt",
+    "updatedAt",
+    "issuedAt",
+    "dueAt",
+    "processedAt",
+    "approvedAt",
+    "acceptedAt",
+    "dispatchedAt",
+    "deliveredAt",
+    "receivedAt",
+    "assinadaEm",
+    "chargedAt",
+    "lastLoginAt",
+    "expiresAt",
+    "readAt",
+    "resolvedAt",
+    "hashDocumento",
+    "hashAnterior",
+    "proofUrl",
+    "avatarUrl",
+    "imageUrl",
+    "fileUrl",
+    "documentUrl",
+    "ip",
+    "agente",
+    "de",
+    "ate",
+    "periodo",
+    "referenciaPagamento",
+    "searchText"
+  ],
+  "porPasso": {
+    "admin prontidão": [
+      "detalhe",
+      "acao",
+      "estado",
+      "resumo"
+    ],
+    "ready": [
+      "env"
+    ],
+    "health": [
+      "env"
+    ]
+  }
+}

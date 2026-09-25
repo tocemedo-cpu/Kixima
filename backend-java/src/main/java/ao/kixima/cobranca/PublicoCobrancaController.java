@@ -1,5 +1,7 @@
 package ao.kixima.cobranca;
 
+import ao.kixima.common.Decimais;
+
 import ao.kixima.common.error.ErrorResponse;
 import ao.kixima.payment.PlatformFeeService;
 import ao.kixima.plan.PlanService;
@@ -42,10 +44,10 @@ public class PublicoCobrancaController {
     @GetMapping("/api/planos")
     public Map<String, Object> planos() {
         Map<String, Object> taxa = new LinkedHashMap<>();
-        taxa.put("porOrdemUsd", platformFeeService.perPo());
-        taxa.put("porFaturaUsd", platformFeeService.perInvoice());
-        taxa.put("limiarUsd", platformFeeService.thresholdUsd());
-        taxa.put("percentagemAcima", platformFeeService.percentAbove());
+        taxa.put("porOrdemUsd", Decimais.numero(platformFeeService.perPo()));
+        taxa.put("porFaturaUsd", Decimais.numero(platformFeeService.perInvoice()));
+        taxa.put("limiarUsd", Decimais.numero(platformFeeService.thresholdUsd()));
+        taxa.put("percentagemAcima", Decimais.numero(platformFeeService.percentAbove()));
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("planos", planService.tabela());
         // Publicado junto: o que se paga por transação é a outra metade do modelo.

@@ -24,8 +24,9 @@ public final class EventPayloads {
     private EventPayloads() {
     }
 
-    private static BigDecimal num(BigDecimal v) {
-        return v == null ? BigDecimal.ZERO : v;
+    /** `const num = (d) => Number(d ?? 0)` do eventBus.js: nos eventos os valores são NÚMEROS (não o texto Decimal das respostas HTTP). */
+    private static double num(BigDecimal v) {
+        return v == null ? 0d : v.doubleValue();
     }
 
     private static Map<String, Object> empresa(Company c) {

@@ -377,7 +377,7 @@ public class PoService {
                 erpExternalId == null || erpExternalId.isBlank() ? null : erpExternalId, null));
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("po", po.getReference());
-        detail.put("valor", payment.getAmount().toPlainString());
+        detail.put("valor", ao.kixima.common.Decimais.texto(payment.getAmount()));
         detail.put("erpExternalId", erpExternalId == null || erpExternalId.isBlank() ? null : erpExternalId);
         auditService.record(new AuditService.Entry(ATOR_ERP, "PAGAMENTO_CONFIRMADO_ERP", "Payment", payment.getId(),
                 payment.getReference(), detail));
@@ -411,7 +411,8 @@ public class PoService {
 
     @Transactional(readOnly = true)
     public List<PurchaseOrder> listPurchaseOrders(String companyId, PersonaRole role, PoStatus status) {
-        return purchaseOrderRepository.findAll(PurchaseOrderSpecifications.paraListagem(companyId, role, status));
+        return purchaseOrderRepository.findAll(PurchaseOrderSpecifications.paraListagem(companyId, role, status),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
     }
 
     // --- 2. Aprovação (Company Admin — ponto único) ---------------------------

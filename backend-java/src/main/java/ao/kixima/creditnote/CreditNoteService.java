@@ -160,7 +160,7 @@ public class CreditNoteService {
             Map<String, Object> detail = new LinkedHashMap<>();
             detail.put("fatura", fatura.reference());
             detail.put("motivo", motivoLimpo);
-            detail.put("valor", valor.toPlainString());
+            detail.put("valor", ao.kixima.common.Decimais.texto(valor));
             detail.put("moeda", fatura.currency());
             auditService.record(new AuditService.Entry(actor != null ? actor : new Actor(user.id(), user.name(), null, user.companyId(), null),
                     "NOTA_CREDITO_EMITIDA", "CreditNote", criada.getId(), criada.getReference(), detail));

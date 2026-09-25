@@ -29,7 +29,8 @@ import java.util.function.Consumer;
 public class HttpGatewayAdapter implements GatewayAdapter {
 
     /** Uma variável de ambiente exigida: o nome que o Node reporta em "Em falta" e o valor lido. */
-    public record Credencial(String nomeEnv, String valor) {
+    /** {@code campo} é a chave do CONFIG do serviço Node (baseUrl, posId…): é o que `emFalta` expõe; {@code nomeEnv} vai na mensagem de erro. */
+    public record Credencial(String nomeEnv, String campo, String valor) {
         boolean ausente() {
             return valor == null || valor.isBlank();
         }
@@ -66,12 +67,13 @@ public class HttpGatewayAdapter implements GatewayAdapter {
     @Override
     public List<String> emFalta() {
         List<String> falta = new ArrayList<>();
-        for (Credencial c : credenciais) if (c.ausente()) falta.add(c.nomeEnv());
+        for (Credencial c : credenciais) if (c.ausente()) falta.add(c.campo());
         return falta;
     }
 
     private void exigirConfiguracao() {
-        List<String> falta = emFalta();
+        List<String> falta = new ArrayList<>();
+        for (Credencial c : credenciais) if (c.ausente()) falta.add(c.nomeEnv());
         if (!falta.isEmpty()) {
             throw new IllegalStateException(def.nome() + " não está configurado. Em falta: " + String.join(", ", falta)
                     + ". Este canal não funciona sem credenciais " + artigo() + def.nome() + " — e não simula pagamentos.");

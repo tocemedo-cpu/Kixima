@@ -57,11 +57,21 @@ public class GlobalExceptionHandler {
     /** Bean Validation (@Valid em @RequestBody) — equivalente ao zod nas rotas. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
-        List<String> mensagens = ex.getBindingResult().getFieldErrors().stream()
-                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
-                .collect(Collectors.toList());
-        log.warn("VALIDATION_ERROR [{}] {}", req.getRequestURI(), mensagens);
-        return ResponseEntity.status(422).body(ErrorResponse.of("VALIDATION_ERROR", "Dados inválidos.", mensagens));
+        // A mesma forma do `result.error.flatten()` do zod (utils/validate.js): erros de
+        // campo agrupados pelo PRIMEIRO segmento do caminho (items[0].quantity → items),
+        // erros do objecto em `formErrors`.
+        java.util.Map<String, List<String>> fieldErrors = new java.util.LinkedHashMap<>();
+        for (var fe : ex.getBindingResult().getFieldErrors()) {
+            String campo = fe.getField().split("[.\\[]", 2)[0];
+            fieldErrors.computeIfAbsent(campo, k -> new java.util.ArrayList<>()).add(fe.getDefaultMessage());
+        }
+        List<String> formErrors = ex.getBindingResult().getGlobalErrors().stream()
+                .map(ge -> ge.getDefaultMessage()).collect(Collectors.toList());
+        java.util.Map<String, Object> details = new java.util.LinkedHashMap<>();
+        details.put("formErrors", formErrors);
+        details.put("fieldErrors", fieldErrors);
+        log.warn("VALIDATION_ERROR [{}] {}", req.getRequestURI(), fieldErrors);
+        return ResponseEntity.status(422).body(ErrorResponse.of("VALIDATION_ERROR", "Dados inválidos.", details));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)

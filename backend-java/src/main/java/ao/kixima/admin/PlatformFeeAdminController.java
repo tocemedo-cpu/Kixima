@@ -45,7 +45,7 @@ public class PlatformFeeAdminController {
     public PlatformFeeDto cobrar(@PathVariable String id, HttpServletRequest req) {
         PlatformFeeDto fee = platformFeeService.chargePlatformFee(id);
         auditService.recordSafe(new AuditService.Entry(auditService.actorFrom(CurrentUserHolder.get(), req), "TAXA_COBRADA",
-                "PlatformFee", fee.id(), fee.id(), Map.of("valor", fee.amount().toPlainString(), "moeda", fee.currency())));
+                "PlatformFee", fee.id(), fee.id(), Map.of("valor", ao.kixima.common.Decimais.texto(fee.amount()), "moeda", fee.currency())));
         return fee;
     }
 }

@@ -1,5 +1,7 @@
 package ao.kixima.painel;
 
+import ao.kixima.common.Decimais;
+
 import ao.kixima.company.Company;
 import ao.kixima.contract.Contract;
 import ao.kixima.contract.ContractRepository;
@@ -51,7 +53,7 @@ public class FinanceiroPanelService {
             return mapa("id", inv.getId(), "reference", inv.getReference(), "supplier", supplier(),
                     "poReference", po != null ? po.getReference() : contract != null ? contract.getReference() : null,
                     "poId", inv.getPurchaseOrderId() != null ? inv.getPurchaseOrderId() : po != null ? po.getId() : null,
-                    "amount", inv.getAmount(), "currency", inv.getCurrency(), "status", inv.getStatus().name(),
+                    "amount", Decimais.numero(inv.getAmount()), "currency", inv.getCurrency(), "status", inv.getStatus().name(),
                     "issuedAt", inv.getIssuedAt(), "dueAt", inv.getDueAt(),
                     "paidAt", payment == null ? null : payment.getProcessedAt());
         }
@@ -74,8 +76,9 @@ public class FinanceiroPanelService {
         return out;
     }
 
-    static BigDecimal soma(List<Carregada> is) {
-        return is.stream().map(c -> c.inv().getAmount()).reduce(BigDecimal.ZERO, BigDecimal::add);
+    /** `num()` do financeiroService.js: as somas saem como número. */
+    static Number soma(List<Carregada> is) {
+        return Decimais.numero(is.stream().map(c -> c.inv().getAmount()).reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
     private static List<Carregada> pendentes(List<Carregada> all) {

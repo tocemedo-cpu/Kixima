@@ -1,5 +1,6 @@
 package ao.kixima.catalog;
 
+import org.hibernate.annotations.UpdateTimestamp;
 import ao.kixima.common.persistence.AbstractPersistableEntity;
 import ao.kixima.company.Company;
 import jakarta.persistence.Column;
@@ -166,6 +167,7 @@ public class Product extends AbstractPersistableEntity<String> {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 

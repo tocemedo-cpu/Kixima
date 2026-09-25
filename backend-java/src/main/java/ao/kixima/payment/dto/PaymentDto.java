@@ -20,12 +20,18 @@ public record PaymentDto(String id, String invoiceId, BigDecimal amount, String 
                          Instant receivedAt, String receivedById, Instant processedAt, String serie, Integer numeroNaSerie,
                          String hashDocumento, String hashAnterior, Instant assinadaEm, String agtDocumentNo,
                          @JsonInclude(JsonInclude.Include.NON_NULL) InvoiceDto invoice,
-                         @JsonInclude(JsonInclude.Include.NON_NULL) Object agtInvoiceResubmission) {
+                         @JsonInclude(JsonInclude.Include.NON_NULL) Object agtInvoiceResubmission,
+                         @JsonInclude(JsonInclude.Include.NON_NULL) String processedByName) {
 
     public static PaymentDto de(Payment p, InvoiceDto invoice, Object agtInvoiceResubmission) {
+        return de(p, invoice, agtInvoiceResubmission, null);
+    }
+
+    /** Detalhe da PO: o Node acrescenta {@code processedByName} ao pagamento (Payment só guarda o id). */
+    public static PaymentDto de(Payment p, InvoiceDto invoice, Object agtInvoiceResubmission, String processedByName) {
         return new PaymentDto(p.getId(), p.getInvoiceId(), p.getAmount(), p.getCurrency(), p.getStatus(), p.getCanal(),
                 p.getProcessedById(), p.getReference(), p.getProofUrl(), p.getProofName(), p.getReceivedAt(), p.getReceivedById(),
                 p.getProcessedAt(), p.getSerie(), p.getNumeroNaSerie(), p.getHashDocumento(), p.getHashAnterior(), p.getAssinadaEm(),
-                p.getAgtDocumentNo(), invoice, agtInvoiceResubmission);
+                p.getAgtDocumentNo(), invoice, agtInvoiceResubmission, processedByName);
     }
 }

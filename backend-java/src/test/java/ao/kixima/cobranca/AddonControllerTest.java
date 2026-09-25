@@ -107,6 +107,7 @@ class AddonControllerTest {
         mockMvc.perform(get("/api/addons/catalogo").header("Authorization", "Bearer " + login(COMPRADOR_EMAIL)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.addonKey == 'PO_ROBOT')].requerPlano").value("PRO"))
+                // Preço de tabela é aritmética JS no Node → número (ao contrário das colunas Decimal, que saem como texto).
                 .andExpect(jsonPath("$[0].preco.valorUsd").value(org.hamcrest.Matchers.greaterThan(0)));
 
         porNoPlano("PRO", 2);

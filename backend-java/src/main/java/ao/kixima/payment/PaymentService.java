@@ -165,7 +165,7 @@ public class PaymentService {
             // Auditoria DENTRO da transação: um pagamento sem registo não existe.
             Map<String, Object> detail = new LinkedHashMap<>();
             detail.put("fatura", invoice.getReference());
-            detail.put("valor", invoice.getAmount().toPlainString());
+            detail.put("valor", ao.kixima.common.Decimais.texto(invoice.getAmount()));
             detail.put("moeda", invoice.getCurrency());
             detail.put("comprovativo", proofName);
             auditService.record(new AuditService.Entry(actor != null ? actor : new Actor(user.id(), user.name(), null, user.companyId(), null),
@@ -255,7 +255,7 @@ public class PaymentService {
             payment.confirmarRececao(Instant.now(), user.id());
             Map<String, Object> detail = new LinkedHashMap<>();
             detail.put("fatura", payment.getInvoice().getReference());
-            detail.put("valor", payment.getAmount().toPlainString());
+            detail.put("valor", ao.kixima.common.Decimais.texto(payment.getAmount()));
             detail.put("moeda", payment.getCurrency());
             auditService.record(new AuditService.Entry(actor != null ? actor : new Actor(user.id(), user.name(), null, user.companyId(), null),
                     "RECECAO_VALOR_CONFIRMADA", "Payment", payment.getId(), payment.getReference(), detail));

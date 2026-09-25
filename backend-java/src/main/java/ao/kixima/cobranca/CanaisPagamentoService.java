@@ -41,8 +41,8 @@ public class CanaisPagamentoService {
                         "Implementado contra a especificação da EMIS, por ligar. Requer contrato e credenciais.",
                         "A EMIS recusou o pedido ({status}). A fatura NÃO foi paga.", "AOA"),
                 emisBaseUrl, emisToken,
-                List.of(new HttpGatewayAdapter.Credencial("EMIS_BASE_URL", emisBaseUrl), new HttpGatewayAdapter.Credencial("EMIS_POS_ID", emisPosId),
-                        new HttpGatewayAdapter.Credencial("EMIS_TOKEN", emisToken), new HttpGatewayAdapter.Credencial("EMIS_CALLBACK_URL", emisCallbackUrl)),
+                List.of(new HttpGatewayAdapter.Credencial("EMIS_BASE_URL", "baseUrl", emisBaseUrl), new HttpGatewayAdapter.Credencial("EMIS_POS_ID", "posId", emisPosId),
+                        new HttpGatewayAdapter.Credencial("EMIS_TOKEN", "token", emisToken), new HttpGatewayAdapter.Credencial("EMIS_CALLBACK_URL", "callbackUrl", emisCallbackUrl)),
                 corpo -> {
                     corpo.put("token", emisToken);
                     if (corpo.containsKey("phone")) corpo.put("mobile", corpo.remove("phone"));
@@ -56,8 +56,8 @@ public class CanaisPagamentoService {
                         "Forma provável, por confirmar contra a documentação real da PayPay. Requer contrato e credenciais.",
                         "A PayPay recusou o pedido ({status}). O documento NÃO foi pago.", null),
                 paypayBaseUrl, paypayToken,
-                List.of(new HttpGatewayAdapter.Credencial("PAYPAY_BASE_URL", paypayBaseUrl), new HttpGatewayAdapter.Credencial("PAYPAY_MERCHANT_ID", paypayMerchantId),
-                        new HttpGatewayAdapter.Credencial("PAYPAY_TOKEN", paypayToken), new HttpGatewayAdapter.Credencial("PAYPAY_CALLBACK_URL", paypayCallbackUrl)),
+                List.of(new HttpGatewayAdapter.Credencial("PAYPAY_BASE_URL", "baseUrl", paypayBaseUrl), new HttpGatewayAdapter.Credencial("PAYPAY_MERCHANT_ID", "merchantId", paypayMerchantId),
+                        new HttpGatewayAdapter.Credencial("PAYPAY_TOKEN", "token", paypayToken), new HttpGatewayAdapter.Credencial("PAYPAY_CALLBACK_URL", "callbackUrl", paypayCallbackUrl)),
                 corpo -> {
                     corpo.put("merchantId", paypayMerchantId);
                     corpo.put("callbackUrl", paypayCallbackUrl);
@@ -75,8 +75,8 @@ public class CanaisPagamentoService {
                         "Forma provável, por confirmar contra a documentação real da API do " + nome + ". Requer contrato e credenciais.",
                         "O " + nome + " recusou o pedido ({status}). O documento NÃO foi pago.", null),
                 baseUrl, clientSecret,
-                List.of(new HttpGatewayAdapter.Credencial(envPrefix + "_BASE_URL", baseUrl), new HttpGatewayAdapter.Credencial(envPrefix + "_CLIENT_ID", clientId),
-                        new HttpGatewayAdapter.Credencial(envPrefix + "_CLIENT_SECRET", clientSecret), new HttpGatewayAdapter.Credencial(envPrefix + "_CALLBACK_URL", callbackUrl)),
+                List.of(new HttpGatewayAdapter.Credencial(envPrefix + "_BASE_URL", "baseUrl", baseUrl), new HttpGatewayAdapter.Credencial(envPrefix + "_CLIENT_ID", "clientId", clientId),
+                        new HttpGatewayAdapter.Credencial(envPrefix + "_CLIENT_SECRET", "clientSecret", clientSecret), new HttpGatewayAdapter.Credencial(envPrefix + "_CALLBACK_URL", "callbackUrl", callbackUrl)),
                 corpo -> {
                     corpo.remove("phone");
                     corpo.put("clientId", clientId);

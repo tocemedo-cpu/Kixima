@@ -251,7 +251,8 @@ class CompanyControllerTest {
                 .andReturn();
         var json = objectMapper.readTree(sub.getResponse().getContentAsString());
         assertThat(json.get("monthly").get("amountUsd").decimalValue())
-                .isEqualByComparingTo(json.get("company").get("seatPriceUsd").decimalValue().multiply(java.math.BigDecimal.valueOf(json.get("activeUsers").asInt())));
+                // `company.seatPriceUsd` é coluna Decimal → texto (como no Node); `monthly.amountUsd` é aritmética → número.
+                .isEqualByComparingTo(new java.math.BigDecimal(json.get("company").get("seatPriceUsd").asText()).multiply(java.math.BigDecimal.valueOf(json.get("activeUsers").asInt())));
         // ... e não a de outra empresa.
         mockMvc.perform(get("/api/companies/" + companyIdOf("AO-CLI-0001") + "/subscription").header("Authorization", "Bearer " + fornecedorToken))
                 .andExpect(status().isForbidden());

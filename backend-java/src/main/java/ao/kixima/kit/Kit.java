@@ -1,5 +1,6 @@
 package ao.kixima.kit;
 
+import org.hibernate.annotations.UpdateTimestamp;
 import ao.kixima.common.persistence.AbstractPersistableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,6 +31,7 @@ public class Kit extends AbstractPersistableEntity<String> {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 

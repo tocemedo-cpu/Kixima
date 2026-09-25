@@ -1,5 +1,8 @@
 package ao.kixima.cobranca;
 
+import ao.kixima.common.Decimais;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import ao.kixima.addon.AddonService;
 import ao.kixima.addon.CompanyAddon;
 import ao.kixima.addon.CompanyAddonRepository;
@@ -49,7 +52,7 @@ public class AddonCobrancaService {
 
     static final List<CobrancaStatus> EM_ABERTO = AssinaturaService.EM_ABERTO;
 
-    public record Preco(BigDecimal valorUsd, String periodo, int meses, BigDecimal porMesUsd) {
+    public record Preco(@JsonSerialize(using = Decimais.ComoNumeroJs.class) BigDecimal valorUsd, String periodo, int meses, @JsonSerialize(using = Decimais.ComoNumeroJs.class) BigDecimal porMesUsd) {
     }
 
     private final AddonService addonService;
