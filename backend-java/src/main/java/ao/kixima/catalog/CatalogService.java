@@ -29,9 +29,7 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.web.multipart.MultipartFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -69,7 +67,6 @@ public class CatalogService {
     private final CompanyRepository companyRepository;
     private final PlanService planService;
     private final StorageService storageService;
-    private final int tectoPorOmissao;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -77,8 +74,7 @@ public class CatalogService {
     public CatalogService(ProductRepository productRepository, ProductDocumentRepository productDocumentRepository,
                            CompanyDocumentRepository companyDocumentRepository, StockMovementRepository stockMovementRepository,
                            NotificationService notificationService, ProductImageRepository productImageRepository,
-                           CompanyRepository companyRepository, PlanService planService, StorageService storageService,
-                           @Value("${kixima.db.max-rows:1000}") int tectoPorOmissao) {
+                           CompanyRepository companyRepository, PlanService planService, StorageService storageService) {
         this.productRepository = productRepository;
         this.productDocumentRepository = productDocumentRepository;
         this.companyDocumentRepository = companyDocumentRepository;
@@ -88,7 +84,6 @@ public class CatalogService {
         this.companyRepository = companyRepository;
         this.planService = planService;
         this.storageService = storageService;
-        this.tectoPorOmissao = tectoPorOmissao;
     }
 
     // --- Escrita (Lacunas D.2) -------------------------------------------------
@@ -339,25 +334,21 @@ public class CatalogService {
     }
 
     /**
-     * `Pageable.ofSize(tectoPorOmissao)` aqui NÃO é paginação de resposta —
-     * o Node também não pagina esta lista. É o equivalente ao tecto de
-     * segurança de config/database.js: um limite alto que nunca deveria ser
-     * atingido em uso normal; se for, fica registado em log (TODO: reportar
-     * a Sentry tal como o Node, quando essa dependência entrar).
+     * Sem paginação de resposta — o Node também não pagina esta lista. O
+     * tecto de segurança de config/database.js (DB_MAX_ROWS) aplica-se aqui
+     * como em qualquer outra leitura em lista, pelo mecanismo transversal
+     * de {@link ao.kixima.common.persistence.TectoDeLinhas}: limite alto que
+     * nunca deveria ser atingido em uso normal e, se for, um erro no log
+     * (o Node também só regista no log — não reporta ao Sentry).
      */
     @Transactional(readOnly = true)
     public List<ProductDto> listCatalog(Filtros filtros) {
         ProductKind kind = "PRODUTO".equals(filtros.kind()) || "SERVICO".equals(filtros.kind())
                 ? ProductKind.valueOf(filtros.kind()) : null;
-        Pageable tecto = PageRequest.of(0, tectoPorOmissao, Sort.by(Sort.Direction.DESC, "createdAt"));
         List<Product> produtos = productRepository.findAll(
                 ProductSpecifications.comFiltros(filtros.category(), kind, filtros.supplierId(),
                         filtros.excludeSupplierId(), filtros.search()),
-                tecto).getContent();
-        if (produtos.size() == tectoPorOmissao) {
-            log.error("Leitura de Product atingiu o tecto de {} linhas e foi truncada. "
-                    + "Qualquer total calculado a partir daqui está ERRADO.", tectoPorOmissao);
-        }
+                Sort.by(Sort.Direction.DESC, "createdAt"));
         return produtos.stream().map(p -> toDto(p, supplierListView(p.getSupplier()), false)).toList();
     }
 

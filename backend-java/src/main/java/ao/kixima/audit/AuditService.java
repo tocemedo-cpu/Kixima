@@ -3,6 +3,7 @@ package ao.kixima.audit;
 import ao.kixima.audit.dto.AuditActionCount;
 import ao.kixima.audit.dto.AuditLogDto;
 import ao.kixima.audit.dto.AuditLogListResponse;
+import ao.kixima.common.error.SentryReporter;
 import ao.kixima.security.CurrentUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,11 +39,14 @@ public class AuditService {
     private final AuditLogRepository repository;
     private final ObjectMapper objectMapper;
     private final JdbcTemplate jdbcTemplate;
+    private final SentryReporter sentry;
 
-    public AuditService(AuditLogRepository repository, ObjectMapper objectMapper, JdbcTemplate jdbcTemplate) {
+    public AuditService(AuditLogRepository repository, ObjectMapper objectMapper, JdbcTemplate jdbcTemplate,
+                        SentryReporter sentry) {
         this.repository = repository;
         this.objectMapper = objectMapper;
         this.jdbcTemplate = jdbcTemplate;
+        this.sentry = sentry;
     }
 
     public Actor actorFrom(CurrentUser user, HttpServletRequest req) {
@@ -88,8 +92,8 @@ public class AuditService {
 
     /**
      * Variante "não pode partir o negócio": regista após o sucesso da
-     * operação; uma falha aqui vai para o log (Sentry entra quando M0
-     * adicionar essa dependência — ver TODO em GlobalExceptionHandler).
+     * operação; uma falha aqui é grave (fica um buraco no trilho) — vai para
+     * o log e Sentry.
      */
     public void recordSafe(Entry entry) {
         try {
@@ -101,6 +105,7 @@ public class AuditService {
             repository.save(row);
         } catch (Exception e) {
             log.error("AUDITORIA FALHOU — registo perdido: action={}", entry.action(), e);
+            sentry.captureException(e);
         }
     }
 

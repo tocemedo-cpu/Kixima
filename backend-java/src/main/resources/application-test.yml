@@ -9,6 +9,10 @@ spring:
     hibernate:
       ddl-auto: validate
 
+sentry:
+  # Como no Node (`config.sentry.dsn && !config.isTest`): nos testes o Sentry nunca liga, mesmo com SENTRY_DSN no ambiente.
+  enabled: false
+
 kixima:
   # Como no Node (rateLimit.js desliga-se em NODE_ENV=test): a configuração real testa-se em RateLimitFilterTest.
   rate-limit:
