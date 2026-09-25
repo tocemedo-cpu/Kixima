@@ -61,6 +61,24 @@ Certifique-se de que o `kixima-backend` está a correr em `localhost:4000`
 utilizadores de demonstração. A página de login já vem com atalhos para
 preencher as credenciais de cada persona.
 
+### Variáveis de ambiente
+
+Todas opcionais — sem nenhuma, o comportamento é o de sempre (backend Node em
+`:4000`, Socket.IO).
+
+| Variável | Quando se lê | Efeito |
+|---|---|---|
+| `VITE_API_TARGET` | só no `npm run dev` (proxy do Vite) | Para onde o proxy de `/api`, `/socket.io` e `/ws` aponta. Omissão: `http://localhost:4000` (Node). Para desenvolver contra o backend Java: `VITE_API_TARGET=http://localhost:4001 npm run dev`. |
+| `VITE_REALTIME` | na build (`npm run dev` / `npm run build`) | Transporte do tempo real (`src/realtime/RealtimeContext.jsx`): `socketio` (omissão — o Socket.IO do Node, em produção até ao cutover e o caminho de recuo durante ele) ou `stomp` (o Spring WebSocket/STOMP do Java, endpoint `/ws`). Qualquer outro valor cai em `socketio`. |
+| `VITE_API_BASE_URL` | na build, só na app nativa (Capacitor) | Origem absoluta da API e do tempo real dentro do WebView (`src/api/client.js`). Omissão: `https://kixima.net`. |
+| `VITE_SENTRY_DSN` | na build | Ativa o Sentry no browser (`src/sentry.jsx`). |
+
+Exemplo, cutover local completo contra o Java:
+
+```bash
+VITE_API_TARGET=http://localhost:4001 VITE_REALTIME=stomp npm run dev
+```
+
 ## Estrutura
 
 ```
