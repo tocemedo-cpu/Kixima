@@ -97,8 +97,14 @@ async function main() {
     },
   });
 
-  await prisma.product.createMany({
-    data: [
+  // createdAt DISTINTOS e decrescentes pela ordem desta lista: o catálogo
+  // ordena por createdAt desc e, com empates, o Postgres devolve a ordem
+  // física — que muda a cada UPDATE (MVCC). O primeiro produto do catálogo
+  // passava a ser outro consoante as suites que corriam antes (um serviço
+  // coberto por contrato-quadro, e a PO virava call-off sem factura). Assim
+  // o primeiro é sempre a válvula: produto simples, fora dos contratos.
+  const BASE_PRODUTOS = Date.now();
+  const PRODUTOS_SEMENTE = [
       {
         supplierId: supplier.id,
         name: 'Válvula de esfera 4" API 6D',
@@ -206,7 +212,9 @@ async function main() {
         rating: 4.6,
         reviewCount: 11,
       },
-    ],
+  ];
+  await prisma.product.createMany({
+    data: PRODUTOS_SEMENTE.map((p, i) => ({ ...p, createdAt: new Date(BASE_PRODUTOS - i * 1000) })),
   });
 
   // Metadados de marketplace (kind, localização, certificações, slug, verificação).

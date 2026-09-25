@@ -3,6 +3,8 @@ module.exports = {
   testEnvironment: 'node',
   // env.js corre em cada worker antes dos módulos da app serem importados.
   setupFiles: ['<rootDir>/tests/env.js'],
+  // Repõe o process.env no fim de cada ficheiro (ver tests/isolarEnv.js).
+  setupFilesAfterEnv: ['<rootDir>/tests/isolarEnv.js'],
   // globalSetup prepara a base de dados de teste uma única vez.
   globalSetup: '<rootDir>/tests/globalSetup.js',
   testMatch: ['<rootDir>/tests/**/*.test.js'],
