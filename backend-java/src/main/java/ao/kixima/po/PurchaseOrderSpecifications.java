@@ -14,6 +14,11 @@ final class PurchaseOrderSpecifications {
     }
 
     static Specification<PurchaseOrder> paraListagem(String companyId, PersonaRole role, PoStatus status) {
+        return paraListagem(companyId, role, status, false);
+    }
+
+    /** `invoiced` — só ordens que já têm fatura (ecrã de Faturas do Fornecedor). */
+    static Specification<PurchaseOrder> paraListagem(String companyId, PersonaRole role, PoStatus status, boolean invoiced) {
         return (root, query, cb) -> {
             List<Predicate> conditions = new ArrayList<>();
             if (status != null) conditions.add(cb.equal(root.get("status"), status));
@@ -27,6 +32,7 @@ final class PurchaseOrderSpecifications {
                         cb.equal(root.get("buyerCompanyId"), companyId),
                         cb.equal(root.get("supplierCompanyId"), companyId)));
             }
+            if (invoiced) conditions.add(cb.isNotNull(root.get("invoice")));
             return cb.and(conditions.toArray(new Predicate[0]));
         };
     }

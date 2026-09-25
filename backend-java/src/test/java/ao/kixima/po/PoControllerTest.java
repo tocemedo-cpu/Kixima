@@ -188,6 +188,24 @@ class PoControllerTest {
                         .header("Authorization", "Bearer " + fornecedorToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.id=='" + poId + "')]").exists());
+
+        // Ecrã de Faturas do Fornecedor: `invoiced=true` filtra só POs com fatura,
+        // e `page` muda a forma da resposta de array puro para o envelope
+        // {items,total,page,pages,limit} — mesmo contrato condicional do Node
+        // (poService.listPurchaseOrders:245-268). A base de demo já semeia
+        // outras POs faturadas para este fornecedor — não se assume `total==1`.
+        mockMvc.perform(get("/api/purchase-orders").param("invoiced", "true").param("page", "1").param("limit", "15")
+                        .header("Authorization", "Bearer " + fornecedorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.limit").value(15))
+                .andExpect(jsonPath("$.items[?(@.id=='" + poId + "')].invoice.reference").exists());
+
+        // `invoiced=true` sem `page` continua a devolver array puro (só filtra).
+        mockMvc.perform(get("/api/purchase-orders").param("invoiced", "true")
+                        .header("Authorization", "Bearer " + fornecedorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id=='" + poId + "')]").exists());
     }
 
     @Test

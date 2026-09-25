@@ -65,11 +65,21 @@ public class PoController {
         return poDtoService.criada(po.getId());
     }
 
+    // Sem `page` → array puro (compatível com os consumidores existentes). Com
+    // `page` → paginação server-side com envelope — mesmo contrato condicional
+    // de poService.listPurchaseOrders (backend/src/services/poService.js:245-268).
     @GetMapping
-    public List<PurchaseOrderDto> list(@RequestParam(required = false) String status) {
+    public Object list(@RequestParam(required = false) String status,
+                        @RequestParam(required = false) Boolean invoiced,
+                        @RequestParam(required = false) Integer page,
+                        @RequestParam(required = false) Integer limit) {
         CurrentUser user = CurrentUserHolder.get();
         PoStatus statusEnum = status == null ? null : PoStatus.valueOf(status);
-        return poDtoService.listagem(user.companyId(), user.role(), statusEnum);
+        boolean invoicedFlag = Boolean.TRUE.equals(invoiced);
+        if (page == null) {
+            return poDtoService.listagem(user.companyId(), user.role(), statusEnum, invoicedFlag);
+        }
+        return poDtoService.listagemPaginada(user.companyId(), user.role(), statusEnum, invoicedFlag, page, limit);
     }
 
     @GetMapping("/{id}")

@@ -13,11 +13,14 @@ import ao.kixima.payment.PaymentRepository;
 import ao.kixima.payment.dto.PaymentDto;
 import ao.kixima.po.dto.PurchaseOrderDto;
 import ao.kixima.po.dto.PurchaseOrderItemDto;
+import ao.kixima.po.dto.PurchaseOrdersPageDto;
 import ao.kixima.security.CurrentUser;
 import ao.kixima.security.PersonaRole;
 import ao.kixima.user.User;
 import ao.kixima.user.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,10 +64,10 @@ public class PoDtoService {
         return PurchaseOrderDto.de(carregar(id));
     }
 
-    /** listPurchaseOrders: `include: { items: true, invoice: { include: { payment: true } } }`, por createdAt desc. */
+    /** listPurchaseOrders sem `page`: `include: { items: true, invoice: { include: { payment: true } } }`, por createdAt desc. */
     @Transactional(readOnly = true)
-    public List<PurchaseOrderDto> listagem(String companyId, PersonaRole role, PoStatus status) {
-        return purchaseOrderRepository.findAll(PurchaseOrderSpecifications.paraListagem(companyId, role, status),
+    public List<PurchaseOrderDto> listagem(String companyId, PersonaRole role, PoStatus status, boolean invoiced) {
+        return purchaseOrderRepository.findAll(PurchaseOrderSpecifications.paraListagem(companyId, role, status, invoiced),
                         org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"))
                 .stream().map(po -> PurchaseOrderDto.de(po, itens(po, false), faturaResumida(po.getInvoice()), null, null, null, null, null))
                 .toList();
@@ -87,6 +90,24 @@ public class PoDtoService {
                 nome(po.getCreatedById()), nome(po.getApprovedById()),
                 po.getContractId() == null ? null : contractRepository.findById(po.getContractId())
                         .map(c -> new PurchaseOrderDto.ContractRef(c.getReference())).orElse(null));
+    }
+
+    /**
+     * listPurchaseOrders com `page` — mesmo tecto/matemática do Node:
+     * `take = min(max(1, limit||15), 50)`, `pages = max(1, ceil(total/take))`.
+     */
+    @Transactional(readOnly = true)
+    public PurchaseOrdersPageDto listagemPaginada(String companyId, PersonaRole role, PoStatus status, boolean invoiced, Integer page, Integer limit) {
+        int take = Math.min(Math.max(1, limit == null ? 15 : limit), 50);
+        int current = Math.max(1, page == null ? 1 : page);
+        var spec = PurchaseOrderSpecifications.paraListagem(companyId, role, status, invoiced);
+        var pageable = PageRequest.of(current - 1, take, Sort.by(Sort.Direction.DESC, "createdAt"));
+        var resultado = purchaseOrderRepository.findAll(spec, pageable);
+        List<PurchaseOrderDto> items = resultado.getContent().stream()
+                .map(po -> PurchaseOrderDto.de(po, itens(po, false), faturaResumida(po.getInvoice()), null, null, null, null, null))
+                .toList();
+        int pages = Math.max(1, (int) Math.ceil((double) resultado.getTotalElements() / take));
+        return new PurchaseOrdersPageDto(items, resultado.getTotalElements(), current, pages, take);
     }
 
     private PurchaseOrder carregar(String id) {
