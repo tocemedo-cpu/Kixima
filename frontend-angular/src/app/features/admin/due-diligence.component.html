@@ -1,0 +1,25 @@
+@if (error() && !companies()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!companies()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header title="Cadastro de Empresas (Due Diligence)" subtitle="Reveja e aprove ou rejeite o cadastro de compradores e fornecedores."></app-page-header>
+
+    @if (companies()!.length === 0) {
+      <div class="empty-state">
+        <h3>Nenhum cadastro pendente</h3>
+        <p>Novos registos de empresa aparecem aqui para revisão.</p>
+      </div>
+    } @else {
+      @for (company of companies()!; track company.id) {
+        <app-company-review-card
+          [company]="company"
+          [expanded]="expandedId() === company.id"
+          (toggle)="toggle(company.id)"
+          (decided)="reload()"
+        ></app-company-review-card>
+      }
+    }
+  </div>
+}

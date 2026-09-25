@@ -98,3 +98,18 @@ export const BILLING_PERIODICITY: Record<string, string> = {
   TRIMESTRAL: 'Trimestral',
   SEMESTRAL: 'Semestral',
 };
+
+// Espelha COMPANY_STATUS/POLICY_STATUS em frontend/src/domain.js:70-93.
+export const COMPANY_STATUS: Record<string, { label: string; tone: string }> = {
+  PENDENTE: { label: 'Pendente de due diligence', tone: 'pending' },
+  APROVADA: { label: 'Aprovada', tone: 'success' },
+  REJEITADA: { label: 'Rejeitada', tone: 'danger' },
+  SUSPENSA: { label: 'Suspensa', tone: 'danger' },
+};
+
+export const POLICY_STATUS: Record<string, { label: string; tone: string }> = {
+  SUBMETIDA: { label: 'Submetida', tone: 'pending' },
+  APROVADA: { label: 'Aprovada', tone: 'success' },
+  REJEITADA: { label: 'Rejeitada', tone: 'danger' },
+  EXPIRADA: { label: 'Expirada', tone: 'danger' },
+};

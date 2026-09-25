@@ -1,0 +1,68 @@
+<div class="card" style="margin-bottom:14px">
+  <div class="card-pad row-link" (click)="toggle.emit()" style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <strong>{{ company.name }}</strong>
+      <div style="font-size:12.5px;color:var(--ink-600);margin-top:2px">
+        {{ company.type === 'CLIENTE' ? 'Cliente' : 'Fornecedor' }} · NIF {{ company.taxId }} · {{ company.contactEmail }}
+      </div>
+    </div>
+    <app-badge [tone]="COMPANY_STATUS[company.status]?.tone">{{ COMPANY_STATUS[company.status]?.label }}</app-badge>
+  </div>
+
+  @if (expanded) {
+    <div class="card-pad" style="border-top:1px solid var(--line)">
+      <app-error-banner [message]="error"></app-error-banner>
+      <app-success-banner [message]="success"></app-success-banner>
+
+      @if (!detail) {
+        <app-loading></app-loading>
+      } @else {
+        <div style="margin-bottom:16px">
+          <strong style="font-size:13px">Documentos de credenciamento</strong>
+          @if (detail.documents?.length) {
+            <div class="doc-list">
+              @for (doc of detail.documents; track doc.id) {
+                <a class="doc-item" [href]="doc.fileUrl" target="_blank" rel="noreferrer">
+                  <app-icon name="invoice" [size]="16" class="doc-ic"></app-icon>
+                  {{ docLabel(doc.type) }}
+                  <span class="doc-name">{{ doc.originalName }}</span>
+                </a>
+              }
+            </div>
+          } @else {
+            <p class="helptext" style="margin-top:6px">Nenhum documento anexado no cadastro.</p>
+          }
+        </div>
+
+        @if (company.type === 'FORNECEDOR') {
+          <div style="margin-bottom:16px">
+            <strong style="font-size:13px">Apólice Fornecedor→KIXIMA</strong>
+            @if (supplierPolicy; as policy) {
+              <div style="margin-top:8px;font-size:13px;display:grid;gap:4px">
+                <span>Nº <span class="mono">{{ policy.policyNumber }}</span> — {{ policy.insurer }}</span>
+                <span>Cobertura: {{ formatMoney(policy.coverageAmount, policy.currency) }}</span>
+                <span>Válida: {{ formatDate(policy.validFrom) }} — {{ formatDate(policy.validUntil) }}</span>
+                @if (policy.documentUrl) {
+                  <a class="doc-item" [href]="policy.documentUrl" target="_blank" rel="noreferrer" style="margin-top:4px">
+                    <app-icon name="invoice" [size]="16" class="doc-ic"></app-icon>
+                    Documento da apólice
+                  </a>
+                }
+                <span><app-badge [tone]="POLICY_STATUS[policy.status]?.tone">{{ POLICY_STATUS[policy.status]?.label }}</app-badge></span>
+              </div>
+            } @else {
+              <p class="helptext" style="margin-top:6px">
+                Ainda não submetida. Não é possível aprovar o fornecedor sem esta apólice.
+              </p>
+            }
+          </div>
+        }
+
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-accent" [disabled]="busy || !canApprove" (click)="decide(true)">Aprovar empresa</button>
+          <button class="btn btn-danger" [disabled]="busy" (click)="decide(false)">Rejeitar cadastro</button>
+        </div>
+      }
+    </div>
+  }
+</div>

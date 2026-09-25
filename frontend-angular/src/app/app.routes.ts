@@ -198,6 +198,14 @@ export const routes: Routes = [
         canActivate: [roleGuard('ADMIN_SISTEMA')],
         children: [
           { path: '', component: PendingPageComponent, data: { titulo: 'Início — Admin do Sistema' } },
+          {
+            path: 'due-diligence',
+            loadComponent: () => import('./features/admin/due-diligence.component').then((m) => m.DueDiligenceComponent),
+          },
+          {
+            path: 'taxas',
+            loadComponent: () => import('./features/admin/platform-fees.component').then((m) => m.PlatformFeesComponent),
+          },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Admin do Sistema' } },
         ],
       },

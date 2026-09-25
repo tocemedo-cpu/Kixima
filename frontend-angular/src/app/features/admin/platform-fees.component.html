@@ -1,0 +1,61 @@
+<app-crumbs [trail]="['Configurações e Suporte', 'Taxa KIXIMA']"></app-crumbs>
+<app-buyer-page-head title="Taxa KIXIMA" subtitle="Taxas da plataforma geradas em cada pagamento, à parte da fatura. 8 USD por PO até 11.500 USD por transação (0,20% acima) + 15 USD por fatura — cobradas ao fornecedor."></app-buyer-page-head>
+
+<app-kpi-row [cards]="kpiCards()"></app-kpi-row>
+
+<app-tabs [tabs]="tabs" [value]="tab()" (onChange)="tab.set($event)"></app-tabs>
+<app-toolbar placeholder="Pesquisar por empresa ou fatura…" [q]="q()" (onQ)="q.set($event)"></app-toolbar>
+
+<app-success-banner [message]="sucesso()"></app-success-banner>
+@if (error()) {
+  <div class="empty-state"><p>{{ error() }}</p></div>
+} @else {
+  <div class="bz-card bz-tablewrap">
+    <table class="bz-table">
+      <thead>
+        <tr>
+          <th>Fornecedor</th><th>Fatura</th><th>POs</th><th>Composição</th>
+          <th>Taxa</th><th>Estado</th><th>Data</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (!data()) {
+          <tr><td colspan="8"><app-empty-row>A carregar…</app-empty-row></td></tr>
+        } @else if (fees().length === 0) {
+          <tr><td colspan="8"><app-empty-row>Ainda não há taxas geradas. São criadas automaticamente quando um pagamento é processado.</app-empty-row></td></tr>
+        } @else {
+          @for (f of fees(); track f.id) {
+            <tr>
+              <td><strong>{{ f.company?.name || '—' }}</strong></td>
+              <td class="mono">{{ f.invoice?.reference || '—' }}</td>
+              <td>{{ f.poCount }}</td>
+              <td class="bz-muted">
+                {{ f.poCount }} × {{ formatMoney(f.perPo, f.currency) }} + {{ formatMoney(f.perInvoice, f.currency) }}
+                @if (f.basis === 'PERCENTUAL') {
+                  (0,20% de {{ formatMoney(f.poValueUsd, 'USD') }})
+                }
+              </td>
+              <td><strong>{{ formatMoney(f.amount, f.currency) }}</strong></td>
+              <td><app-pill [tone]="STATUS_TONE[f.status] || 'neutral'">{{ STATUS_LABEL[f.status] || f.status }}</app-pill></td>
+              <td class="bz-muted">{{ formatDateTime(f.createdAt) }}</td>
+              <td>
+                <div style="display:flex;gap:6px;align-items:center">
+                  @if (f.status === 'PENDENTE') {
+                    <button class="btn btn-sm" [disabled]="busy() === f.id" (click)="charge(f.id)">
+                      {{ busy() === f.id ? 'A cobrar…' : 'Marcar cobrada' }}
+                    </button>
+                  } @else {
+                    <span class="bz-muted">{{ formatDateTime(f.chargedAt) }}</span>
+                  }
+                  <button class="btn btn-ghost btn-sm" title="Extrato/documento de cobrança do fornecedor" (click)="verExtrato(f.companyId)">
+                    Extrato
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+}
