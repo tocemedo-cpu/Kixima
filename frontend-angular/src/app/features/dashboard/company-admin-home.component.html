@@ -1,0 +1,70 @@
+@if (error()) {
+  <div class="empty-state">
+    <h3>Não foi possível carregar</h3>
+    <p>{{ error() }}</p>
+  </div>
+} @else if (!d()) {
+  <div class="bz-empty">A carregar…</div>
+} @else {
+  <div>
+    <app-crumbs [trail]="['Dashboard']"></app-crumbs>
+    <app-buyer-page-head title="Dashboard" subtitle="Visão geral da sua empresa em tempo real."></app-buyer-page-head>
+
+    <app-kpi-row [cards]="kpisTopo()"></app-kpi-row>
+
+    <div class="bz-layout">
+      <div class="bz-panel">
+        <div class="bz-head" style="margin-bottom:10px">
+          <h3 style="margin:0">Volume de Operações</h3>
+          <span class="bz-muted">Últimos 6 meses</span>
+        </div>
+        <div class="ca-bars">
+          @for (v of d()!.volume; track v.label) {
+            <div class="ca-bar">
+              <div class="ca-bar-track">
+                <div class="ca-bar-fill" [style.height.%]="alturaBarra(v.value)" [title]="v.value"></div>
+              </div>
+              <span class="bz-muted">{{ v.label }}</span>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="bz-panel">
+        <div class="bz-head" style="margin-bottom:6px">
+          <h3 style="margin:0">Atividade Recente</h3>
+          <a class="pf-link" href="/empresa/atividades">Ver todas</a>
+        </div>
+        @for (r of d()!.recent; track r.reference) {
+          <div class="hs-ticket">
+            <div>
+              <strong>PO {{ r.reference }}</strong>
+              <span class="bz-sub2">{{ r.party }}</span>
+            </div>
+            <div class="hs-ticket-meta">
+              <app-pill [tone]="PO_STATUS[r.status]?.tone">{{ PO_STATUS[r.status]?.label || r.status }}</app-pill>
+              <span class="bz-sub2">{{ formatDateTime(r.at) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <h3 class="pf-h2">Resumo Geral</h3>
+    <app-kpi-row [cards]="kpisResumo()"></app-kpi-row>
+
+    <div class="bz-panel ca-quick">
+      <strong>Ações Rápidas</strong>
+      <div class="ca-quick-row">
+        <button class="btn btn-ghost btn-sm" (click)="ir('/empresa/utilizadores')">
+          <app-icon name="users" [size]="14"></app-icon> Novo Usuário
+        </button>
+        <button class="btn btn-ghost btn-sm" (click)="ir('/empresa/aprovacoes')">
+          <app-icon name="approvals" [size]="14"></app-icon> Aprovar POs
+        </button>
+        <button class="btn btn-ghost btn-sm" (click)="ir('/empresa/relatorios')">
+          <app-icon name="report" [size]="14"></app-icon> Relatório Executivo
+        </button>
+      </div>
+    </div>
+  </div>
+}

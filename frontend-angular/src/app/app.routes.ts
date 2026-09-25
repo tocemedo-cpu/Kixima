@@ -74,7 +74,11 @@ export const routes: Routes = [
         path: 'comprador',
         canActivate: [roleGuard('COMPRADOR')],
         children: [
-          { path: '', component: PendingPageComponent, data: { titulo: 'Início — Comprador' } },
+          {
+            path: '',
+            loadComponent: () => import('./features/dashboard/comprador-home.component').then((m) => m.CompradorHomeComponent),
+            data: { titulo: 'Início — Comprador' },
+          },
           {
             // Corrigido nesta sessão: o caminho real de Quotes.jsx é
             // /comprador/cotacoes (ver frontend/src/App.jsx:191), não
@@ -130,7 +134,11 @@ export const routes: Routes = [
         path: 'fornecedor',
         canActivate: [roleGuard('FORNECEDOR')],
         children: [
-          { path: '', component: PendingPageComponent, data: { titulo: 'Início — Fornecedor' } },
+          {
+            path: '',
+            loadComponent: () => import('./features/dashboard/fornecedor-home.component').then((m) => m.FornecedorHomeComponent),
+            data: { titulo: 'Início — Fornecedor' },
+          },
           {
             path: 'catalogo',
             loadComponent: () => import('./features/catalog/catalog-manage.component').then((m) => m.CatalogManageComponent),
@@ -179,7 +187,12 @@ export const routes: Routes = [
         path: 'empresa',
         canActivate: [roleGuard('COMPANY_ADMIN')],
         children: [
-          { path: '', component: PendingPageComponent, data: { titulo: 'Início — Administração da Empresa' } },
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/dashboard/company-admin-home.component').then((m) => m.CompanyAdminHomeComponent),
+            data: { titulo: 'Início — Administração da Empresa' },
+          },
           {
             path: 'aprovacoes',
             loadComponent: () => import('./features/orders/approvals.component').then((m) => m.ApprovalsComponent),
@@ -216,7 +229,11 @@ export const routes: Routes = [
         path: 'financeiro',
         canActivate: [roleGuard('FINANCEIRO')],
         children: [
-          { path: '', component: PendingPageComponent, data: { titulo: 'Início — Financeiro' } },
+          {
+            path: '',
+            loadComponent: () => import('./features/dashboard/financeiro-home.component').then((m) => m.FinanceiroHomeComponent),
+            data: { titulo: 'Início — Financeiro' },
+          },
           {
             path: 'faturas',
             loadComponent: () =>
@@ -248,7 +265,12 @@ export const routes: Routes = [
         path: 'sistema',
         canActivate: [roleGuard('ADMIN_SISTEMA')],
         children: [
-          { path: '', component: PendingPageComponent, data: { titulo: 'Início — Admin do Sistema' } },
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/dashboard/admin-sistema-home.component').then((m) => m.AdminSistemaHomeComponent),
+            data: { titulo: 'Início — Admin do Sistema' },
+          },
           {
             path: 'due-diligence',
             loadComponent: () => import('./features/admin/due-diligence.component').then((m) => m.DueDiligenceComponent),

@@ -1,0 +1,160 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!d()) {
+  <app-loading></app-loading>
+} @else {
+  <div class="home">
+    <div style="margin-bottom:20px">
+      <h1 class="home-hi">{{ saudacao }}, {{ firstName() }}! <span>👋</span></h1>
+      <p class="home-sub">O que pretende comprar hoje?</p>
+      <form class="home-search" (submit)="$event.preventDefault(); submitSearch()">
+        <span class="home-search-ico"><app-icon name="search" [size]="18"></app-icon></span>
+        <input [value]="q()" (input)="q.set($any($event.target).value)" placeholder="Pesquisar produtos, serviços ou fornecedores…" />
+        <button class="btn btn-accent" type="submit">Pesquisar</button>
+      </form>
+    </div>
+
+    <div class="home-kpis">
+      <app-comprador-kpi
+        icon="invoice" label="Ordens de Compra" [value]="d()!.dash.kpis.emAndamento" sub="Em andamento" tone="brand" to="/comprador/ordens"
+      ></app-comprador-kpi>
+      <app-comprador-kpi
+        icon="payment" label="Aguardando Pagamento" [value]="d()!.dash.kpis.aguardandoPagamento.count"
+        [sub]="'Total: ' + formatMoney(d()!.dash.kpis.aguardandoPagamento.total)" tone="amber" to="/comprador/pagamentos"
+      ></app-comprador-kpi>
+      <app-comprador-kpi
+        icon="truck" label="Em Entrega" [value]="d()!.dash.kpis.emEntrega.count"
+        [sub]="'Total: ' + formatMoney(d()!.dash.kpis.emEntrega.total)" tone="teal" to="/comprador/entregas"
+      ></app-comprador-kpi>
+      <app-comprador-kpi
+        icon="reception" label="Recebidas" [value]="d()!.dash.kpis.recebidasMes" sub="Este mês" tone="info" to="/comprador/recepcao"
+      ></app-comprador-kpi>
+    </div>
+
+    <div class="home-programs">
+      <a class="home-program" href="/supplier-development">
+        <span class="home-program-ico"><app-icon name="suppliers" [size]="18"></app-icon></span>
+        <span>
+          <strong>Supplier Development</strong>
+          <span>Apoio burocrático e parceiros internacionais para empresas angolanas</span>
+        </span>
+      </a>
+      <a class="home-program" href="/parcerias">
+        <span class="home-program-ico"><app-icon name="offshore" [size]="18"></app-icon></span>
+        <span>
+          <strong>Parceiros internacionais</strong>
+          <span>Procura de parceiros estrangeiros para tecnologia e capacitação</span>
+        </span>
+      </a>
+      <a class="home-program" href="/planos">
+        <span class="home-program-ico"><app-icon name="wallet" [size]="18"></app-icon></span>
+        <span>
+          <strong>Planos e preços</strong>
+          <span>Taxas por transação e acesso por utilizador, com os limites de cada plano</span>
+        </span>
+      </a>
+    </div>
+
+    <div class="home-row home-row-cats">
+      <section class="card card-pad">
+        <app-section-head title="Categorias Principais" to="/comprador/catalogo"></app-section-head>
+        <div class="cat-grid">
+          @for (c of d()!.categories.slice(0, 8); track c.name) {
+            <a [routerLink]="'/comprador/servicos'" [queryParams]="{ category: c.name }" class="cat-tile">
+              <span class="cat-ico"><app-icon [name]="categoryIcon(c.name)" [size]="24"></app-icon></span>
+              <span class="cat-name">{{ c.name }}</span>
+            </a>
+          }
+          @if (d()!.categories.length === 0) {
+            <p class="helptext">Sem categorias.</p>
+          }
+        </div>
+      </section>
+
+      <section class="protect-card">
+        <span class="protect-shield"><app-icon name="policy" [size]="40"></app-icon></span>
+        <h3>COMPRAS PROTEGIDAS KIXIMA</h3>
+        <p>Todas as transações são protegidas pela KIXIMA com fornecedores verificados e seguros de execução.</p>
+        <a routerLink="/ajuda" class="protect-link">Saiba mais →</a>
+      </section>
+    </div>
+
+    <div class="home-row home-row-trend">
+      <section class="card card-pad">
+        <app-section-head title="Trending na KIXIMA" sub="Mais visualizados" to="/comprador/servicos"></app-section-head>
+        <div class="mini-grid">
+          @for (p of d()!.trending; track p.id) {
+            <app-mini-card [p]="p" (cardClick)="verProduto(p)"></app-mini-card>
+          }
+          @if (d()!.trending.length === 0) {
+            <p class="helptext">Sem dados ainda.</p>
+          }
+        </div>
+      </section>
+
+      <section class="card card-pad">
+        <app-section-head title="Minhas Ordens" to="/comprador/ordens"></app-section-head>
+        <ul class="ord-list">
+          @for (o of d()!.dash.minhasOrdens; track o.label) {
+            <li><span class="ord-dot"></span><span>{{ o.label }}</span><strong>{{ o.count }}</strong></li>
+          }
+        </ul>
+      </section>
+
+      <section class="card card-pad">
+        <app-section-head title="Atividades Recentes" to="/notificacoes"></app-section-head>
+        @if (d()!.notifs.length === 0) {
+          <p class="helptext">Sem atividades.</p>
+        } @else {
+          <ul class="act-list">
+            @for (n of d()!.notifs; track n.id) {
+              <li>
+                <span class="act-ico"><app-icon name="activities" [size]="14"></app-icon></span>
+                <span class="act-txt">{{ n.title || n.message }}</span>
+                <span class="act-time">{{ timeAgo(n.createdAt) }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </div>
+
+    <div class="home-row home-row-bottom">
+      <section class="card card-pad">
+        <app-section-head title="Fornecedores Verificados" to="/comprador/servicos?verified=true"></app-section-head>
+        <div class="sup-grid">
+          @for (s of d()!.suppliers; track s.id) {
+            <div class="sup-card">
+              <span class="sup-logo">
+                @if (s.logoUrl) {
+                  <img [src]="s.logoUrl" [alt]="s.name" />
+                } @else {
+                  {{ initials(s.name) }}
+                }
+              </span>
+              <span class="sup-name">{{ s.name }}</span>
+              @if (s.rating) {
+                <span class="sup-rating">★ {{ s.rating.toFixed(1) }}</span>
+              }
+            </div>
+          }
+          @if (d()!.suppliers.length === 0) {
+            <p class="helptext">Sem fornecedores verificados.</p>
+          }
+        </div>
+      </section>
+
+      <section class="card card-pad">
+        <app-section-head title="Compras Frequentes" to="/comprador/catalogo"></app-section-head>
+        <div class="mini-grid mini-grid-5">
+          @for (p of d()!.frequent; track p.id) {
+            <app-mini-card [p]="p" [fromPrice]="true" (cardClick)="verProduto(p)"></app-mini-card>
+          }
+          @if (d()!.frequent.length === 0) {
+            <p class="helptext">Sem dados ainda.</p>
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+}

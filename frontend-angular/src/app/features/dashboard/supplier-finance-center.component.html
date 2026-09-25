@@ -1,0 +1,77 @@
+@if (error()) {
+  <div class="empty-state">
+    <h3>Não foi possível carregar</h3>
+    <p>{{ error() }}</p>
+  </div>
+} @else if (!orders()) {
+  <div class="bz-empty">A carregar…</div>
+} @else {
+  <div>
+    <app-crumbs [trail]="['Financeiro', 'Centro Financeiro']"></app-crumbs>
+    <app-buyer-page-head title="Centro Financeiro" subtitle="Recebimentos dos clientes, compras a pagar e Taxa KIXIMA."></app-buyer-page-head>
+
+    <app-kpi-row [cards]="kpis()"></app-kpi-row>
+
+    @if (pendingInvoices().length > 0) {
+      <div class="bz-panel" style="margin-bottom:16px">
+        <div class="bz-head" style="margin-bottom:6px">
+          <h3 style="margin:0">Compras a pagar (prazo de 7 dias)</h3>
+          <a class="pf-link" href="/financeiro/faturas">Ver todas</a>
+        </div>
+        @for (i of pendingInvoices().slice(0, 4); track i.id) {
+          <div class="hs-ticket">
+            <div>
+              <strong class="bz-mono">{{ i.reference }}</strong>
+              <span class="bz-sub2">vence {{ formatDate(i.dueAt) }}</span>
+            </div>
+            <div class="hs-ticket-meta"><strong>{{ formatMoney(i.amount, i.currency) }}</strong></div>
+          </div>
+        }
+        <button class="btn btn-accent" style="width:100%;margin-top:10px" (click)="ir('/financeiro/faturas')">
+          <app-icon name="invoice" [size]="14"></app-icon> Pagar faturas das compras
+        </button>
+      </div>
+    }
+
+    <div class="bz-layout">
+      <div class="bz-panel">
+        <div class="bz-head" style="margin-bottom:10px">
+          <h3 style="margin:0">Por confirmar receção</h3>
+          <a class="pf-link" href="/financeiro/recebidos">Ver todos</a>
+        </div>
+        @if (porConfirmar().length === 0) {
+          <p class="bz-sub">Nada por confirmar — está tudo em dia.</p>
+        } @else {
+          @for (p of porConfirmar().slice(0, 6); track p.id) {
+            <div class="hs-ticket">
+              <div>
+                <strong class="bz-mono">{{ p.reference }}</strong>
+                <span class="bz-sub2">processado {{ formatDate(p.processedAt) }}</span>
+              </div>
+              <div class="hs-ticket-meta"><strong>{{ formatMoney(p.amount, p.currency) }}</strong></div>
+            </div>
+          }
+        }
+        <button class="btn btn-accent" style="width:100%;margin-top:10px" (click)="ir('/financeiro/recebidos')">
+          <app-icon name="payment" [size]="14"></app-icon> Confirmar receções
+        </button>
+      </div>
+      <div class="bz-panel">
+        <h3 style="margin-top:0">Taxa KIXIMA</h3>
+        @if (fees(); as f) {
+          <p class="bz-sub" style="margin-top:8px">
+            @if (f.kpis.pendentes > 0) {
+              Tem <strong>{{ formatMoney(f.kpis.pendingAOA) }}</strong> por liquidar à plataforma.
+            } @else {
+              Sem taxas pendentes — está tudo liquidado.
+            }
+          </p>
+          <p class="bz-sub2">Total gerado: {{ formatMoney(f.kpis.totalAOA) }} · Cobrado: {{ formatMoney(f.kpis.chargedAOA) }}</p>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px" (click)="extratoTaxas()">Ver extrato completo</button>
+        } @else {
+          <p class="bz-sub">Sem dados de taxas.</p>
+        }
+      </div>
+    </div>
+  </div>
+}

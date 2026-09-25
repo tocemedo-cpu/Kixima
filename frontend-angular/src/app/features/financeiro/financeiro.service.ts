@@ -3,15 +3,20 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
-import { FinanceiroInvoicesResponse, FinanceiroPaymentsResponse } from '../../core/models/financeiro.model';
+import {
+  FinanceiroInvoicesResponse,
+  FinanceiroOverviewResponse,
+  FinanceiroPaymentsResponse,
+  PendingInvoiceRow,
+} from '../../core/models/financeiro.model';
 import { PaymentDto } from '../../core/models/purchase-order.model';
 
 @Injectable({ providedIn: 'root' })
 export class FinanceiroService {
   constructor(private readonly api: ApiService) {}
 
-  overview(): Observable<Record<string, unknown>> {
-    return this.api.get('/api/financeiro/overview');
+  overview(): Observable<FinanceiroOverviewResponse> {
+    return this.api.get<FinanceiroOverviewResponse>('/api/financeiro/overview');
   }
 
   invoices(): Observable<FinanceiroInvoicesResponse> {
@@ -20,6 +25,13 @@ export class FinanceiroService {
 
   payments(status?: string): Observable<FinanceiroPaymentsResponse> {
     return this.api.get<FinanceiroPaymentsResponse>('/api/financeiro/payments', status ? { status } : undefined);
+  }
+
+  // GET /api/payments/invoices/pending — compras a pagar da própria empresa
+  // (lado comprador), usado pelo painel inicial do Financeiro numa empresa
+  // FORNECEDORA. Requer papel FINANCEIRO ou COMPANY_ADMIN (não FORNECEDOR).
+  pendingInvoicesToPay(): Observable<PendingInvoiceRow[]> {
+    return this.api.get<PendingInvoiceRow[]>('/api/payments/invoices/pending');
   }
 
   // Comprovativo OBRIGATÓRIO (multipart, campo "proof") — espelha

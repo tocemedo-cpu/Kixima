@@ -1,25 +1,7 @@
-// Porta de frontend/src/components/ProductCover.jsx + categoryVisual()
-// (frontend/src/components/icons.jsx:81-97). Os nomes de ícone por categoria
-// (valve, hydraulic, inspection, engineering, equipment, materials, offshore,
-// consulting) ainda não foram portados para IconComponent — caem no mesmo
-// 'box' que o original usa para qualquer categoria desconhecida, por isso o
-// comportamento nunca fica pior do que o original, só menos específico até
-// esses ícones serem portados (ver docs/migracao-angular/PLANO.md).
+// Porta de frontend/src/components/ProductCover.jsx.
 import { Component, Input } from '@angular/core';
 import { IconComponent } from './icon.component';
-
-const CATEGORY_ICON: Record<string, string> = {
-  Válvulas: 'valve',
-  Hidráulica: 'hydraulic',
-  'Inspeção & Ensaios': 'inspection',
-  'Logística & Transporte': 'truck',
-  Engenharia: 'engineering',
-  Equipamentos: 'equipment',
-  'Formação & Certificação': 'certification',
-  Materiais: 'materials',
-  Offshore: 'offshore',
-  Consultoria: 'consulting',
-};
+import { categoryIcon } from '../category-visual';
 
 @Component({
   selector: 'app-product-cover',
@@ -47,6 +29,6 @@ export class ProductCoverComponent {
   @Input() caption = true;
 
   get iconeCategoria(): string {
-    return (this.category && CATEGORY_ICON[this.category]) || 'box';
+    return categoryIcon(this.category);
   }
 }

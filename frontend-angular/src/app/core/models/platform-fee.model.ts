@@ -40,3 +40,33 @@ export interface PlatformFeeBookDto {
   fees: PlatformFeeDto[];
   kpis: PlatformFeeBookKpis;
 }
+
+// GET /api/companies/:id/platform-fees (CompanyPlatformFeeController.java) —
+// extrato de uma empresa (usado por SupplierFinanceCenter em financeiro/Home.jsx).
+// NOTA: apesar do sufixo "AOA" nos nomes, os valores são em USD — nome mantido
+// por compatibilidade da UI (comentário explícito no Java, PlatformFeeStatementDto.java).
+export interface PlatformFeeStatementKpis {
+  total: number;
+  totalAOA: number;
+  pendingAOA: number;
+  chargedAOA: number;
+  pendentes: number;
+  cobradas: number;
+  currency: string;
+}
+
+export interface PlatformFeeStatementFormula {
+  perPo: string;
+  perInvoice: string;
+  thresholdUsd: string;
+  percentAbove: string;
+  currency: string;
+}
+
+export interface PlatformFeeStatementDto {
+  company: { id: string; name: string; taxId: string; plan?: string | null };
+  fees: PlatformFeeDto[];
+  kpis: PlatformFeeStatementKpis;
+  formula: PlatformFeeStatementFormula;
+  generatedAt: string;
+}

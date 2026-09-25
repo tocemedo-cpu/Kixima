@@ -37,6 +37,11 @@ describe('FinanceiroService', () => {
     semStatus.flush({ kpis: {}, items: [] });
   });
 
+  it('pendingInvoicesToPay() chama GET /api/payments/invoices/pending', () => {
+    service.pendingInvoicesToPay().subscribe();
+    http.expectOne({ url: '/api/payments/invoices/pending', method: 'GET' }).flush([]);
+  });
+
   it('pay() envia POST multipart com o campo "proof" para /api/payments/invoices/:id/pay', () => {
     const ficheiro = new File(['x'], 'comprovativo.pdf', { type: 'application/pdf' });
     service.pay('inv1', ficheiro).subscribe();

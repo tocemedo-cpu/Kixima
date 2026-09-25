@@ -1,0 +1,54 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (semAcesso()) {
+  <div>
+    <app-page-header title="Visão geral" subtitle="Cadastros pendentes, apólices a expirar e empresas ativas."></app-page-header>
+    <div class="card card-pad">
+      <strong style="font-size:13.5px">Sem acesso a Cadastro &amp; Empresas</strong>
+      <p class="helptext" style="margin-top:8px">
+        O seu acesso não inclui esta área. Veja no menu à esquerda as páginas que já pode usar.
+      </p>
+    </div>
+  </div>
+} @else if (!companies()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header title="Visão geral" subtitle="Cadastros pendentes, apólices a expirar e empresas ativas."></app-page-header>
+
+    <div class="grid-cols grid-3" style="margin-bottom:24px">
+      <app-stat-card
+        label="Cadastros pendentes"
+        [value]="pendentes().length"
+        sub="Aguardando due diligence"
+        to="/sistema/due-diligence"
+      ></app-stat-card>
+      <app-stat-card
+        label="Empresas ativas"
+        [value]="aprovadas().length"
+        sub="Credenciadas na plataforma"
+        to="/sistema/empresas"
+      ></app-stat-card>
+      <app-stat-card label="Total de empresas" [value]="companies()!.length" to="/sistema/empresas"></app-stat-card>
+    </div>
+
+    @if (pendentes().length > 0) {
+      <div
+        class="banner"
+        style="background:var(--amber-100);color:var(--amber-600);border:1px solid rgba(201,135,31,.25);display:flex;justify-content:space-between;align-items:center"
+      >
+        <span>Tem {{ pendentes().length }} cadastro(s) de empresa aguardando due diligence.</span>
+        <a class="btn btn-accent btn-sm" routerLink="/sistema/due-diligence">Rever agora</a>
+      </div>
+    }
+
+    <div class="card card-pad" style="margin-top:16px">
+      <strong style="font-size:13.5px">Apólices</strong>
+      <p class="helptext" style="margin-top:8px">
+        Emita apólices KIXIMA→Cliente e reveja apólices Fornecedor→KIXIMA em
+        <a routerLink="/sistema/apolices" style="color:var(--brand-600);font-weight:600">Gestão de Apólices</a>.
+        Alertas de expiração (30 dias) são enviados automaticamente ao Company Admin e Financeiro de cada empresa.
+      </p>
+    </div>
+  </div>
+}

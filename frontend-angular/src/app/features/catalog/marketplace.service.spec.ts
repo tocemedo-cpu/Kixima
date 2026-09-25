@@ -30,4 +30,11 @@ describe('MarketplaceService', () => {
     expect(req.request.params.get('category')).toBe('Válvulas');
     req.flush({ categories: [], kinds: [], countries: [], certifications: [], priceBounds: { min: 0, max: 0 } });
   });
+
+  it('suppliers() chama GET /api/marketplace/suppliers', () => {
+    service.suppliers().subscribe();
+    const req = http.expectOne('/api/marketplace/suppliers');
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+  });
 });

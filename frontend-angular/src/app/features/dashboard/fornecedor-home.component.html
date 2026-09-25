@@ -1,0 +1,46 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!orders()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header title="Central de Negócios" subtitle="Resumo: POs novas, faturas pendentes, pagamentos recebidos."></app-page-header>
+
+    <div class="grid-cols grid-3" style="margin-bottom:24px">
+      <app-stat-card label="POs novas para aceitar" [value]="novas().length" to="/fornecedor/ordens"></app-stat-card>
+      <app-stat-card
+        label="Aguardando pagamento"
+        [value]="aguardandoPagamento().length"
+        sub="Dentro do prazo garantido de 7 dias"
+        to="/fornecedor/faturas"
+      ></app-stat-card>
+      <app-stat-card label="Pagamentos recebidos" [value]="pagas().length" to="/fornecedor/pagamentos"></app-stat-card>
+    </div>
+
+    <div class="card">
+      <div class="card-pad" style="border-bottom:1px solid var(--line)">
+        <strong>Ordens de compra recentes</strong>
+      </div>
+      <app-data-table
+        [rows]="recentes()"
+        rowKey="id"
+        (rowClick)="verOrdem($event)"
+        emptyTitle="Sem ordens de compra ainda"
+        emptyBody="Assim que um cliente emitir uma PO para a sua empresa, ela aparece aqui."
+      >
+        <ng-template appTableColumn key="reference" header="Referência" let-r>
+          <span class="mono">{{ r.reference }}</span>
+        </ng-template>
+        <ng-template appTableColumn key="total" header="Valor" let-r>
+          {{ formatMoney(r.totalAmount, r.currency) }}
+        </ng-template>
+        <ng-template appTableColumn key="status" header="Estado" let-r>
+          <app-badge [tone]="$any(PO_STATUS)[r.status]?.tone">{{ $any(PO_STATUS)[r.status]?.label }}</app-badge>
+        </ng-template>
+        <ng-template appTableColumn key="date" header="Recebida em" let-r>
+          {{ formatDate(r.createdAt) }}
+        </ng-template>
+      </app-data-table>
+    </div>
+  </div>
+}

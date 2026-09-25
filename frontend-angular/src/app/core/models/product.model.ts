@@ -127,6 +127,18 @@ export interface MarketplaceSearchResult {
   limit: number;
 }
 
+// GET /api/marketplace/suppliers (MarketplaceService.verifiedSuppliers(8) no
+// Java) — usado pela Home do Comprador.
+export interface VerifiedSupplierCard {
+  id: string;
+  name: string;
+  logoUrl?: string | null;
+  city?: string | null;
+  country?: string | null;
+  rating?: number | null;
+  productCount?: number;
+}
+
 // Espelha marketplaceService.facets() — backend/src/services/marketplaceService.js:146-179.
 export interface MarketplaceFacets {
   categories: Array<{ name: string; count: number }>;

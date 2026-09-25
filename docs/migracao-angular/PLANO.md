@@ -76,6 +76,7 @@ neste repositório.
 | Perfil da Empresa (organização) — Company Admin | `features/company-admin/{organization,bank-details-panel}.component.ts` | `pages/companyAdmin/Organization.jsx` | `GET /api/company-admin/organizacao`, `GET/PUT /api/companies/:id/bank-details` |
 | Perfil da Empresa (apólices) — Company Admin | `features/company-admin/company-profile.component.ts` | `pages/companyAdmin/CompanyProfile.jsx` | `GET /api/companies/:id`, `GET /api/policies/company/:id` |
 | Catálogo de Produtos e Serviços — Fornecedor | `features/catalog/{catalog-manage,dropzone}.component.ts` | `pages/fornecedor/CatalogManage.jsx` | `GET/POST/PUT/DELETE /api/catalog[/:id]`, `POST /api/catalog/:id/{media,image}`, `DELETE /api/catalog/:id/{images,documents}/:id`, `GET /api/planos` |
+| Painéis iniciais (Home) — Fornecedor/Comprador/Company Admin/Financeiro/Admin Sistema | `features/dashboard/*.component.ts` | `pages/{fornecedor,comprador,companyAdmin,financeiro,adminSistema}/Home.jsx` | `GET /api/purchase-orders`, `GET /api/company-admin/dashboard`, `GET /api/dashboard/comprador`, `GET /api/marketplace/{facets,search,suppliers}`, `GET /api/notifications`, `GET /api/financeiro/overview`, `GET /api/companies/:id/platform-fees`, `GET /api/payments/invoices/pending`, `GET /api/companies` |
 
 **Verificação ao vivo desta etapa** (Postgres + backend Java a correr localmente, Angular com o seu proxy): login como Comprador → pesquisa no catálogo → produto → cesta → checkout (gera PO) → lista de ordens com KPIs → detalhe da PO → aprovação pelo Company Admin → aceitação pelo Fornecedor (gera fatura com os campos AGT presentes, correctamente vazios sem credenciais) → guarda de máquina de estados (despachar antes de pago devolve 400) → fluxo de rejeição com motivo. RBAC confirmado com 403 em cada ponto errado: Comprador não aprova nem aceita a própria PO, Fornecedor não aprova, Fornecedor não lê `/api/buyer/orders` (403), pedido sem sessão dá 401. Um bug de routing desta sessão anterior foi encontrado e corrigido: a rota de Cotações do Comprador estava em `/comprador/pedidos`, mas a real (`frontend/src/App.jsx:191`) é `/comprador/cotacoes` — nunca teria sido alcançável pela navegação real da aplicação.
 
@@ -98,6 +99,8 @@ neste repositório.
 **Verificação ao vivo — Usuários & Perfis/Organização/Perfil da Empresa (Company Admin)**: todos os endpoints (`/api/companies/{users,invites}`, `/api/company-admin/organizacao`, `/api/companies/:id/bank-details`, `/api/policies/company/:id`) já estavam correctos e completos no Java. Fluxo de convite testado ponta-a-ponta pela UI real: modal "+ Novo Usuário" → convite criado → toast de sucesso → convite novo na lista, sem reload da página. O convite de equipa aceite numa etapa anterior desta sessão (`convidado.teste@petroangola.co.ao`) foi confirmado a aparecer em "Cadastros pendentes" e activado com sucesso (`PATCH /api/companies/users/:id/activate`, `active: true`). Dados bancários testados ao vivo para o Fornecedor (Kianda): `GET`/`PUT /api/companies/:id/bank-details` com IBAN e SWIFT reais. RBAC confirmado nas três páginas: Comprador recebe 403 em `/api/companies/users` no servidor, e o `roleGuard('COMPANY_ADMIN')` bloqueia as três rotas no cliente. Dois ícones que faltavam (`cart`, `suppliers`) portados para `IconComponent`, e `CompanyListItem`/`CompanyDetail` ganharam os campos `address`/`city`/`province`/`country`/`verified` (usados por Organization.jsx, ainda não precisos pelos ecrãs anteriores).
 
 **Verificação ao vivo — Catálogo de Produtos e Serviços (Fornecedor, CatalogManage.jsx)**: última página de prioridade 1. Todos os 9 endpoints (`GET/POST/PUT/DELETE /api/catalog[/:id]`, `POST /api/catalog/:id/{media,image}`, `DELETE /api/catalog/:id/{images,documents}/:id`, `GET /api/planos`) já estavam correctos e completos no Java (`CatalogController.java`, `PublicoCobrancaController.java`) — confirmados endpoint a endpoint por um agente de pesquisa dedicado antes de codificar, incluindo as assimetrias reais preservadas de propósito: `kind` é aceite pelo formulário mas ignorado por ambos os backends na escrita (Product.kind fica sempre PRODUTO — não é bug do Java, é paridade); o limite de tamanho de imagem é 15 MB em `mainImage`/`gallery`/docs mas 12 MB no endpoint dedicado `/:id/image`; `PUT`, `/:id/image` e as duas rotas `DELETE` nunca devolvem `images`/`documents` no corpo (por isso o componente sempre recarrega a lista após essas chamadas, tal como o React). Testado ao vivo por HTTP directo com ficheiros reais (PNG 1×1 válido, PDF mínimo válido — não texto renomeado): criação multipart com imagem principal + galeria + ficha técnica (201, `images`/`documents` na forma exacta `{id,url,isPrimary,sortOrder}`/`{id,type,fileUrl,originalName}`, sem `productId`/`createdAt` — um desvio real do modelo `ProductDto` anterior nesta sessão, corrigido), edição por PUT em JSON, adição de mídia a um produto existente, substituição da imagem de capa, remoção de uma imagem e de um documento, e desactivação (soft delete). RBAC confirmado: Comprador recebe 403 em `POST/DELETE /api/catalog` no servidor, e o `roleGuard('FORNECEDOR')` bloqueia `/fornecedor/catalogo` no cliente (redirecciona para `/comprador`). Fluxo completo também testado pela UI real com Playwright: publicar um produto novo pelo formulário de 3 abas (cascata UNSPSC → categoria O&G → preço → imagens), ver o cartão aparecer na grelha com o indicador "Posição na pesquisa" do plano real da empresa (CORE), remover o produto de teste, e editar um produto já publicado (`Válvula de esfera 4" API 6D`) confirmando pré-preenchimento completo do formulário e da galeria/documentos existentes — sem nenhum erro JS de página. Descrição do produto de demonstração restaurada ao valor original após o teste de edição. Catálogo UNSPSC (119 itens, `unspscCatalog.js`) e as 119 imagens de referência em `public/catalog/` portados 1:1 para `core/data/unspsc-catalog.ts` e `frontend-angular/public/catalog/`.
+
+**Verificação ao vivo — Painéis iniciais (Home) das 5 personas**: todos os 9 endpoints usados (`purchase-orders`, `company-admin/dashboard`, `dashboard/comprador`, `marketplace/{facets,search,suppliers}`, `notifications`, `financeiro/overview`, `companies/:id/platform-fees`, `payments/invoices/pending`, `companies`) já estavam correctos e completos no Java — confirmados endpoint a endpoint por um agente de pesquisa dedicado, que revelou duas particularidades reais preservadas de propósito: `GET /api/dashboard/comprador` só aceita o papel COMPRADOR (não COMPANY_ADMIN, ao contrário dos outros painéis); `GET /api/payments/invoices/pending` só aceita FINANCEIRO/COMPANY_ADMIN (não FORNECEDOR — inofensivo aqui porque a rota `/financeiro/*` já só é alcançável por FINANCEIRO). Duas lacunas reais do modelo `ProductDto` foram corrigidas nesta sessão (faltavam `unspscSegment`/`unspscFamily`/`unspscClass`, que o Java devolve). `marketplace/suppliers` e `notifications` não tinham serviço Angular nenhum — criados de raiz (`MarketplaceService.suppliers()`, `NotificationsService` novo). Testado ao vivo por HTTP directo com as 5 contas de teste (Fornecedor, Comprador, Company Admin, Financeiro, Admin Sistema), confirmando a forma exacta de cada resposta contra o modelo TypeScript. O ramo FORNECEDOR de `financeiro/Home.jsx` (SupplierFinanceCenter) foi testado ao vivo repontando temporariamente um utilizador FINANCEIRO de teste para a empresa Fornecedora Kianda (revertido no fim), já que não existia nenhuma conta FINANCEIRO numa empresa fornecedora na base de teste. Fluxo completo também testado pela UI real com Playwright nas 5 contas: todos os painéis renderizam com dados reais, sem nenhum erro JS de página; confirmados a tabela de ordens recentes do Fornecedor (com `DataTableComponent`/`TableColumnDirective` novos, genéricos e reutilizáveis), os gráficos de barras do Company Admin/Financeiro, a grelha completa da Home do Comprador (KPIs, categorias, trending, fornecedores verificados, actividades recentes) e o banner de "due diligence pendente" do Admin Sistema. RBAC confirmado: Comprador redireccionado ao tentar `/sistema` e `/financeiro`. Dois ícones em falta (`users`, `activities`) portados para `IconComponent`; `categoryVisual()`/`CATEGORY_ICON` extraído para um helper partilhado (`shared/category-visual.ts`) para não duplicar entre `ProductCoverComponent` e a Home do Comprador.
 
 ## Inventário completo das 97 páginas React e prioridade sugerida
 
@@ -143,7 +146,7 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 | `Payments.jsx` | 1 | **Migrado** |
 | `Deliveries.jsx` | 2 | **Migrado** |
 | `Receptions.jsx` | 2 | **Migrado** |
-| `Home.jsx` | 2 | Pendente |
+| `Home.jsx` | 2 | **Migrado** |
 | `Services.jsx` | 2 | Pendente |
 | `Explore.jsx` | 2 | Pendente |
 | `ServiceDetail.jsx` | 2 | Pendente |
@@ -164,7 +167,7 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 | `Payments.jsx` | 1 | **Migrado** (reutilizado também em `/financeiro/recebidos` — mesmo componente React de origem) |
 | `Inventory.jsx` | 2 | Pendente |
 | `StockMovements.jsx` | 2 | Pendente |
-| `Home.jsx` | 2 | Pendente |
+| `Home.jsx` | 2 | **Migrado** |
 | `CatalogImport.jsx` | 2 | Pendente |
 | `CatalogInsights.jsx` | 2 | Pendente |
 | `OrderHistory.jsx` | 2 | Pendente |
@@ -182,7 +185,7 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 | `Approvals.jsx` | 1 | **Migrado** |
 | `Contracts.jsx` | 1 | **Migrado** |
 | `Assinatura.jsx` | 2 | Pendente |
-| `Home.jsx` | 2 | Pendente |
+| `Home.jsx` | 2 | **Migrado** |
 | `Users.jsx` | 2 | **Migrado** |
 | `Organization.jsx` | 2 | **Migrado** |
 | `CompanyProfile.jsx` | 2 | **Migrado** |
@@ -199,7 +202,7 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 |---|---|---|
 | `PendingInvoices.jsx` | 1 | **Migrado** |
 | `PaymentHistory.jsx` | 1 | **Migrado** |
-| `Home.jsx` | 2 | Pendente |
+| `Home.jsx` | 2 | **Migrado** |
 
 ### Admin do Sistema (`pages/adminSistema/`) — 20 páginas
 
@@ -210,7 +213,7 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 | `Companies.jsx` | 2 | Pendente |
 | `Contracts.jsx` | 2 | Pendente |
 | `Cobrancas.jsx` | 2 | Pendente |
-| `Home.jsx` | 2 | Pendente |
+| `Home.jsx` | 2 | **Migrado** |
 | `Administradores.jsx` | 3 | Pendente |
 | `Permissions.jsx` | 3 | Pendente |
 | `PolicyManagement.jsx` | 3 | Pendente |
@@ -256,17 +259,19 @@ em Node.js, e porquê, está descrito na secção seguinte deste relatório
 ## Como continuar esta migração
 
 1. Escolher o próximo domínio pela tabela de prioridade acima. **Toda a
-   prioridade 1 está migrada** (o último item, `fornecedor/CatalogManage.jsx`,
-   foi concluído nesta sessão). Dentro da prioridade 2, `comprador/
-   {Deliveries,Receptions}.jsx` e `companyAdmin/{Users,Organization,
-   CompanyProfile}.jsx` já estão migrados. Candidatos com bom custo/benefício
-   para continuar: as páginas `Home.jsx` de cada persona (painéis iniciais —
-   Comprador, Fornecedor, Company Admin, Financeiro, Admin do Sistema já têm
-   o resto do domínio a funcionar, mas continuam a cair em
-   `PendingPageComponent` ao entrar na área), ou o resto da prioridade 2:
-   `fornecedor/{Inventory,StockMovements,CatalogImport,CatalogInsights}.jsx`,
-   `comprador/{Explore,Services,ServiceDetail,SupplierCompare,Suppliers}.jsx`,
-   `companyAdmin/{Assinatura}.jsx`, `admin/{Companies,Contracts,Cobrancas}.jsx`.
+   prioridade 1 está migrada**, e as 5 páginas `Home.jsx` (painéis iniciais de
+   cada persona) também — todas as personas têm agora uma página de entrada
+   real em Angular, em vez de caírem em `PendingPageComponent`. O que resta é
+   sobretudo prioridade 2/3. Candidatos com bom custo/benefício para
+   continuar: `fornecedor/{Inventory,StockMovements,CatalogImport,
+   CatalogInsights,OrderHistory,Wallet}.jsx`, `comprador/{Explore,Services,
+   ServiceDetail,SupplierCompare,Suppliers}.jsx`, `companyAdmin/
+   {Assinatura}.jsx`, `admin/{Companies,Contracts,Cobrancas}.jsx` — todos de
+   prioridade 2. Repare que `DataTableComponent`/`TableColumnDirective` e
+   `StatCardComponent` (novos nesta sessão, em `shared/components/`) são
+   genéricos e reutilizáveis — várias destas páginas (ex.: `Inventory.jsx`,
+   `OrderHistory.jsx`) provavelmente também usam `DataTable`/`StatCard` no
+   React original, portanto não é preciso recriá-los.
 2. Para cada página: ler o `.jsx` original por completo, confirmar as
    chamadas de API reais (nunca assumir pelo nome do ficheiro), portar
    modelo → serviço → componente → template, escrever testes, e só depois

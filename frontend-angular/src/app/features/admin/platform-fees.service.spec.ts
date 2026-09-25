@@ -24,4 +24,9 @@ describe('PlatformFeesService', () => {
     service.charge('fee1').subscribe();
     http.expectOne({ url: '/api/admin/platform-fees/fee1/charge', method: 'PATCH' }).flush({});
   });
+
+  it('forCompany() chama GET /api/companies/:id/platform-fees', () => {
+    service.forCompany('c1').subscribe();
+    http.expectOne({ url: '/api/companies/c1/platform-fees', method: 'GET' }).flush({});
+  });
 });
