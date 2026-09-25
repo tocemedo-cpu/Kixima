@@ -55,6 +55,14 @@ export function formatNumber(value: string | number | null | undefined): string 
   return new Intl.NumberFormat('pt-PT').format(Number(value ?? 0));
 }
 
+// Espelha formatUsd em frontend/src/domain.js — usado só pela Assinatura
+// (preços de planos são sempre em USD, ao contrário do resto da plataforma).
+// Sem casas decimais por omissão (os preços dos planos são valores redondos);
+// quem precisa dos cêntimos (o equivalente mensal) pede-os via `decimais`.
+export function formatUsd(amount: string | number | null | undefined, decimais = 0): string {
+  return new Intl.NumberFormat('pt-PT', { minimumFractionDigits: decimais, maximumFractionDigits: decimais }).format(Number(amount ?? 0)) + ' USD';
+}
+
 // Junta partes não-vazias (ex.: cidade/país) com um separador — extraído
 // porque os templates do Angular não suportam arrow functions em bindings
 // (`.filter(v => v)` falha em NG5002), ao contrário do JSX original.
