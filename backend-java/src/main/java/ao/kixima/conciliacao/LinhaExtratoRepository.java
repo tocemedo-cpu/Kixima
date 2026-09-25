@@ -17,4 +17,8 @@ public interface LinhaExtratoRepository extends JpaRepository<LinhaExtrato, Stri
     @Query(value = "SELECT l FROM LinhaExtrato l LEFT JOIN FETCH l.invoice WHERE l.estado IN :estados ORDER BY l.dataValor DESC",
             countQuery = "SELECT count(l) FROM LinhaExtrato l WHERE l.estado IN :estados")
     Page<LinhaExtrato> findPorResolver(@Param("estados") List<String> estados, Pageable pageable);
+
+    long countByImportadaEmBetweenAndEstado(java.time.Instant de, java.time.Instant ate, String estado);
+
+    long countByImportadaEmBetweenAndEstadoIn(java.time.Instant de, java.time.Instant ate, List<String> estados);
 }

@@ -10,6 +10,10 @@ public interface QuoteRequestRepository extends JpaRepository<QuoteRequest, Stri
     /** Cotações pedidas pela empresa no mês corrente — a medida de intensidade de uso que o plano limita. */
     long countByBuyerCompanyIdAndCreatedAtGreaterThanEqual(String buyerCompanyId, Instant inicioDoMes);
 
+    long countByCreatedAtBetween(Instant de, Instant ate);
+
+    long countByCreatedAtBetweenAndStatusIn(Instant de, Instant ate, java.util.Collection<QuoteStatus> statuses);
+
     // `listForBuyer` / `listForSupplier`: dois métodos por lado porque o Postgres não consegue tipar
     // um parâmetro `:status IS NULL` sobre um enum nomeado ("could not determine data type").
     List<QuoteRequest> findByBuyerCompanyIdOrderByCreatedAtDesc(String buyerCompanyId);

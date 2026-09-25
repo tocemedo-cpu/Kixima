@@ -29,4 +29,16 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
             + "LEFT JOIN ao.kixima.contract.Contract c ON c.id = i.contractId "
             + "WHERE po.buyerCompanyId = :companyId OR c.clientCompanyId = :companyId ORDER BY i.dueAt ASC")
     java.util.List<Invoice> findDaEmpresaCompradora(@org.springframework.data.repository.query.Param("companyId") String companyId);
+
+    /** faturacaoService.verificarCadeia — a série inteira, pela ordem em que foi numerada. */
+    java.util.List<Invoice> findBySerieAndNumeroNaSerieIsNotNullOrderByNumeroNaSerieAsc(String serie);
+
+    /** saftService.gerar — faturas de UM fornecedor no período (ligadas por PO ou por contrato-quadro). */
+    @org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i LEFT JOIN PurchaseOrder po ON po.id = i.purchaseOrderId "
+            + "LEFT JOIN Contract c ON c.id = i.contractId WHERE i.issuedAt BETWEEN :ini AND :fim "
+            + "AND (po.supplierCompanyId = :sid OR c.supplierCompanyId = :sid) "
+            + "ORDER BY i.serie ASC, i.numeroNaSerie ASC, i.issuedAt ASC")
+    java.util.List<Invoice> findDoFornecedorNoPeriodo(@org.springframework.data.repository.query.Param("sid") String supplierCompanyId,
+                                                      @org.springframework.data.repository.query.Param("ini") java.time.Instant ini,
+                                                      @org.springframework.data.repository.query.Param("fim") java.time.Instant fim);
 }

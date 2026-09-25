@@ -231,6 +231,10 @@ public class Invoice extends AbstractPersistableEntity<String> {
         return numeroNaSerie;
     }
 
+    public String getHashAnterior() {
+        return hashAnterior;
+    }
+
     public String getHashDocumento() {
         return hashDocumento;
     }

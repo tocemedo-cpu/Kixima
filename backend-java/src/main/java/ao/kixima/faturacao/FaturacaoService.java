@@ -76,6 +76,12 @@ public class FaturacaoService {
         return companySerieFiscal == null ? null : companySerieFiscal + "-RC";
     }
 
+    /** Formato do exemplo oficial: série + ano + sequencial com 7 dígitos, sem letra de tipo; null em vez de inventar. */
+    public static String numeroDocumentoAGT(String serie, int ano, Integer numeroNaSerie) {
+        if (serie == null || serie.isBlank() || numeroNaSerie == null || numeroNaSerie == 0) return null;
+        return serie + "." + ano + "/" + String.format("%07d", numeroNaSerie);
+    }
+
     String textoParaAssinar(Instant emitidaEm, String serie, long numero, BigDecimal total, String hashAnterior) {
         String data = DATA.format(emitidaEm);
         String carimbo = CARIMBO.format(emitidaEm);

@@ -58,6 +58,11 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, St
 
     long countByStatus(PoStatus status);
 
+    /** metricasService.volumeTransacionado — `aggregate({ _sum: totalAmount, _count })`. */
+    @Query("SELECT COUNT(po), COALESCE(SUM(po.totalAmount), 0) FROM PurchaseOrder po "
+            + "WHERE po.createdAt BETWEEN :de AND :ate AND po.status IN :status")
+    List<Object[]> agregadoVolume(@Param("de") java.time.Instant de, @Param("ate") java.time.Instant ate, @Param("status") Collection<PoStatus> status);
+
     @Query("SELECT po FROM PurchaseOrder po LEFT JOIN FETCH po.buyerCompany LEFT JOIN FETCH po.supplierCompany ORDER BY po.updatedAt DESC")
     List<PurchaseOrder> findRecentesComEmpresas(Pageable pageable);
 

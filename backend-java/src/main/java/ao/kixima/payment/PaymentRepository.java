@@ -26,5 +26,10 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
 
     List<Payment> findTop10ByOrderByProcessedAtDesc();
 
+    /** metricasService.tempoAteConfirmacao — pagamentos processados no período, com a fatura para a data de emissão. */
+    @Query("SELECT p FROM Payment p LEFT JOIN FETCH p.invoice WHERE p.processedAt BETWEEN :de AND :ate AND p.status = :status")
+    List<Payment> findProcessadosNoPeriodo(@Param("de") java.time.Instant de, @Param("ate") java.time.Instant ate,
+                                          @Param("status") PaymentStatus status, org.springframework.data.domain.Pageable pageable);
+
     long countByProofUrlStartingWith(String prefixo);
 }
