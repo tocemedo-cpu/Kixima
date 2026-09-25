@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.time.Instant;
 import java.util.Map;
 
@@ -41,6 +42,53 @@ public class PlanService {
     private final BigDecimal seatPriceCapUsd;
     private final int gracePeriodDays;
     private final int limiarAExpirarDias;
+
+    /** Espelha `preco()` — com o equivalente mensal CALCULADO, nunca escrito à mão. */
+    public record Preco(BigDecimal valorUsd, String periodo, int meses, BigDecimal porMesUsd) {
+    }
+
+    public static final Map<String, Integer> MESES_DO_PERIODO = Map.of("MENSAL", 1, "TRIMESTRAL", 3, "SEMESTRAL", 6, "ANUAL", 12);
+
+    private final Map<CompanyPlan, Preco> precos = new java.util.EnumMap<>(CompanyPlan.class);
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void configurarPrecos(@Value("${kixima.plan.precos.base.valor-usd:100}") BigDecimal baseUsd,
+                          @Value("${kixima.plan.precos.base.periodo:TRIMESTRAL}") String basePeriodo,
+                          @Value("${kixima.plan.precos.core.valor-usd:100}") BigDecimal coreUsd,
+                          @Value("${kixima.plan.precos.core.periodo:MENSAL}") String corePeriodo,
+                          @Value("${kixima.plan.precos.pro.valor-usd:5000}") BigDecimal proUsd,
+                          @Value("${kixima.plan.precos.pro.periodo:ANUAL}") String proPeriodo) {
+        precos.put(CompanyPlan.BASE, preco(baseUsd, basePeriodo));
+        precos.put(CompanyPlan.CORE, preco(coreUsd, corePeriodo));
+        precos.put(CompanyPlan.PRO, preco(proUsd, proPeriodo));
+    }
+
+    private static Preco preco(BigDecimal valor, String periodo) {
+        int meses = MESES_DO_PERIODO.getOrDefault(periodo, 1);
+        return new Preco(valor, periodo, meses, valor.divide(BigDecimal.valueOf(meses), 2, java.math.RoundingMode.HALF_UP));
+    }
+
+    /** Preço de um plano (BASICO normaliza para CORE). */
+    public Preco preco(CompanyPlan plan) {
+        return precos.get(normalizarPlano(plan));
+    }
+
+    public List<CompanyPlan> escada() {
+        return List.of(ESCADA);
+    }
+
+    /** `tabela()` — todos os planos com preço e funcionalidades, para a página pública. Um sítio só. */
+    public List<Map<String, Object>> tabela() {
+        List<Map<String, Object>> out = new java.util.ArrayList<>();
+        for (CompanyPlan plano : ESCADA) {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("plano", plano.name());
+            m.put("preco", preco(plano));
+            m.put("features", features(plano));
+            out.add(m);
+        }
+        return out;
+    }
 
     public PlanService(@Value("${kixima.plan.seat-price-cap-usd:100}") BigDecimal seatPriceCapUsd,
                         @Value("${kixima.plan.grace-period-days:7}") int gracePeriodDays,

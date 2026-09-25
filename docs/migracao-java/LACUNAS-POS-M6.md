@@ -61,6 +61,11 @@ subscrição/cobrança). Também portados de passagem: contexto "quote" e
 
 ### C. Cobrança da própria KIXIMA (subscrição, add-ons, planos)
 
+**Estado: FECHADO** (commit "Lacunas C"): `/api/assinatura`, `/api/addons`,
+`/api/planos` e o webhook `/api/webhooks/pagamento/{canal}` com os cinco
+adaptadores de gateway (EMIS, PayPay, BAI, BFA, Standard Bank Angola) — todos
+"recusam-se a fingir" sem credenciais, como no Node.
+
 | Rotas Node | Endpoints | Serviço(s) Node | Notas |
 |---|---|---|---|
 | `/api/assinatura` | 8 | assinaturaService (780) | pedir → comprovativo → confirmar; canais automáticos (gateway) |

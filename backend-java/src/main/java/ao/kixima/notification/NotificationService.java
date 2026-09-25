@@ -103,6 +103,14 @@ public class NotificationService {
                 .toList();
     }
 
+    /** `notifyUsersByRole({ roles })` SEM companyId — os utilizadores internos da KIXIMA (ADMIN_SISTEMA, sem empresa). */
+    public List<Notification> notifyPlatformRole(PersonaRole role, NotificationType type, String title, String message,
+                                                 String relatedEntityType, String relatedEntityId) {
+        return userRepository.findByRoleAndActiveTrue(role).stream()
+                .map(u -> notifyUser(u.getId(), type, title, message, NotificationChannel.IN_APP_EMAIL, relatedEntityType, relatedEntityId, u.getEmail()))
+                .toList();
+    }
+
     public Notification notifyCompanyContact(String companyId, NotificationType type, String title, String message) {
         Company company = companyRepository.findById(companyId).orElse(null);
         if (company == null) return null;

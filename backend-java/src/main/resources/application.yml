@@ -171,6 +171,48 @@ kixima:
   plan:
     # Mesmas variáveis de ambiente que backend/src/services/planService.js.
     seat-price-cap-usd: ${KIXIMA_SEAT_PRICE_CAP_USD:100}
+    # PRECOS — o Pro é ANUAL por omissão de propósito (5.000/ano ≈ 417/mês é uma escada; 5.000/mês seria um penhasco).
+    precos:
+      base:
+        valor-usd: ${KIXIMA_PRECO_BASE_USD:100}
+        periodo: ${KIXIMA_PRECO_BASE_PERIODO:TRIMESTRAL}
+      core:
+        valor-usd: ${KIXIMA_PRECO_CORE_USD:100}
+        periodo: ${KIXIMA_PRECO_CORE_PERIODO:MENSAL}
+      pro:
+        valor-usd: ${KIXIMA_PRECO_PRO_USD:5000}
+        periodo: ${KIXIMA_PRECO_PRO_PERIODO:ANUAL}
+  banco:
+    # Dados bancários da KIXIMA para a transferência da subscrição (assinaturaService.dadosBancarios).
+    # Vêm do ambiente, não da base: mudam quando a KIXIMA muda de banco, não com um deploy.
+    titular: ${KIXIMA_BANCO_TITULAR:}
+    nome: ${KIXIMA_BANCO_NOME:}
+    iban: ${KIXIMA_BANCO_IBAN:}
+    swift: ${KIXIMA_BANCO_SWIFT:}
+    moeda: ${KIXIMA_BANCO_MOEDA:USD}
+  paypay:
+    # Mesmas variáveis que paypayService.js — canal PayPay; sem elas o canal não existe.
+    base-url: ${PAYPAY_BASE_URL:}
+    merchant-id: ${PAYPAY_MERCHANT_ID:}
+    token: ${PAYPAY_TOKEN:}
+    callback-url: ${PAYPAY_CALLBACK_URL:}
+  bancos:
+    # Mesmas variáveis que bancoGatewayService.js — adaptador genérico por confirmar contra a API real de cada banco.
+    bai:
+      base-url: ${BAI_BASE_URL:}
+      client-id: ${BAI_CLIENT_ID:}
+      client-secret: ${BAI_CLIENT_SECRET:}
+      callback-url: ${BAI_CALLBACK_URL:}
+    bfa:
+      base-url: ${BFA_BASE_URL:}
+      client-id: ${BFA_CLIENT_ID:}
+      client-secret: ${BFA_CLIENT_SECRET:}
+      callback-url: ${BFA_CALLBACK_URL:}
+    standard-bank-ao:
+      base-url: ${STANDARD_BANK_AO_BASE_URL:}
+      client-id: ${STANDARD_BANK_AO_CLIENT_ID:}
+      client-secret: ${STANDARD_BANK_AO_CLIENT_SECRET:}
+      callback-url: ${STANDARD_BANK_AO_CALLBACK_URL:}
     grace-period-days: ${KIXIMA_GRACE_PERIOD_DAYS:7}
     limiar-a-expirar-dias: 30
   ops:

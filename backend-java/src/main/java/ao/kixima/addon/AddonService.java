@@ -18,11 +18,8 @@ import java.util.Map;
  * validade paga. É o que poRoboRoutes.js/poRoboService.js exigem antes de
  * qualquer operação do robot.
  *
- * NÃO PORTADO (fica só no Node por agora): pedir/submeterComprovativo/
- * confirmar/cancelar/fila/catalogo/estado — o fluxo de cobrança do add-on,
- * o mesmo mecanismo de assinaturaService.js (pedir → comprovativo →
- * confirmar por um humano da KIXIMA), sem chamador Java ainda. Enquanto
- * isso, o Node é o único sítio onde um add-on se torna ATIVO; o Java só lê.
+ * O fluxo de cobrança (pedir/submeterComprovativo/confirmar/cancelar/fila/
+ * catalogo/estado) está em {@link ao.kixima.cobranca.AddonCobrancaService}.
  */
 @Service
 public class AddonService {
@@ -45,6 +42,11 @@ public class AddonService {
         this.addons = Map.of(PO_ROBOT, new Definicao("Automatic PO Robot", "PRO", poRobotValorUsd, poRobotPeriodo));
     }
 
+    /** As chaves dos add-ons existentes (ordem estável), para o catálogo. */
+    public java.util.Set<String> chaves() {
+        return new java.util.TreeSet<>(addons.keySet());
+    }
+
     public Definicao definicao(String addonKey) {
         Definicao def = addons.get(addonKey);
         if (def == null) {
@@ -59,7 +61,7 @@ public class AddonService {
      * validade NUNCA muda o status sozinha (nenhum job a fazer isso) — é
      * verificada a cada leitura, mesmo princípio de PlanService.estadoSubscricao.
      */
-    boolean aindaValido(CompanyAddon addon, Instant agora) {
+    public boolean aindaValido(CompanyAddon addon, Instant agora) {
         if (addon == null || addon.getStatus() != CompanyAddonStatus.ATIVO) return false;
         if (addon.getValidoAte() == null) return true; // add-ons ativados antes desta correção, sem validade guardada
         return !addon.getValidoAte().isBefore(agora);

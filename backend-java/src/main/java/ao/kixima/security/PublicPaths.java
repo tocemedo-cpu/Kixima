@@ -67,6 +67,10 @@ public class PublicPaths {
         // publicRoutes.js — a parede pública de avaliações, só leitura.
         adicionar("GET", "/api/public/feedback");
         adicionar("GET", "/api/public/stats");
+        // Tabela de planos e preços — pública (planosRoutes.js).
+        adicionar("GET", "/api/planos");
+        // Callback dos canais de pagamento automático — quem chama é o gateway, não um utilizador (webhookPagamentoRoutes.js).
+        adicionar("POST", "/api/webhooks/pagamento/*");
         // app.js — rota pública direta (fora de qualquer router com `authenticate`).
         adicionar("GET", "/api/retencao");
         // realtimeService.js — o upgrade HTTP do WebSocket passa sem token: a

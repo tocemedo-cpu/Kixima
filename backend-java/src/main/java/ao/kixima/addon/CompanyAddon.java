@@ -55,6 +55,22 @@ public class CompanyAddon extends AbstractPersistableEntity<String> {
         // JPA
     }
 
+    public CompanyAddon(String id, String companyId, String addonKey) {
+        this.id = id;
+        this.companyId = companyId;
+        this.addonKey = addonKey;
+        this.createdAt = Instant.now();
+        this.updatedAt = this.createdAt;
+    }
+
+    /** `companyAddon.upsert` de addonService.aplicarConfirmacao — ATIVO com a validade paga (a primeira confirmação cria, as seguintes renovam). */
+    public void ativar(Instant activatedAt, Instant validoAte) {
+        this.status = CompanyAddonStatus.ATIVO;
+        this.activatedAt = activatedAt;
+        this.validoAte = validoAte;
+        this.updatedAt = Instant.now();
+    }
+
     public String getId() {
         return id;
     }
