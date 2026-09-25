@@ -1,0 +1,71 @@
+@if (!products() || !movements()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header
+      [title]="'Inventário — ' + title"
+      [subtitle]="isEntrada ? 'Registe entradas em armazém (aumentam o stock).' : 'Registe saídas de armazém (reduzem o stock).'"
+    ></app-page-header>
+    <app-error-banner [message]="error()"></app-error-banner>
+    <app-success-banner [message]="success()"></app-success-banner>
+
+    <div class="card card-pad" style="margin-bottom:18px;max-width:560px">
+      <form (submit)="$event.preventDefault(); handleSubmit()" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <app-field label="Produto" #productField="appField" style="margin:0;flex:1 1 220px">
+          <select [id]="productField.id" [value]="form().productId" (change)="update('productId', $any($event.target).value)">
+            <option value="">— escolher —</option>
+            @for (p of products()!; track p.id) {
+              <option [value]="p.id">{{ p.name }} (stock: {{ p.stockQuantity ?? 0 }})</option>
+            }
+          </select>
+        </app-field>
+        <app-field label="Quantidade" #qtyField="appField" style="margin:0;width:110px">
+          <input [id]="qtyField.id" type="number" min="1" [value]="form().quantity" (input)="update('quantity', $any($event.target).value)" />
+        </app-field>
+        <app-field label="Nota (opcional)" #noteField="appField" style="margin:0;flex:1 1 160px">
+          <input [id]="noteField.id" [value]="form().note" (input)="update('note', $any($event.target).value)" />
+        </app-field>
+        <button class="btn btn-accent" type="submit" [disabled]="saving()">
+          {{ saving() ? 'A registar…' : isEntrada ? 'Registar entrada' : 'Registar saída' }}
+        </button>
+      </form>
+    </div>
+
+    @if (movements()!.length === 0) {
+      <div class="empty-state">
+        <h3>Sem {{ title.toLowerCase() }}</h3>
+        <p>Os movimentos registados aparecem aqui.</p>
+      </div>
+    } @else {
+      <div class="card" style="overflow-x:auto">
+        <div class="bz-scroll-x">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Produto</th>
+                <th style="text-align:right">Qtd.</th>
+                <th>Nota</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of movements()!; track m.id) {
+                <tr>
+                  <td>{{ formatDateTime(m.createdAt) }}</td>
+                  <td>{{ m.product?.name || productName(m.productId) }}</td>
+                  <td style="text-align:right;font-weight:700">{{ isEntrada ? '+' : '−' }}{{ m.quantity }}</td>
+                  <td>{{ m.note || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (total() > movements()!.length) {
+          <p class="helptext" style="margin:10px 0 0">
+            A mostrar os {{ movements()!.length }} movimentos mais recentes de {{ total() }} no total.
+          </p>
+        }
+      </div>
+    }
+  </div>
+}

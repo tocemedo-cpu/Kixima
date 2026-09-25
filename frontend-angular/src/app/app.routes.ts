@@ -148,6 +148,20 @@ export const routes: Routes = [
             loadComponent: () => import('./features/catalog/catalog-manage.component').then((m) => m.CatalogManageComponent),
           },
           {
+            path: 'inventario/stock',
+            loadComponent: () => import('./features/catalog/inventory.component').then((m) => m.InventoryComponent),
+          },
+          {
+            path: 'inventario/entradas',
+            loadComponent: () => import('./features/catalog/stock-movements.component').then((m) => m.StockMovementsComponent),
+            data: { isEntrada: true },
+          },
+          {
+            path: 'inventario/saidas',
+            loadComponent: () => import('./features/catalog/stock-movements.component').then((m) => m.StockMovementsComponent),
+            data: { isEntrada: false },
+          },
+          {
             path: 'pedidos/solicitacoes',
             loadComponent: () =>
               import('./features/quotes/supplier-quotes.component').then((m) => m.SupplierQuotesComponent),

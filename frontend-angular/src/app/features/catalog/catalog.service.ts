@@ -6,6 +6,13 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { ProductDto, RemocaoAck } from '../../core/models/product.model';
+import {
+  CreateStockMovementBody,
+  StockMovementDto,
+  StockMovementsPage,
+  StockMovementType,
+  UpdateStockBody,
+} from '../../core/models/stock-movement.model';
 
 export interface CatalogFiltro {
   [key: string]: string | undefined;
@@ -62,5 +69,20 @@ export class CatalogService {
   // DELETE /api/catalog/:id — desactivação (soft delete: active=false).
   deactivate(id: string): Observable<ProductDto> {
     return this.api.del<ProductDto>(`/api/catalog/${id}`);
+  }
+
+  // PATCH /api/catalog/:id/stock — actualização parcial de stock/armazém/disponibilidade.
+  updateStock(id: string, body: UpdateStockBody): Observable<ProductDto> {
+    return this.api.patch<ProductDto>(`/api/catalog/${id}/stock`, body);
+  }
+
+  // GET /api/catalog/movements — registados antes de /:id no Java para não
+  // colidir com esse caminho (CatalogController.java).
+  movements(type: StockMovementType, limit: number): Observable<StockMovementsPage> {
+    return this.api.get<StockMovementsPage>('/api/catalog/movements', { type, limit });
+  }
+
+  createMovement(body: CreateStockMovementBody): Observable<StockMovementDto> {
+    return this.api.post<StockMovementDto>('/api/catalog/movements', body);
   }
 }

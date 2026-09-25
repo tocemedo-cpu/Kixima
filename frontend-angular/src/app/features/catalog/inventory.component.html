@@ -1,0 +1,99 @@
+@if (!products()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header title="Inventário — Stock" subtitle="Gira as quantidades em armazém dos seus produtos."></app-page-header>
+    <app-error-banner [message]="error()"></app-error-banner>
+    <app-success-banner [message]="success()"></app-success-banner>
+
+    <div class="grid-cols grid-3" style="margin-bottom:18px">
+      <app-stat-card label="Produtos" [value]="products()!.length"></app-stat-card>
+      <app-stat-card label="Unidades em stock" [value]="totalUnits()"></app-stat-card>
+      <app-stat-card
+        label="Abaixo do mínimo"
+        [value]="lowCount()"
+        [sub]="lowCount() ? 'Requer reposição' : 'Tudo acima do mínimo'"
+      ></app-stat-card>
+    </div>
+
+    @if (products()!.length === 0) {
+      <div class="empty-state">
+        <h3>Sem produtos</h3>
+        <p>Publique itens no catálogo para gerir o respetivo stock.</p>
+        <a class="btn btn-accent btn-sm" routerLink="/fornecedor/catalogo">Ir para o catálogo</a>
+      </div>
+    } @else {
+      <div class="card" style="overflow-x:auto">
+        <div class="bz-scroll-x">
+          <table>
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Armazém</th>
+                <th>Stock</th>
+                <th>Mínimo</th>
+                <th>Disponibilidade</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of products()!; track p.id) {
+                <tr [style.background]="isLow(p) ? 'rgba(227,6,19,0.05)' : null">
+                  <td>
+                    <strong>{{ p.name }}</strong>
+                    <div style="font-size:11.5px;color:var(--ink-400)">{{ p.sku || p.category }}</div>
+                  </td>
+                  @if (editing() === p.id) {
+                    <td>
+                      <input [value]="draft().warehouse" (input)="updateDraft('warehouse', $any($event.target).value)" />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        style="width:80px"
+                        [value]="draft().stockQuantity"
+                        (input)="updateDraft('stockQuantity', $any($event.target).value)"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        style="width:80px"
+                        [value]="draft().minStock"
+                        (input)="updateDraft('minStock', $any($event.target).value)"
+                      />
+                    </td>
+                    <td>
+                      <select aria-label="Disponibilidade" [value]="draft().availability" (change)="updateDraft('availability', $any($event.target).value)">
+                        @for (a of PRODUCT_AVAILABILITY; track a) {
+                          <option [value]="a">{{ a }}</option>
+                        }
+                      </select>
+                    </td>
+                    <td style="white-space:nowrap">
+                      <button class="btn btn-accent btn-sm" [disabled]="saving()" (click)="save(p.id)">Guardar</button>
+                      <button class="btn btn-ghost btn-sm" (click)="cancelarEdicao()">Cancelar</button>
+                    </td>
+                  } @else {
+                    <td>{{ p.warehouse || '—' }}</td>
+                    <td>
+                      <strong>{{ p.stockQuantity ?? '—' }}</strong>
+                      @if (isLow(p)) {
+                        <app-badge tone="danger">baixo</app-badge>
+                      }
+                    </td>
+                    <td>{{ p.minStock ?? '—' }}</td>
+                    <td>{{ p.availability || '—' }}</td>
+                    <td><button class="btn btn-ghost btn-sm" (click)="startEdit(p)">Editar</button></td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+}

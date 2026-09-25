@@ -86,4 +86,28 @@ describe('CatalogService', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush({});
   });
+
+  it('updateStock() chama PATCH /api/catalog/:id/stock', () => {
+    service.updateStock('p1', { stockQuantity: 10 }).subscribe();
+    const req = http.expectOne('/api/catalog/p1/stock');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ stockQuantity: 10 });
+    req.flush({});
+  });
+
+  it('movements() chama GET /api/catalog/movements com type e limit', () => {
+    service.movements('ENTRADA', 100).subscribe();
+    const req = http.expectOne((r) => r.url === '/api/catalog/movements');
+    expect(req.request.params.get('type')).toBe('ENTRADA');
+    expect(req.request.params.get('limit')).toBe('100');
+    req.flush({ itens: [], total: 0, pagina: 1, porPagina: 25, paginas: 0 });
+  });
+
+  it('createMovement() chama POST /api/catalog/movements', () => {
+    service.createMovement({ productId: 'p1', type: 'SAIDA', quantity: 3 }).subscribe();
+    const req = http.expectOne('/api/catalog/movements');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ productId: 'p1', type: 'SAIDA', quantity: 3 });
+    req.flush({});
+  });
 });
