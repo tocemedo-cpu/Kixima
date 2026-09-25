@@ -198,11 +198,16 @@ kixima:
     local-dir: ${STORAGE_LOCAL_DIR:uploads}
   db:
     # Tecto de segurança para listas sem paginação própria — equivalente ao
-    # TETO_POR_OMISSAO/DB_MAX_ROWS de config/database.js. Ainda não é o
-    # interceptor genérico que se aplica a TODAS as leituras como no Node
-    # (isso pede um mecanismo cross-cutting, ver TODO no plano de migração);
-    # por agora aplica-se explicitamente em CatalogService.listCatalog.
+    # TETO_POR_OMISSAO/DB_MAX_ROWS de config/database.js, aplicado a TODAS as
+    # leituras feitas por repositórios (common/persistence/TectoDeLinhas):
+    # `limit N` no SQL quando não há paginação explícita, e um erro no log
+    # quando a lista volta cheia. Fora do tecto: reference_counters e o
+    # JdbcTemplate (o `$queryRaw` do Node também não passa pela extensão).
     max-rows: ${DB_MAX_ROWS:1000}
+  sentry:
+    # DSN do Sentry do frontend, só para a CSP (connect-src) — csp.js usa o do
+    # backend quando este não está definido (é a mesma organização Sentry).
+    frontend-dsn: ${SENTRY_FRONTEND_DSN:}
   plan:
     # Mesmas variáveis de ambiente que backend/src/services/planService.js.
     seat-price-cap-usd: ${KIXIMA_SEAT_PRICE_CAP_USD:100}
@@ -277,6 +282,21 @@ kixima:
     # não-bloqueante: sem RABBITMQ_URL nada é publicado e o Kixima funciona igual.
     url: ${RABBITMQ_URL:}
     exchange: ${RABBITMQ_EXCHANGE:kixima.events}
+
+sentry:
+  # Espelha config/sentry.js: inativo sem SENTRY_DSN (DSN vazio = SDK
+  # desligado, tudo no-op). Erros são sempre capturados; a amostragem de
+  # performance é 0 por omissão, como no Node.
+  dsn: ${SENTRY_DSN:}
+  traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0}
+  # `environment: config.env` — o perfil ativo, "development" sem perfil (como NODE_ENV).
+  environment: ${spring.profiles.active:development}
+  # O @sentry/node não envia PII por omissão — aqui também não.
+  send-default-pii: false
+  # O Node só reporta o que o errorHandler decide (ver GlobalExceptionHandler);
+  # sem isto o starter enviava também cada log de erro como evento.
+  logging:
+    enabled: false
 
 management:
   endpoints:

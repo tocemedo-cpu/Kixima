@@ -19,4 +19,5 @@ kixima:
 
 logging:
   level:
-    ao.kixima: INFO
+    # Mesma variável que config/logger.js (error|warn|info|debug; omissão "info").
+    ao.kixima: ${LOG_LEVEL:INFO}

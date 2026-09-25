@@ -29,6 +29,7 @@
   <properties>
     <java.version>21</java.version>
     <jjwt.version>0.12.6</jjwt.version>
+    <sentry.version>8.58.0</sentry.version>
   </properties>
 
   <dependencies>
@@ -145,6 +146,13 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <!-- Rastreio de erros — equivalente a @sentry/node (config/sentry.js). Sem SENTRY_DSN
+         fica tudo no-op, tal como no Node; ver bloco `sentry:` em application.yml. -->
+    <dependency>
+      <groupId>io.sentry</groupId>
+      <artifactId>sentry-spring-boot-starter-jakarta</artifactId>
+      <version>${sentry.version}</version>
     </dependency>
 
     <!-- Testes — equivalente a jest + supertest -->

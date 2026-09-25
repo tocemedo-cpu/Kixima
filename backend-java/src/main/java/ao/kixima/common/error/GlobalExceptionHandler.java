@@ -26,9 +26,8 @@ import java.util.stream.Collectors;
  * {@code {error:{code,message,details?}}}, os mesmos códigos de estado, e a
  * mesma tradução de erros de ORM (Prisma P2002/P2025 → equivalente
  * JPA/Hibernate) e de upload (Multer → MaxUploadSizeExceededException).
- *
- * TODO (M6 ou antes, quando Sentry for adicionado ao pom.xml): reproduzir
- * captureException(err, req) para 5xx, tal como config/sentry.js no Node.
+ * O que vai para o Sentry é o mesmo que no Node: os 5xx de {@link AppException}
+ * e os erros inesperados — nunca os 4xx (ver {@link SentryReporter}).
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -36,15 +35,18 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     private final boolean isDevelopment;
+    private final SentryReporter sentry;
 
-    public GlobalExceptionHandler(org.springframework.core.env.Environment env) {
+    public GlobalExceptionHandler(org.springframework.core.env.Environment env, SentryReporter sentry) {
         this.isDevelopment = List.of(env.getActiveProfiles()).contains("dev");
+        this.sentry = sentry;
     }
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResponse> handleAppException(AppException ex, HttpServletRequest req) {
         if (ex.getStatusCode() >= 500) {
             log.error(ex.getMessage(), ex);
+            sentry.captureException(ex, req); // erros de servidor (5xx) — para o Sentry
         } else {
             log.warn("{} [{}] {}", ex.getCode(), req.getRequestURI(), ex.getMessage());
         }
@@ -125,7 +127,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest req) {
         log.error("Erro não tratado [{}] {}", req.getRequestURI(), ex.getMessage(), ex);
-        // TODO: captureException(ex, req) — Sentry, quando adicionado (ver nota da classe).
+        sentry.captureException(ex, req); // erro inesperado — sempre reportado ao Sentry
         String message = "Ocorreu um erro interno. Tente novamente mais tarde.";
         if (isDevelopment) {
             StringWriter sw = new StringWriter();
