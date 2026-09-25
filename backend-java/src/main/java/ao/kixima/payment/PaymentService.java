@@ -137,7 +137,7 @@ public class PaymentService {
         // Guarda o comprovativo antes da transação (o upload não é transacional).
         String proofUrl;
         try {
-            proofUrl = storageService.saveFile(proof.getBytes(), proof.getOriginalFilename(), tipo, "comprovativo-" + fatura.reference());
+            proofUrl = storageService.saveFile(proof.getBytes(), proof.getOriginalFilename(), tipo, "comprovativo-" + fatura.reference(), "proofs");
         } catch (IOException e) {
             throw new IllegalStateException("Falha a ler o comprovativo enviado.", e);
         }

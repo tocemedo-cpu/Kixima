@@ -208,14 +208,14 @@ public class CompanyService {
             if (!required.contains(d.type())) continue;
             validarDocumento(d.file());
             String fileUrl = storageService.saveFile(bytesDe(d.file()), d.file().getOriginalFilename(), d.file().getContentType(),
-                    data.taxId + "-" + d.type().name());
+                    data.taxId + "-" + d.type().name(), "documents");
             docRecords.add(new Guardado(d.type(), fileUrl, d.file().getOriginalFilename()));
         }
         String policyDocumentUrl = null;
         if (type == CompanyType.FORNECEDOR) {
             validarDocumento(policyFile);
             policyDocumentUrl = storageService.saveFile(bytesDe(policyFile), policyFile.getOriginalFilename(), policyFile.getContentType(),
-                    data.taxId + "-APOLICE");
+                    data.taxId + "-APOLICE", "documents");
         }
 
         // 4. Criar empresa + admin + documentos (+ apólice, se fornecedora) — mesma transação.

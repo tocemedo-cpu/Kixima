@@ -147,6 +147,13 @@ kixima:
     env: ${AGT_ENV:hml}
     sandbox-username: ${AGT_SANDBOX_USERNAME:}
     sandbox-password: ${AGT_SANDBOX_PASSWORD:}
+  anthropic:
+    # Recomendação em linguagem natural do Category Management — chamada real à API da Claude.
+    # Sem chave, a análise numérica sai na mesma e a recomendação vem null com o motivo explícito.
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${ANTHROPIC_MODEL:claude-sonnet-5}
+  # Versão do programa declarada no SAF-T (ProductVersion) — `npm_package_version` no Node.
+  versao: ${KIXIMA_VERSAO:1.0}
   faturacao:
     # Identidade da KIXIMA como FABRICANTE do software certificado (ProductCompanyTaxID /
     # SoftwareCertificateNumber no SAF-T) — distinta do NIF de cada fornecedor emitente.
@@ -160,14 +167,20 @@ kixima:
     from: ${EMAIL_FROM:notificacoes@kixima.co.ao}
     brevo-api-key: ${BREVO_API_KEY:}
   storage:
-    # 's3' ainda não portado para Java (SDK novo no pom.xml) — ver
-    # StorageService, M5: cai sempre no disco local, com um aviso alto no
-    # log (mesmo espírito do "S3 mal configurado" do Node), nunca silencioso.
+    # Mesmas variáveis que config/env.js: 'local' (disco do contentor, apagado a cada
+    # deploy) ou 's3' (AWS S3 / Supabase Storage / R2 / MinIO, via SDK da AWS). Com 's3'
+    # e credenciais em falta cai para o disco local com aviso ALTO no log — nunca silencioso.
     provider: ${STORAGE_PROVIDER:local}
     bucket: ${STORAGE_BUCKET:}
     # Credenciais S3 — obrigatórias com STORAGE_PROVIDER=s3; a Prontidão diz o NOME das que faltam, nunca o valor.
     access-key: ${STORAGE_ACCESS_KEY:}
     secret-key: ${STORAGE_SECRET_KEY:}
+    region: ${STORAGE_REGION:}
+    # Endpoint S3-compatível (Supabase: https://<ref>.supabase.co/storage/v1/s3); vazio = AWS.
+    endpoint: ${STORAGE_ENDPOINT:}
+    # URL público base para servir os ficheiros (CDN / bucket público); vazio = endpoint/bucket ou host AWS.
+    public-url: ${STORAGE_PUBLIC_URL:}
+    force-path-style: ${STORAGE_FORCE_PATH_STYLE:true}
     # Bucket PRIVADO só para cópias de segurança — nunca o das imagens, que é público.
     backup-bucket: ${STORAGE_BACKUP_BUCKET:}
     local-dir: ${STORAGE_LOCAL_DIR:uploads}

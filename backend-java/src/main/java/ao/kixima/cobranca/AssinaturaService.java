@@ -343,7 +343,7 @@ public class AssinaturaService {
         if (!cobranca.emAberto()) {
             throw new ConflictException("A cobrança " + cobranca.getReferencia() + " está " + cobranca.getStatus().name().toLowerCase() + " e não aceita comprovativo.");
         }
-        String url = storageService.saveFile(bytesDe(file), file.getOriginalFilename(), file.getContentType(), "subscricao-" + cobranca.getReferencia());
+        String url = storageService.saveFile(bytesDe(file), file.getOriginalFilename(), file.getContentType(), "subscricao-" + cobranca.getReferencia(), "proofs");
         cobranca.registarComprovativo(url, Instant.now());
 
         Map<String, Object> detail = new LinkedHashMap<>();

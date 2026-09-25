@@ -392,7 +392,7 @@ public class CatalogImportService {
                 String mimetype = "image/" + ("jpg".equals(linha.im.ext()) ? "jpeg" : linha.im.ext());
                 String url = storageService.saveFile(linha.im.buffer(),
                         (vazio(linha.code) ? slugify(linha.nome) : linha.code) + "." + ext, mimetype,
-                        "cat-" + supplierId.substring(0, Math.min(8, supplierId.length())) + "-" + (vazio(linha.code) ? String.valueOf(linha.i) : linha.code));
+                        "cat-" + supplierId.substring(0, Math.min(8, supplierId.length())) + "-" + (vazio(linha.code) ? String.valueOf(linha.i) : linha.code), "catalog");
                 linha.data.put("imageUrl", url);
                 linha.comImagem = true;
             } catch (Exception e) {

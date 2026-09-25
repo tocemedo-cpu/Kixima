@@ -122,10 +122,22 @@
       <version>5.2.5</version>
     </dependency>
 
+    <!-- Limite de taxa da API externa de catálogo (120 pedidos/min por chave) — equivalente ao express-rate-limit -->
+    <dependency>
+      <groupId>com.bucket4j</groupId>
+      <artifactId>bucket4j-core</artifactId>
+      <version>8.10.1</version>
+    </dependency>
+
     <!-- Armazenamento S3 — equivalente a @aws-sdk/client-s3 -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
+      <version>2.28.11</version>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>apache-client</artifactId>
       <version>2.28.11</version>
     </dependency>
 

@@ -2,6 +2,8 @@ package ao.kixima.support;
 
 import ao.kixima.audit.Actor;
 import ao.kixima.audit.AuditService;
+import ao.kixima.catalog.UploadFilters;
+import ao.kixima.common.error.ErrorResponse;
 import ao.kixima.common.error.NotFoundException;
 import ao.kixima.common.error.ValidationException;
 import ao.kixima.company.Company;
@@ -21,6 +23,8 @@ import ao.kixima.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -68,16 +72,74 @@ public class SupportController {
     private final CompanyRepository companyRepository;
     private final AuditService auditService;
     private final StorageService storageService;
+    private final SupportOverviewService overviewService;
 
     public SupportController(SupportTicketRepository ticketRepository, SupportChatService supportChatService,
                               UserRepository userRepository, CompanyRepository companyRepository,
-                              AuditService auditService, StorageService storageService) {
+                              AuditService auditService, StorageService storageService, SupportOverviewService overviewService) {
         this.ticketRepository = ticketRepository;
         this.supportChatService = supportChatService;
         this.userRepository = userRepository;
         this.companyRepository = companyRepository;
         this.auditService = auditService;
         this.storageService = storageService;
+        this.overviewService = overviewService;
+    }
+
+    // --- Página de Ajuda e imagens dos locais (Lacunas D.6) ----------------------
+
+    @GetMapping("/overview")
+    public Map<String, Object> overview() {
+        return overviewService.overview(CurrentUserHolder.get());
+    }
+
+    @GetMapping("/admin/overview")
+    @RequireRole({ADMIN_SISTEMA})
+    @RequirePermission(SUPORTE)
+    public Map<String, Object> adminOverview() {
+        return overviewService.adminOverview();
+    }
+
+    /** uploadSlotImage — local inválido é 404, sem ficheiro é 400, formato não suportado 422, grande demais 413. */
+    private ResponseEntity<?> uploadSlotImage(String key, MultipartFile image) {
+        if (!SupportOverviewService.slotValido(key)) {
+            return ResponseEntity.status(404).body(ErrorResponse.of("NOT_FOUND", "Local de imagem inválido."));
+        }
+        if (image == null || image.isEmpty()) {
+            return ResponseEntity.badRequest().body(ErrorResponse.of("NO_FILE", "Nenhuma imagem enviada."));
+        }
+        UploadFilters.imagem(image, UploadFilters.LIMITE_IMAGEM);
+        byte[] bytes;
+        try {
+            bytes = image.getBytes();
+        } catch (java.io.IOException e) {
+            throw new ValidationException("Não foi possível ler o ficheiro enviado.");
+        }
+        String nome = image.getOriginalFilename() == null || image.getOriginalFilename().isBlank() ? key + ".jpg" : image.getOriginalFilename();
+        String imageUrl = storageService.saveFile(bytes, nome, image.getContentType(), "support-" + key, "support");
+        return ResponseEntity.ok(overviewService.guardarImagem(key, imageUrl));
+    }
+
+    @PostMapping("/images/{key}")
+    @RequireRole({ADMIN_SISTEMA})
+    @RequirePermission(SUPORTE)
+    public ResponseEntity<?> uploadImagem(@PathVariable String key, @RequestParam(value = "image", required = false) MultipartFile image) {
+        return uploadSlotImage(key, image);
+    }
+
+    @DeleteMapping("/images/{key}")
+    @RequireRole({ADMIN_SISTEMA})
+    @RequirePermission(SUPORTE)
+    public Map<String, String> removerImagem(@PathVariable String key) {
+        overviewService.removerImagem(key);
+        return Map.of("key", key);
+    }
+
+    @PostMapping("/categories/{key}/image")
+    @RequireRole({ADMIN_SISTEMA})
+    @RequirePermission(SUPORTE)
+    public ResponseEntity<?> uploadImagemDeCategoria(@PathVariable String key, @RequestParam(value = "image", required = false) MultipartFile image) {
+        return uploadSlotImage(key, image);
     }
 
     // --- Pedido do próprio utilizador ------------------------------------------
@@ -185,7 +247,7 @@ public class SupportController {
             boolean valido = tipo != null && (tipo.matches("^image/(png|jpe?g|webp|gif)$") || tipo.equals("application/pdf"));
             if (!valido) throw new ValidationException("Documento inválido — use PDF ou imagem (PNG/JPG).");
             try {
-                attachmentUrl = storageService.saveFile(attachment.getBytes(), attachment.getOriginalFilename(), tipo, "support-msg-" + id);
+                attachmentUrl = storageService.saveFile(attachment.getBytes(), attachment.getOriginalFilename(), tipo, "support-msg-" + id, "support-chat");
             } catch (java.io.IOException e) {
                 throw new IllegalStateException("Falha a ler o anexo enviado.", e);
             }

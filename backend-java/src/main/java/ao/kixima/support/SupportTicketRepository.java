@@ -28,5 +28,11 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicket, St
 
     List<SupportTicket> findTop10ByOrderByCreatedAtDesc();
 
+    long countByUserIdAndStatusIn(String userId, List<SupportStatus> statuses);
+
+    /** `groupBy({ by: ['status'], _count })` do painel do Admin. */
+    @Query("SELECT t.status, COUNT(t) FROM SupportTicket t GROUP BY t.status")
+    List<Object[]> contagemPorStatus();
+
     Page<SupportTicket> findByStatusOrderByCreatedAtDesc(SupportStatus status, Pageable pageable);
 }

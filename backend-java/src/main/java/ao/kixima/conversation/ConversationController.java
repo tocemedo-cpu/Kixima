@@ -122,7 +122,7 @@ public class ConversationController {
             boolean valido = tipo != null && (tipo.matches("^image/(png|jpe?g|webp|gif)$") || tipo.equals("application/pdf"));
             if (!valido) throw new ValidationException("Documento inválido — use PDF ou imagem (PNG/JPG).");
             try {
-                attachmentUrl = storageService.saveFile(attachment.getBytes(), attachment.getOriginalFilename(), tipo, "conversation-msg-" + id);
+                attachmentUrl = storageService.saveFile(attachment.getBytes(), attachment.getOriginalFilename(), tipo, "conversation-msg-" + id, "chat-comercial");
             } catch (IOException e) {
                 throw new IllegalStateException("Falha a ler o anexo enviado.", e);
             }

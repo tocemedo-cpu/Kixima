@@ -128,7 +128,7 @@ public class UserController {
             throw new IllegalStateException("Falha a ler a imagem enviada.", e);
         }
         String originalname = image.getOriginalFilename() == null || image.getOriginalFilename().isBlank() ? "avatar.jpg" : image.getOriginalFilename();
-        u.setAvatarUrl(storageService.saveFile(bytes, originalname, tipo, "avatar-" + u.getId()));
+        u.setAvatarUrl(storageService.saveFile(bytes, originalname, tipo, "avatar-" + u.getId(), "avatars"));
         return ResponseEntity.ok(UserPublicDto.de(u));
     }
 

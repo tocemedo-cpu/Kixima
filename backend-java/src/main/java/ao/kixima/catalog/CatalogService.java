@@ -215,7 +215,7 @@ public class CatalogService {
         List<ProductDocument> docs = new ArrayList<>();
         for (Documento d : media.documentos()) {
             MultipartFile f = d.file();
-            String fileUrl = storageService.saveFile(bytes(f), f.getOriginalFilename(), f.getContentType(), keyHint + "-" + d.type().name());
+            String fileUrl = storageService.saveFile(bytes(f), f.getOriginalFilename(), f.getContentType(), keyHint + "-" + d.type().name(), "documents");
             docs.add(new ProductDocument(UUID.randomUUID().toString(), product.getId(), d.type(), fileUrl, f.getOriginalFilename(), agora));
         }
         if (primaryUrl != null) product.setImageUrl(primaryUrl);
@@ -289,7 +289,7 @@ public class CatalogService {
         List<ProductDocument> docs = new ArrayList<>();
         for (Documento d : media.documentos()) {
             MultipartFile f = d.file();
-            String fileUrl = storageService.saveFile(bytes(f), f.getOriginalFilename(), f.getContentType(), keyHint + "-" + d.type().name() + "-add");
+            String fileUrl = storageService.saveFile(bytes(f), f.getOriginalFilename(), f.getContentType(), keyHint + "-" + d.type().name() + "-add", "documents");
             docs.add(new ProductDocument(UUID.randomUUID().toString(), id, d.type(), fileUrl, f.getOriginalFilename(), agora));
         }
         productImageRepository.saveAll(imagens);

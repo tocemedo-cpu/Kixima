@@ -47,6 +47,17 @@ public interface ProductRepository extends JpaRepository<Product, String>, JpaSp
     @Query("UPDATE Product p SET p.stockQuantity = p.stockQuantity - :quantity WHERE p.id = :id AND p.stockQuantity >= :quantity")
     int decrementStockIfAvailable(@Param("id") String id, @Param("quantity") int quantity);
 
+    // --- API externa de catálogo (apiCatalogoRoutes.js) ---
+    long countBySupplierId(String supplierId);
+
+    long countBySupplierIdAndActive(String supplierId, boolean active);
+
+    List<Product> findBySupplierIdOrderByUpdatedAtDescIdAsc(String supplierId, org.springframework.data.domain.Pageable pageable);
+
+    List<Product> findBySupplierIdAndActiveOrderByUpdatedAtDescIdAsc(String supplierId, boolean active, org.springframework.data.domain.Pageable pageable);
+
+    Optional<Product> findFirstBySupplierIdAndSku(String supplierId, String sku);
+
     /** buyerService.suppliers / reportsService.supplierStats — o catálogo de um fornecedor. */
     List<Product> findBySupplierId(String supplierId);
 }

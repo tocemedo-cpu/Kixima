@@ -76,6 +76,9 @@ public class PublicPaths {
         adicionar("POST", "/api/webhooks/pagamento/*");
         // app.js — rota pública direta (fora de qualquer router com `authenticate`).
         adicionar("GET", "/api/retencao");
+        // API externa de catálogo: autenticada por CHAVE (Bearer kxm_...), não por sessão — ver ApiCatalogoController.
+        adicionar("/api/v1/catalogo");
+        adicionar("/api/v1/catalogo/*");
         // realtimeService.js — o upgrade HTTP do WebSocket passa sem token: a
         // autenticação é no CONNECT STOMP (io.use(autenticarSocket) no Node),
         // porque o Bearer do Capacitor só pode vir nesse frame, nunca no upgrade.

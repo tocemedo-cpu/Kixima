@@ -74,23 +74,29 @@ adaptadores de gateway (EMIS, PayPay, BAI, BFA, Standard Bank Angola) — todos
 
 ### D. Administração, operações e catálogo (escrita)
 
+**Estado: FECHADO** (commits "Lacunas D.1" a "Lacunas D.6/D.7/D.8").
+
 | Rotas Node | Endpoints | Serviço(s) Node | Notas |
 |---|---|---|---|
-| ~~`/api/admin` (invites de assessor, users/areas/status, activities, prontidão, email-teste)~~ | 14 | adminService (320), prontidaoService (675) | **FECHADO** (commit "Lacunas D.1"): `admin/AdminService`, `admin/AdminController`, `admin/ProntidaoService`; email de teste via `EmailDispatchService.enviarDireto` (recusa-se a fingir em modo console: 422). A Prontidão diz, com honestidade, quando `STORAGE_PROVIDER=s3` está definido mas este servidor ainda não sabe escrever no S3 (até D.8). |
+| ~~`/api/admin` (invites de assessor, users/areas/status, activities, prontidão, email-teste)~~ | 14 | adminService (320), prontidaoService (675) | **FECHADO** (commit "Lacunas D.1"): `admin/AdminService`, `admin/AdminController`, `admin/ProntidaoService`; email de teste via `EmailDispatchService.enviarDireto` (recusa-se a fingir em modo console: 422). A Prontidão diz o NOME das credenciais S3 em falta, nunca o valor. |
 | ~~`/api/catalog` (create/update/delete, import, imagens/media/documentos)~~ | 8 | catalogService (escrita), catalogImportService (310), storage | **FECHADO** (commit "Lacunas D.2"): `CatalogService` (escrita e media), `CatalogImportService` (Apache POI no lugar do SheetJS; fotos embebidas lidas do zip), `catalog/dto/ProductPayload` (createProductSchema/partial), `catalog/UploadFilters` (filtros do multer). |
 | ~~`/api/marketplace` (search, compare, facets, suppliers)~~ | 4 | marketplaceService (259) | **FECHADO** (commit "Lacunas D.3/D.4"): `marketplace/MarketplaceService` — filtros em SQL nativo (search_text por gatilho, text[], search_rank do fornecedor), hidratação pelo JPA. |
 | ~~`/api/kits`~~ | 3 | kitService | **FECHADO** (commit "Lacunas D.3/D.4"): `kit/{Kit,KitItem,KitService,KitController}`. |
-| `/api/faturacao` (integridade, saft, saft/resumo, metricas) | 4 | saftService (355), faturacaoService | SAF-T (AO) e integridade da cadeia |
-| `/api/support` (overview, admin/overview, imagens de categorias) | 5 | supportService | painéis e imagens do suporte |
-| `/api/category-management` (analise, media-mensal) | 2 | categoryAnalyticsService (resto) | dashboard de Category Management |
-| `/api/v1/catalogo` | 3 | apiCatalogoRoutes (181) | API externa por chave — exige rate limiting (Bucket4j, dependência nova) |
+| ~~`/api/faturacao` (integridade, saft, saft/resumo, metricas)~~ | 4 | saftService (355), faturacaoService | **FECHADO** (commit "Lacunas D.5"): `faturacao/{CadeiaIntegridadeService,SaftService,MetricasService,FaturacaoController}`. Diferença deliberada: período ilegível no SAF-T é 422, não o 500 do `Error` cru do Node. |
+| ~~`/api/support` (overview, admin/overview, imagens de categorias)~~ | 5 | supportService | **FECHADO** (commit "Lacunas D.6/D.7/D.8"): `support/SupportOverviewService` + rotas em `SupportController`; overrides mortos no disco voltam ao default (`StorageService.urlAindaVivo`). |
+| ~~`/api/category-management` (analise, media-mensal)~~ | 2 | categoryAnalyticsService (resto) | **FECHADO** (commit "Lacunas D.6/D.7/D.8"): `analytics/{CategoryManagementController,AiRecommendationService}`, `CategoryAnalyticsService` (volume/oportunidades/previsão), `DiscountThresholdService.proximoThreshold`. A IA chama a Messages API só com `ANTHROPIC_API_KEY`; sem ela, texto null com motivo. |
+| ~~`/api/v1/catalogo`~~ | 3 | apiCatalogoRoutes (181) | **FECHADO** (commit "Lacunas D.6/D.7/D.8"): `apicatalogo/ApiCatalogoController` — chave `kxm_` fora da sessão JWT (PublicPaths), 120/min por chave com Bucket4j (janela fixa), auditoria `CATALOGO_ATUALIZADO_POR_API`. Diferença deliberada: `prazoEntregaDias` inválido é 422 (o Node deixava um NaN rebentar em 500). |
 
 ## Dependências transversais ainda por portar
 
-- **S3** no `StorageService` (SDK AWS, dependência nova) — sem isto, uploads
-  caem no disco do contentor e a cópia de segurança recusa-se a correr.
-- **Rate limiting** (Bucket4j, dependência nova) — todos os limitadores do
-  Node (`rateLimiters.js`) e a API externa `/api/v1/catalogo`.
+- ~~**S3** no `StorageService`~~ — **PORTADO** (commit "Lacunas D.6/D.7/D.8"):
+  SDK da AWS v2 (`s3` + `apache-client`), mesmas variáveis `STORAGE_*` do Node,
+  pastas por tipo de ficheiro, 502 com o motivo explicado quando o bucket falha;
+  a cópia de segurança passa a correr com S3 configurado. Só testável de ponta a
+  ponta contra um bucket real (em M7, no staging).
+- **Rate limiting** (Bucket4j): **portado** para a API externa `/api/v1/catalogo`
+  (120/min por chave). Os restantes limitadores do Node (`rateLimiters.js`:
+  login, chat, uploads) continuam por portar — ver M7.
 - **SMTP** como provider de email (JavaMail) — só `console`/`brevo` existem.
 - **i18n dos emails** (`i18n/emails.js`) — o email sai sempre em português.
 - **Interceptor genérico de tecto de linhas** (`DB_MAX_ROWS`) — só aplicado

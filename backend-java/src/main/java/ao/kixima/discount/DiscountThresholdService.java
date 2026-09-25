@@ -98,6 +98,50 @@ public class DiscountThresholdService {
                 null, Map.of("minVolumeUsd", minVolume, "discountPercent", percent)));
     }
 
+    /** Um patamar tal como proximoThreshold o compara: só o mínimo e a percentagem, já normalizados. */
+    public record Patamar(String id, double minVolumeUsd, double discountPercent, boolean ativo) {
+        public static Patamar de(DiscountThresholdDto t) {
+            return new Patamar(t.id(), t.minVolumeUsd().doubleValue(), t.discountPercent().doubleValue(), t.ativo());
+        }
+    }
+
+    /**
+     * Espelha discountThresholdService.proximoThreshold — o patamar mais alto já
+     * atingido, o próximo, quanto falta e a poupança adicional ao chegar lá.
+     * `patamares` null → lê os ativos da base.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> proximoThreshold(double volumeAtualUsd, List<Patamar> patamares) {
+        List<Patamar> lista = new java.util.ArrayList<>(patamares != null ? patamares : listar(true).stream().map(Patamar::de).toList());
+        lista.sort(java.util.Comparator.comparingDouble(Patamar::minVolumeUsd));
+        double volume = Double.isFinite(volumeAtualUsd) ? volumeAtualUsd : 0;
+        Patamar atual = null;
+        Patamar proximo = null;
+        for (Patamar t : lista) {
+            if (t.minVolumeUsd() <= volume) atual = t;
+            else if (proximo == null) proximo = t;
+        }
+        double descontoAtual = atual == null ? 0 : atual.discountPercent();
+        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("volumeAtualUsd", volume);
+        out.put("descontoAtual", descontoAtual);
+        out.put("thresholdAtual", atual == null ? null : patamarOut(atual));
+        out.put("proximoThreshold", proximo == null ? null : patamarOut(proximo));
+        out.put("faltamUsd", proximo == null ? null : Math.round((proximo.minVolumeUsd() - volume) * 100) / 100.0);
+        out.put("poupancaPotencialUsd", proximo == null ? null
+                : Math.round(proximo.minVolumeUsd() * ((proximo.discountPercent() - descontoAtual) / 100) * 100) / 100.0);
+        return out;
+    }
+
+    private static Map<String, Object> patamarOut(Patamar t) {
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("id", t.id());
+        m.put("minVolumeUsd", t.minVolumeUsd());
+        m.put("discountPercent", t.discountPercent());
+        m.put("ativo", t.ativo());
+        return m;
+    }
+
     private void validarVolume(BigDecimal minVolumeUsd) {
         if (minVolumeUsd == null || minVolumeUsd.signum() <= 0) {
             throw new ValidationException("minVolumeUsd tem de ser maior que zero.");

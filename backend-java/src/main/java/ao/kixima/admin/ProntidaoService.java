@@ -314,15 +314,6 @@ public class ProntidaoService {
                             + "Uma variável criada mas deixada EM BRANCO conta como ausente. Reinicie o serviço depois de guardar — "
                             + "enquanto faltarem, os ficheiros vão para o disco do contentor e desaparecem no reinício seguinte."));
         }
-        if (!"s3".equals(storageService.providerAtivo())) {
-            // Honestidade sobre o próprio servidor: pedir S3 a um processo que ainda não o sabe usar
-            // é a mesma falha silenciosa que a página existe para apanhar.
-            Risco risco = ficheirosEmRisco();
-            return List.of(check("storage", "Armazenamento de ficheiros", FALHA,
-                    "STORAGE_PROVIDER=s3 está definido, mas ESTE servidor ainda não sabe escrever no S3 — os ficheiros vão para o disco do contentor."
-                            + descreverRisco(risco),
-                    "Sirva os uploads pelo backend que tem o S3 ligado até este o suportar. Cada upload aqui volta a avisar no registo do serviço."));
-        }
         Risco risco = ficheirosEmRisco();
         if (risco != null && risco.total() > 0) {
             return List.of(check("storage", "Armazenamento de ficheiros", AVISO,

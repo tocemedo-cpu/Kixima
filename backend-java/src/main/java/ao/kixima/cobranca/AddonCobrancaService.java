@@ -178,7 +178,7 @@ public class AddonCobrancaService {
         if (!cobranca.emAberto()) {
             throw new ConflictException("A cobrança " + cobranca.getReferencia() + " está " + cobranca.getStatus().name().toLowerCase() + " e não aceita comprovativo.");
         }
-        String url = storageService.saveFile(AssinaturaService.bytesDe(file), file.getOriginalFilename(), tipo, "addon-" + cobranca.getReferencia());
+        String url = storageService.saveFile(AssinaturaService.bytesDe(file), file.getOriginalFilename(), tipo, "addon-" + cobranca.getReferencia(), "proofs");
         cobranca.registarComprovativo(url, Instant.now());
 
         Map<String, Object> detail = new LinkedHashMap<>();

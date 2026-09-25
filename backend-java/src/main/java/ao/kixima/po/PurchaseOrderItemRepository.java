@@ -20,6 +20,12 @@ public interface PurchaseOrderItemRepository extends JpaRepository<PurchaseOrder
      * compra reconhecida de um produto por uma empresa num período; devolve
      * [po.createdAt, quantity] por item, agrupado por mês do lado Java.
      */
+    /** categoryAnalyticsService.volumePorCategoria / oportunidadesConsolidacao — categoria, total da linha e PO. */
+    @Query("SELECT p.category, i.lineTotal, i.purchaseOrderId FROM PurchaseOrderItem i LEFT JOIN i.product p JOIN i.purchaseOrder po "
+            + "WHERE po.buyerCompanyId = :companyId AND po.status IN :status AND po.createdAt BETWEEN :de AND :ate")
+    List<Object[]> linhasReconhecidasDaEmpresa(@Param("companyId") String companyId, @Param("status") List<PoStatus> status,
+                                               @Param("de") java.time.Instant de, @Param("ate") java.time.Instant ate);
+
     @Query("SELECT po.createdAt, i.quantity FROM PurchaseOrderItem i JOIN i.purchaseOrder po "
             + "WHERE i.productId = :productId AND po.buyerCompanyId = :companyId AND po.status IN :status "
             + "AND po.createdAt BETWEEN :de AND :ate")
