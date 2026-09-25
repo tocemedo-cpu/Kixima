@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -120,6 +121,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ErrorResponse> handleRouteNotFound(NoHandlerFoundException ex) {
         String message = "Rota " + ex.getHttpMethod() + " " + ex.getRequestURL() + " não existe.";
+        return ResponseEntity.status(404).body(ErrorResponse.of("ROUTE_NOT_FOUND", message));
+    }
+
+    /**
+     * O mesmo 404 quando um ficheiro do frontend compilado (SpaHandlerMapping)
+     * desaparece entre a decisão de o servir e a leitura — sem isto caía no
+     * fallback abaixo como um 500.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(NoResourceFoundException ex, HttpServletRequest req) {
+        String message = "Rota " + ex.getHttpMethod() + " " + req.getRequestURI() + " não existe.";
         return ResponseEntity.status(404).body(ErrorResponse.of("ROUTE_NOT_FOUND", message));
     }
 

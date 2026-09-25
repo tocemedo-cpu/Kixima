@@ -1,0 +1,4 @@
+# Corre antes do contexto existir: traduz a DATABASE_URL do Node (libpq) para
+# spring.datasource.* quando DATABASE_URL_JDBC não está definida.
+org.springframework.boot.env.EnvironmentPostProcessor=\
+ao.kixima.config.DatabaseUrlEnvironmentPostProcessor

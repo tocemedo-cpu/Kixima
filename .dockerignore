@@ -3,6 +3,8 @@
 **/.git
 **/dist
 **/build
+# Saída do Maven (backend-java): o jar compila-se dentro da imagem, nunca entra do disco local.
+**/target
 **/coverage
 **/*.log
 **/.env

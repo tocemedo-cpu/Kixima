@@ -1,5 +1,6 @@
 package ao.kixima.security;
 
+import ao.kixima.frontend.SpaHandlerMapping;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 
@@ -99,6 +100,12 @@ public class PublicPaths {
     }
 
     public boolean ePublico(String metodo, String path) {
+        // Deploy de serviço único (M8): o SPA e os seus ficheiros estáticos — qualquer
+        // GET/HEAD fora de /api, /ws, /socket.io, /health, /ready, /actuator — são
+        // públicos, tal como no Node o express.static e o history fallback vêm DEPOIS
+        // dos routers e sem `authenticate`. As páginas /, /login e /cadastro têm de
+        // carregar sem sessão; a API por trás delas continua protegida rota a rota.
+        if (SpaHandlerMapping.eCaminhoDoSpa(metodo, path)) return true;
         return entradas.stream().anyMatch(e ->
                 (e.metodo().equals(QUALQUER_METODO) || e.metodo().equalsIgnoreCase(metodo)) && matcher.match(e.pathPattern(), path));
     }

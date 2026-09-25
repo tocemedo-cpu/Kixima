@@ -1,16 +1,31 @@
 # Configuração base — comum a todos os perfis. Nomes de variável de ambiente
 # alinhados 1:1 com backend/src/config/env.js (Node), para as duas versões
 # poderem ser configuradas com o MESMO conjunto de segredos no painel do
-# Render durante a janela de sobreposição.
+# Render durante a janela de sobreposição — incluindo a base de dados:
+#
+#   DATABASE_URL          a connection string única do Node
+#                         (postgresql://user:pass@host:porta/base?sslmode=require).
+#                         config/DatabaseUrlEnvironmentPostProcessor traduz-a
+#                         para spring.datasource.url/username/password antes
+#                         de o contexto arrancar (parâmetros do Prisma como
+#                         pgbouncer=true/connection_limit são traduzidos ou
+#                         ignorados, com aviso no log).
+#   DATABASE_URL_JDBC     alternativa explícita (jdbc:postgresql://...), com
+#   + DATABASE_USER       DATABASE_USER/DATABASE_PASSWORD separados. Quando
+#   + DATABASE_PASSWORD   está definida ganha SEMPRE à DATABASE_URL.
+#
+# Sem nenhuma das duas fica a base local de desenvolvimento/testes abaixo.
+# No perfil test a DATABASE_URL é ignorada de propósito (application-test.yml
+# manda) — a suite nunca aponta a outra base por causa de uma variável na shell.
 spring:
   application:
     name: kixima-backend
 
   datasource:
-    # DATABASE_URL do Node é uma connection string única; aqui separamos em
-    # host/user/password porque é o formato que o Spring espera — o valor
-    # continua a apontar ao MESMO pooler Supabase (porta 6543, Transaction
-    # pooler) usado pelo backend Node. Nunca o host direto (só IPv6).
+    # Ver o bloco de comentário no topo: DATABASE_URL (Node) ou
+    # DATABASE_URL_JDBC + DATABASE_USER + DATABASE_PASSWORD. O valor continua
+    # a apontar ao MESMO pooler Supabase usado pelo backend Node. Nunca o host
+    # direto (só IPv6).
     url: ${DATABASE_URL_JDBC:jdbc:postgresql://localhost:5432/kixima_test}
     username: ${DATABASE_USER:kixima}
     password: ${DATABASE_PASSWORD:kixima}
@@ -72,6 +87,12 @@ spring.web.resources.add-mappings: false
 # por omissão do Spring.
 
 kixima:
+  # Deploy de serviço único (a mesma topologia do Node): a pasta do frontend
+  # compilado (Vite -> frontend/dist) que este processo serve na mesma origem
+  # que a API, com history fallback para o SPA — ver frontend/SpaHandlerMapping.
+  # A imagem Docker (backend-java/Dockerfile) fixa FRONTEND_DIST=/app/frontend/dist.
+  # Vazia (ou sem index.html): só a API responde, com aviso no log como no Node.
+  frontend-dist: ${FRONTEND_DIST:}
   # Espelha backend/src/middleware/rateLimit.js — mesmos máximos e variáveis de ambiente.
   # Desligado no perfil de teste (como NODE_ENV=test no Node); trust-proxy = `app.set('trust proxy', 1)`.
   rate-limit:
