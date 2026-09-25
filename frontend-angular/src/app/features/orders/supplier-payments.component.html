@@ -1,0 +1,55 @@
+@if (error() && !orders()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!orders()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    @if (toast()) {
+      <div class="svc-toast">{{ toast() }}</div>
+    }
+    <app-page-header title="Pagamentos Recebidos" subtitle="Comprovativos anexados pelo cliente — confirme quando o valor entrar na sua conta."></app-page-header>
+    <app-error-banner [message]="error()"></app-error-banner>
+
+    <div class="card">
+      @if (paid().length === 0) {
+        <div class="empty-state">
+          <h3>Sem pagamentos recebidos ainda</h3>
+          <p>Quando o Financeiro do cliente processar um pagamento, ele aparece aqui.</p>
+        </div>
+      } @else {
+        <table>
+          <thead>
+            <tr><th>Pagamento</th><th>PO</th><th>Valor</th><th>Processado em</th><th>Comprovativo</th><th>Receção do valor</th></tr>
+          </thead>
+          <tbody>
+            @for (o of paid(); track o.id) {
+              <tr class="row-link" (click)="verDetalhe(o.id)">
+                <td><span class="mono">{{ o.invoice?.payment?.reference }}</span></td>
+                <td><span class="mono">{{ o.reference }}</span></td>
+                <td>{{ formatMoney(o.invoice?.payment?.amount, o.invoice?.payment?.currency) }}</td>
+                <td>{{ formatDateTime(o.invoice?.payment?.processedAt) }}</td>
+                <td>
+                  @if (o.invoice?.payment?.proofUrl) {
+                    <button class="btn btn-ghost btn-sm" (click)="verComprovativo(o.invoice!.payment!.proofUrl!, $event)" [title]="o.invoice?.payment?.proofName || 'comprovativo'">Ver comprovativo</button>
+                  } @else {
+                    <span class="bz-muted">—</span>
+                  }
+                </td>
+                <td>
+                  @if (o.invoice?.payment?.receivedAt) {
+                    <app-badge tone="success">Confirmada · {{ formatDate(o.invoice?.payment?.receivedAt) }}</app-badge>
+                  } @else {
+                    <button class="btn btn-accent btn-sm" [disabled]="confirming() === o.invoice?.payment?.id"
+                      (click)="$event.stopPropagation(); confirmReceived(o.invoice!.payment!)">
+                      {{ confirming() === o.invoice?.payment?.id ? 'A confirmar…' : 'Confirmar receção' }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+}

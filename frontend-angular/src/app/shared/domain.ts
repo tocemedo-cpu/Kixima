@@ -78,3 +78,11 @@ export const PO_STATUS: Record<PoStatus, { label: string; tone: string }> = {
   RECEBIDA_COM_DIVERGENCIA: { label: 'Recebida — com divergência', tone: 'danger' },
   CONCLUIDA: { label: 'Concluída', tone: 'success' },
 };
+
+// Espelha INVOICE_STATUS em frontend/src/domain.js:63-68.
+export const INVOICE_STATUS: Record<string, { label: string; tone: string }> = {
+  PENDENTE: { label: 'Pendente', tone: 'pending' },
+  PAGA: { label: 'Paga', tone: 'success' },
+  VENCIDA: { label: 'Vencida', tone: 'danger' },
+  CANCELADA: { label: 'Cancelada', tone: 'neutral' },
+};

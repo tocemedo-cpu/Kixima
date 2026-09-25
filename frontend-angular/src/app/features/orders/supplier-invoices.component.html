@@ -1,0 +1,37 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!data()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header title="Faturas" subtitle="Geradas automaticamente quando aceita uma PO — apenas consulta."></app-page-header>
+    <div class="card">
+      @if (data()!.items.length === 0) {
+        <div class="empty-state">
+          <h3>Sem faturas ainda</h3>
+          <p>Assim que aceitar uma PO, a fatura é gerada automaticamente e aparece aqui.</p>
+        </div>
+      } @else {
+        <table>
+          <thead>
+            <tr><th>Fatura</th><th>PO</th><th>Valor</th><th>Prazo (7 dias)</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            @for (o of data()!.items; track o.id) {
+              <tr class="row-link" (click)="verDetalhe(o.id)">
+                <td><span class="mono">{{ o.invoice?.reference }}</span></td>
+                <td><span class="mono">{{ o.reference }}</span></td>
+                <td>{{ formatMoney(o.invoice?.amount, o.invoice?.currency) }}</td>
+                <td>{{ formatDate(o.invoice?.dueAt) }}</td>
+                <td><app-badge [tone]="INVOICE_STATUS[o.invoice?.status || '']?.tone">{{ INVOICE_STATUS[o.invoice?.status || '']?.label }}</app-badge></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <div style="padding:10px 14px">
+          <app-pagination [page]="data()!.page" [pages]="data()!.pages" [total]="data()!.total" unit="faturas" (onPage)="irPara($event)"></app-pagination>
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -101,6 +101,16 @@ export const routes: Routes = [
             path: 'ordens/:id',
             loadComponent: () => import('./features/orders/order-detail.component').then((m) => m.OrderDetailComponent),
           },
+          {
+            path: 'faturas',
+            loadComponent: () =>
+              import('./features/orders/supplier-invoices.component').then((m) => m.SupplierInvoicesComponent),
+          },
+          {
+            path: 'pagamentos',
+            loadComponent: () =>
+              import('./features/orders/supplier-payments.component').then((m) => m.SupplierPaymentsComponent),
+          },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Fornecedor' } },
         ],
       },
@@ -111,9 +121,11 @@ export const routes: Routes = [
         canActivate: [roleGuard('COMPANY_ADMIN')],
         children: [
           { path: '', component: PendingPageComponent, data: { titulo: 'Início — Administração da Empresa' } },
-          // OrderDetail é partilhado por 4 personas (ver frontend/src/App.jsx:216)
-          // — a lista de Approvals.jsx continua pendente, só o detalhe (que já
-          // foi migrado por inteiro, com as acções de Company Admin) é montado aqui.
+          {
+            path: 'aprovacoes',
+            loadComponent: () => import('./features/orders/approvals.component').then((m) => m.ApprovalsComponent),
+          },
+          // OrderDetail é partilhado por 4 personas (ver frontend/src/App.jsx:216).
           {
             path: 'aprovacoes/:id',
             loadComponent: () => import('./features/orders/order-detail.component').then((m) => m.OrderDetailComponent),
@@ -131,6 +143,14 @@ export const routes: Routes = [
           {
             path: 'ordens/:id',
             loadComponent: () => import('./features/orders/order-detail.component').then((m) => m.OrderDetailComponent),
+          },
+          // Mesma página do lado Fornecedor (frontend/src/App.jsx:268) — a
+          // empresa também vende, então o Financeiro vê os pagamentos
+          // recebidos das suas próprias vendas aqui.
+          {
+            path: 'recebidos',
+            loadComponent: () =>
+              import('./features/orders/supplier-payments.component').then((m) => m.SupplierPaymentsComponent),
           },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Financeiro' } },
         ],

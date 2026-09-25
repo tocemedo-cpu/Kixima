@@ -22,6 +22,23 @@ export interface BuyerOrdersParams {
   limit?: number;
 }
 
+// GET /api/purchase-orders sem `page` devolve um array puro; com `page`
+// devolve o mesmo envelope paginado de BuyerOrdersResult, mas sem `kpis`
+// (só buyerService.orders calcula KPIs) — ver poService.listPurchaseOrders:245-268.
+export interface PurchaseOrdersListParams {
+  status?: string;
+  invoiced?: 'true';
+  page?: number;
+  limit?: number;
+}
+export interface PurchaseOrdersPage {
+  items: PurchaseOrderDto[];
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class OrdersService {
   constructor(private readonly api: ApiService) {}
@@ -29,6 +46,22 @@ export class OrdersService {
   // GET /api/buyer/orders — lista com KPIs, usada por Orders.jsx (comprador).
   buyerOrders(params: BuyerOrdersParams): Observable<BuyerOrdersResult> {
     return this.api.get<BuyerOrdersResult>('/api/buyer/orders', params as Record<string, string | number | undefined>);
+  }
+
+  // GET /api/purchase-orders (sem page) — array puro, usado por Approvals.jsx
+  // (Company Admin) e por Payments.jsx (Fornecedor/Financeiro, filtrado no cliente).
+  list(status?: string): Observable<PurchaseOrderDto[]> {
+    return this.api.get<PurchaseOrderDto[]>('/api/purchase-orders', status ? { status } : undefined);
+  }
+
+  // GET /api/purchase-orders?page=... — envelope paginado, usado por Invoices.jsx (Fornecedor).
+  listPage(params: PurchaseOrdersListParams): Observable<PurchaseOrdersPage> {
+    return this.api.get<PurchaseOrdersPage>('/api/purchase-orders', params as Record<string, string | number | undefined>);
+  }
+
+  // PATCH /api/payments/:paymentId/confirm-received — usado por Payments.jsx (Fornecedor).
+  confirmPaymentReceived(paymentId: string): Observable<unknown> {
+    return this.api.patch(`/api/payments/${paymentId}/confirm-received`);
   }
 
   // POST /api/purchase-orders — uma PO por fornecedor, chamada em ciclo pelo Checkout.

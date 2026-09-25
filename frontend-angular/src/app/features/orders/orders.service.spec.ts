@@ -63,6 +63,34 @@ describe('OrdersService', () => {
     http.expectOne({ url: '/api/purchase-orders/po1/history', method: 'GET' }).flush([]);
   });
 
+  it('list() chama GET /api/purchase-orders sem `page` — array puro, com/sem filtro de status', () => {
+    service.list('AGUARDANDO_APROVACAO').subscribe();
+    const comStatus = http.expectOne((r) => r.url === '/api/purchase-orders');
+    expect(comStatus.request.method).toBe('GET');
+    expect(comStatus.request.params.get('status')).toBe('AGUARDANDO_APROVACAO');
+    expect(comStatus.request.params.has('page')).toBeFalse();
+    comStatus.flush([]);
+
+    service.list().subscribe();
+    const semStatus = http.expectOne((r) => r.url === '/api/purchase-orders');
+    expect(semStatus.request.params.has('status')).toBeFalse();
+    semStatus.flush([]);
+  });
+
+  it('listPage() chama GET /api/purchase-orders com `page` — envelope paginado', () => {
+    service.listPage({ invoiced: 'true', page: 2, limit: 15 }).subscribe();
+    const req = http.expectOne((r) => r.url === '/api/purchase-orders');
+    expect(req.request.params.get('invoiced')).toBe('true');
+    expect(req.request.params.get('page')).toBe('2');
+    expect(req.request.params.get('limit')).toBe('15');
+    req.flush({ items: [], total: 0, page: 2, pages: 1, limit: 15 });
+  });
+
+  it('confirmPaymentReceived() chama PATCH /api/payments/:paymentId/confirm-received', () => {
+    service.confirmPaymentReceived('pay1').subscribe();
+    http.expectOne({ url: '/api/payments/pay1/confirm-received', method: 'PATCH' }).flush({});
+  });
+
   it('emitirNotaCredito() e anularFatura() chamam os endpoints de fatura correctos', () => {
     service.emitirNotaCredito('inv1', 'devolução', 500).subscribe();
     const nc = http.expectOne({ url: '/api/payments/invoices/inv1/notas-credito', method: 'POST' });

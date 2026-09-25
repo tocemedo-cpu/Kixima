@@ -24,14 +24,24 @@ export interface PurchaseOrderItemDto {
   product?: { id: string; name: string } | null;
 }
 
+// Espelha o modelo Payment do Prisma (backend/prisma/schema.prisma:1403-1445).
+// `processedByName` é acrescentado pelo service (não é uma coluna) — ver
+// poService.getPurchaseOrder:226-228 ("Payment só guarda o id").
 export interface PaymentDto {
   id: string;
   invoiceId: string;
-  proofUrl?: string | null;
-  canal?: string | null;
+  amount: string;
+  currency: string;
+  status: string;
+  canal: string;
+  reference: string;
   processedById?: string | null;
   processedByName?: string | null;
-  paidAt?: string | null;
+  proofUrl?: string | null;
+  proofName?: string | null;
+  receivedAt?: string | null;
+  receivedById?: string | null;
+  processedAt: string;
 }
 
 export interface InvoiceLineDto {

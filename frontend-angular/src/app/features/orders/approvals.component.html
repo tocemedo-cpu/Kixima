@@ -1,0 +1,33 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!orders()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header title="Aprovações de PO" subtitle="Ponto único de aprovação — reveja e aprove ou rejeite cada ordem de compra."></app-page-header>
+    <div class="card">
+      @if (orders()!.length === 0) {
+        <div class="empty-state">
+          <h3>Nenhuma PO à espera de aprovação</h3>
+          <p>Assim que um comprador emitir uma PO, ela aparece aqui.</p>
+        </div>
+      } @else {
+        <table>
+          <thead>
+            <tr><th>Referência</th><th>Valor</th><th>Emitida em</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (o of orders()!; track o.id) {
+              <tr class="row-link" (click)="rever(o.id)">
+                <td><span class="mono">{{ o.reference }}</span></td>
+                <td>{{ formatMoney(o.totalAmount, o.currency) }}</td>
+                <td>{{ formatDate(o.createdAt) }}</td>
+                <td><span style="color:var(--brand-600);font-weight:600">Rever →</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+}
