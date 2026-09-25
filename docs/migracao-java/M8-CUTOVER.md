@@ -15,30 +15,37 @@ por omissão em `frontend/src/api/client.js`; `capacitor.config.json` não fixa
 nenhum servidor, só o esquema `https`). O cutover **não muda** esse domínio —
 muda o serviço que o serve.
 
-## 0. O que ainda não existe no repositório (bloqueia tudo o resto)
+## 0. O que esta preparação deixou feito no repositório
 
-Verificado nesta árvore. Cada linha é uma pré-condição, não um detalhe:
+Cada linha era uma pré-condição em falta quando este runbook foi escrito;
+todas ficaram fechadas antes de o runbook ser fundido:
 
-1. `render.yaml` só define o serviço `kixima`. O serviço `kixima-java` tem de
-   ser acrescentado (ou criado à mão no painel com os mesmos parâmetros:
-   `runtime: docker`, região `frankfurt`, `healthCheckPath: /ready`).
-2. Não há `Dockerfile` para o Java (nem em `backend-java/`, nem na raiz). A
-   imagem tem de: compilar o SPA com `VITE_REALTIME=stomp`, empacotar
-   `target/kixima-backend-0.1.0-SNAPSHOT.jar` (Java 21, `pom.xml`) e arrancar
-   com `SPRING_PROFILES_ACTIVE=prod`.
-3. **O backend Java não serve o SPA.** `application.yml` tem
-   `spring.web.resources.add-mappings: false` e não existe nenhum handler de
-   `index.html`/`FRONTEND_DIST` em `backend-java/src/main/java`. Sem isto, mover
-   o domínio para o Java deixa `kixima.net/` a responder 404 `ROUTE_NOT_FOUND`.
-4. O frontend ainda só tem Socket.IO (`frontend/src/realtime/RealtimeContext.jsx`)
-   e o proxy do Vite aponta fixo a `localhost:4000`. As flags `VITE_REALTIME` e
-   `VITE_API_TARGET` vêm de uma tarefa paralela.
-5. `application-prod.yml` exige `DATABASE_URL_JDBC` + `DATABASE_USER` +
-   `DATABASE_PASSWORD`; a aceitação da `DATABASE_URL` única do Node vem de uma
-   tarefa paralela (secção 2 documenta as duas formas).
-6. `.github/workflows/ci.yml` não tem o job `backend-java-tests`.
-7. O `AgtPrivateKeyLoader` **não lê** `/etc/secrets/chavePrivada.pem` sozinho
-   (o Node lê). No Java é preciso `AGT_JWS_PRIVATE_KEY_PATH=/etc/secrets/chavePrivada.pem`.
+1. `render.yaml` define o segundo serviço `kixima-java` (Docker,
+   `dockerfilePath: ./backend-java/Dockerfile`, contexto na raiz,
+   `healthCheckPath: /ready`, a mesma lista de variáveis do serviço Node,
+   `JWT_SECRET` partilhado via `fromService` para as sessões sobreviverem ao
+   cutover, jobs desligados). O serviço `kixima` (Node) fica intacto.
+2. `backend-java/Dockerfile`: compila o SPA com `VITE_REALTIME=stomp`, empacota
+   o jar (Java 21) e arranca com `SPRING_PROFILES_ACTIVE=prod`, sem root, com
+   `postgresql17-client` para o `pg_dump` da cópia de segurança.
+3. O Java serve o SPA (`frontend/FrontendDist`, `frontend/SpaHandlerMapping`)
+   a partir de `FRONTEND_DIST`, com o mesmo fallback para `index.html` do
+   Node e o 404 `ROUTE_NOT_FOUND` de `/api/*` intacto.
+4. O frontend escolhe o transporte por `VITE_REALTIME` (`socketio` por
+   omissão, `stomp` na imagem Java) e o proxy do Vite aponta a
+   `VITE_API_TARGET` (`frontend/src/realtime/stompAdapter.js`).
+5. O Java aceita a `DATABASE_URL` única do Node
+   (`config/DatabaseUrlEnvironmentPostProcessor`); `DATABASE_URL_JDBC` +
+   `DATABASE_USER` + `DATABASE_PASSWORD` continuam a ter precedência.
+6. `.github/workflows/ci.yml` corre `backend-java-tests` (Postgres + semente
+   do Node + `mvn test`).
+7. `AgtPrivateKeyLoader` lê `/etc/secrets/chavePrivada.pem` e
+   `/etc/secrets/AGT_JWS_PRIVATE_KEY_BASE64` pela mesma ordem do Node.
+
+Prova disponível sem a réplica de staging: a suite e2e inteira (83 testes,
+5 personas, chat por STOMP, acessibilidade) a passar contra o backend Java
+com o mesmo frontend e a mesma base de demonstração — ver `M7-PARIDADE.md` §7
+e o comando em §1.
 
 ## 1. Pré-condições (bloqueantes)
 
@@ -72,9 +79,9 @@ e `M7-PARIDADE.md` §5 deixaram em aberto.
   cd ../frontend && VITE_API_TARGET=http://localhost:4001 VITE_REALTIME=stomp npm run dev -- --port 5173 &
   E2E_BASE_URL=http://localhost:5173 npm run e2e
   ```
-  (`VITE_API_TARGET`/`VITE_REALTIME` — **A CONFIRMAR** os nomes finais em
-  `vite.config.js` quando a tarefa paralela fundir. Os 83 testes têm de passar,
-  incluindo `chat.spec.js`, que é o que exercita o STOMP.)
+  (`VITE_API_TARGET` e `VITE_REALTIME` são as variáveis de `vite.config.js` e
+  `src/realtime/RealtimeContext.jsx`. Os 83 testes têm de passar, incluindo
+  `chat.spec.js`, que é o que exercita o STOMP — passaram nesta preparação.)
 - [ ] Replay de contrato ainda verde na semente: `DUMP=/tmp/kixima_test.dump paridade/correr.sh`
   (só as 6 diferenças documentadas em M7 §2) e `python3 paridade/inventario.py` a 246/246.
 - [ ] `JWT_SECRET` de produção **copiado** (é `generateValue: true` no Render —
@@ -95,7 +102,7 @@ operador tem de os copiar.
 | `NODE_ENV=production` | `SPRING_PROFILES_ACTIVE=prod` | Liga `application-prod.yml`, `ProducaoStartupGuard`, cookie `Secure`. `/health` devolve `env: "prod"` (Node: `"production"`); o Sentry recebe `environment=prod`. |
 | `PORT` (Render injecta) | `PORT` → `server.port` | = (omissão local 4000 vs 4001). |
 | `APP_URL` | `APP_URL` → `kixima.app-url` | = ; vazio = origem do pedido, nos dois. Também entra na allow-list de CORS nos dois lados. |
-| `DATABASE_URL` (libpq, pooler 6543, `?sslmode=require&pgbouncer=true`) | **Forma A (hoje):** `DATABASE_URL_JDBC=jdbc:postgresql://aws-0-<região>.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0` + `DATABASE_USER=postgres.<ref>` + `DATABASE_PASSWORD`. **Forma B (tarefa paralela, A CONFIRMAR):** a mesma `DATABASE_URL` do Node. | `prepareThreshold=0` é o equivalente JDBC de `pgbouncer=true` (a Prontidão Java avisa sem ele). Nunca o host `db.<ref>.supabase.co` (IPv6). |
+| `DATABASE_URL` (libpq, pooler 6543, `?sslmode=require&pgbouncer=true`) | **Forma A (hoje):** `DATABASE_URL_JDBC=jdbc:postgresql://aws-0-<região>.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0` + `DATABASE_USER=postgres.<ref>` + `DATABASE_PASSWORD`. **Forma B (`config/DatabaseUrlEnvironmentPostProcessor`):** a mesma `DATABASE_URL` do Node — `pgbouncer=true` passa a `prepareThreshold=0`, `connection_limit` é ignorado com aviso. A forma A tem precedência quando as duas existem. | `prepareThreshold=0` é o equivalente JDBC de `pgbouncer=true` (a Prontidão Java avisa sem ele). Nunca o host `db.<ref>.supabase.co` (IPv6). |
 | `DIRECT_URL` (libpq, pooler 5432) | `DIRECT_URL` → `kixima.backup.direct-url` | = ; libpq nos dois (é o `pg_dump`). Sem ela o Java deriva da ligação JDBC; a Prontidão exige porta 5432. |
 | — | `DB_POOL_MAX` (omissão 5) | Só Java. **5 durante a sobreposição** (plano §5); rever depois de o Node ser desligado. |
 | — (Prisma `migrate-boot.js` corre sempre no arranque) | `FLYWAY_ENABLED` (omissão `false`; `baseline-on-migrate: true`, `baseline-version: 0`) | Só Java. Ver §3.6: `true` **só** depois de o Node estar parado. |
