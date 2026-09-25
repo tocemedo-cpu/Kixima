@@ -1,0 +1,125 @@
+/* KIXIMA — os três fundos da Proposta 04 · Bancada (Manual v1.0).
+ *
+ * "Os três fundos são o mesmo conjunto de variáveis com valores diferentes.
+ * Trocar de fundo não altera uma linha de estrutura, e nenhum deles mexe no
+ * símbolo, no losango Samakaka nem na tipografia." — KIXIMA_Proposta_4_Bancada.
+ *
+ * Os valores abaixo são os do HTML de referência, com três afinações de
+ * contraste (WCAG AA, 4,5:1 em texto corrente, medidas com o axe nas páginas
+ * da suite de acessibilidade):
+ *   - Claro: --ténue 8F887A → 716B5F (dava 3,0–3,5:1 sobre branco, marfim e
+ *     canvas); --aviso e --cu-fg B3730A → 9B6309 (3,6:1 nos selos "em curso"
+ *     e 3,9:1 nas notas de avaliação).
+ *   - Escuro 1: --ténue 8A8276 → 8F877B (4,4:1 sobre o branco do fundo).
+ * Em cada caso é o mesmo tom, só mais escuro ou mais claro até ao primeiro
+ * valor que passa. Todos os tokens históricos da aplicação (global.css:
+ * --brand-*, --ink-*, --paper-*, --navy-*, --amber-*, --teal-*, --line…)
+ * passaram a ler estas variáveis, por isso qualquer ecrã muda de fundo sem
+ * tocar no seu CSS.
+ *
+ * Selecção (ver src/tema/TemaContext.jsx):
+ *   - sem escolha guardada: Claro; Escuro 1 se o sistema pedir cores escuras
+ *     (prefers-color-scheme), exactamente como o script da proposta;
+ *   - <html data-tema="claro|escuro-1|escuro-2"> fixa a escolha da pessoa.
+ */
+
+:root {
+  color-scheme: light;
+  --marfim: #F7F3EA; --canvas: #F1EEE6; --branco: #FFFFFF; --areia: #EBE4D6;
+  --linha: #E0D9C9; --linha-2: #CFC6B2;
+  --preto: #111111; --texto: #2B2A28; --suave: #6A6458; --ténue: #716B5F;
+  --vermelho: #B8202E; --cta: #E11D2A; --ocre: #D99A05; --verde: #1B7F52; --aviso: #9B6309;
+  --shell: #111111; --shell-txt: #F7F3EA; --shell-fg: #B8B0A2; --shell-linha: #38352F;
+  --busca-bg: #1D1B18; --busca-bd: #3A3630; --busca-fg: #9C958A;
+  --solido: #111111; --barra: #EBE4D6; --hover: #FBF9F4; --halo: #F6DCDE; --ref: #2B2A28;
+  --alerta-bd: #E7C3C6; --r-bd: #E0B8BC;
+  --al-fg: #B8202E; --al-bd: #E3BFC3; --al-bg: #FBEFF0;
+  --cu-fg: #9B6309; --cu-bd: #E2C592; --cu-bg: #FCF4E5;
+  --ok-fg: #1B7F52; --ok-bd: #A9CCBA; --ok-bg: #EEF6F1;
+  --r-btn: 6px; --r-card: 10px;
+  --sombra: 0 1px 2px rgba(17,17,17,.06), 0 1px 10px rgba(17,17,17,.04);
+  --samakaka: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='4' viewBox='0 0 48 4'><path d='M4 0l4 2-4 2-4-2z' fill='%23B8202E'/><path d='M16 0l4 2-4 2-4-2z' fill='%23D99A05'/><path d='M28 0l4 2-4 2-4-2z' fill='%23F7F3EA'/><path d='M40 0l4 2-4 2-4-2z' fill='%23B8202E'/></svg>");
+  /* Sobre a barra preta o marfim lê-se e o preto não — o avatar ocre leva tinta preta fixa. */
+  --sobre-ocre: #111111;
+  --sobre-cta: #FFFFFF;
+}
+
+/* Escuro 1 — o modelo exacto da proposta 04, apenas invertido: os mesmos neutros
+   quentes do manual, o mesmo vermelho Samakaka e o mesmo ocre. */
+@media (prefers-color-scheme: dark) { :root:not([data-tema]) {
+  color-scheme: dark;
+  --marfim: #131210; --canvas: #191714; --branco: #201E1A; --areia: #2A2723;
+  --linha: #302C26; --linha-2: #453E34;
+  --preto: #F2EFE8; --texto: #E0DACF; --suave: #A79F92; --ténue: #8F877B;
+  --vermelho: #E0656D; --cta: #EF5A62; --ocre: #E5A821; --verde: #4CB183; --aviso: #DCA13C;
+  --shell: #0C0B09; --shell-txt: #F7F3EA; --shell-fg: #A79F92; --shell-linha: #2E2A24;
+  --busca-bg: #16140F; --busca-bd: #35302A; --busca-fg: #8E867A;
+  --solido: #EDE8DC; --barra: #35302A; --hover: #1E1C18; --halo: rgba(224,101,109,.20); --ref: #BFB6A6;
+  --alerta-bd: #52302F; --r-bd: #5C3533;
+  --al-fg: #F0999D; --al-bd: #52302F; --al-bg: #231A19;
+  --cu-fg: #E7BE6C; --cu-bd: #4E3F1C; --cu-bg: #221D12;
+  --ok-fg: #6CC9A2; --ok-bd: #1F4936; --ok-bg: #13201A;
+  --sombra: 0 1px 2px rgba(0,0,0,.45), 0 1px 12px rgba(0,0,0,.28);
+} }
+:root[data-tema="claro"] {
+  color-scheme: light;
+  --marfim: #F7F3EA; --canvas: #F1EEE6; --branco: #FFFFFF; --areia: #EBE4D6;
+  --linha: #E0D9C9; --linha-2: #CFC6B2;
+  --preto: #111111; --texto: #2B2A28; --suave: #6A6458; --ténue: #716B5F;
+  --vermelho: #B8202E; --cta: #E11D2A; --ocre: #D99A05; --verde: #1B7F52; --aviso: #9B6309;
+  --shell: #111111; --shell-txt: #F7F3EA; --shell-fg: #B8B0A2; --shell-linha: #38352F;
+  --busca-bg: #1D1B18; --busca-bd: #3A3630; --busca-fg: #9C958A;
+  --solido: #111111; --barra: #EBE4D6; --hover: #FBF9F4; --halo: #F6DCDE; --ref: #2B2A28;
+  --alerta-bd: #E7C3C6; --r-bd: #E0B8BC;
+  --al-fg: #B8202E; --al-bd: #E3BFC3; --al-bg: #FBEFF0;
+  --cu-fg: #9B6309; --cu-bd: #E2C592; --cu-bg: #FCF4E5;
+  --ok-fg: #1B7F52; --ok-bd: #A9CCBA; --ok-bg: #EEF6F1;
+  --sombra: 0 1px 2px rgba(17,17,17,.06), 0 1px 10px rgba(17,17,17,.04);
+}
+:root[data-tema="escuro-1"] {
+  color-scheme: dark;
+  --marfim: #131210; --canvas: #191714; --branco: #201E1A; --areia: #2A2723;
+  --linha: #302C26; --linha-2: #453E34;
+  --preto: #F2EFE8; --texto: #E0DACF; --suave: #A79F92; --ténue: #8F877B;
+  --vermelho: #E0656D; --cta: #EF5A62; --ocre: #E5A821; --verde: #4CB183; --aviso: #DCA13C;
+  --shell: #0C0B09; --shell-txt: #F7F3EA; --shell-fg: #A79F92; --shell-linha: #2E2A24;
+  --busca-bg: #16140F; --busca-bd: #35302A; --busca-fg: #8E867A;
+  --solido: #EDE8DC; --barra: #35302A; --hover: #1E1C18; --halo: rgba(224,101,109,.20); --ref: #BFB6A6;
+  --alerta-bd: #52302F; --r-bd: #5C3533;
+  --al-fg: #F0999D; --al-bd: #52302F; --al-bg: #231A19;
+  --cu-fg: #E7BE6C; --cu-bd: #4E3F1C; --cu-bg: #221D12;
+  --ok-fg: #6CC9A2; --ok-bd: #1F4936; --ok-bg: #13201A;
+  --sombra: 0 1px 2px rgba(0,0,0,.45), 0 1px 12px rgba(0,0,0,.28);
+}
+/* Escuro 2 — aproxima-se da proposta 02: superfícies de casco, o ocre a ler-se
+   como âmbar de segurança e um ciano de instrumento nas referências. */
+:root[data-tema="escuro-2"] {
+  color-scheme: dark;
+  --marfim: #0C1219; --canvas: #111A22; --branco: #17222C; --areia: #1F2C37;
+  --linha: #263543; --linha-2: #3A4E5E;
+  --preto: #DCE5EC; --texto: #C4D1DB; --suave: #93A6B5; --ténue: #7A8B99;
+  --vermelho: #E5646B; --cta: #F0565E; --ocre: #F2A007; --verde: #3FAE79; --aviso: #E9A83C;
+  --shell: #070C11; --shell-txt: #E7EEF4; --shell-fg: #8FA1AF; --shell-linha: #24323D;
+  --busca-bg: #0F171E; --busca-bd: #2A3A47; --busca-fg: #78899A;
+  --solido: #E3EBF1; --barra: #31455480; --hover: #1D2A34; --halo: rgba(229,100,107,.20); --ref: #35A7B8;
+  --alerta-bd: #4C2A2E; --r-bd: #5A2E32;
+  --al-fg: #F08A8E; --al-bd: #5A2A2D; --al-bg: #231619;
+  --cu-fg: #E9BE5E; --cu-bd: #584613; --cu-bg: #221D0E;
+  --ok-fg: #63C79A; --ok-bd: #1E4634; --ok-bg: #12201A;
+  --sombra: 0 1px 2px rgba(0,0,0,.45), 0 1px 12px rgba(0,0,0,.30);
+}
+
+/* Folhas imprimíveis (PO, factura, extracto de taxas) ficam sempre em papel
+   claro, seja qual for o fundo escolhido: são documentos, não ecrãs. */
+.folha-clara, .folha-clara * { color-scheme: light; }
+.folha-clara {
+  --marfim: #F7F3EA; --canvas: #F1EEE6; --branco: #FFFFFF; --areia: #EBE4D6;
+  --linha: #E0D9C9; --linha-2: #CFC6B2;
+  --preto: #111111; --texto: #2B2A28; --suave: #6A6458; --ténue: #716B5F;
+  --vermelho: #B8202E; --cta: #E11D2A; --ocre: #D99A05; --verde: #1B7F52; --aviso: #9B6309;
+  --solido: #111111; --barra: #EBE4D6; --hover: #FBF9F4; --halo: #F6DCDE; --ref: #2B2A28;
+  --al-fg: #B8202E; --al-bd: #E3BFC3; --al-bg: #FBEFF0;
+  --cu-fg: #9B6309; --cu-bd: #E2C592; --cu-bg: #FCF4E5;
+  --ok-fg: #1B7F52; --ok-bd: #A9CCBA; --ok-bg: #EEF6F1;
+  --sombra: none;
+}

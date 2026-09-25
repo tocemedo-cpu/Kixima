@@ -1,0 +1,86 @@
+@if (!carregado()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header title="Cotações" subtitle="Peça preços a fornecedores antes de emitir a ordem de compra.">
+      <button action class="btn btn-accent" (click)="toggleForm()">{{ showForm() ? 'Cancelar' : '+ Pedir cotação' }}</button>
+    </app-page-header>
+
+    <app-error-banner [message]="error()"></app-error-banner>
+    <app-success-banner [message]="success()"></app-success-banner>
+
+    @if (showForm()) {
+      <div class="card card-pad" style="margin-bottom:18px;max-width:620px">
+        <form (submit)="$event.preventDefault(); submit()">
+          <div class="reg-section" style="margin-top:0">Produtos (do mesmo fornecedor)</div>
+          @for (l of lines(); track $index) {
+            <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px">
+              <div class="field" style="margin:0;flex:1">
+                <label>Produto</label>
+                <select [value]="l.productId" (change)="setLine($index, { productId: $any($event.target).value })">
+                  <option value="">— escolher —</option>
+                  @for (p of catalog(); track p.id) {
+                    <option [value]="p.id">{{ p.name }} — {{ p.supplier?.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="field" style="margin:0;width:90px">
+                <label>Qtd.</label>
+                <input type="number" min="1" [value]="l.quantity" (input)="setLine($index, { quantity: +$any($event.target).value })">
+              </div>
+              @if (lines().length > 1) {
+                <button type="button" class="btn btn-ghost btn-sm" (click)="removeLine($index)">×</button>
+              }
+            </div>
+          }
+          <button type="button" class="btn btn-ghost btn-sm" (click)="addLine()" style="margin-bottom:12px">+ Adicionar produto</button>
+          @if (!sameSupplier()) {
+            <p class="error-text" style="margin:0 0 10px">Os produtos escolhidos são de fornecedores diferentes.</p>
+          }
+          <div class="field">
+            <label>Nota (opcional)</label>
+            <textarea rows="2" [value]="note()" (input)="note.set($any($event.target).value)"></textarea>
+          </div>
+          <button class="btn btn-accent" type="submit" [disabled]="saving()">{{ saving() ? 'A enviar…' : 'Enviar pedido' }}</button>
+        </form>
+      </div>
+    }
+
+    @if ((quotes() || []).length === 0) {
+      <div class="empty-state">
+        <h3>Sem cotações</h3>
+        <p>Peça uma cotação quando quiser preço e prazo antes de emitir uma ordem.</p>
+        <button class="btn btn-accent btn-sm" (click)="abrirFormulario()">+ Pedir cotação</button>
+      </div>
+    } @else {
+      @for (q of quotes(); track q.id) {
+        <div class="card card-pad" style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <strong>{{ q.supplierCompany?.name || 'Fornecedor' }}</strong>
+              <div style="font-size:12.5px;color:var(--ink-600)">{{ formatDate(q.createdAt) }}</div>
+            </div>
+            <app-badge [tone]="statusTone(q.status)">{{ statusLabel(q.status) }}</app-badge>
+          </div>
+          <ul style="margin:10px 0;padding-left:18px;font-size:13.5px">
+            @for (it of q.items; track it.id) {
+              <li>{{ it.quantity }}× {{ it.product?.name || '—' }}</li>
+            }
+          </ul>
+          @if (q.status !== 'ABERTA' && q.responsePrice != null) {
+            <div style="font-size:13.5px;background:var(--paper-050);border-radius:8px;padding:10px 12px">
+              Cotação: <strong>{{ formatMoney(q.responsePrice, q.items[0]?.product?.currency || 'AOA') }}</strong>
+              @if (q.responseLeadDays != null) { · prazo {{ q.responseLeadDays }} dias }
+              @if (q.responseNote) { · {{ q.responseNote }} }
+            </div>
+          }
+          @if (q.status === 'RESPONDIDA') {
+            <div style="margin-top:10px">
+              <button class="btn btn-ghost btn-sm" (click)="close(q.id)">Encerrar</button>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+}

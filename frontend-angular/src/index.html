@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-AO">
+<head>
+  <meta charset="utf-8">
+  <title>KIXIMA.NET | The state of the art do procurement à execução</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="E-marketplace B2B Source-to-Pay, nascido em Angola e preparado para África.">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- Fundo escolhido (Claro / Escuro 1 / Escuro 2) aplicado antes do primeiro
+       paint, para não haver um clarão do fundo errado — mesma lógica de
+       frontend/index.html. Sem escolha guardada, o CSS segue o sistema
+       (prefers-color-scheme). Ver app/shared/tema/tema.service.ts. -->
+  <script>
+    try {
+      var t = localStorage.getItem('kixima.tema');
+      if (t === 'claro' || t === 'escuro-1' || t === 'escuro-2') document.documentElement.setAttribute('data-tema', t);
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

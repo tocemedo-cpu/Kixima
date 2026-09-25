@@ -1,0 +1,20 @@
+/* Casca provisória — reutiliza .navbar do global.css (a mesma barra escura
+   de marca) mas dispensa a grelha completa de .app-shell (que espera uma
+   barra lateral ainda não portada, ver PLANO.md). */
+.shell-min {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.shell-min .navbar {
+  justify-content: space-between;
+}
+
+.shell-min-content {
+  flex: 1;
+  padding: 24px;
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+}

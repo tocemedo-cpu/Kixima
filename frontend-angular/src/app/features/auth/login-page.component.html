@@ -1,0 +1,99 @@
+<div class="login-screen">
+  <app-auth-hero></app-auth-hero>
+
+  <div class="login-panel">
+    <div class="login-card">
+      @if (challenge()) {
+        <h2>Verificação em dois passos</h2>
+        @if (metodo() === 'EMAIL') {
+          <p>Enviámos um código de 6 dígitos para <strong>{{ enviadoPara() }}</strong>. Confirme também a pasta de spam.</p>
+        } @else {
+          <p>Introduza o código de 6 dígitos da sua app de autenticação.</p>
+        }
+        @if (aviso()) {
+          <p class="helptext" style="margin-top:-6px">{{ aviso() }}</p>
+        }
+        <form [formGroup]="codeForm" (ngSubmit)="handleVerify()">
+          <div class="field">
+            <label for="totp">Código</label>
+            <input id="totp" inputmode="numeric" maxlength="6" autofocus formControlName="code" placeholder="000000">
+          </div>
+          @if (error()) {
+            <p class="error-text" style="margin-bottom:12px">{{ error() }}</p>
+          }
+          <button class="btn btn-accent" type="submit" [disabled]="submitting() || codeForm.invalid" style="width:100%">
+            {{ submitting() ? 'A entrar…' : 'Verificar e entrar' }}
+          </button>
+          <p style="margin-top:10px;display:flex;justify-content:space-between;gap:8px">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="voltarAoLogin()">← Voltar ao login</button>
+            @if (metodo() === 'EMAIL') {
+              <button type="button" class="btn btn-ghost btn-sm" (click)="reenviar()">Enviar outro</button>
+            }
+          </p>
+        </form>
+      } @else {
+        <h2>Entrar</h2>
+        <p>Aceda com a sua conta KIXIMA.</p>
+        <form [formGroup]="loginForm" (ngSubmit)="handleSubmit()">
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" formControlName="email" placeholder="voce&#64;empresa.co.ao">
+          </div>
+          <div class="field">
+            <label for="password">Palavra-passe</label>
+            <input id="password" type="password" formControlName="password" placeholder="••••••••">
+          </div>
+          @if (error()) {
+            <p class="error-text" style="margin-bottom:12px">{{ error() }}</p>
+          }
+          <button class="btn btn-accent btn-lg" type="submit" [disabled]="submitting()" style="width:100%">
+            {{ submitting() ? 'A entrar…' : 'Entrar' }}
+          </button>
+          <p style="margin-top:10px;text-align:right">
+            <a routerLink="/recuperar" style="color:var(--brand-600);font-weight:600;font-size:13px">Esqueceu a senha?</a>
+          </p>
+        </form>
+      }
+
+      <p class="helptext" style="margin-top:16px">
+        A sua empresa ainda não está na KIXIMA?
+        <a routerLink="/cadastro" style="color:var(--brand-600);font-weight:600">Registe-a aqui</a>.
+      </p>
+
+      <div class="login-programs">
+        <a class="login-program" routerLink="/supplier-development">
+          <span class="login-program-ico"><app-icon name="approvals" [size]="16"></app-icon></span>
+          <span>
+            <strong>Supplier Development</strong>
+            <span>Apoio no processo burocrático para se tornar fornecedor credenciado</span>
+          </span>
+        </a>
+        <a class="login-program" routerLink="/parcerias">
+          <span class="login-program-ico"><app-icon name="box" [size]="16"></app-icon></span>
+          <span>
+            <strong>Parceiros internacionais</strong>
+            <span>Procura de parceiros estrangeiros para tecnologia e capacitação</span>
+          </span>
+        </a>
+        <a class="login-program" routerLink="/planos">
+          <span class="login-program-ico"><app-icon name="chart" [size]="16"></app-icon></span>
+          <span>
+            <strong>Planos e preços</strong>
+            <span>Taxas por transação e acesso por utilizador, com os limites de cada plano</span>
+          </span>
+        </a>
+      </div>
+
+      <p class="helptext" style="margin-top:10px;font-size:11.5px">
+        <a routerLink="/termos" style="color:inherit">Termos de Uso</a>
+        ·
+        <a routerLink="/privacidade" style="color:inherit">Política de Privacidade</a>
+      </p>
+
+      <div class="login-fundo">
+        <span>Fundo</span>
+        <app-tema-selector [compacto]="true"></app-tema-selector>
+      </div>
+    </div>
+  </div>
+</div>

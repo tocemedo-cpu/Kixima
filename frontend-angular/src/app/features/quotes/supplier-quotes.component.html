@@ -1,0 +1,69 @@
+@if (list() === null) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header
+      [title]="isInbox() ? 'Pedidos — Solicitações' : 'Pedidos — Cotações'"
+      [subtitle]="isInbox() ? 'Pedidos de cotação recebidos que aguardam a sua resposta.' : 'Cotações que já respondeu.'">
+    </app-page-header>
+
+    <app-error-banner [message]="error()"></app-error-banner>
+    <app-success-banner [message]="success()"></app-success-banner>
+
+    @if (list()!.length === 0) {
+      @if (isInbox()) {
+        <div class="empty-state">
+          <h3>Ainda não recebeu pedidos de cotação</h3>
+          <p>Os pedidos chegam de compradores que encontram os seus produtos. Um catálogo mais completo — com fichas técnicas e certificados — aparece em mais pesquisas.</p>
+          <a class="btn btn-accent btn-sm" routerLink="/fornecedor/catalogo">Ver o meu catálogo</a>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <h3>Ainda não respondeu a cotações</h3>
+          <p>As cotações que responder ficam guardadas aqui, com o histórico de preços e prazos que ofereceu.</p>
+          <a class="btn btn-accent btn-sm" routerLink="/fornecedor/pedidos/solicitacoes">Ver solicitações por responder</a>
+        </div>
+      }
+    } @else {
+      @for (q of list()!; track q.id) {
+        <div class="card card-pad" style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <strong>{{ q.buyerCompany?.name || 'Comprador' }}</strong>
+              <div style="font-size:12.5px;color:var(--ink-600)">{{ formatDate(q.createdAt) }}</div>
+            </div>
+            <app-badge [tone]="statusTone(q.status)">{{ statusLabel(q.status) }}</app-badge>
+          </div>
+
+          <ul style="margin:10px 0;padding-left:18px;font-size:13.5px">
+            @for (it of q.items; track it.id) {
+              <li>{{ it.quantity }}× {{ it.product?.name || '—' }}</li>
+            }
+          </ul>
+          @if (q.note) {
+            <p class="helptext" style="margin-top:0">Nota do comprador: {{ q.note }}</p>
+          }
+
+          @if (q.status !== 'ABERTA' && q.responsePrice != null) {
+            <div style="font-size:13.5px;margin-top:6px">
+              A sua cotação: <strong>{{ formatMoney(q.responsePrice, q.items[0]?.product?.currency || 'AOA') }}</strong>
+              @if (q.responseLeadDays != null) { · prazo {{ q.responseLeadDays }} dias }
+              @if (q.responseNote) { · {{ q.responseNote }} }
+            </div>
+          }
+
+          @if (isInbox()) {
+            <form
+              style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:10px;border-top:1px solid var(--line);padding-top:12px"
+              (submit)="$event.preventDefault(); responder(q, price.value, leadDays.value, note.value)">
+              <div class="field" style="margin:0;width:160px"><label>Preço proposto</label><input #price type="number" min="0" step="0.01"></div>
+              <div class="field" style="margin:0;width:120px"><label>Prazo (dias)</label><input #leadDays type="number" min="0"></div>
+              <div class="field" style="margin:0;flex:1 1 160px"><label>Nota (opcional)</label><input #note></div>
+              <button class="btn btn-accent" type="submit">Enviar cotação</button>
+            </form>
+          }
+        </div>
+      }
+    }
+  </div>
+}
