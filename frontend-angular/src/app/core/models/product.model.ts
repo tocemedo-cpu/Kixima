@@ -157,6 +157,10 @@ export interface MarketplaceSearchParams {
   verified?: 'true';
   minRating?: number;
   promo?: 'true';
+  // Confirmados contra MarketplaceService.java (mapa livre de filtros) —
+  // usados por Explore.jsx/Services.jsx, que o Catalog.jsx original não usava.
+  country?: string;
+  certifications?: string;
   sort?: string;
   page?: number;
   limit?: number;

@@ -1,0 +1,184 @@
+<div>
+  @if (toast()) {
+    <div class="svc-toast">{{ toast() }}</div>
+  }
+
+  <div class="svc-crumbs">Home <span>›</span> <strong>Explorar / Pesquisa</strong></div>
+  <h1 class="svc-title">Explorar / Pesquisa</h1>
+
+  <form class="exp-searchbar" (submit)="$event.preventDefault(); doSearch()">
+    <span class="svc-search-ico"><app-icon name="search" [size]="18"></app-icon></span>
+    <input [value]="pendingQ()" (input)="onPendingQ($any($event.target).value)" placeholder="Pesquisar produtos, serviços ou fornecedores…" />
+    <button class="btn btn-accent" type="submit">Pesquisar</button>
+    <button type="button" class="btn btn-ghost exp-save" (click)="saveSearch()">
+      <app-icon name="policy" [size]="14"></app-icon> Guardar Pesquisa
+    </button>
+  </form>
+
+  <div class="svc-count">
+    @if (loading()) {
+      A carregar…
+    } @else {
+      @if (q()) {
+        Resultado para "{{ q() }}"
+      } @else {
+        Resultado
+      }
+      <span class="exp-total">{{ formatNumber(total()) }} resultados</span>
+    }
+    <span class="svc-sortwrap">
+      Ordenar por
+      <select aria-label="Ordenar por" [value]="sort()" (change)="setSort($any($event.target).value)">
+        @for (s of SORTS; track s[0]) {
+          <option [value]="s[0]">{{ s[1] }}</option>
+        }
+      </select>
+    </span>
+  </div>
+
+  @if (chips().length > 0) {
+    <div class="chip-row">
+      @for (c of chips(); track c.k) {
+        <button class="chip" (click)="clearChip(c)">{{ c.label }} <span>×</span></button>
+      }
+      <button class="chip-clear" (click)="clearAll()">Limpar todos</button>
+    </div>
+  }
+
+  <div class="svc-layout">
+    <aside class="svc-filters">
+      <div class="flt-head">
+        <strong>Filtrar Resultados</strong>
+        <button class="flt-clear" (click)="clearAll()">Limpar filtros</button>
+      </div>
+
+      <div class="flt-group">
+        <div class="flt-title">Categoria</div>
+        @for (c of facets().categories; track c.name) {
+          <label class="flt-check">
+            <input type="checkbox" [checked]="category() === c.name" (change)="setCategory(c.name)" />
+            <span class="flt-lbl">{{ c.name }}</span><span class="flt-num">({{ c.count }})</span>
+          </label>
+        }
+      </div>
+
+      <div class="flt-group">
+        <div class="flt-title">Tipo</div>
+        @for (kd of facets().kinds; track kd.name) {
+          <label class="flt-check">
+            <input type="checkbox" [checked]="kind() === kd.name" (change)="setKind(kd.name)" />
+            <span class="flt-lbl">{{ KIND_LABEL[kd.name] || kd.name }}</span><span class="flt-num">({{ kd.count }})</span>
+          </label>
+        }
+      </div>
+
+      <div class="flt-group">
+        <div class="flt-title">Localização</div>
+        @for (c of facets().countries; track c.name) {
+          <label class="flt-check">
+            <input type="checkbox" [checked]="country() === c.name" (change)="setCountry(c.name)" />
+            <span class="flt-lbl">{{ c.name }}</span><span class="flt-num">({{ c.count }})</span>
+          </label>
+        }
+        @if (facets().countries.length === 0) {
+          <p class="helptext" style="margin:0">—</p>
+        }
+      </div>
+
+      <div class="flt-group">
+        <div class="flt-title">Certificações</div>
+        @for (c of facets().certifications; track c.name) {
+          <label class="flt-check">
+            <input type="checkbox" [checked]="certs().includes(c.name)" (change)="toggleCert(c.name)" />
+            <span class="flt-lbl">{{ c.name }}</span><span class="flt-num">({{ c.count }})</span>
+          </label>
+        }
+      </div>
+    </aside>
+
+    <div>
+      @if (error()) {
+        <div class="empty-state">
+          <h3>Não foi possível carregar</h3>
+          <p>{{ error() }}</p>
+          <button class="btn btn-accent" (click)="reload()">Tentar de novo</button>
+        </div>
+      } @else if (loading()) {
+        <div class="svc-grid">
+          @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+            <div class="svc-card svc-skel"></div>
+          }
+        </div>
+      } @else if (total() === 0) {
+        <div class="empty-state">
+          <h3>Nenhum resultado</h3>
+          <p>Ajuste a pesquisa ou os filtros.</p>
+        </div>
+      } @else {
+        <div class="svc-grid">
+          @for (p of data()!.items; track p.id) {
+            <div class="exp-card">
+              <div class="exp-media" (click)="abrir(p)" role="button" tabindex="0">
+                <app-product-cover [imageUrl]="p.imageUrl" [category]="p.category" [name]="p.name" [caption]="false"></app-product-cover>
+                <span class="exp-kind">{{ KIND_LABEL[p.kind] || '' }}</span>
+              </div>
+              <div class="exp-top">
+                <span class="exp-logo">
+                  @if (p.supplier?.logoUrl) {
+                    <img [src]="p.supplier!.logoUrl" [alt]="p.supplier!.name" />
+                  } @else {
+                    {{ initials(p.supplier?.name) }}
+                  }
+                </span>
+                <button [class]="'svc-fav' + (p.isFavorite ? ' on' : '')" (click)="toggleFav(p)" aria-label="Favorito">♥</button>
+              </div>
+              <strong class="svc-name" (click)="abrir(p)">{{ p.name }}</strong>
+              <div class="svc-company">{{ p.supplier?.name }}</div>
+              <div class="svc-ratingrow">
+                <app-stars [value]="p.rating || 0"></app-stars>
+                <span class="svc-ratenum">{{ p.rating ? p.rating.toFixed(1) : '—' }} {{ p.reviewCount ? '(' + p.reviewCount + ' avaliações)' : '' }}</span>
+                @if (p.supplier?.verified) {
+                  <span class="svc-verified">KIXIMA Verified</span>
+                }
+              </div>
+              <p class="svc-desc">{{ p.description }}</p>
+              <div class="svc-metarow">
+                <span><app-icon name="offshore" [size]="13"></app-icon> {{ joinNonEmpty([p.city, p.country]) || '—' }}</span>
+                @if (p.leadTimeDays) {
+                  <span>Prazo {{ p.leadTimeDays }} dias</span>
+                }
+              </div>
+              <div class="exp-foot">
+                <div>
+                  <div class="exp-fromlbl">A partir de</div>
+                  <div class="exp-price">{{ formatMoney(p.promoPrice || p.unitPrice, p.currency) }}</div>
+                </div>
+                <button class="btn btn-accent btn-sm" (click)="abrir(p)">Ver Detalhes</button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="svc-pag">
+          <button class="btn btn-ghost btn-sm" [disabled]="page() <= 1" (click)="setPage(page() - 1)">← Anterior</button>
+          @for (n of pageNumbers(); track $index) {
+            @if (n === '…') {
+              <span class="svc-ellipsis">…</span>
+            } @else {
+              <button [class]="'svc-pagn' + (n === page() ? ' on' : '')" (click)="setPage($any(n))">{{ n }}</button>
+            }
+          }
+          <button class="btn btn-ghost btn-sm" [disabled]="page() >= pages()" (click)="setPage(page() + 1)">Próximo →</button>
+          <span class="exp-perpage">
+            Resultados por página
+            <select aria-label="Resultados por página" [value]="limit()" (change)="setLimit($any($event.target).value)">
+              @for (n of PAGE_SIZES; track n) {
+                <option [value]="n">{{ n }}</option>
+              }
+            </select>
+          </span>
+        </div>
+      }
+    </div>
+  </div>
+</div>

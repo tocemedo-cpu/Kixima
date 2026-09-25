@@ -37,4 +37,34 @@ describe('MarketplaceService', () => {
     expect(req.request.method).toBe('GET');
     req.flush([]);
   });
+
+  it('addFavorite() chama POST /api/marketplace/favorites com productId', () => {
+    service.addFavorite('p1').subscribe();
+    const req = http.expectOne('/api/marketplace/favorites');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ productId: 'p1' });
+    req.flush({ productId: 'p1', favorite: true });
+  });
+
+  it('removeFavorite() chama DELETE /api/marketplace/favorites/:id', () => {
+    service.removeFavorite('p1').subscribe();
+    const req = http.expectOne('/api/marketplace/favorites/p1');
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ productId: 'p1', favorite: false });
+  });
+
+  it('saveSearch() chama POST /api/marketplace/saved-searches', () => {
+    service.saveSearch({ label: 'Válvulas', query: 'q=valvula' }).subscribe();
+    const req = http.expectOne('/api/marketplace/saved-searches');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ label: 'Válvulas', query: 'q=valvula' });
+    req.flush({ id: 's1', userId: 'u1', label: 'Válvulas', query: 'q=valvula', createdAt: '2024-01-01' });
+  });
+
+  it('compare() chama GET /api/marketplace/compare com productId', () => {
+    service.compare('p1').subscribe();
+    const req = http.expectOne((r) => r.url === '/api/marketplace/compare');
+    expect(req.request.params.get('productId')).toBe('p1');
+    req.flush({ base: {}, offers: [], count: 0 });
+  });
 });

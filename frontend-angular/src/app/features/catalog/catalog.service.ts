@@ -14,6 +14,7 @@ import {
   UpdateStockBody,
 } from '../../core/models/stock-movement.model';
 import { CatalogImportResult } from '../../core/models/catalog-import.model';
+import { CreateReviewBody, ProductReviewDto, ReviewSummaryDto } from '../../core/models/marketplace-extra.model';
 
 export interface CatalogFiltro {
   [key: string]: string | undefined;
@@ -93,5 +94,16 @@ export class CatalogService {
   // isso pelo código do erro, não pelo estado HTTP.
   importCatalog(file: File): Observable<CatalogImportResult> {
     return this.api.upload<CatalogImportResult>('/api/catalog/import', file, 'file');
+  }
+
+  reviews(productId: string): Observable<ProductReviewDto[]> {
+    return this.api.get<ProductReviewDto[]>(`/api/catalog/${productId}/reviews`);
+  }
+
+  // Devolve o resumo agregado (rating/reviewCount), NÃO a review criada
+  // (ReviewService.java) — a UI tem de voltar a pedir reviews() para
+  // actualizar a lista.
+  createReview(productId: string, body: CreateReviewBody): Observable<ReviewSummaryDto> {
+    return this.api.post<ReviewSummaryDto>(`/api/catalog/${productId}/reviews`, body);
   }
 }

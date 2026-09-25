@@ -1,0 +1,140 @@
+<div>
+  @if (toast()) {
+    <div class="svc-toast">{{ toast() }}</div>
+  }
+
+  <div class="svc-crumbs">Home <span>›</span> Catálogo <span>›</span> <strong>Serviços</strong></div>
+  <h1 class="svc-title">Serviços</h1>
+
+  <div class="svc-searchbar">
+    <span class="svc-search-ico"><app-icon name="search" [size]="18"></app-icon></span>
+    <input [value]="q()" (input)="onQ($any($event.target).value)" placeholder="Pesquisar serviços por nome, categoria, especialidade…" />
+  </div>
+
+  <div class="svc-count">
+    @if (loading()) {
+      A carregar…
+    } @else {
+      Mostrando {{ from() }} - {{ to() }} de {{ formatNumber(total()) }} serviços
+    }
+    <span class="svc-sortwrap">
+      Ordenar por
+      <select aria-label="Ordenar por" [value]="sort()" (change)="setSort($any($event.target).value)">
+        @for (s of SORTS; track s[0]) {
+          <option [value]="s[0]">{{ s[1] }}</option>
+        }
+      </select>
+    </span>
+  </div>
+
+  <div class="svc-layout">
+    <aside class="svc-filters">
+      <div class="flt-group">
+        <div class="flt-title">Categorias</div>
+        <button [class]="'flt-cat' + (!category() ? ' on' : '')" (click)="setCategory('')">Todas</button>
+        @for (c of facets().categories; track c.name) {
+          <button [class]="'flt-cat' + (category() === c.name ? ' on' : '')" (click)="setCategory(c.name)">
+            <span>{{ c.name }}</span><span class="flt-num">{{ c.count }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="flt-group">
+        <div class="flt-title">Localização</div>
+        @for (c of COUNTRIES; track c) {
+          <label class="flt-check">
+            <input type="radio" name="country" [checked]="country() === c" (change)="setCountry(c)" /> {{ c }}
+          </label>
+        }
+        <label class="flt-check">
+          <input type="radio" name="country" [checked]="country() === ''" (change)="setCountry('')" /> Todos
+        </label>
+      </div>
+
+      <div class="flt-group">
+        <div class="flt-title">Fornecedor Verificado</div>
+        <label class="flt-check">
+          <input type="checkbox" [checked]="verified()" (change)="setVerified($any($event.target).checked)" /> Apenas
+          Fornecedores Verificados
+        </label>
+      </div>
+
+      <div class="flt-group">
+        <div class="flt-title">Certificações</div>
+        @for (c of CERTS; track c) {
+          <label class="flt-check">
+            <input type="checkbox" [checked]="certs().includes(c)" (change)="toggleCert(c)" /> {{ c }}
+          </label>
+        }
+      </div>
+
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px" (click)="clearFilters()">Limpar Filtros</button>
+    </aside>
+
+    <div>
+      @if (error()) {
+        <div class="empty-state">
+          <h3>Não foi possível carregar</h3>
+          <p>{{ error() }}</p>
+        </div>
+      } @else if (loading()) {
+        <div class="svc-grid">
+          @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+            <div class="svc-card svc-skel"></div>
+          }
+        </div>
+      } @else if (total() === 0) {
+        <div class="empty-state">
+          <h3>Nenhum serviço encontrado</h3>
+          <p>Ajuste a pesquisa ou os filtros.</p>
+        </div>
+      } @else {
+        <div class="svc-grid">
+          @for (p of data()!.items; track p.id) {
+            <div class="svc-card">
+              <div class="svc-card-img">
+                <app-product-cover [imageUrl]="p.imageUrl" [category]="p.category" [name]="p.name" [caption]="false"></app-product-cover>
+                <span [class]="'svc-avail ' + availClass(p)">{{ p.availability || 'Disponível' }}</span>
+                <button [class]="'svc-fav' + (p.isFavorite ? ' on' : '')" (click)="toggleFav(p)" aria-label="Favorito">♥</button>
+              </div>
+              <div class="svc-card-body">
+                <div class="svc-company">{{ p.supplier?.name }}</div>
+                <strong class="svc-name" (click)="abrir(p)">{{ p.name }}</strong>
+                <p class="svc-desc">{{ p.description }}</p>
+                <div class="svc-metarow">
+                  <span><app-icon name="offshore" [size]="13"></app-icon> {{ joinNonEmpty([p.city, p.country]) || '—' }}</span>
+                  @if (p.leadTimeDays) {
+                    <span>Prazo {{ p.leadTimeDays }} dias</span>
+                  }
+                </div>
+                <div class="svc-ratingrow">
+                  <app-stars [value]="p.rating || 0"></app-stars>
+                  <span class="svc-ratenum">{{ p.rating ? p.rating.toFixed(1) : '—' }} {{ p.reviewCount ? '(' + p.reviewCount + ')' : '' }}</span>
+                  @if (p.supplier?.verified) {
+                    <span class="svc-verified">Verificado</span>
+                  }
+                </div>
+                <div class="svc-actions">
+                  <button class="btn btn-ghost btn-sm" (click)="abrir(p)">Ver Detalhes</button>
+                  <button class="btn btn-accent btn-sm" (click)="solicitarCotacao(p)">Solicitar Cotação</button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="svc-pag">
+          <button class="btn btn-ghost btn-sm" [disabled]="page() <= 1" (click)="setPage(page() - 1)">← Anterior</button>
+          @for (n of pageNumbers(); track $index) {
+            @if (n === '…') {
+              <span class="svc-ellipsis">…</span>
+            } @else {
+              <button [class]="'svc-pagn' + (n === page() ? ' on' : '')" (click)="setPage($any(n))">{{ n }}</button>
+            }
+          }
+          <button class="btn btn-ghost btn-sm" [disabled]="page() >= pages()" (click)="setPage(page() + 1)">Próximo →</button>
+        </div>
+      }
+    </div>
+  </div>
+</div>

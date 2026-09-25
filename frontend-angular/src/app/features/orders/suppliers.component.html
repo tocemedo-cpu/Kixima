@@ -1,0 +1,89 @@
+<div>
+  <app-crumbs [trail]="[{ label: 'Home', to: '/comprador' }, 'Fornecedores']"></app-crumbs>
+  <app-buyer-page-head title="Fornecedores" subtitle="Gerencie a sua base de fornecedores e acompanhe o seu desempenho."></app-buyer-page-head>
+
+  <app-kpi-row [cards]="kpis()"></app-kpi-row>
+
+  <div class="bz-layout">
+    <div>
+      <app-tabs [tabs]="TABS" [value]="tab()" (onChange)="onTab($event)"></app-tabs>
+      <app-toolbar placeholder="Pesquisar por nome, categoria, cidade…" [q]="q()" (onQ)="onQ($event)"></app-toolbar>
+
+      @if (error()) {
+        <app-error-banner [message]="error()"></app-error-banner>
+      } @else {
+        <div class="bz-card bz-tablewrap">
+          <table class="bz-table">
+            <thead>
+              <tr>
+                <th>Fornecedor</th>
+                <th>Categoria</th>
+                <th>Cidade / País</th>
+                <th>Status</th>
+                <th>Avaliação</th>
+                <th>Última Transação</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (!data()) {
+                <tr><td colspan="6"><app-empty-row>A carregar…</app-empty-row></td></tr>
+              } @else if (data()!.items.length === 0) {
+                <tr><td colspan="6"><app-empty-row>Sem fornecedores.</app-empty-row></td></tr>
+              } @else {
+                @for (s of data()!.items; track s.id) {
+                  <tr>
+                    <td><app-supplier-cell [supplier]="s"></app-supplier-cell></td>
+                    <td>{{ s.category }}</td>
+                    <td>{{ joinNonEmpty([s.city, s.country]) || '—' }}</td>
+                    <td>
+                      <app-pill [tone]="s.status === 'APROVADA' ? 'success' : 'pending'">{{ statusLabel(s.status) }}</app-pill>
+                      @if (s.verified) {
+                        <span class="bz-sub2">Homologado</span>
+                      }
+                    </td>
+                    <td>
+                      @if (s.rating) {
+                        <span class="svc-ratingrow"><app-stars [value]="s.rating"></app-stars> <span class="svc-ratenum">{{ s.rating.toFixed(1) }}</span></span>
+                      } @else {
+                        <span class="bz-muted">—</span>
+                      }
+                    </td>
+                    <td>
+                      @if (s.lastTransaction) {
+                        <span class="bz-mono">{{ s.lastTransaction.reference }}</span>
+                        <span class="bz-sub2">{{ formatDate(s.lastTransaction.createdAt) }}</span>
+                      } @else {
+                        <span class="bz-muted">—</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <div class="bz-side">
+      <div class="bz-panel">
+        <h3>Top Fornecedores</h3>
+        @if (top().length === 0) {
+          <p class="bz-sub">Sem dados.</p>
+        } @else {
+          @for (s of top(); track s.id; let i = $index) {
+            <div class="bz-panel-row">
+              <span>{{ i + 1 }}. {{ s.name }}</span>
+              <strong style="color:var(--ok-700)">{{ s.rating!.toFixed(1) }}</strong>
+            </div>
+          }
+        }
+      </div>
+      <div class="bz-panel">
+        <h3>Ações Rápidas</h3>
+        <button class="bz-qa"><app-icon name="suppliers" [size]="14"></app-icon> Convidar Fornecedor</button>
+        <button class="bz-qa"><app-icon name="report" [size]="14"></app-icon> Relatório de Fornecedores</button>
+      </div>
+    </div>
+  </div>
+</div>

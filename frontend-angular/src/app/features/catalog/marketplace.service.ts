@@ -9,6 +9,12 @@ import {
   MarketplaceSearchResult,
   VerifiedSupplierCard,
 } from '../../core/models/product.model';
+import {
+  CompareResponse,
+  CreateSavedSearchBody,
+  FavoriteResultDto,
+  SavedSearchDto,
+} from '../../core/models/marketplace-extra.model';
 
 @Injectable({ providedIn: 'root' })
 export class MarketplaceService {
@@ -26,5 +32,22 @@ export class MarketplaceService {
   // (MarketplaceController.java), usado pela Home do Comprador.
   suppliers(): Observable<VerifiedSupplierCard[]> {
     return this.api.get<VerifiedSupplierCard[]>('/api/marketplace/suppliers');
+  }
+
+  // Sem @RequireRole no Java — qualquer utilizador com sessão, não só COMPRADOR.
+  addFavorite(productId: string): Observable<FavoriteResultDto> {
+    return this.api.post<FavoriteResultDto>('/api/marketplace/favorites', { productId });
+  }
+
+  removeFavorite(productId: string): Observable<FavoriteResultDto> {
+    return this.api.del<FavoriteResultDto>(`/api/marketplace/favorites/${productId}`);
+  }
+
+  saveSearch(body: CreateSavedSearchBody): Observable<SavedSearchDto> {
+    return this.api.post<SavedSearchDto>('/api/marketplace/saved-searches', body);
+  }
+
+  compare(productId: string): Observable<CompareResponse> {
+    return this.api.get<CompareResponse>('/api/marketplace/compare', { productId });
   }
 }

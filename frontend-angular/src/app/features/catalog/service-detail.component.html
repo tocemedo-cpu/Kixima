@@ -1,0 +1,109 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!p()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px" (click)="voltar()">← Voltar aos serviços</button>
+    <app-success-banner [message]="msg()"></app-success-banner>
+
+    <div class="grid-cols grid-2" style="align-items:start">
+      <div class="card" style="overflow:hidden">
+        <div class="detail-cover">
+          <app-product-cover [imageUrl]="p()!.imageUrl" [category]="p()!.category" [name]="p()!.name"></app-product-cover>
+        </div>
+        <div class="card-pad">
+          <span class="badge badge-neutral">{{ p()!.category }}</span>
+          @if (p()!.specialty) {
+            <span class="badge badge-neutral" style="margin-left:6px">{{ p()!.specialty }}</span>
+          }
+          <h1 style="font-size:22px;margin-top:12px">{{ p()!.name }}</h1>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+            <app-stars [value]="p()!.rating || 0"></app-stars>
+            <span style="font-size:13px;color:var(--ink-600)">
+              {{ p()!.rating ? p()!.rating!.toFixed(1) : '—' }} {{ p()!.reviewCount ? '(' + p()!.reviewCount + ' avaliações)' : '' }}
+            </span>
+            @if (p()!.supplier?.verified) {
+              <span class="svc-verified">Verificado</span>
+            }
+          </div>
+          <p style="font-size:14px;color:var(--ink-600);margin-top:12px;line-height:1.6">
+            {{ p()!.fullDescription || p()!.description || 'Sem descrição.' }}
+          </p>
+          <div style="margin-top:16px;display:grid;gap:8px;font-size:13.5px">
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <span style="color:var(--ink-400)">Fornecedor</span>
+              <span style="text-align:right">{{ p()!.supplier?.name }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <span style="color:var(--ink-400)">Localização</span>
+              <span style="text-align:right">{{ joinNonEmpty([p()!.city, p()!.province, p()!.country]) || '—' }}</span>
+            </div>
+            @if (p()!.leadTimeDays) {
+              <div style="display:flex;justify-content:space-between;gap:12px">
+                <span style="color:var(--ink-400)">Prazo</span>
+                <span style="text-align:right">{{ p()!.leadTimeDays }} dias</span>
+              </div>
+            }
+            @if (p()!.availability) {
+              <div style="display:flex;justify-content:space-between;gap:12px">
+                <span style="color:var(--ink-400)">Disponibilidade</span>
+                <span style="text-align:right">{{ p()!.availability }}</span>
+              </div>
+            }
+            @if (p()!.certifications?.length) {
+              <div style="display:flex;justify-content:space-between;gap:12px">
+                <span style="color:var(--ink-400)">Certificações</span>
+                <span style="text-align:right">{{ p()!.certifications.join(', ') }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card card-pad" style="margin-bottom:16px">
+          <div class="stat-label">Preço</div>
+          <div class="stat-value" style="font-family:var(--font-mono)">{{ formatMoney(p()!.unitPrice, p()!.currency) }}</div>
+          <button class="btn btn-accent" style="width:100%;margin-top:16px" (click)="quote()">Solicitar Cotação</button>
+        </div>
+
+        <div class="card card-pad">
+          <strong style="font-size:13.5px">Avaliações</strong>
+          <form (submit)="$event.preventDefault(); submitReview()" style="margin:12px 0;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+            <app-field label="Nota" #ratingField="appField" style="margin:0;width:90px">
+              <select [id]="ratingField.id" [value]="rating()" (change)="setRating($any($event.target).value)">
+                @for (n of ratingOptions; track n) {
+                  <option [value]="n">{{ n }} ★</option>
+                }
+              </select>
+            </app-field>
+            <div class="field" style="margin:0;flex:1">
+              <label>Comentário</label>
+              <input [value]="comment()" (input)="comment.set($any($event.target).value)" />
+            </div>
+            <button class="btn btn-ghost btn-sm" type="submit">Avaliar</button>
+          </form>
+          @if (reviews().length === 0) {
+            <p class="helptext" style="margin:0">Ainda sem avaliações.</p>
+          } @else {
+            <div style="display:grid;gap:10px">
+              @for (r of reviews(); track r.id) {
+                <div style="border-top:1px solid var(--line);padding-top:8px">
+                  <div style="display:flex;justify-content:space-between">
+                    <app-stars [value]="r.rating"></app-stars>
+                    <span style="font-size:12px;color:var(--ink-400)">{{ formatDate(r.createdAt) }}</span>
+                  </div>
+                  <div style="font-size:13px">{{ r.authorName }}</div>
+                  @if (r.comment) {
+                    <p style="font-size:13px;color:var(--ink-600);margin:2px 0 0">{{ r.comment }}</p>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

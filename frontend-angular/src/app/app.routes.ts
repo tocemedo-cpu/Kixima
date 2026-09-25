@@ -89,6 +89,26 @@ export const routes: Routes = [
             loadComponent: () => import('./features/quotes/quotes.component').then((m) => m.QuotesComponent),
           },
           {
+            path: 'explorar',
+            loadComponent: () => import('./features/catalog/explore.component').then((m) => m.ExploreComponent),
+          },
+          {
+            path: 'servicos',
+            loadComponent: () => import('./features/catalog/services.component').then((m) => m.ServicesComponent),
+          },
+          {
+            path: 'servicos/:slug',
+            loadComponent: () => import('./features/catalog/service-detail.component').then((m) => m.ServiceDetailComponent),
+          },
+          {
+            path: 'comparar',
+            loadComponent: () => import('./features/catalog/supplier-compare.component').then((m) => m.SupplierCompareComponent),
+          },
+          {
+            path: 'fornecedores',
+            loadComponent: () => import('./features/orders/suppliers.component').then((m) => m.SuppliersComponent),
+          },
+          {
             path: 'catalogo',
             loadComponent: () =>
               import('./features/catalog/catalog-browse.component').then((m) => m.CatalogBrowseComponent),

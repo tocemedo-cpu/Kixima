@@ -33,6 +33,7 @@ const PATHS: Record<string, string> = {
   report: `<g ${P}><path d="M6 2h9l3 3v17H6z" /><path d="M9 13l2 2 4-4M9 8h6" /></g>`,
   users: `<g ${P}><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5" /><path d="M16 6a3 3 0 0 1 0 6M21 20c0-2.2-1.2-3.8-3-4.5" /></g>`,
   activities: `<g ${P}><path d="M3 12h4l2 6 4-14 2 8h6" /></g>`,
+  building: `<g ${P}><rect x="4" y="3" width="16" height="18" rx="1.5" /><path d="M8 7h2M8 11h2M8 15h2M14 7h2M14 11h2M14 15h2" /></g>`,
 };
 
 @Component({

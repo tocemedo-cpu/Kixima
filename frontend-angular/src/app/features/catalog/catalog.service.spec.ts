@@ -120,4 +120,19 @@ describe('CatalogService', () => {
     expect(fd.get('file')).toBe(ficheiro);
     req.flush({ total: 0, created: 0, updated: 0, withImages: 0, warnings: [], errors: [] });
   });
+
+  it('reviews() chama GET /api/catalog/:id/reviews', () => {
+    service.reviews('p1').subscribe();
+    const req = http.expectOne('/api/catalog/p1/reviews');
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+  });
+
+  it('createReview() chama POST /api/catalog/:id/reviews', () => {
+    service.createReview('p1', { rating: 5, comment: 'Óptimo' }).subscribe();
+    const req = http.expectOne('/api/catalog/p1/reviews');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ rating: 5, comment: 'Óptimo' });
+    req.flush({ rating: 5, reviewCount: 1 });
+  });
 });

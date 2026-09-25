@@ -51,6 +51,17 @@ export function formatMoney(amount: string | number | null | undefined, currency
   return new Intl.NumberFormat('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value) + ' ' + symbol;
 }
 
+export function formatNumber(value: string | number | null | undefined): string {
+  return new Intl.NumberFormat('pt-PT').format(Number(value ?? 0));
+}
+
+// Junta partes não-vazias (ex.: cidade/país) com um separador — extraído
+// porque os templates do Angular não suportam arrow functions em bindings
+// (`.filter(v => v)` falha em NG5002), ao contrário do JSX original.
+export function joinNonEmpty(parts: Array<string | null | undefined>, sep = ', '): string {
+  return parts.filter((v): v is string => Boolean(v)).join(sep);
+}
+
 export function formatDate(value: string | null | undefined): string {
   if (!value) return '—';
   return new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
