@@ -224,7 +224,7 @@ reposta a partir da semente:
 
 | Suite | Resultado |
 |---|---|
-| Java (`mvn -o -q test`) | 251 testes, 0 falhas, 0 erros |
+| Java (`mvn -o -q test`) | 271 testes, 0 falhas, 0 erros (depois da preparação do M8) |
 | Node (`npm test`, referência) | 111 suites, 1020 testes, 0 falhas |
 | Frontend (vitest, build, auditorias i18n) | 167 testes, 0 falhas; 0 textos em falta, 0 hardcoded |
 | End-to-end (Playwright, 5 personas, axe nos três fundos) | 83 testes, 0 falhas |
