@@ -15,6 +15,7 @@ import {
   ResolveDivergenceBody,
 } from '../../core/models/purchase-order.model';
 import { BuyerPaymentsResponse } from '../../core/models/buyer-payments.model';
+import { DeliveriesResponse, ReceptionsResponse } from '../../core/models/buyer-tracking.model';
 
 export interface BuyerOrdersParams {
   status?: string;
@@ -52,6 +53,16 @@ export class OrdersService {
   // GET /api/buyer/payments — faturas das PO do comprador, usada por comprador/Payments.jsx.
   buyerPayments(status?: string, q?: string): Observable<BuyerPaymentsResponse> {
     return this.api.get<BuyerPaymentsResponse>('/api/buyer/payments', { status, q });
+  }
+
+  // GET /api/buyer/deliveries — usada por comprador/Deliveries.jsx.
+  buyerDeliveries(stage: string, q?: string): Observable<DeliveriesResponse> {
+    return this.api.get<DeliveriesResponse>('/api/buyer/deliveries', { stage, q });
+  }
+
+  // GET /api/buyer/receptions — usada por comprador/Receptions.jsx.
+  buyerReceptions(status: string, q?: string): Observable<ReceptionsResponse> {
+    return this.api.get<ReceptionsResponse>('/api/buyer/receptions', { status, q });
   }
 
   // GET /api/purchase-orders (sem page) — array puro, usado por Approvals.jsx

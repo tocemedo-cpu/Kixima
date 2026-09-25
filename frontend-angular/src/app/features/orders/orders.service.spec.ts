@@ -105,6 +105,22 @@ describe('OrdersService', () => {
     http.expectOne({ url: '/api/payments/pay1/confirm-received', method: 'PATCH' }).flush({});
   });
 
+  it('buyerDeliveries() chama GET /api/buyer/deliveries com stage e q', () => {
+    service.buyerDeliveries('EM_TRANSITO', 'kianda').subscribe();
+    const req = http.expectOne((r) => r.url === '/api/buyer/deliveries');
+    expect(req.request.params.get('stage')).toBe('EM_TRANSITO');
+    expect(req.request.params.get('q')).toBe('kianda');
+    req.flush({ kpis: {}, items: [] });
+  });
+
+  it('buyerReceptions() chama GET /api/buyer/receptions com status e q', () => {
+    service.buyerReceptions('DIVERGENCIA', 'valvula').subscribe();
+    const req = http.expectOne((r) => r.url === '/api/buyer/receptions');
+    expect(req.request.params.get('status')).toBe('DIVERGENCIA');
+    expect(req.request.params.get('q')).toBe('valvula');
+    req.flush({ kpis: {}, items: [] });
+  });
+
   it('emitirNotaCredito() e anularFatura() chamam os endpoints de fatura correctos', () => {
     service.emitirNotaCredito('inv1', 'devolução', 500).subscribe();
     const nc = http.expectOne({ url: '/api/payments/invoices/inv1/notas-credito', method: 'POST' });

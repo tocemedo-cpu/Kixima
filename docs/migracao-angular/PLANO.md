@@ -70,6 +70,8 @@ neste repositório.
 | Aceitar convite de equipa | `features/auth/accept-invite.component.ts` | `pages/shared/AcceptInvite.jsx` | `GET/POST /api/companies/invite/:token` |
 | Aceitar convite de Admin do Sistema | `features/auth/accept-admin-invite.component.ts` | `pages/shared/AcceptAdminInvite.jsx` | `GET/POST /api/admin/invite/:token` |
 | Recuperação de senha | `features/auth/password-reset.component.ts` | `pages/shared/PasswordReset.jsx` | `POST /api/auth/{forgot-password,reset-password}` |
+| Acompanhar Entrega — Comprador | `features/orders/deliveries.component.ts` | `pages/comprador/Deliveries.jsx` | `GET /api/buyer/deliveries?stage=&q=` |
+| Recepção — Comprador | `features/orders/receptions.component.ts` | `pages/comprador/Receptions.jsx` | `GET /api/buyer/receptions?status=&q=` |
 
 **Verificação ao vivo desta etapa** (Postgres + backend Java a correr localmente, Angular com o seu proxy): login como Comprador → pesquisa no catálogo → produto → cesta → checkout (gera PO) → lista de ordens com KPIs → detalhe da PO → aprovação pelo Company Admin → aceitação pelo Fornecedor (gera fatura com os campos AGT presentes, correctamente vazios sem credenciais) → guarda de máquina de estados (despachar antes de pago devolve 400) → fluxo de rejeição com motivo. RBAC confirmado com 403 em cada ponto errado: Comprador não aprova nem aceita a própria PO, Fornecedor não aprova, Fornecedor não lê `/api/buyer/orders` (403), pedido sem sessão dá 401. Um bug de routing desta sessão anterior foi encontrado e corrigido: a rota de Cotações do Comprador estava em `/comprador/pedidos`, mas a real (`frontend/src/App.jsx:191`) é `/comprador/cotacoes` — nunca teria sido alcançável pela navegação real da aplicação.
 
@@ -86,6 +88,8 @@ neste repositório.
 **Verificação ao vivo — Due Diligence/Taxa KIXIMA (Admin do Sistema)**: primeiro domínio Angular do Admin do Sistema. `GET/PATCH /api/companies` e `GET/PATCH /api/admin/platform-fees` já estavam correctos e completos no Java. A base de demonstração não tinha nenhuma empresa PENDENTE, por isso duas linhas de teste foram inseridas directamente na base local (`kixima_test`, disposable) para exercitar o fluxo real: aprovação de um cliente (200, `approvedAt` preenchido), tentativa de aprovar um fornecedor sem apólice Fornecedor→KIXIMA submetida (`BUSINESS_RULE_VIOLATION`, a mesma regra do Node), e rejeição desse fornecedor (200, `rejectedAt` preenchido) — confirmado também pela UI real (clique em "Aprovar empresa", banner de sucesso, e o cartão a desaparecer da lista assim que o `reload()` corre, exactamente o mesmo comportamento do `onDecided={load}` do React). Taxa KIXIMA confirmada com os 2 registos reais gerados automaticamente pelos pagamentos processados nesta sessão (23 USD cada), e a acção "Marcar cobrada" testada ao vivo (`status: COBRADO`, `chargedAt` preenchido). RBAC confirmado em ambos: `ADMIN_SISTEMA` só — `COMPANY_ADMIN` recebe 403 em `/api/companies/:id/decision` e em `/api/admin/platform-fees*`.
 
 **Verificação ao vivo — fluxos sem sessão (Cadastro/Convites/Recuperação de senha)**: os quatro endpoints Java (`POST /api/companies/register`, `GET/POST /api/companies/invite/:token`, `GET/POST /api/admin/invite/:token`, `POST /api/auth/{forgot,reset}-password`) já estavam correctos e completos — nenhuma correcção necessária. Os quatro fluxos foram exercitados de ponta a ponta pela UI real (browser headless, sem atalhos): cadastro público de uma empresa CLIENTE com dois documentos PDF reais anexados (a validação de conteúdo do Java recusou corretamente um `.pdf` que era só texto — teve de se gerar um PDF válido de facto); um convite COMPRADOR criado pelo Company Admin real, aceite através de `/convite/:token` (o utilizador fica `active:false`, à espera da aprovação do Company Admin, exactamente como o React); pedido de recuperação de senha com resposta anti-enumeração idêntica para email existente e inexistente, e definição da nova senha em `/recuperar/:token` (o token é um JWT assinado, nunca guardado em tabela — para o testar sem o SMTP configurado, foi construído à mão com o mesmo segredo/algoritmo HS256 do `JwtService`, só para fins de verificação; a senha do utilizador de teste foi reposta no valor de demonstração no final). O convite de Admin do Sistema (`/convite-admin/:token`) foi verificado ao nível do modelo/serviço (contratos confirmados) sem repetir o mesmo teste de ponta-a-ponta, já que a mecânica é idêntica à do convite de equipa.
+
+**Verificação ao vivo — Acompanhar Entrega/Recepção (Comprador)**: primeiras páginas de prioridade 2 migradas. `GET /api/buyer/{deliveries,receptions}` já estavam correctos e completos no Java. Confirmado por HTTP directo (KPIs reais — 1 em trânsito, 3 em preparação, 3 entregues, 2 canceladas; 1 a receber, 1 recebido, 1 com divergência) e por browser headless em `/comprador/{entregas,recepcao}`. RBAC confirmado: Fornecedor recebe 403 nos dois endpoints no servidor, e o `roleGuard('COMPRADOR')` do Angular bloqueia as duas rotas no cliente.
 
 ## Inventário completo das 97 páginas React e prioridade sugerida
 
@@ -129,8 +133,8 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 | `Checkout.jsx` | 1 | **Migrado** |
 | `Orders.jsx` | 1 | **Migrado** |
 | `Payments.jsx` | 1 | **Migrado** |
-| `Deliveries.jsx` | 2 | Pendente |
-| `Receptions.jsx` | 2 | Pendente |
+| `Deliveries.jsx` | 2 | **Migrado** |
+| `Receptions.jsx` | 2 | **Migrado** |
 | `Home.jsx` | 2 | Pendente |
 | `Services.jsx` | 2 | Pendente |
 | `Explore.jsx` | 2 | Pendente |
@@ -246,15 +250,14 @@ em Node.js, e porquê, está descrito na secção seguinte deste relatório
 1. Escolher o próximo domínio pela tabela de prioridade acima. Toda a
    prioridade 1 está migrada excepto `fornecedor/CatalogManage.jsx`
    (formulário grande — 754 linhas, taxonomia Oil & Gas completa; sugestão
-   para a próxima sessão, sozinha, dado o tamanho). A seguir vem a
-   prioridade 2 — operação diária de alto uso. Candidatos com bom
-   custo/benefício para começar: `comprador/{Deliveries,Receptions}.jsx`
-   (acompanhamento de entrega/receção, reutilizam `OrdersService`/`PO_STATUS`
-   já existentes), `companyAdmin/{Users,Organization,CompanyProfile}.jsx`
-   (gestão da própria empresa — ainda nenhuma página Angular no domínio
-   Company Admin fora de Aprovações/Contratos), ou as páginas `Home.jsx` de
-   cada persona (painéis iniciais — Comprador, Fornecedor, Company Admin,
-   Financeiro, Admin do Sistema já têm o resto do domínio a funcionar, mas
+   para a próxima sessão, sozinha, dado o tamanho). Dentro da prioridade 2,
+   `comprador/{Deliveries,Receptions}.jsx` já estão migrados. Candidatos com
+   bom custo/benefício para continuar: `companyAdmin/{Users,Organization,
+   CompanyProfile}.jsx` (gestão da própria empresa — ainda nenhuma página
+   Angular no domínio Company Admin fora de Aprovações/Contratos), ou as
+   páginas `Home.jsx` de cada persona (painéis iniciais — Comprador,
+   Fornecedor, Company Admin, Financeiro, Admin do Sistema já têm o resto
+   do domínio a funcionar, mas
    continuam a cair em `PendingPageComponent` ao entrar na área).
 2. Para cada página: ler o `.jsx` original por completo, confirmar as
    chamadas de API reais (nunca assumir pelo nome do ficheiro), portar

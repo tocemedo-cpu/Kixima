@@ -1,0 +1,49 @@
+<app-crumbs [trail]="[{ label: 'Home', to: '/comprador' }, 'Recepção']"></app-crumbs>
+<app-buyer-page-head title="Recepção" subtitle="Acompanhe e gestione a recepção de mercadorias e serviços das suas ordens de compra."></app-buyer-page-head>
+
+<app-kpi-row [cards]="kpiCards()"></app-kpi-row>
+
+<app-tabs [tabs]="tabs" [value]="tab()" (onChange)="setTab($event)"></app-tabs>
+<app-toolbar placeholder="Pesquisar por nº da PO, fornecedor, item…" [q]="q()" (onQ)="onQ($event)"></app-toolbar>
+
+@if (error()) {
+  <div class="empty-state"><p>{{ error() }}</p></div>
+} @else {
+  <div class="bz-card bz-tablewrap">
+    <table class="bz-table">
+      <thead>
+        <tr>
+          <th>Nº da PO</th><th>Fornecedor</th><th>Item / Descrição</th><th>Qtd.</th>
+          <th>Data de Recebimento</th><th>Status</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (!data()) {
+          <tr><td colspan="7"><app-empty-row>A carregar…</app-empty-row></td></tr>
+        } @else if (data()!.items.length === 0) {
+          <tr><td colspan="7"><app-empty-row>Sem itens.</app-empty-row></td></tr>
+        } @else {
+          @for (r of data()!.items; track r.id) {
+            <tr>
+              <td><span class="bz-mono">{{ r.reference }}</span></td>
+              <td><app-supplier-cell [supplier]="r.supplier"></app-supplier-cell></td>
+              <td>{{ r.item }}<span class="bz-sub2">SKU: {{ r.sku || '—' }}</span></td>
+              <td>{{ r.quantity }}</td>
+              <td>{{ r.receivedAt ? formatDate(r.receivedAt) : '—' }}</td>
+              <td><app-pill [tone]="ST[r.status]?.tone">{{ ST[r.status]?.label || r.status }}</app-pill></td>
+              <td>
+                <div class="bz-actions">
+                  @if (r.status === 'DIVERGENCIA') {
+                    <button class="btn btn-danger btn-sm" (click)="verOrdem(r.poId)">Resolver</button>
+                  } @else {
+                    <button class="bz-iconbtn" title="Ver ordem" (click)="verOrdem(r.poId)"><app-icon name="search" [size]="14"></app-icon></button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+}

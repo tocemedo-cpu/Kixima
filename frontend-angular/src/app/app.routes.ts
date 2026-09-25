@@ -113,6 +113,14 @@ export const routes: Routes = [
             path: 'pagamentos',
             loadComponent: () => import('./features/orders/buyer-payments.component').then((m) => m.BuyerPaymentsComponent),
           },
+          {
+            path: 'entregas',
+            loadComponent: () => import('./features/orders/deliveries.component').then((m) => m.DeliveriesComponent),
+          },
+          {
+            path: 'recepcao',
+            loadComponent: () => import('./features/orders/receptions.component').then((m) => m.ReceptionsComponent),
+          },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Comprador' } },
         ],
       },

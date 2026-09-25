@@ -1,0 +1,53 @@
+<app-crumbs [trail]="[{ label: 'Home', to: '/comprador' }, 'Acompanhar Entrega']"></app-crumbs>
+<app-buyer-page-head title="Acompanhar Entrega" subtitle="Acompanhe o status e o progresso das entregas das suas ordens de compra."></app-buyer-page-head>
+
+<app-kpi-row [cards]="kpiCards()"></app-kpi-row>
+
+<app-tabs [tabs]="tabs" [value]="tab()" (onChange)="setTab($event)"></app-tabs>
+<app-toolbar placeholder="Pesquisar por nº da PO, fornecedor…" [q]="q()" (onQ)="onQ($event)"></app-toolbar>
+
+@if (error()) {
+  <div class="empty-state"><p>{{ error() }}</p></div>
+} @else {
+  <div class="bz-card bz-tablewrap">
+    <table class="bz-table">
+      <thead>
+        <tr>
+          <th>Nº da PO</th><th>Fornecedor</th><th>Data de Emissão</th><th>Status</th>
+          <th>Localização</th><th>Progresso</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (!data()) {
+          <tr><td colspan="7"><app-empty-row>A carregar…</app-empty-row></td></tr>
+        } @else if (data()!.items.length === 0) {
+          <tr><td colspan="7"><app-empty-row>Sem entregas.</app-empty-row></td></tr>
+        } @else {
+          @for (d of data()!.items; track d.id) {
+            <tr>
+              <td>
+                <span class="bz-mono">{{ d.reference }}</span>
+                <span class="bz-sub2">{{ d.itemsCount }} {{ d.itemsCount === 1 ? 'item' : 'itens' }}</span>
+              </td>
+              <td><app-supplier-cell [supplier]="d.supplier"></app-supplier-cell></td>
+              <td>{{ formatDate(d.emittedAt) }}</td>
+              <td><app-pill [tone]="STAGE_TONE[d.stage]">{{ d.label }}</app-pill></td>
+              <td><span class="bz-muted"><app-icon name="offshore" [size]="12"></app-icon> {{ d.location }}</span></td>
+              <td>
+                <div class="bz-progressrow">
+                  <span class="bz-progress"><span [style.width.%]="d.progress" [style.background]="BAR_COLOR[d.stage]"></span></span>
+                  <span class="bz-muted">{{ d.progress }}%</span>
+                </div>
+              </td>
+              <td>
+                <div class="bz-actions">
+                  <button class="bz-iconbtn" title="Ver ordem" (click)="verOrdem(d.id)"><app-icon name="search" [size]="14"></app-icon></button>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+}

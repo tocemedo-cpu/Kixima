@@ -17,6 +17,7 @@ const PATHS: Record<string, string> = {
   history: `<g ${P}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 4v4h4M12 7v5l3 2" /></g>`,
   help: `<g ${P}><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.3" /><path d="M12 17h.01" /></g>`,
   wallet: `<g ${P}><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M16 14h2" /></g>`,
+  offshore: `<g ${P}><path d="M12 3v18M5 8l7-5 7 5" /><circle cx="12" cy="14" r="3" /><path d="M3 21h18" /></g>`,
   box: `<g ${P}><path d="M3 8v8l9 5 9-5V8l-9-5z" /><path d="M3 8l9 5 9-5M12 13v8" /></g>`,
   search: `<g ${P}><circle cx="11" cy="11" r="7" /><path d="m21 21-4-4" /></g>`,
   catalog: `<g ${P}><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></g>`,
