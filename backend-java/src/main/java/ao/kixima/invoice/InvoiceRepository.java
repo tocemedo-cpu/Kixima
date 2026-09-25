@@ -8,8 +8,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
     Optional<Invoice> findByReferenciaPagamento(String referenciaPagamento);
 
     /**
-     * Espelha paymentService.listPendingInvoices — só o ramo `purchaseOrder.buyerCompanyId`
-     * (o ramo `contract.clientCompanyId` fica com o domínio Contract, ainda por portar).
+     * Espelha paymentService.listPendingInvoices — só o ramo `purchaseOrder.buyerCompanyId`.
+     * LACUNA: o Node também devolve as faturas consolidadas de contrato (`contract.clientCompanyId`,
+     * ver {@link #findDaEmpresaCompradora} para a forma dessa junção); aqui ainda não entram.
      */
     @org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i JOIN FETCH i.purchaseOrder po "
             + "WHERE i.status = :status AND po.buyerCompanyId = :buyerCompanyId ORDER BY i.dueAt ASC")

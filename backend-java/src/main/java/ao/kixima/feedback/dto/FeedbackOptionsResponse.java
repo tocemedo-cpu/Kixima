@@ -4,8 +4,8 @@ import java.util.List;
 
 /**
  * Espelha o retorno de feedbackService.opcoes — as opções reais para o
- * dropdown "sobre o que é esta avaliação", por categoria. `pagamento` fica
- * sempre vazio: depende do domínio Payment, ainda não portado.
+ * dropdown "sobre o que é esta avaliação", por categoria (PAGAMENTO são os
+ * pagamentos PROCESSADOS das POs da empresa — ver FeedbackService.opcoes).
  */
 public record FeedbackOptionsResponse(List<FeedbackOptionDto> FORNECEDOR, List<FeedbackOptionDto> PRODUTO,
                                        List<FeedbackOptionDto> SERVICO, List<FeedbackOptionDto> PEDIDO,

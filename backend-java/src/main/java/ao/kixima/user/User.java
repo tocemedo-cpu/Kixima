@@ -133,9 +133,11 @@ public class User extends AbstractPersistableEntity<String> {
 
     /**
      * Criação de uma conta nova (aceitação de convite — ver
-     * ao.kixima.invite.InviteService — ou registo directo de empresa,
-     * ainda não portado). Os restantes campos (MFA, bloqueio progressivo,
-     * ...) nascem com o valor por omissão declarado acima.
+     * ao.kixima.invite.InviteService e ao.kixima.admin.AdminService — ou o
+     * administrador criado no cadastro público de empresa, ver
+     * ao.kixima.company.CompanyService#registerCompany). Os restantes campos
+     * (MFA, bloqueio progressivo, ...) nascem com o valor por omissão
+     * declarado acima.
      */
     public User(String id, String name, String email, String passwordHash, PersonaRole role, String companyId,
                 boolean active, Instant termsAcceptedAt, Instant createdAt) {

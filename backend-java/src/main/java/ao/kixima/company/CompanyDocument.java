@@ -15,9 +15,9 @@ import java.time.Instant;
 /**
  * Espelha o modelo Prisma `CompanyDocument` (schema.prisma:485-496, tabela
  * `company_documents`) — documento de credenciamento (Certidão Comercial,
- * Alvará, Licença ANPG) enviado no cadastro da empresa (ver
- * companyService.registerCompany — NÃO PORTADO). Só de LEITURA neste
- * marco: a listagem para o módulo de Documentação do fornecedor (ver
+ * Alvará, Licença ANPG) enviado no cadastro público da empresa — escrito por
+ * {@link CompanyService#registerCompany}, depois de os ficheiros irem para o
+ * storage; lido pela listagem do módulo de Documentação do fornecedor (ver
  * ao.kixima.catalog.CatalogController#documentosDoFornecedor).
  */
 @Entity

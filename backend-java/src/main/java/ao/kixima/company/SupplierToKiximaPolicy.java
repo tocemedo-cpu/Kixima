@@ -18,8 +18,10 @@ import java.time.Instant;
  * Espelha o modelo Prisma `SupplierToKiximaPolicy` (schema.prisma:1473-1493,
  * tabela `supplier_to_kixima_policies`) — apólice de seguro
  * Fornecedor→KIXIMA, exigida para credenciar qualquer empresa fornecedora
- * (ver companyService.decideCompanyStatus, ainda não portado). Só criação
- * neste marco (ver {@code ao.kixima.supplierdev.SupplierDevService#approve}).
+ * (ver {@link CompanyService#decideCompanyStatus}). Criada no cadastro
+ * público ({@link CompanyService#registerCompany}), na submissão pelo
+ * fornecedor ({@code ao.kixima.policy.PolicyService}) e na aprovação de um
+ * pedido de Supplier Development ({@code ao.kixima.supplierdev.SupplierDevService#approve}).
  */
 @Entity
 @Table(name = "supplier_to_kixima_policies")

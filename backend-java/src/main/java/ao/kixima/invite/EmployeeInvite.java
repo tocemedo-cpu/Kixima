@@ -22,11 +22,11 @@ import java.util.List;
  * {@code companyId}), ou de assessor {@code ADMIN_SISTEMA} (companyId
  * {@code null}, usa {@code adminAreas}).
  *
- * NÃO PORTADO: o fluxo de convite de assessor ADMIN_SISTEMA
- * (adminService.js: createAdminInvite/listAdminInvites/...) — mesma
- * tabela, controller/rotas próprias, ainda não portadas. O campo
- * {@code adminAreas} fica mapeado (é a mesma linha na base) mas sem
- * nenhum caminho Java que o escreva por agora.
+ * Os dois fluxos escrevem nesta mesma tabela: o convite de funcionário em
+ * {@link InviteService} (companyId preenchido, adminAreas vazio) e o convite
+ * de assessor ADMIN_SISTEMA em {@code ao.kixima.admin.AdminService}
+ * (createAdminInvite/listAdminInvites/resend/cancel/accept, rotas em
+ * {@code AdminController}), que é o único a preencher {@code adminAreas}.
  */
 @Entity
 @Table(name = "employee_invites")

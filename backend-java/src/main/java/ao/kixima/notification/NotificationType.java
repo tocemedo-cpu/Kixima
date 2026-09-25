@@ -2,9 +2,8 @@ package ao.kixima.notification;
 
 /**
  * Espelha o enum Prisma `NotificationType` (schema.prisma) — TODOS os
- * valores, incluindo os de domínios ainda não portados para Java
- * (subscrição, ERP, Supplier Development, nota de crédito) — a base é
- * PARTILHADA com o Node, que continua a escrever linhas com esses tipos;
+ * valores, mesmo os que nenhum caminho Java emite: a base é PARTILHADA
+ * com o Node, que continua a escrever linhas com qualquer um destes tipos;
  * um enum incompleto aqui rebentaria a leitura dessas linhas
  * (EnumType.STRING falha em qualquer valor fora do conjunto Java).
  */

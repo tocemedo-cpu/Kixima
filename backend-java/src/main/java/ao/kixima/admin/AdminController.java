@@ -34,11 +34,11 @@ import static ao.kixima.security.AdminArea.OPERACOES;
 import static ao.kixima.security.PersonaRole.ADMIN_SISTEMA;
 
 /**
- * Espelha o troço de backend/src/routes/adminRoutes.js ainda por portar:
- * convites de assessor (público + Super Admin), utilizadores da plataforma,
- * áreas, actividades do sistema, prontidão e email de teste. Os restantes
- * troços vivem em AdminAuditController, BackupAdminController,
- * MfaReminderController, PlatformFeeAdminController e FeedbackAdminController.
+ * Espelha o troço de backend/src/routes/adminRoutes.js dos convites de
+ * assessor (público + Super Admin), utilizadores da plataforma, áreas,
+ * actividades do sistema, prontidão e email de teste. Os restantes troços
+ * vivem em AdminAuditController, BackupAdminController, MfaReminderController,
+ * PlatformFeeAdminController e FeedbackAdminController.
  */
 @RestController
 @RequestMapping("/api/admin")

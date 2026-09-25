@@ -13,7 +13,10 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
 
     List<Payment> findByInvoiceIdIn(java.util.Collection<String> invoiceIds);
 
-    /** Espelha paymentService.listPaymentHistory — só o ramo da PO (o de Contract fica por portar). */
+    /**
+     * Espelha paymentService.listPaymentHistory — só o ramo da PO. LACUNA: o Node também devolve os
+     * pagamentos de faturas consolidadas de contrato (`invoice.contract.clientCompanyId`); aqui ainda não entram.
+     */
     @Query("SELECT p FROM Payment p JOIN FETCH p.invoice i JOIN FETCH i.purchaseOrder po "
             + "WHERE po.buyerCompanyId = :buyerCompanyId ORDER BY p.processedAt DESC")
     List<Payment> findHistoricoDoComprador(@Param("buyerCompanyId") String buyerCompanyId);

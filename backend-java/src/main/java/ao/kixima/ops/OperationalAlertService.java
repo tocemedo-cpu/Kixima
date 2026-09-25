@@ -89,7 +89,7 @@ public class OperationalAlertService {
             if (avisadoRecentemente(assunto, agora)) return Resultado.naoEnviado("avisado há pouco");
 
             // Sem email configurado não há nada a fazer aqui — o painel de Prontidão
-            // (ainda não portado) é quem assinala essa configuração em falta.
+            // (ao.kixima.admin.ProntidaoService) é quem assinala essa configuração em falta.
             if (!emailDispatchService.configurado()) return Resultado.naoEnviado("email não configurado");
 
             List<String> para = destinatarios();
