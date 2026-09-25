@@ -21,6 +21,7 @@ let adminSistemaToken;
 let companyId;
 let planoOriginal;
 let validoAteOriginal;
+let fornecedoraOriginal;
 
 beforeAll(async () => {
   [adminEmpresaToken, financeiroToken, adminSistemaToken] = await Promise.all([
@@ -33,6 +34,12 @@ beforeAll(async () => {
   const empresa = await prisma.company.findUnique({ where: { id: companyId } });
   planoOriginal = empresa.plan;
   validoAteOriginal = empresa.planoValidoAte;
+  // A fornecedora (Kianda) também é mexida nesta suite — e um teste deixava-a
+  // em PRO de propósito. Fica registada aqui para voltar ao plano de origem no
+  // fim: outro ficheiro (catalog-fornecedor-melhorias) conta com o CORE da
+  // semente, e falhava ou passava conforme a ordem em que o Jest os corria.
+  const forn = await prisma.company.findFirst({ where: { taxId: 'AO-FOR-0001' } });
+  fornecedoraOriginal = forn ? { id: forn.id, plan: forn.plan, searchRank: forn.searchRank, planoValidoAte: forn.planoValidoAte } : null;
 });
 
 // Cada teste parte de uma empresa sem cobranças em aberto e no plano de origem:
@@ -60,6 +67,11 @@ afterAll(async () => {
       planoValidoAte: validoAteOriginal,
     },
   });
+  if (fornecedoraOriginal) {
+    const { id, ...dados } = fornecedoraOriginal;
+    await prisma.planoCobranca.deleteMany({ where: { companyId: id } });
+    await prisma.company.update({ where: { id }, data: { ...dados, ultimoAvisoSubscricaoTier: null } });
+  }
   await prisma.$disconnect();
 });
 

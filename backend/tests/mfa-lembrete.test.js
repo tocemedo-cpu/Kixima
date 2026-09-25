@@ -100,10 +100,16 @@ describe('Pedir que ativem', () => {
   // Um pedido sem data é um pedido que se adia — foi o que aconteceu.
   test('o email diz o prazo e o que acontece quando passar', async () => {
     const anterior = config.auth.mfaEnforceFrom;
-    config.auth.mfaEnforceFrom = new Date('2026-09-15T00:00:00Z');
+    // O prazo tem de estar no FUTURO: passado o prazo, a conta do próprio
+    // Admin do Sistema sem 2FA fica limitada ao ecrã de ativação (mfaPolicy) e
+    // o pedido nem chega a enviar nada. Uma data fixa aqui era uma bomba-relógio
+    // — o teste passou a falhar no dia em que a data passou.
+    const prazo = new Date(Date.now() + 60 * 86400000);
+    prazo.setUTCHours(0, 0, 0, 0);
+    config.auth.mfaEnforceFrom = prazo;
     try {
       await auth(tokens.adminSistema).post('/api/admin/mfa-lembrete');
-      expect(enviados[0].corpo).toContain('2026-09-15');
+      expect(enviados[0].corpo).toContain(prazo.toISOString().slice(0, 10));
       expect(enviados[0].corpo).toMatch(/só dá acesso ao ecrã de ativação/);
       expect(enviados[0].corpo).toMatch(/Configurações → Segurança/);
     } finally {

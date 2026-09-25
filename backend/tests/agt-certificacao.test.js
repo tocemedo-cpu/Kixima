@@ -86,7 +86,7 @@ describe('envelope', () => {
       cliente: { taxId: '999999999', country: 'AO', name: 'Cliente Teste' }, linhas: [],
     });
     const payload = agtCertificacaoService.envelope('5001636863', [doc, doc]);
-    expect(payload.schemaVersion).toBe('1.2');
+    expect(payload.schemaVersion).toBe('2.0');
     expect(payload.numberOfEntries).toBe(2);
     expect(payload.documents).toHaveLength(2);
     expect(payload.submissionUUID).toMatch(/^[0-9a-f-]{36}$/);

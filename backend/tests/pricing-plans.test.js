@@ -136,9 +136,18 @@ describe('Dimensão da empresa e planos', () => {
 
 describe('Gestão do plano (Admin do Sistema)', () => {
   let companyId;
+  let original;
   beforeAll(async () => {
     const me = await auth(tokens.fornecedor).get('/api/auth/me');
     companyId = me.body.user.companyId;
+    const c = await prisma.company.findUnique({ where: { id: companyId } });
+    original = { size: c.size, plan: c.plan, searchRank: c.searchRank, seatPriceUsd: c.seatPriceUsd };
+  });
+  // Estes testes mudam a dimensão, o plano e o preço por utilizador da
+  // fornecedora pela API e deixavam-na em PRO/GRANDE — outro ficheiro
+  // (catalog-fornecedor-melhorias) conta com o CORE da semente.
+  afterAll(async () => {
+    await prisma.company.update({ where: { id: companyId }, data: original });
   });
 
   test('o Admin define dimensão, plano e preço por utilizador', async () => {

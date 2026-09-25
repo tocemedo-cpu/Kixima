@@ -29,7 +29,7 @@ describe('construirPedidoSerie', () => {
     const pedido = agtSeriesService.construirPedidoSerie({
       taxRegistrationNumber: '5001636863', seriesYear: '2026', documentType: 'FR', establishmentNumber: '1',
     });
-    expect(pedido.schemaVersion).toBe('1.2');
+    expect(pedido.schemaVersion).toBe('2.0');
     expect(pedido.submissionUUID).toMatch(/^[0-9a-f-]{36}$/);
     expect(pedido.taxRegistrationNumber).toBe('5001636863');
     expect(pedido.seriesYear).toBe('2026');
