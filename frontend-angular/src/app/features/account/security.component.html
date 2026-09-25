@@ -1,0 +1,23 @@
+<div>
+  <app-page-header title="Segurança" subtitle="Altere a sua senha e proteja a conta com dois fatores."></app-page-header>
+  <app-error-banner [message]="error()"></app-error-banner>
+  <app-success-banner [message]="success()"></app-success-banner>
+
+  <div class="card card-pad" style="max-width:420px">
+    <form (submit)="$event.preventDefault(); submit()">
+      <app-field label="Senha atual" #fAtual="appField">
+        <input [id]="fAtual.id" type="password" required [value]="form().currentPassword" (input)="setCampo('currentPassword', $any($event.target).value)" />
+      </app-field>
+      <app-field label="Nova senha (mín. 10)" #fNova="appField">
+        <input [id]="fNova.id" type="password" required minlength="10" [value]="form().newPassword" (input)="setCampo('newPassword', $any($event.target).value)" />
+      </app-field>
+      <app-field label="Confirmar nova senha" #fConfirmar="appField">
+        <input [id]="fConfirmar.id" type="password" required minlength="10" [value]="form().confirm" (input)="setCampo('confirm', $any($event.target).value)" />
+      </app-field>
+      <button class="btn btn-accent" type="submit" [disabled]="saving()">{{ saving() ? 'A guardar…' : 'Alterar senha' }}</button>
+    </form>
+  </div>
+
+  <app-two-factor-section></app-two-factor-section>
+  <app-personal-data-section></app-personal-data-section>
+</div>

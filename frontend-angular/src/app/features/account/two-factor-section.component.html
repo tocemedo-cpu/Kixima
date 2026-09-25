@@ -1,0 +1,77 @@
+<div class="card card-pad" style="max-width:420px;margin-top:16px">
+  <strong style="font-size:13.5px">Verificação em dois passos</strong>
+  <p class="helptext" style="margin:6px 0 12px">
+    Além da senha, entrar passa a pedir um código de 6 dígitos. Assim, quem descobrir a sua senha não entra na mesma. Recomendado sobretudo para perfis que aprovam e pagam.
+  </p>
+  <app-error-banner [message]="error()"></app-error-banner>
+  <app-success-banner [message]="success()"></app-success-banner>
+
+  @if (!status()) {
+    <p class="loading-text">A carregar…</p>
+  } @else if (status()!.enabled) {
+    <p style="font-size:13px">
+      ✅ <strong>Ativa</strong> desde {{ formatDate(status()!.enabledAt) }} —
+      {{ status()!.metodo === 'EMAIL' ? 'por email' : 'por app de autenticação' }}.
+    </p>
+    <app-field label="Para desativar, confirme um código atual" style="margin-top:10px" #fDesativar="appField">
+      <input [id]="fDesativar.id" inputmode="numeric" maxlength="6" placeholder="000000" [value]="disableCode()" (input)="disableCode.set($any($event.target).value)" />
+    </app-field>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      @if (status()!.metodo === 'EMAIL') {
+        <button class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="pedirCodigoParaDesativar()">Enviar-me um código</button>
+      }
+      <button class="btn btn-danger btn-sm" [disabled]="busy() || disableCode().trim().length !== 6" (click)="disable()">Desativar</button>
+    </div>
+  } @else if (!etapa()) {
+    @if (status()!.emailIndisponivel) {
+      <p class="error-text" style="font-size:12.5px;margin:0 0 10px">{{ status()!.emailIndisponivel }}</p>
+    } @else {
+      <p class="helptext" style="margin:0 0 10px">O código será enviado para <strong>{{ status()!.email }}</strong>.</p>
+    }
+    <button class="btn btn-accent" [disabled]="busy() || !!status()!.emailIndisponivel" (click)="comecarEmail()">Ativar com código por email</button>
+    <p class="helptext" style="margin:10px 0 0">
+      <button
+        type="button"
+        (click)="comecarApp()"
+        [disabled]="busy()"
+        style="background:none;border:0;padding:0;cursor:pointer;color:var(--brand-600);font:inherit;text-decoration:underline"
+      >
+        Prefiro usar uma app de autenticação
+      </button>
+      — mais seguro, mas obriga a instalar uma aplicação no telemóvel.
+    </p>
+  } @else if (etapa() === 'EMAIL') {
+    <p style="font-size:13px;margin:0 0 10px">
+      Enviámos um código de 6 dígitos para <strong>{{ envio()?.enviadoPara }}</strong>.
+      É válido durante {{ envio()?.validadeMinutos }} minutos. Confirme também a pasta de spam.
+    </p>
+    <app-field label="Código recebido por email" #fCodigoEmail="appField">
+      <input [id]="fCodigoEmail.id" inputmode="numeric" maxlength="6" placeholder="000000" [value]="code()" (input)="code.set($any($event.target).value)" />
+    </app-field>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-accent" [disabled]="busy() || code().trim().length !== 6" (click)="confirmar()">Confirmar e ativar</button>
+      <button class="btn btn-ghost" [disabled]="busy()" (click)="reenviarEmail()">Enviar outro</button>
+      <button class="btn btn-ghost" [disabled]="busy()" (click)="cancelar()">Cancelar</button>
+    </div>
+  } @else {
+    <p style="font-size:13px;margin:0 0 6px">
+      <strong>1. Instale uma app de autenticação</strong> — Google Authenticator, Microsoft Authenticator ou Authy, gratuitas na Play Store e na App Store. Se já tiver uma, avance.
+    </p>
+    <p style="font-size:13px;margin:0 0 10px">
+      <strong>2. Abra a app e digitalize o código QR</strong> (ou use a chave manual). A app cria uma entrada KIXIMA e começa logo a mostrar um código de 6 dígitos.
+    </p>
+    @if (qr()) {
+      <img [src]="qr()" alt="Código QR do 2FA" style="display:block;margin:0 auto 10px;border-radius:8px" />
+    }
+    <p class="helptext" style="margin:0 0 12px;word-break:break-all">
+      Chave manual: <span class="mono">{{ setup()?.secret }}</span>
+    </p>
+    <app-field label="3. Introduza o código de 6 dígitos que a app está a mostrar" #fCodigoApp="appField">
+      <input [id]="fCodigoApp.id" inputmode="numeric" maxlength="6" placeholder="000000" [value]="code()" (input)="code.set($any($event.target).value)" />
+    </app-field>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-accent" [disabled]="busy() || code().trim().length !== 6" (click)="confirmar()">Confirmar e ativar</button>
+      <button class="btn btn-ghost" [disabled]="busy()" (click)="cancelar()">Cancelar</button>
+    </div>
+  }
+</div>

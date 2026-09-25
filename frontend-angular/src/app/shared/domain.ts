@@ -126,6 +126,63 @@ export const COMPANY_STATUS: Record<string, { label: string; tone: string }> = {
   SUSPENSA: { label: 'Suspensa', tone: 'danger' },
 };
 
+// Espelha resolverDestinoNotificacao em frontend/src/domain.js:190-246. Sem
+// destino conhecido e seguro para o papel de quem clicou, devolve null —
+// quem chama só marca como lida, sem navegar (mais vale não fazer nada do
+// que mandar alguém para uma página que o roleGuard lhe vai recusar).
+export function resolverDestinoNotificacao(
+  n: { relatedEntityType?: string | null; relatedEntityId?: string | null; type: string } | null | undefined,
+  user: { role: PersonaRole } | null | undefined,
+): string | null {
+  if (!n || !user) return null;
+  const tipo = n.relatedEntityType;
+  const id = n.relatedEntityId;
+  const role = user.role;
+
+  if (tipo === 'PurchaseOrder' && id) {
+    const porPapel: Partial<Record<PersonaRole, string>> = {
+      COMPRADOR: `/comprador/ordens/${id}`,
+      COMPANY_ADMIN: `/empresa/aprovacoes/${id}`,
+      FORNECEDOR: `/fornecedor/ordens/${id}`,
+      FINANCEIRO: `/financeiro/ordens/${id}`,
+    };
+    return porPapel[role] || null;
+  }
+  if (tipo === 'Invoice') {
+    return role === 'FINANCEIRO' ? '/financeiro/faturas' : null;
+  }
+  if (tipo === 'Payment') {
+    if (role === 'FORNECEDOR') return '/fornecedor/pagamentos';
+    if (role === 'COMPANY_ADMIN') return '/empresa';
+    return null;
+  }
+  if (tipo === 'PlanoCobranca') {
+    return role === 'COMPANY_ADMIN' || role === 'FINANCEIRO' ? '/empresa/assinatura' : null;
+  }
+  if (tipo === 'SupportTicket') {
+    return id ? `/suporte/chat?ticket=${id}` : '/suporte/chat';
+  }
+  if (tipo === 'Conversation') {
+    return id ? `/mensagens/chat-comercial?c=${id}` : '/mensagens/chat-comercial';
+  }
+  if (tipo === 'SupplierDevRequest') {
+    return role === 'ADMIN_SISTEMA' ? '/sistema/supplier-development' : null;
+  }
+
+  switch (n.type) {
+    case 'APOLICE_SUBMETIDA_APROVADA':
+    case 'APOLICE_A_EXPIRAR':
+      return role === 'COMPANY_ADMIN' || role === 'FINANCEIRO' ? '/empresa/documentos' : null;
+    case 'CADASTRO_EMPRESA_APROVADO':
+    case 'CADASTRO_EMPRESA_REJEITADO':
+      return role === 'COMPANY_ADMIN' ? '/empresa/perfil' : null;
+    case 'ALERTA_SEGURANCA':
+      return role === 'ADMIN_SISTEMA' ? '/sistema/alertas-seguranca' : null;
+    default:
+      return null;
+  }
+}
+
 export const POLICY_STATUS: Record<string, { label: string; tone: string }> = {
   SUBMETIDA: { label: 'Submetida', tone: 'pending' },
   APROVADA: { label: 'Aprovada', tone: 'success' },

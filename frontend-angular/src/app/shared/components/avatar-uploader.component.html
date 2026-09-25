@@ -1,0 +1,37 @@
+<div class="av-wrap">
+  <div class="av-photo" [style.width.px]="size" [style.height.px]="size">
+    @if (avatarUrl) {
+      <img [src]="avatarUrl" [alt]="name" />
+    } @else {
+      <span class="av-initials">{{ initials }}</span>
+    }
+    <button class="av-edit" (click)="toggleMenu()" title="Alterar foto" [disabled]="busy()">
+      <app-icon [name]="busy() ? 'policy' : 'certification'" [size]="14"></app-icon>
+    </button>
+    @if (menu()) {
+      <div class="av-menu">
+        <button (click)="abrirSeletorFicheiro()"><app-icon name="report" [size]="14"></app-icon> Carregar imagem</button>
+        <button (click)="abrirCamera()"><app-icon name="chart" [size]="14"></app-icon> Usar câmera</button>
+        @if (avatarUrl) {
+          <button (click)="remover()"><app-icon name="approvals" [size]="14"></app-icon> Remover</button>
+        }
+      </div>
+    }
+  </div>
+  <input #ficheiroInput type="file" accept="image/*" hidden (change)="onPick($event)" />
+  @if (error()) {
+    <p class="av-error">{{ error() }}</p>
+  }
+
+  @if (cam()) {
+    <div class="av-modal" (click)="pararCamera()">
+      <div class="av-cam" (click)="$event.stopPropagation()">
+        <video #video playsinline muted></video>
+        <div class="av-cam-actions">
+          <button class="btn btn-ghost" (click)="pararCamera()">Cancelar</button>
+          <button class="btn btn-accent" (click)="capturar()" [disabled]="busy()">{{ busy() ? 'A enviar…' : 'Capturar foto' }}</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,79 @@
+@if (error()) {
+  <div class="empty-state">
+    <h3>Não foi possível carregar</h3>
+    <p>{{ error() }}</p>
+  </div>
+} @else if (!data()) {
+  <div class="bz-empty">A carregar…</div>
+} @else {
+  <div>
+    <app-crumbs [trail]="trail()"></app-crumbs>
+    <app-buyer-page-head title="Meu Perfil" subtitle="Gerencie as suas informações pessoais, preferências e configurações da sua conta."></app-buyer-page-head>
+
+    <div class="pf-top">
+      <div class="bz-panel pf-id">
+        <app-avatar-uploader [name]="data()!.user.name" [avatarUrl]="data()!.user.avatarUrl" [size]="68" (avatarChange)="setAvatar($event)"></app-avatar-uploader>
+        <div>
+          <div class="pf-name">{{ data()!.user.name }} <app-pill tone="success">Ativo</app-pill></div>
+          <div class="pf-role">{{ roleLabel(data()!.user.role) }}</div>
+          <div class="pf-company">{{ data()!.company?.name || 'Administração KIXIMA' }}</div>
+        </div>
+      </div>
+
+      <div class="bz-panel">
+        <h3>Contacto</h3>
+        <div class="pf-info"><app-icon name="policy" [size]="15"></app-icon> <span>{{ data()!.user.email }}</span></div>
+        <div class="pf-info"><app-icon name="building" [size]="15"></app-icon> <span>{{ data()!.company?.contactPhone || '—' }}</span></div>
+        <div class="pf-info"><app-icon name="offshore" [size]="15"></app-icon> <span>{{ localizacao() }}</span></div>
+        <div class="pf-info"><app-icon name="wallet" [size]="15"></app-icon> <span>Kwanza (Kz)</span></div>
+      </div>
+
+      <div class="bz-panel">
+        <h3>Segurança da Conta</h3>
+        <div class="bz-panel-row"><span>Palavra-passe</span><a class="pf-link" routerLink="/seguranca">Alterar</a></div>
+        <div class="bz-panel-row"><span>Autenticação em duas etapas</span><span class="bz-muted">Configurar</span></div>
+        <div class="bz-panel-row"><span>Conta criada</span><strong>{{ formatDateTime(data()!.user.createdAt) }}</strong></div>
+      </div>
+    </div>
+
+    <h2 class="pf-h2">Resumo da Conta</h2>
+    <app-kpi-row [cards]="kpiCards()"></app-kpi-row>
+
+    <div class="bz-layout">
+      <div class="bz-panel">
+        <h3>Atividade Recente</h3>
+        @if (!data()!.recent || data()!.recent.length === 0) {
+          <p class="bz-sub">Sem atividade recente.</p>
+        } @else {
+          <div class="bz-scroll-x">
+            <table class="bz-table" style="margin-top:4px">
+              <tbody>
+                @for (r of data()!.recent; track r.reference) {
+                  <tr>
+                    <td><span class="bz-mono">{{ r.reference }}</span><span class="bz-sub2">{{ r.party }}</span></td>
+                    <td><app-pill [tone]="$any(PO_STATUS)[r.status]?.tone">{{ $any(PO_STATUS)[r.status]?.label || r.status }}</app-pill></td>
+                    <td class="r bz-muted">{{ formatDateTime(r.at) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+      <div class="bz-side">
+        <div class="bz-panel">
+          <h3>{{ data()!.company ? 'Informações da Empresa' : 'Plataforma' }}</h3>
+          @if (data()!.company; as company) {
+            <div class="bz-panel-row"><span>Empresa</span><strong>{{ company.name }}</strong></div>
+            <div class="bz-panel-row"><span>NIF</span><strong>{{ company.taxId }}</strong></div>
+            <div class="bz-panel-row"><span>Tipo</span><strong>{{ company.type === 'FORNECEDOR' ? 'Prestadora' : 'Cliente' }}</strong></div>
+            <div class="bz-panel-row"><span>Endereço</span><strong>{{ company.address || '—' }}</strong></div>
+            <div class="bz-panel-row"><span>Estado</span><app-pill [tone]="company.status === 'APROVADA' ? 'success' : 'pending'">{{ company.status === 'APROVADA' ? 'Aprovada' : company.status }}</app-pill></div>
+          } @else {
+            <p class="bz-sub">Conta de Administração do Sistema KIXIMA — sem empresa associada.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

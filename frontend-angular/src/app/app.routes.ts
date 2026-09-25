@@ -145,6 +145,13 @@ export const routes: Routes = [
             path: 'recepcao',
             loadComponent: () => import('./features/orders/receptions.component').then((m) => m.ReceptionsComponent),
           },
+          // Alias — Profile.jsx é a mesma página partilhada de /perfil,
+          // apenas também alcançável a partir da navegação do Comprador
+          // (ver frontend/src/App.jsx:201).
+          {
+            path: 'perfil',
+            loadComponent: () => import('./features/account/profile.component').then((m) => m.ProfileComponent),
+          },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Comprador' } },
         ],
       },
@@ -373,8 +380,18 @@ export const routes: Routes = [
       },
 
       // --- Partilhado (qualquer papel autenticado) ---------------------
-      { path: 'perfil', component: PendingPageComponent, data: { titulo: 'Perfil' } },
-      { path: 'notificacoes', component: PendingPageComponent, data: { titulo: 'Notificações' } },
+      {
+        path: 'perfil',
+        loadComponent: () => import('./features/account/profile.component').then((m) => m.ProfileComponent),
+      },
+      {
+        path: 'notificacoes',
+        loadComponent: () => import('./features/account/notifications.component').then((m) => m.NotificationsComponent),
+      },
+      {
+        path: 'seguranca',
+        loadComponent: () => import('./features/account/security.component').then((m) => m.SecurityComponent),
+      },
       { path: 'suporte', component: PendingPageComponent, data: { titulo: 'Suporte' } },
       { path: 'ajuda', component: PendingPageComponent, data: { titulo: 'Ajuda' } },
     ],

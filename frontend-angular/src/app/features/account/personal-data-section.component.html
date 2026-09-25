@@ -1,0 +1,42 @@
+@if (feito(); as resultado) {
+  <div class="card card-pad" style="max-width:420px;margin-top:16px">
+    <strong style="font-size:13.5px">Dados eliminados</strong>
+    <p class="helptext" style="margin:6px 0 0">
+      Os seus dados pessoais foram removidos e a conta foi fechada. O histórico de ordens e pagamentos foi preservado sem o identificar, por obrigação legal de conservação contabilística.
+    </p>
+  </div>
+} @else {
+  <div class="card card-pad" style="max-width:420px;margin-top:16px">
+    <strong style="font-size:13.5px">Os meus dados pessoais</strong>
+    <p class="helptext" style="margin:6px 0 0">
+      Tem o direito de aceder aos dados que a KIXIMA guarda sobre si e de pedir a sua eliminação.
+    </p>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn btn-ghost" (click)="exportar()" [disabled]="aExportar()">{{ aExportar() ? 'A preparar…' : 'Descarregar os meus dados' }}</button>
+      @if (!confirmar()) {
+        <button class="btn btn-danger" (click)="pedirConfirmacao()">Eliminar os meus dados</button>
+      }
+    </div>
+
+    @if (confirmar()) {
+      <form (submit)="$event.preventDefault(); anonimizar()" style="margin-top:14px">
+        <p class="helptext" style="margin:0 0 10px">
+          <strong>Isto não tem volta.</strong> O seu nome, email e foto são apagados e a conta é fechada. As ordens, faturas e pagamentos em que participou continuam a existir, mas deixam de o identificar — a lei fiscal obriga a conservá-los.
+        </p>
+        <app-field label="Confirme a sua senha atual" #fSenha="appField">
+          <input [id]="fSenha.id" type="password" required [value]="senha()" (input)="senha.set($any($event.target).value)" />
+        </app-field>
+        @if (erro()) {
+          <p class="error-text">{{ erro() }}</p>
+        }
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-danger" type="submit">Eliminar definitivamente</button>
+          <button class="btn btn-ghost" type="button" (click)="cancelarConfirmacao()">Cancelar</button>
+        </div>
+      </form>
+    } @else if (erro()) {
+      <p class="error-text" style="margin-top:10px">{{ erro() }}</p>
+    }
+  </div>
+}
