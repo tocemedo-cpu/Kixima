@@ -162,9 +162,15 @@ public class AgtPayloadService {
         return m;
     }
 
-    private Map<String, Object> documentoDeFatura(Invoice invoice, String fornecedorTaxId) {
+    /** `clienteDe`: `purchaseOrder?.buyerCompany || contract?.clientCompany` — a fatura consolidada de call-offs só tem contrato. */
+    private static Company clienteDe(Invoice invoice) {
         PurchaseOrder po = invoice.getPurchaseOrder();
-        Company cliente = po == null ? null : po.getBuyerCompany();
+        if (po != null && po.getBuyerCompany() != null) return po.getBuyerCompany();
+        return invoice.getContract() == null ? null : invoice.getContract().getClientCompany();
+    }
+
+    private Map<String, Object> documentoDeFatura(Invoice invoice, String fornecedorTaxId) {
+        Company cliente = clienteDe(invoice);
 
         List<Map<String, Object>> linhas = new ArrayList<>();
         for (InvoiceLine li : invoice.getLines()) {
@@ -199,8 +205,7 @@ public class AgtPayloadService {
     /** Espelha documentoDeNotaCredito — uma linha "CORRECAO" que referencia a fatura original (retificação). */
     private Map<String, Object> documentoDeNotaCredito(CreditNote creditNote, String fornecedorTaxId) {
         Invoice invoice = creditNote.getInvoice();
-        PurchaseOrder po = invoice.getPurchaseOrder();
-        Company cliente = po == null ? null : po.getBuyerCompany();
+        Company cliente = clienteDe(invoice);
         String faturaOriginalNo = numeroDocumento("FT", invoice.getId(), invoice.getAssinadaEm());
         BigDecimal netAmount = nz(creditNote.getNetAmount());
         BigDecimal taxAmount = nz(creditNote.getTaxAmount());
@@ -242,8 +247,7 @@ public class AgtPayloadService {
      */
     private Map<String, Object> documentoDeRecibo(Payment payment, String fornecedorTaxId) {
         Invoice invoice = payment.getInvoice();
-        PurchaseOrder po = invoice.getPurchaseOrder();
-        Company cliente = po == null ? null : po.getBuyerCompany();
+        Company cliente = clienteDe(invoice);
         String faturaNo = numeroDocumento("FT", invoice.getId(), invoice.getAssinadaEm());
         String faturaData = DATA.format(invoice.getAssinadaEm() != null ? invoice.getAssinadaEm() : invoice.getCreatedAt());
 
@@ -282,22 +286,20 @@ public class AgtPayloadService {
 
         if ("FT".equals(tipo)) {
             Invoice invoice = invoiceRepository.findById(id).orElseThrow(() -> new NotFoundException("Fatura"));
-            PurchaseOrder po = invoice.getPurchaseOrder();
-            verificarPosse(po == null ? null : po.getSupplierCompanyId(), supplierCompanyId);
+            // partesDaFatura: o fornecedor vem da PO ou, na fatura consolidada de call-offs, do contrato.
+            verificarPosse(invoice.supplierCompanyId(), supplierCompanyId);
             return envelope(fornecedor.getTaxId(), documentoDeFatura(invoice, fornecedor.getTaxId()));
         }
 
         if ("NC".equals(tipo)) {
             CreditNote creditNote = creditNoteRepository.findByIdComFatura(id).orElseThrow(() -> new NotFoundException("Nota de crédito"));
-            PurchaseOrder po = creditNote.getInvoice().getPurchaseOrder();
-            verificarPosse(po == null ? null : po.getSupplierCompanyId(), supplierCompanyId);
+            verificarPosse(creditNote.getInvoice().supplierCompanyId(), supplierCompanyId);
             return envelope(fornecedor.getTaxId(), documentoDeNotaCredito(creditNote, fornecedor.getTaxId()));
         }
 
         if ("RC".equals(tipo)) {
             Payment payment = paymentRepository.findByIdComFatura(id).orElseThrow(() -> new NotFoundException("Recibo"));
-            PurchaseOrder po = payment.getInvoice().getPurchaseOrder();
-            verificarPosse(po == null ? null : po.getSupplierCompanyId(), supplierCompanyId);
+            verificarPosse(payment.getInvoice().supplierCompanyId(), supplierCompanyId);
             return envelope(fornecedor.getTaxId(), documentoDeRecibo(payment, fornecedor.getTaxId()));
         }
 
@@ -379,8 +381,7 @@ public class AgtPayloadService {
     public EstadoConsultado consultarEstadoFatura(String invoiceId, String supplierCompanyId) {
         Company fornecedor = carregarFornecedor(supplierCompanyId);
         Invoice invoice = invoiceRepository.findById(invoiceId).orElseThrow(() -> new NotFoundException("Fatura"));
-        PurchaseOrder po = invoice.getPurchaseOrder();
-        verificarPosse(po == null ? null : po.getSupplierCompanyId(), supplierCompanyId);
+        verificarPosse(invoice.supplierCompanyId(), supplierCompanyId);
 
         if (invoice.getAgtRequestId() == null) {
             throw new BusinessRuleException(

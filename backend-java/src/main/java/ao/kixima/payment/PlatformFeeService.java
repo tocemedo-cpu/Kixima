@@ -102,10 +102,15 @@ public class PlatformFeeService {
         return new Calculo(count, parcelaPo, parcelaFatura, amount, CURRENCY, basis, round2(valor));
     }
 
-    /** Cria o registo de taxa para uma fatura, na MESMA transação do pagamento (quem chama é @Transactional). */
+    /**
+     * Cria o registo de taxa para uma fatura, na MESMA transação do pagamento (quem chama é @Transactional).
+     * O nº de POs é 1 (fatura normal) ou o nº de call-offs consolidados — `consolidatedPoIds?.length || 1`.
+     */
     public PlatformFee createForInvoice(Invoice invoice, String companyId) {
-        int poCount = 1; // faturas consolidadas de call-offs ficam com o domínio Contract, por portar
+        List<String> consolidadas = invoice.getConsolidatedPoIds();
+        int poCount = consolidadas == null || consolidadas.isEmpty() ? 1 : consolidadas.size();
         BigDecimal rate = fxService.fxRate();
+        // O limiar aplica-se POR TRANSAÇÃO: numa fatura consolidada, o total do período é dividido pelo nº de POs.
         BigDecimal totalUsd = fxService.toUsd(invoice.getAmount(), invoice.getCurrency());
         BigDecimal perPoValueUsd = round2(totalUsd.divide(BigDecimal.valueOf(poCount), 2, RoundingMode.HALF_UP));
         Calculo f = compute(poCount, perPoValueUsd);

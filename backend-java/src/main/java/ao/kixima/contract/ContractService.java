@@ -219,7 +219,7 @@ public class ContractService {
         Invoice invoice = new Invoice(UUID.randomUUID().toString(), reference, null, iva.gross(), iva.net(), iva.tax(), iva.withheld(),
                 contract.getCurrency(), InvoiceStatus.PENDENTE, agora, dueAt, certificacao.serie(), certificacao.numeroNaSerie(),
                 certificacao.hashDocumento(), certificacao.hashAnterior(), certificacao.assinadaEm(), null, agora, agora);
-        invoice.consolidarCallOffs(contractId, pendingCallOffs.stream().map(PurchaseOrder::getId).toList());
+        invoice.consolidarCallOffs(contract, pendingCallOffs.stream().map(PurchaseOrder::getId).toList());
         invoiceRepository.save(invoice);
 
         // Linhas do documento fiscal, de todos os call-offs consolidados.

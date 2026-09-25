@@ -8,11 +8,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
     Optional<Invoice> findByReferenciaPagamento(String referenciaPagamento);
 
     /**
-     * Espelha paymentService.listPendingInvoices — só o ramo `purchaseOrder.buyerCompanyId`
-     * (o ramo `contract.clientCompanyId` fica com o domínio Contract, ainda por portar).
+     * Espelha paymentService.listPendingInvoices — faturas pendentes da empresa compradora,
+     * via PO (`purchaseOrder.buyerCompanyId`) ou via contrato-quadro (`contract.clientCompanyId`,
+     * faturas consolidadas de call-offs), com ambas as relações carregadas como o `include` do Node.
      */
-    @org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i JOIN FETCH i.purchaseOrder po "
-            + "WHERE i.status = :status AND po.buyerCompanyId = :buyerCompanyId ORDER BY i.dueAt ASC")
+    @org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i LEFT JOIN FETCH i.purchaseOrder po LEFT JOIN FETCH i.contract c "
+            + "WHERE i.status = :status AND (po.buyerCompanyId = :buyerCompanyId OR c.clientCompanyId = :buyerCompanyId) ORDER BY i.dueAt ASC")
     java.util.List<Invoice> findPendentesDoComprador(@org.springframework.data.repository.query.Param("buyerCompanyId") String buyerCompanyId,
                                                       @org.springframework.data.repository.query.Param("status") InvoiceStatus status);
 

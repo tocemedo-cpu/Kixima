@@ -22,6 +22,7 @@ import ao.kixima.notification.NotificationService;
 import ao.kixima.payment.dto.PaymentDto;
 import ao.kixima.po.PoStatus;
 import ao.kixima.po.PurchaseOrder;
+import ao.kixima.po.PurchaseOrderRepository;
 import ao.kixima.security.CurrentUser;
 import ao.kixima.storage.StorageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,7 +52,9 @@ import java.util.UUID;
  * sandbox) nunca bloqueia nem desfaz um pagamento já comitado — o dinheiro
  * já saiu, uma recusa de paperwork não desfaz isso.
  *
- * NÃO PORTADO: o ramo {@code contract}/{@code consolidatedPoIds} (call-offs).
+ * Duas formas de fatura: a de UMA PO ({@code purchaseOrderId}) e a
+ * consolidada de call-offs de um contrato-quadro ({@code contractId} +
+ * {@code consolidatedPoIds}, sem PO) — a posse vem da PO ou do contrato.
  */
 @Service
 public class PaymentService {
@@ -61,6 +64,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final InvoiceRepository invoiceRepository;
+    private final PurchaseOrderRepository purchaseOrderRepository;
     private final CompanyRepository companyRepository;
     private final StorageService storageService;
     private final FaturacaoService faturacaoService;
@@ -74,6 +78,7 @@ public class PaymentService {
     private final TransactionTemplate tx;
 
     public PaymentService(PaymentRepository paymentRepository, InvoiceRepository invoiceRepository,
+                           PurchaseOrderRepository purchaseOrderRepository,
                            CompanyRepository companyRepository, StorageService storageService, FaturacaoService faturacaoService,
                            PlatformFeeService platformFeeService, AuditService auditService,
                            NotificationService notificationService, EventBus eventBus, AgtPayloadService agtPayloadService,
@@ -81,6 +86,7 @@ public class PaymentService {
                            PlatformTransactionManager transactionManager) {
         this.paymentRepository = paymentRepository;
         this.invoiceRepository = invoiceRepository;
+        this.purchaseOrderRepository = purchaseOrderRepository;
         this.companyRepository = companyRepository;
         this.storageService = storageService;
         this.faturacaoService = faturacaoService;
@@ -104,8 +110,8 @@ public class PaymentService {
                 .map(p -> PaymentDto.de(p, InvoiceDto.de(p.getInvoice(), true), null)).toList());
     }
 
-    private record FaturaAPagar(String reference, String purchaseOrderId, String buyerCompanyId, String supplierCompanyId,
-                                String serieFiscal, Instant dataAdesao) {
+    private record FaturaAPagar(String reference, String purchaseOrderId, List<String> consolidatedPoIds, String buyerCompanyId,
+                                String supplierCompanyId, String serieFiscal, Instant dataAdesao) {
     }
 
     public PaymentDto processPayment(String invoiceId, CurrentUser user, MultipartFile proof, Actor actor) {
@@ -122,14 +128,15 @@ public class PaymentService {
             if (invoice.getStatus() != InvoiceStatus.PENDENTE) {
                 throw new ConflictException("Fatura no estado \"" + invoice.getStatus() + "\" não pode ser paga.");
             }
-            PurchaseOrder po = invoice.getPurchaseOrder();
-            String ownerCompanyId = po == null ? null : po.getBuyerCompanyId();
+            // `purchaseOrder?.buyerCompanyId ?? contract?.clientCompanyId` — na fatura consolidada de call-offs a posse é do contrato.
+            String ownerCompanyId = invoice.buyerCompanyId();
             if (ownerCompanyId == null || !ownerCompanyId.equals(user.companyId())) {
                 throw new ForbiddenException("Só pode pagar faturas da sua própria empresa.");
             }
-            String supplierId = po.getSupplierCompanyId();
+            String supplierId = invoice.supplierCompanyId();
             Company supplier = supplierId == null ? null : companyRepository.findById(supplierId).orElse(null);
-            return new FaturaAPagar(invoice.getReference(), invoice.getPurchaseOrderId(), ownerCompanyId, supplierId,
+            return new FaturaAPagar(invoice.getReference(), invoice.getPurchaseOrderId(), List.copyOf(invoice.getConsolidatedPoIds()),
+                    ownerCompanyId, supplierId,
                     supplier == null ? null : supplier.getSerieFiscal(),
                     supplier == null ? null : supplier.getDataAdesaoFacturacaoElectronica());
         });
@@ -155,9 +162,17 @@ public class PaymentService {
             paymentRepository.save(criado);
 
             invoice.setStatus(InvoiceStatus.PAGA);
-            PurchaseOrder po = invoice.getPurchaseOrder();
-            po.setStatus(PoStatus.PAGA);
-            po.setPaidAt(agora);
+            if (fatura.purchaseOrderId() != null) {
+                PurchaseOrder po = invoice.getPurchaseOrder();
+                po.setStatus(PoStatus.PAGA);
+                po.setPaidAt(agora);
+            } else if (!fatura.consolidatedPoIds().isEmpty()) {
+                // `updateMany({ where: { id: { in: consolidatedPoIds } }, data: { paidAt } })` — só a data; o
+                // estado das call-offs não muda (uma fatura consolidada cobre call-offs em execução/entregues).
+                for (PurchaseOrder callOff : purchaseOrderRepository.findAllById(fatura.consolidatedPoIds())) {
+                    callOff.setPaidAt(agora);
+                }
+            }
 
             // Taxa da plataforma (KIXIMA) — à parte da PO/Fatura, cobrada ao fornecedor.
             if (fatura.supplierCompanyId() != null) platformFeeService.createForInvoice(invoice, fatura.supplierCompanyId());
@@ -175,10 +190,11 @@ public class PaymentService {
 
         Invoice invoiceComPo = tx.execute(s -> {
             Invoice i = invoiceRepository.findById(invoiceId).orElseThrow();
-            i.getPurchaseOrder().getReference();
+            if (i.getPurchaseOrder() != null) i.getPurchaseOrder().getReference();
             return i;
         });
-        notificationService.pagamentoProcessado(payment, invoiceComPo.getPurchaseOrder());
+        // Como no Node, só a fatura de UMA PO avisa o fornecedor ("pagamento da PO X") — a consolidada não tem PO.
+        if (fatura.purchaseOrderId() != null) notificationService.pagamentoProcessado(payment, invoiceComPo.getPurchaseOrder());
 
         eventBus.publish("payment.completed", EventPayloads.paymentCompleted(payment, invoiceComPo),
                 "payment-completed:" + payment.getId(), fatura.buyerCompanyId());
@@ -245,8 +261,8 @@ public class PaymentService {
     public PaymentDto confirmReceived(String paymentId, CurrentUser user, Actor actor) {
         return tx.execute(s -> {
             Payment payment = paymentRepository.findByIdComFatura(paymentId).orElseThrow(() -> new NotFoundException("Pagamento"));
-            PurchaseOrder po = payment.getInvoice().getPurchaseOrder();
-            String supplierCompanyId = po == null ? null : po.getSupplierCompanyId();
+            // `purchaseOrder?.supplierCompanyId ?? contract?.supplierCompanyId` — a fatura consolidada só tem contrato.
+            String supplierCompanyId = payment.getInvoice().supplierCompanyId();
             if (supplierCompanyId == null || !supplierCompanyId.equals(user.companyId())) {
                 throw new ForbiddenException("Só o fornecedor desta fatura pode confirmar a receção.");
             }
