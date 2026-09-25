@@ -228,5 +228,9 @@ reposta a partir da semente:
 | Node (`npm test`, referência) | 111 suites, 1020 testes, 0 falhas |
 | Frontend (vitest, build, auditorias i18n) | 167 testes, 0 falhas; 0 textos em falta, 0 hardcoded |
 | End-to-end (Playwright, 5 personas, axe nos três fundos) | 83 testes, 0 falhas |
+| End-to-end **contra o backend Java** (`VITE_API_TARGET=http://localhost:4001 VITE_REALTIME=stomp`, chat por STOMP incluído) | 83 testes, 0 falhas |
 
-O inventário de rotas continua em 246/246 (`paridade/inventario.py`).
+O inventário de rotas continua em 246/246 (`paridade/inventario.py`). A suite
+e2e a passar por inteiro contra o Java, com o mesmo frontend e a mesma base
+de demonstração, é a prova de cutover mais forte disponível sem a réplica de
+staging — ver `M8-CUTOVER.md`.
