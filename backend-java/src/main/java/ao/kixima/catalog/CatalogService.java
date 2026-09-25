@@ -514,7 +514,8 @@ public class CatalogService {
         return m;
     }
 
-    private ProductDto toDto(Product p, Map<String, Object> supplier, boolean incluirMedia) {
+    /** O `Product` tal como o Prisma o devolve (todas as colunas) — usado também pela pesquisa do marketplace. */
+    public ProductDto toDto(Product p, Map<String, Object> supplier, boolean incluirMedia) {
         return new ProductDto(
                 p.getId(), p.getSupplierId(), supplier,
                 p.getName(), p.getSku(), p.getManufacturerCode(), p.getCategory(), p.getSubcategory(),

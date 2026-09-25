@@ -78,8 +78,8 @@ adaptadores de gateway (EMIS, PayPay, BAI, BFA, Standard Bank Angola) — todos
 |---|---|---|---|
 | ~~`/api/admin` (invites de assessor, users/areas/status, activities, prontidão, email-teste)~~ | 14 | adminService (320), prontidaoService (675) | **FECHADO** (commit "Lacunas D.1"): `admin/AdminService`, `admin/AdminController`, `admin/ProntidaoService`; email de teste via `EmailDispatchService.enviarDireto` (recusa-se a fingir em modo console: 422). A Prontidão diz, com honestidade, quando `STORAGE_PROVIDER=s3` está definido mas este servidor ainda não sabe escrever no S3 (até D.8). |
 | ~~`/api/catalog` (create/update/delete, import, imagens/media/documentos)~~ | 8 | catalogService (escrita), catalogImportService (310), storage | **FECHADO** (commit "Lacunas D.2"): `CatalogService` (escrita e media), `CatalogImportService` (Apache POI no lugar do SheetJS; fotos embebidas lidas do zip), `catalog/dto/ProductPayload` (createProductSchema/partial), `catalog/UploadFilters` (filtros do multer). |
-| `/api/marketplace` (search, compare, facets, suppliers) | 4 | marketplaceService (259) | pesquisa do marketplace |
-| `/api/kits` | 3 | kitService | kits |
+| ~~`/api/marketplace` (search, compare, facets, suppliers)~~ | 4 | marketplaceService (259) | **FECHADO** (commit "Lacunas D.3/D.4"): `marketplace/MarketplaceService` — filtros em SQL nativo (search_text por gatilho, text[], search_rank do fornecedor), hidratação pelo JPA. |
+| ~~`/api/kits`~~ | 3 | kitService | **FECHADO** (commit "Lacunas D.3/D.4"): `kit/{Kit,KitItem,KitService,KitController}`. |
 | `/api/faturacao` (integridade, saft, saft/resumo, metricas) | 4 | saftService (355), faturacaoService | SAF-T (AO) e integridade da cadeia |
 | `/api/support` (overview, admin/overview, imagens de categorias) | 5 | supportService | painéis e imagens do suporte |
 | `/api/category-management` (analise, media-mensal) | 2 | categoryAnalyticsService (resto) | dashboard de Category Management |
