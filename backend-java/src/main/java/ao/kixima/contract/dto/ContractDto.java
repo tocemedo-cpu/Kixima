@@ -12,14 +12,18 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Espelha a linha `Contract` devolvida pelo Node — com `clientCompany`/`supplierCompany`
- * (listagens) ou `callOffs` (detalhe) conforme o `include` de cada função.
+ * Espelha a linha `Contract` devolvida pelo Node — todos os escalares,
+ * {@code null} incluído — com `clientCompany`/`supplierCompany` (listagens)
+ * ou `callOffs` (detalhe) conforme o `include` de cada função; a criação
+ * devolve só a linha. Só as relações são condicionais.
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public record ContractDto(String id, String reference, String clientCompanyId, String supplierCompanyId, List<String> categoriesCovered,
                           BigDecimal totalValue, String currency, BigDecimal usedValue, BillingPeriodicity billingPeriodicity,
                           int paymentTermDays, ContractStatus status, Instant validFrom, Instant validUntil, Instant createdAt,
-                          Instant updatedAt, CompanyRef clientCompany, CompanyRef supplierCompany, List<PurchaseOrderDto> callOffs) {
+                          Instant updatedAt,
+                          @JsonInclude(JsonInclude.Include.NON_NULL) CompanyRef clientCompany,
+                          @JsonInclude(JsonInclude.Include.NON_NULL) CompanyRef supplierCompany,
+                          @JsonInclude(JsonInclude.Include.NON_NULL) List<PurchaseOrderDto> callOffs) {
 
     public record CompanyRef(String id, String name) {
         public static CompanyRef de(Company c) {

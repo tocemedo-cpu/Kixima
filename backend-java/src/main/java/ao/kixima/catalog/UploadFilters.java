@@ -21,6 +21,8 @@ public final class UploadFilters {
     public static final long LIMITE_MEDIA = 15 * MB;
     /** `uploadSpreadsheet` — folha de cálculo (25MB). */
     public static final long LIMITE_FOLHA = 25 * MB;
+    /** `uploadDocuments` — comprovativos e documentos de credenciamento (10MB). */
+    public static final long LIMITE_DOCUMENTO = 10 * MB;
 
     private static final Pattern IMAGEM = Pattern.compile("^image/(png|jpe?g|webp|gif)$");
     private static final Pattern HEIC = Pattern.compile("heic|heif", Pattern.CASE_INSENSITIVE);
@@ -46,9 +48,14 @@ public final class UploadFilters {
                 : "Formato de imagem não suportado. Use PNG, JPG, WEBP ou GIF.");
     }
 
-    private static void tamanho(MultipartFile f, long limite) {
+    /**
+     * O que o multer faz ao passar `limits.fileSize`: MulterError com
+     * {@code code: 'LIMIT_FILE_SIZE'}, que o errorHandler.js traduz em 413 com
+     * esta frase — o {@code code} viaja tal e qual no envelope.
+     */
+    public static void tamanho(MultipartFile f, long limite) {
         if (f.getSize() > limite) {
-            throw new AppException("O ficheiro é demasiado grande. Reduza o tamanho da imagem e tente novamente.", 413, "PAYLOAD_TOO_LARGE");
+            throw new AppException("O ficheiro é demasiado grande. Reduza o tamanho da imagem e tente novamente.", 413, "LIMIT_FILE_SIZE");
         }
     }
 

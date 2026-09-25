@@ -13,6 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -175,6 +176,54 @@ class InviteControllerTest {
         mockMvc.perform(delete("/api/companies/users/" + novoUserId).header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(novoUserId));
+    }
+
+    /**
+     * `validate(createInviteSchema)` corre antes do controller: um perfil fora
+     * de {COMPRADOR, FORNECEDOR, FINANCEIRO} — incluindo COMPANY_ADMIN e
+     * ADMIN_SISTEMA, que existem no enum PersonaRole — é 422 com o
+     * {@code flatten()} do zod, nunca o 400 de regra de negócio. Os textos são
+     * os do zod por omissão, letra por letra.
+     */
+    @Test
+    void perfilForaDoEnumDoConviteE422ComOsErrosDoZod() throws Exception {
+        String adminToken = login(COMPANY_ADMIN_EMAIL);
+        for (String role : List.of("ADMIN_SISTEMA", "COMPANY_ADMIN", "GESTOR")) {
+            mockMvc.perform(post("/api/companies/invites")
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType("application/json")
+                            .content(objectMapper.writeValueAsString(Map.of("role", role, "name", "Alguém", "email", "alguem@exemplo.co.ao"))))
+                    .andExpect(status().isUnprocessableEntity())
+                    .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+                    .andExpect(jsonPath("$.error.message").value("Dados inválidos."))
+                    .andExpect(jsonPath("$.error.details.formErrors").isEmpty())
+                    .andExpect(jsonPath("$.error.details.fieldErrors.role.length()").value(1))
+                    .andExpect(jsonPath("$.error.details.fieldErrors.role[0]")
+                            .value("Invalid enum value. Expected 'COMPRADOR' | 'FORNECEDOR' | 'FINANCEIRO', received '" + role + "'"))
+                    .andExpect(jsonPath("$.error.details.fieldErrors.name").doesNotExist())
+                    .andExpect(jsonPath("$.error.details.fieldErrors.email").doesNotExist());
+        }
+
+        // tests/invites.test.js "nome/email em falta → 422": o zod reporta os campos todos de uma vez.
+        mockMvc.perform(post("/api/companies/invites")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of("role", "COMPRADOR"))))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.role").doesNotExist())
+                .andExpect(jsonPath("$.error.details.fieldErrors.name[0]").value("Required"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.email[0]").value("Required"));
+
+        // Sem perfil nenhum + nome curto + email mal formado — as mensagens próprias do schema.
+        mockMvc.perform(post("/api/companies/invites")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of("name", "A", "email", "nao-e-email"))))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.details.fieldErrors.role[0]").value("Required"))
+                .andExpect(jsonPath("$.error.details.fieldErrors.name[0]").value("Indique o nome do funcionário."))
+                .andExpect(jsonPath("$.error.details.fieldErrors.email[0]").value("Indique um email válido."));
     }
 
     @Test

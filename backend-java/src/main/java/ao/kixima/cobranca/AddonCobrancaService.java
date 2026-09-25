@@ -9,6 +9,7 @@ import ao.kixima.addon.CompanyAddonRepository;
 import ao.kixima.addon.CompanyAddonStatus;
 import ao.kixima.audit.Actor;
 import ao.kixima.audit.AuditService;
+import ao.kixima.catalog.UploadFilters;
 import ao.kixima.cobranca.CobrancaDtos.AddonCobrancaDto;
 import ao.kixima.common.error.BusinessRuleException;
 import ao.kixima.common.error.ConflictException;
@@ -175,6 +176,8 @@ public class AddonCobrancaService {
         String tipo = file.getContentType();
         boolean valido = tipo != null && (tipo.matches("^image/(png|jpe?g|webp|gif)$") || tipo.equals("application/pdf"));
         if (!valido) throw new ValidationException("Documento inválido — use PDF ou imagem (PNG/JPG).");
+        // `uploadDocuments` (config/upload.js): o multer aplica o fileFilter primeiro e só depois o limite de 10MB.
+        UploadFilters.tamanho(file, UploadFilters.LIMITE_DOCUMENTO);
 
         AddonCobranca cobranca = cobrancaRepository.findById(cobrancaId).orElseThrow(() -> new NotFoundException("Cobrança"));
         if (!cobranca.getCompanyId().equals(companyId)) throw new ForbiddenException("Só pode pagar cobranças da sua própria empresa.");

@@ -43,8 +43,9 @@ public class ProfileService {
         }
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Card(String icon, String tone, String label, Object value, Boolean money, String sub) {
+    /** `money: true` só existe nos cartões de valor (profileService.js); os restantes não têm a chave. */
+    public record Card(String icon, String tone, String label, Object value,
+                       @JsonInclude(JsonInclude.Include.NON_NULL) Boolean money, String sub) {
     }
 
     public record Recent(String reference, String party, String status, Instant at) {

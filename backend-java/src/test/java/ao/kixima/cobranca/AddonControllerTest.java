@@ -124,6 +124,25 @@ class AddonControllerTest {
         pedir(companyAdmin, 409); // só pode haver uma cobrança em aberto por vez
     }
 
+    /** `uploadDocuments` (10MB) em addonRoutes.js: acima disso é o 413 LIMIT_FILE_SIZE do multer, não um 422 nosso. */
+    @Test
+    void comprovativoAcimaDe10MbDa413ComoOMulter() throws Exception {
+        porNoPlano("PRO", 2);
+        String companyAdmin = login(COMPANY_ADMIN_EMAIL);
+        String id = pedir(companyAdmin, 201).get("id").asText();
+
+        byte[] grande = new byte[10 * 1024 * 1024 + 1];
+        System.arraycopy(COMPROVATIVO, 0, grande, 0, COMPROVATIVO.length);
+        mockMvc.perform(multipart("/api/addons/" + id + "/comprovativo")
+                        .file(new MockMultipartFile("comprovativo", "enorme.pdf", "application/pdf", grande))
+                        .header("Authorization", "Bearer " + companyAdmin))
+                .andExpect(status().is(413))
+                .andExpect(jsonPath("$.error.code").value("LIMIT_FILE_SIZE"))
+                .andExpect(jsonPath("$.error.message").value("O ficheiro é demasiado grande. Reduza o tamanho da imagem e tente novamente."));
+        assertThat(estado(companyAdmin).get("emAberto").get("status").asText()).isEqualTo("PENDENTE");
+        comprovativo(companyAdmin, id);
+    }
+
     @Test
     void fluxoCompletoAteOAddonAtivoEValidade() throws Exception {
         porNoPlano("PRO", 2);

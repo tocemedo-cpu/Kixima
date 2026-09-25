@@ -11,9 +11,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -167,6 +169,7 @@ class SupportControllerTest {
         assertTrue(auditoriaEncontrada, "SUPORTE_TICKET_RESOLVIDO devia ter ficado no trilho de auditoria.");
     }
 
+    /** tests/support.test.js "rejeita ticket sem assunto/mensagem (400)" — 400 INVALID escrito à mão, não 422 do zod. */
     @Test
     void rejeitaTicketSemAssuntoOuMensagem() throws Exception {
         String token = login(COMPRADOR_EMAIL);
@@ -174,7 +177,91 @@ class SupportControllerTest {
                         .header("Authorization", "Bearer " + token)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of("subject", "", "message", ""))))
-                .andExpect(status().isUnprocessableEntity());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID"))
+                .andExpect(jsonPath("$.error.message").value("Assunto e mensagem são obrigatórios."))
+                .andExpect(jsonPath("$.error.details").doesNotExist());
+        // Sem corpo nenhum (`req.body?.subject`) é o mesmo 400.
+        mockMvc.perform(post("/api/support/tickets").header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID"));
+    }
+
+    /** Os outros `res.status(400).json({ error: { code: 'INVALID' } })` de supportRoutes.js. */
+    @Test
+    void estadoInvalidoETransferenciaSemDestinoSao400Invalid() throws Exception {
+        String compradorToken = login(COMPRADOR_EMAIL);
+        String adminToken = login(ADMIN_SISTEMA_EMAIL);
+        var createRes = mockMvc.perform(post("/api/support/tickets")
+                        .header("Authorization", "Bearer " + compradorToken)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of("subject", "Estado", "message", "Teste de estado"))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String ticketId = objectMapper.readTree(createRes.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(patch("/api/support/tickets/" + ticketId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of("status", "INEXISTENTE"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID"))
+                .andExpect(jsonPath("$.error.message").value("Estado inválido."));
+
+        mockMvc.perform(post("/api/support/admin/tickets/" + ticketId + "/transfer")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType("application/json")
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID"))
+                .andExpect(jsonPath("$.error.message").value("Indique o assessor de destino."));
+    }
+
+    /**
+     * `res.status(201).json(ticket)` devolve a linha crua do Prisma: as colunas
+     * a null ({@code companyId} de quem não tem empresa, {@code assignedToId}
+     * enquanto ninguém assumiu) saem como {@code null}, não desaparecem. Na
+     * listagem admin, {@code company} sai a {@code null} pela mesma razão.
+     */
+    @Test
+    void criacaoDevolveALinhaCruaComAsChavesNulas() throws Exception {
+        String adminToken = login(ADMIN_SISTEMA_EMAIL); // Admin do Sistema: sem empresa → companyId null.
+        var createRes = mockMvc.perform(post("/api/support/tickets")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of("subject", "Forma da resposta", "message", "Chaves nulas presentes"))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        JsonNode ticket = objectMapper.readTree(createRes.getResponse().getContentAsString());
+        for (String chave : List.of("id", "reference", "userId", "companyId", "subject", "category", "message", "status",
+                "assignedToId", "createdAt", "updatedAt")) {
+            assertTrue(ticket.has(chave), "A chave '" + chave + "' devia estar presente, como na linha do Prisma.");
+        }
+        assertTrue(ticket.get("companyId").isNull(), "companyId devia sair como null explícito.");
+        assertTrue(ticket.get("assignedToId").isNull(), "assignedToId devia sair como null explícito.");
+        assertEquals("Geral", ticket.get("category").asText());
+        // Só GET /tickets/:id acrescenta statusLabel; só /admin/tickets acrescenta user/company.
+        assertFalse(ticket.has("statusLabel"));
+        assertFalse(ticket.has("user"));
+        assertFalse(ticket.has("company"));
+        String ticketId = ticket.get("id").asText();
+
+        var listRes = mockMvc.perform(get("/api/support/admin/tickets").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode naLista = null;
+        for (JsonNode t : objectMapper.readTree(listRes.getResponse().getContentAsString())) {
+            if (ticketId.equals(t.get("id").asText())) naLista = t;
+        }
+        assertTrue(naLista != null, "O ticket devia aparecer na listagem admin.");
+        assertEquals(ADMIN_SISTEMA_EMAIL, naLista.get("user").get("email").asText());
+        assertTrue(naLista.has("company") && naLista.get("company").isNull(), "company devia sair como null explícito (`|| null`).");
+        assertFalse(naLista.has("statusLabel"));
+
+        mockMvc.perform(get("/api/support/tickets/" + ticketId).header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusLabel").isString())
+                .andExpect(jsonPath("$.user").doesNotExist());
     }
 
     @Test

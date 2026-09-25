@@ -15,12 +15,13 @@ import java.util.Map;
  * {id,name,status}, getProductBySlug {id,name,status,verified,logoUrl} — por
  * isso viaja como Map em vez de um tipo fixo, para reproduzir exactamente as
  * chaves que o Node devolve em cada caso (`select` do Prisma omite chaves,
- * não as deixa null). `images`/`documents` ficam de fora (null → omitidos,
- * @JsonInclude NON_NULL) na listagem, tal como o Node.
+ * não as deixa null). `images`/`documents` ficam de fora (null → omitidos)
+ * na listagem, tal como o Node. Só estas três relações são condicionais: os
+ * escalares da linha saem sempre, {@code null} incluído ({@code sku: null},
+ * {@code promoPrice: null}…), como o Prisma os devolve.
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public record ProductDto(
-        String id, String supplierId, Map<String, Object> supplier,
+        String id, String supplierId, @JsonInclude(JsonInclude.Include.NON_NULL) Map<String, Object> supplier,
         String name, String sku, String manufacturerCode, String category, String subcategory,
         String brand, String manufacturer, String model, String countryOfOrigin,
         String description, String fullDescription, String applications, String benefits, String keywords,
@@ -34,6 +35,7 @@ public record ProductDto(
         List<String> certifications, List<String> tags, boolean active,
         Float rating, int reviewCount, int viewCount, String imageUrl,
         Instant createdAt, Instant updatedAt,
-        List<ProductImageDto> images, List<ProductDocumentDto> documents
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<ProductImageDto> images,
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<ProductDocumentDto> documents
 ) {
 }
