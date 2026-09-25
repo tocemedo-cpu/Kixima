@@ -1,6 +1,15 @@
 # Perfil de produção — NENHUM valor por omissão para segredos. Falha no
-# arranque se DATABASE_URL_JDBC/JWT_SECRET não estiverem definidos, tal como
-# o backend Node recusa arrancar com um JWT_SECRET fraco (env.js).
+# arranque se a base de dados ou o JWT_SECRET não estiverem definidos, tal
+# como o backend Node recusa arrancar com um JWT_SECRET fraco (env.js).
+#
+# Base de dados — UMA de duas formas (ver o topo de application.yml):
+#   - DATABASE_URL, a connection string única do serviço Node no Render
+#     (é o que render.yaml define para kixima-java): o
+#     DatabaseUrlEnvironmentPostProcessor deriva daí as três propriedades
+#     abaixo e as referências ${DATABASE_URL_JDBC}/... nunca são avaliadas;
+#   - DATABASE_URL_JDBC + DATABASE_USER + DATABASE_PASSWORD, explícitas —
+#     ganham sempre quando presentes. Sem nenhuma das duas o arranque falha
+#     aqui com "Could not resolve placeholder 'DATABASE_URL_JDBC'".
 #
 # Durante a janela de sobreposição (plano, secção 5), este perfil só deve
 # apontar à base de produção partilhada na janela final de verificação

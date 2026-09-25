@@ -48,6 +48,66 @@ jobs:
       - run: npx prisma generate
       - run: npm test
 
+  backend-java-tests:
+    name: Backend Java — JUnit (Spring Boot)
+    runs-on: ubuntu-latest
+
+    # Espelha backend-tests: o MESMO Postgres de serviço, reposto e semeado
+    # exatamente como backend/tests/globalSetup.js faz (`prisma migrate reset`
+    # + seed.demo.js) — a suite JUnit corre sobre a mesma base kixima_test
+    # semeada que a suite Jest, porque os testes portados comparam resultados
+    # com os dados das mesmas personas.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kixima
+          POSTGRES_PASSWORD: kixima
+          POSTGRES_DB: kixima_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kixima -d kixima_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # DATABASE_URL/DIRECT_URL só NESTE passo, de propósito: application-test.yml
+      # já aponta a localhost:5432/kixima_test, e a suite (BackupServiceTest)
+      # confirma que a ligação do pg_dump é derivada da configuração JDBC — uma
+      # DATABASE_URL no ambiente do job mudaria o que se está a testar.
+      - name: Base de testes — migrar e semear (como backend/tests/globalSetup.js)
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://kixima:kixima@127.0.0.1:5432/kixima_test
+          DIRECT_URL: postgresql://kixima:kixima@127.0.0.1:5432/kixima_test
+          JWT_SECRET: ci-test-secret
+          NODE_ENV: test
+        run: |
+          npm ci
+          npx prisma generate
+          npx prisma migrate reset --force --skip-seed --skip-generate
+          node prisma/seed.demo.js
+
+      - name: Testes JUnit
+        working-directory: backend-java
+        run: mvn -q -B test
+
   frontend-build:
     name: Frontend — build Vite
     runs-on: ubuntu-latest
