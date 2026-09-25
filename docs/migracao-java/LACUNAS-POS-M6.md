@@ -46,7 +46,9 @@ subscrição/cobrança). Também portados de passagem: contexto "quote" e
 
 ### B. Empresa, utilizadores e painéis
 
-**Estado: em curso** — `/api/companies` (13 endpoints) fechado em "Lacunas B.1".
+**Estado: FECHADO** (commits "Lacunas B.1" a "Lacunas B.4"): `/api/companies`,
+`/api/users`, `/api/company-admin`, `/api/buyer`, `/api/financeiro`,
+`/api/dashboard`, `/api/reports` e `/api/public/stats`.
 
 | Rotas Node | Endpoints | Serviço(s) Node | Notas |
 |---|---|---|---|

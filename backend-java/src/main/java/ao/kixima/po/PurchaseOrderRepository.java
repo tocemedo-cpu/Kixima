@@ -62,7 +62,9 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, St
     List<PurchaseOrder> findByBuyerCompanyIdAndStatusInAndCreatedAtBetweenOrderByCreatedAtAsc(String buyerCompanyId, Collection<PoStatus> statuses,
                                                                                               java.time.Instant de, java.time.Instant ate);
 
-    /** reportsService.supplierStats — ordens do fornecedor desde uma data (null = sem janela). */
-    @Query("SELECT po FROM PurchaseOrder po WHERE po.supplierCompanyId = :supplierId AND (:desde IS NULL OR po.createdAt >= :desde)")
-    List<PurchaseOrder> findDoFornecedorDesde(@Param("supplierId") String supplierId, @Param("desde") java.time.Instant desde);
+    // reportsService.supplierStats — ordens do fornecedor (com ou sem janela; dois métodos porque o Postgres
+    // não tipa um parâmetro `:desde IS NULL` sobre timestamp).
+    List<PurchaseOrder> findBySupplierCompanyId(String supplierCompanyId);
+
+    List<PurchaseOrder> findBySupplierCompanyIdAndCreatedAtGreaterThanEqual(String supplierCompanyId, java.time.Instant desde);
 }
