@@ -1,0 +1,67 @@
+<div class="login-screen">
+  <div class="login-hero">
+    <app-logo [size]="30" [mark]="72" [subtitle]="true" [light]="true"></app-logo>
+    <div>
+      <h1 class="login-hero-title">Acesso administrativo à KIXIMA.</h1>
+      <p class="login-hero-body">Foi convidado a ser Admin do Sistema. Defina a sua senha para ativar a conta.</p>
+    </div>
+    <div style="font-size:12px;color:var(--navy-100)">Angola / África — setor Oil &amp; Gas</div>
+  </div>
+
+  <div class="login-panel">
+    <div class="login-card" style="max-width:420px">
+      @if (loadError()) {
+        <div>
+          <h2>Convite inválido</h2>
+          <p>{{ loadError() }} Peça um novo convite a quem lhe deu acesso ao sistema.</p>
+          <a class="btn btn-ghost" routerLink="/login" style="margin-top:18px;display:inline-flex">Ir para o login</a>
+        </div>
+      } @else if (done()) {
+        <div>
+          <h2>Conta ativada</h2>
+          <p>A sua conta de Admin do Sistema está ativa. Já pode entrar com o email e a senha que definiu.</p>
+          <a class="btn btn-accent" routerLink="/login" style="margin-top:18px;display:inline-flex">Ir para o login</a>
+        </div>
+      } @else if (!invite()) {
+        <p class="loading-text">A carregar convite…</p>
+      } @else {
+        <h2>Ativar a minha conta</h2>
+        <p>
+          Convite para <strong>{{ invite()!.name }}</strong> ({{ invite()!.email }}) — <strong>Admin do Sistema KIXIMA</strong>.
+        </p>
+        <div class="chip-row" style="margin-bottom:18px">
+          @for (area of invite()!.adminAreas; track area) {
+            <span class="chip" style="cursor:default">{{ ADMIN_AREA_LABELS[area] || area }}</span>
+          }
+        </div>
+        <p class="helptext" style="margin-top:-10px;margin-bottom:16px">
+          As áreas foram definidas por quem o convidou e não podem ser alteradas aqui.
+        </p>
+        <form (submit)="$event.preventDefault(); submit()">
+          <div class="field">
+            <label>Senha (mín. 12)</label>
+            <input type="password" required minlength="12" [value]="password()" (input)="password.set($any($event.target).value)">
+          </div>
+          <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-size:12.5px;cursor:pointer">
+            <input type="checkbox" required [checked]="termsAccepted()" (change)="termsAccepted.set($any($event.target).checked)" style="margin-top:2px">
+            <span>
+              Li e aceito os
+              <a href="/termos" target="_blank" rel="noreferrer" style="color:var(--brand-600);font-weight:600">Termos de Uso</a>
+              e a
+              <a href="/privacidade" target="_blank" rel="noreferrer" style="color:var(--brand-600);font-weight:600">Política de Privacidade</a>.
+            </span>
+          </label>
+          @if (error()) {
+            <p class="error-text" style="margin:12px 0">{{ error() }}</p>
+          }
+          <button class="btn btn-accent" type="submit" [disabled]="submitting() || !termsAccepted()" style="width:100%;margin-top:8px">
+            {{ submitting() ? 'A ativar…' : 'Ativar conta' }}
+          </button>
+        </form>
+        <p class="helptext" style="margin-top:16px">
+          Já tem uma conta? <a routerLink="/login" style="color:var(--brand-600);font-weight:600">Entrar</a>
+        </p>
+      }
+    </div>
+  </div>
+</div>

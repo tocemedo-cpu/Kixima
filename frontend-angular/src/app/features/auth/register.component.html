@@ -1,0 +1,144 @@
+<div class="login-screen">
+  <app-auth-hero></app-auth-hero>
+
+  <div class="login-panel">
+    <div class="login-card" style="max-width:440px">
+      @if (done(); as company) {
+        <div>
+          <h2>Cadastro submetido</h2>
+          <p>
+            O cadastro de <strong>{{ company.name }}</strong> foi recebido e está
+            <strong>pendente de aprovação (due diligence)</strong>. Assim que a KIXIMA aprovar, poderá entrar com o email e a senha que definiu para o administrador.
+          </p>
+          <a class="btn btn-ghost" routerLink="/login" style="margin-top:18px;display:inline-flex">Voltar ao login</a>
+        </div>
+      } @else {
+        <h2>Cadastro de empresa</h2>
+        <p>Onboarding na KIXIMA — dados, conta de administrador e documentos.</p>
+        <form (submit)="$event.preventDefault(); submit()">
+          <app-field label="Tipo de empresa" #tipoField="appField">
+            <select [id]="tipoField.id" [value]="form().type" (change)="update('type', $any($event.target).value)">
+              <option value="CLIENTE">Cliente (operadora)</option>
+              <option value="FORNECEDOR">Fornecedora</option>
+            </select>
+          </app-field>
+          <app-field label="Nome da empresa" #nameField="appField">
+            <input [id]="nameField.id" required [value]="form().name" (input)="update('name', $any($event.target).value)">
+          </app-field>
+          <app-field label="NIF" #taxIdField="appField">
+            <input [id]="taxIdField.id" required [value]="form().taxId" (input)="update('taxId', $any($event.target).value)">
+          </app-field>
+          <app-field label="Email de contacto da empresa" #contactEmailField="appField">
+            <input [id]="contactEmailField.id" type="email" required [value]="form().contactEmail" (input)="update('contactEmail', $any($event.target).value)">
+          </app-field>
+          <div class="grid-cols grid-2">
+            <app-field label="Telefone (opcional)" #phoneField="appField">
+              <input [id]="phoneField.id" [value]="form().contactPhone" (input)="update('contactPhone', $any($event.target).value)">
+            </app-field>
+            <app-field label="Morada (opcional)" #addressField="appField">
+              <input [id]="addressField.id" [value]="form().address" (input)="update('address', $any($event.target).value)">
+            </app-field>
+          </div>
+
+          <div class="reg-section">Conta de administrador</div>
+          <app-field label="Nome do administrador" #adminNameField="appField">
+            <input [id]="adminNameField.id" required [value]="form().adminName" (input)="update('adminName', $any($event.target).value)">
+          </app-field>
+          <div class="grid-cols grid-2">
+            <app-field label="Email (login)" #adminEmailField="appField">
+              <input [id]="adminEmailField.id" type="email" required [value]="form().adminEmail" (input)="update('adminEmail', $any($event.target).value)">
+            </app-field>
+            <app-field label="Senha (mín. 12)" #adminPasswordField="appField">
+              <input [id]="adminPasswordField.id" type="password" required minlength="12" [value]="form().adminPassword" (input)="update('adminPassword', $any($event.target).value)">
+            </app-field>
+          </div>
+
+          <div class="reg-section">Documentos de credenciamento</div>
+          @for (d of requiredDocs(); track d.type) {
+            <app-field [label]="d.label" [obrigatorio]="true" #docField="appField">
+              <input [id]="docField.id" type="file" accept="application/pdf,image/*" (change)="onDoc(d.type, $event)">
+              @if (docs()[d.type]; as f) {
+                <small class="helptext">✓ {{ f.name }}</small>
+              }
+            </app-field>
+          }
+          <small class="helptext">PDF ou imagem, até 10 MB cada.</small>
+
+          @if (isSupplier()) {
+            <div class="reg-section">Apólice de seguro (Fornecedor → KIXIMA)</div>
+            <p class="helptext" style="margin-top:-6px;margin-bottom:10px">
+              Obrigatória no credenciamento de fornecedoras — garante a cobertura das transações realizadas na plataforma.
+            </p>
+            <div class="grid-cols grid-2">
+              <app-field label="Seguradora" [obrigatorio]="true" #insurerField="appField">
+                <input [id]="insurerField.id" required [value]="form().insurer" (input)="update('insurer', $any($event.target).value)">
+              </app-field>
+              <app-field label="Nº da apólice" [obrigatorio]="true" #policyNumberField="appField">
+                <input [id]="policyNumberField.id" required [value]="form().policyNumber" (input)="update('policyNumber', $any($event.target).value)">
+              </app-field>
+            </div>
+            <div class="grid-cols grid-2">
+              <app-field label="Cobertura" [obrigatorio]="true" #coverageField="appField">
+                <input [id]="coverageField.id" type="number" min="0" step="any" required [value]="form().coverageAmount" (input)="update('coverageAmount', $any($event.target).value)">
+              </app-field>
+              <app-field label="Moeda" #currencyField="appField">
+                <select [id]="currencyField.id" [value]="form().policyCurrency" (change)="update('policyCurrency', $any($event.target).value)">
+                  <option value="AOA">AOA</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </app-field>
+            </div>
+            <div class="grid-cols grid-2">
+              <app-field label="Válida de" [obrigatorio]="true" #validFromField="appField">
+                <input [id]="validFromField.id" type="date" required [value]="form().policyValidFrom" (input)="update('policyValidFrom', $any($event.target).value)">
+              </app-field>
+              <app-field label="Válida até" [obrigatorio]="true" #validUntilField="appField">
+                <input [id]="validUntilField.id" type="date" required [value]="form().policyValidUntil" (input)="update('policyValidUntil', $any($event.target).value)">
+              </app-field>
+            </div>
+            <app-field label="Documento da apólice" [obrigatorio]="true" #apoliceDocField="appField">
+              <input [id]="apoliceDocField.id" type="file" accept="application/pdf,image/*" (change)="onDoc('APOLICE_SEGURO', $event)">
+              @if (docs()['APOLICE_SEGURO']; as f) {
+                <small class="helptext">✓ {{ f.name }}</small>
+              }
+            </app-field>
+          }
+
+          <div class="grid-cols grid-2">
+            <app-field label="Nº de trabalhadores" #employeesField="appField">
+              <input [id]="employeesField.id" type="number" min="0" [value]="form().employees" (input)="update('employees', $any($event.target).value)">
+            </app-field>
+            <app-field label="Volume de negócios anual (USD)" #revenueField="appField">
+              <input [id]="revenueField.id" type="number" min="0" step="1000" [value]="form().annualRevenueUsd" (input)="update('annualRevenueUsd', $any($event.target).value)">
+            </app-field>
+          </div>
+          <p class="helptext" style="margin-top:-4px">
+            Serve para classificar a dimensão da empresa e o plano aplicável. Empresas de grande dimensão subscrevem o plano PRO.
+            <a href="/planos" target="_blank" rel="noreferrer" style="color:var(--brand-600);font-weight:600">Ver planos</a>
+          </p>
+
+          <label style="display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-size:12.5px;cursor:pointer">
+            <input type="checkbox" required [checked]="termsAccepted()" (change)="termsAccepted.set($any($event.target).checked)" style="margin-top:2px">
+            <span>
+              Li e aceito, em nome da empresa, os
+              <a href="/termos" target="_blank" rel="noreferrer" style="color:var(--brand-600);font-weight:600">Termos de Uso</a>
+              e a
+              <a href="/privacidade" target="_blank" rel="noreferrer" style="color:var(--brand-600);font-weight:600">Política de Privacidade</a>.
+            </span>
+          </label>
+
+          @if (error()) {
+            <p class="error-text" style="margin:12px 0">{{ error() }}</p>
+          }
+          <button class="btn btn-accent btn-lg" type="submit" [disabled]="submitting() || !termsAccepted()" style="width:100%;margin-top:14px">
+            {{ submitting() ? 'A submeter…' : 'Submeter cadastro' }}
+          </button>
+        </form>
+        <p class="helptext" style="margin-top:16px">
+          Já tem uma conta? <a routerLink="/login" style="color:var(--brand-600);font-weight:600">Entrar</a>
+        </p>
+      }
+    </div>
+  </div>
+</div>

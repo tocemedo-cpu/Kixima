@@ -52,3 +52,31 @@ export interface DecideCompanyBody {
   approve: boolean;
   rejectionReason?: string;
 }
+
+// Corpo de POST /api/companies/register — espelha CompanyRequests.Register
+// (Java) / registerCompanySchema (Node). Enviado como multipart/form-data
+// (RegisterService constrói o FormData a partir destes campos + documentos).
+export interface RegisterCompanyBody {
+  type: CompanyType;
+  name: string;
+  taxId: string;
+  contactEmail: string;
+  contactPhone?: string;
+  address?: string;
+  adminName: string;
+  adminEmail: string;
+  adminPassword: string;
+  employees?: string;
+  annualRevenueUsd?: string;
+  insurer?: string;
+  policyNumber?: string;
+  coverageAmount?: string;
+  policyCurrency?: string;
+  policyValidFrom?: string;
+  policyValidUntil?: string;
+}
+
+export interface RegisteredCompany {
+  id: string;
+  name: string;
+}

@@ -1,0 +1,78 @@
+<div class="login-screen">
+  <div class="login-hero">
+    <app-logo [size]="30" [mark]="72" [subtitle]="true" [light]="true"></app-logo>
+    <div>
+      <h1 class="login-hero-title">
+        {{ isFounding() ? 'A sua empresa foi aprovada na KIXIMA.' : 'Junte-se à equipa da sua empresa na KIXIMA.' }}
+      </h1>
+      <p class="login-hero-body">
+        @if (isFounding()) {
+          Falta um passo: defina a senha da sua conta de administrador para começar a usar a plataforma.
+        } @else {
+          Foi convidado para criar a sua conta. Preencha os seus dados; o administrador da empresa confirma o acesso e poderá entrar de seguida.
+        }
+      </p>
+    </div>
+    <div style="font-size:12px;color:var(--navy-100)">Angola / África — setor Oil &amp; Gas</div>
+  </div>
+
+  <div class="login-panel">
+    <div class="login-card" style="max-width:420px">
+      @if (loadError()) {
+        <div>
+          <h2>Convite inválido</h2>
+          <p>{{ loadError() }} Peça um novo link ao administrador da sua empresa.</p>
+          <a class="btn btn-ghost" routerLink="/login" style="margin-top:18px;display:inline-flex">Ir para o login</a>
+        </div>
+      } @else if (done()) {
+        <div>
+          <h2>Cadastro submetido</h2>
+          @if (isFounding()) {
+            <p>A sua conta foi criada. A sua empresa aguarda agora a aprovação final do Admin do Sistema (due diligence) — assim que for aprovada, poderá entrar com o email e a senha que definiu.</p>
+          } @else {
+            <p>A sua conta foi criada e está <strong>pendente de aprovação</strong> pelo administrador da empresa. Assim que for aceite, poderá entrar com o email e a senha que definiu.</p>
+          }
+          <a class="btn btn-ghost" routerLink="/login" style="margin-top:18px;display:inline-flex">Ir para o login</a>
+        </div>
+      } @else if (!invite()) {
+        <p class="loading-text">A carregar convite…</p>
+      } @else {
+        <h2>Criar a minha conta</h2>
+        <p>
+          Convite para <strong>{{ invite()!.companyName }}</strong> — perfil
+          <strong>{{ roleLabel(invite()!.role) }}</strong>.
+        </p>
+        <form (submit)="$event.preventDefault(); submit()">
+          <app-field label="Nome completo" #nomeField="appField">
+            <input [id]="nomeField.id" required [value]="name()" (input)="name.set($any($event.target).value)" [readOnly]="!!invite()!.email">
+          </app-field>
+          <app-field label="Email (login)" #emailField="appField">
+            <input [id]="emailField.id" type="email" required [value]="email()" (input)="email.set($any($event.target).value)" [readOnly]="!!invite()!.email">
+          </app-field>
+          <div class="field">
+            <label>{{ minimoSenha() === 12 ? 'Senha (mín. 12)' : 'Senha (mín. 10)' }}</label>
+            <input type="password" required [attr.minlength]="minimoSenha()" [value]="password()" (input)="password.set($any($event.target).value)">
+          </div>
+          <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-size:12.5px;cursor:pointer">
+            <input type="checkbox" required [checked]="termsAccepted()" (change)="termsAccepted.set($any($event.target).checked)" style="margin-top:2px">
+            <span>
+              Li e aceito os
+              <a href="/termos" target="_blank" rel="noreferrer" style="color:var(--brand-600);font-weight:600">Termos de Uso</a>
+              e a
+              <a href="/privacidade" target="_blank" rel="noreferrer" style="color:var(--brand-600);font-weight:600">Política de Privacidade</a>.
+            </span>
+          </label>
+          @if (error()) {
+            <p class="error-text" style="margin:12px 0">{{ error() }}</p>
+          }
+          <button class="btn btn-accent" type="submit" [disabled]="submitting() || !termsAccepted()" style="width:100%;margin-top:8px">
+            {{ submitting() ? 'A submeter…' : 'Submeter cadastro' }}
+          </button>
+        </form>
+        <p class="helptext" style="margin-top:16px">
+          Já tem uma conta? <a routerLink="/login" style="color:var(--brand-600);font-weight:600">Entrar</a>
+        </p>
+      }
+    </div>
+  </div>
+</div>

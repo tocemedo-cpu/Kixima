@@ -17,18 +17,39 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login-page.component').then((m) => m.LoginPageComponent),
   },
 
-  // Páginas públicas do site corporativo e fluxos sem sessão (registo,
-  // recuperação de senha, convites) — todas ainda em React nesta fase.
+  // Páginas públicas do site corporativo — ainda em React nesta fase.
   {
     path: '',
     pathMatch: 'full',
     component: PendingPageComponent,
     data: { titulo: 'Site corporativo KIXIMA' },
   },
-  ...[
-    'cadastro', 'recuperar', 'termos', 'privacidade', 'supplier-development',
-    'parcerias', 'planos', 'convite', 'convite-admin',
-  ].map((path) => ({ path, component: PendingPageComponent })),
+  ...['termos', 'privacidade', 'supplier-development', 'parcerias', 'planos'].map((path) => ({ path, component: PendingPageComponent })),
+
+  // Fluxos sem sessão (cadastro, recuperação de senha, convites) — sem
+  // guarda nenhuma, tal como em frontend/src/App.jsx:148-153 (só /login usa
+  // o equivalente de guestGuard, dentro do próprio LoginPage.jsx).
+  {
+    path: 'cadastro',
+    loadComponent: () => import('./features/auth/register.component').then((m) => m.RegisterComponent),
+  },
+  {
+    path: 'convite/:token',
+    loadComponent: () => import('./features/auth/accept-invite.component').then((m) => m.AcceptInviteComponent),
+  },
+  {
+    path: 'convite-admin/:token',
+    loadComponent: () =>
+      import('./features/auth/accept-admin-invite.component').then((m) => m.AcceptAdminInviteComponent),
+  },
+  {
+    path: 'recuperar',
+    loadComponent: () => import('./features/auth/password-reset.component').then((m) => m.PasswordResetComponent),
+  },
+  {
+    path: 'recuperar/:token',
+    loadComponent: () => import('./features/auth/password-reset.component').then((m) => m.PasswordResetComponent),
+  },
 
   // Documentos imprimíveis (folha A4, sem a moldura da app) — fora do Shell,
   // exactamente como em frontend/src/App.jsx:164-168 (dentro de RequireAuth,
