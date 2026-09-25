@@ -214,3 +214,17 @@ python3 paridade/inventario.py                        # inventário de rotas
 As gravações ficam em `paridade/gravacoes/` (`node.json`, `java.json`); o
 diff imprime-se em Markdown e o processo sai com código 1 se houver
 diferenças.
+
+## 7. Verificação depois da auditoria pré-M8
+
+Depois das correcções de `AUDITORIA-PRE-M8.md`, com a base de testes
+reposta a partir da semente:
+
+| Suite | Resultado |
+|---|---|
+| Java (`mvn -o -q test`) | 251 testes, 0 falhas, 0 erros |
+| Node (`npm test`, referência) | 111 suites, 1020 testes, 0 falhas |
+| Frontend (vitest, build, auditorias i18n) | 167 testes, 0 falhas; 0 textos em falta, 0 hardcoded |
+| End-to-end (Playwright, 5 personas, axe nos três fundos) | 83 testes, 0 falhas |
+
+O inventário de rotas continua em 246/246 (`paridade/inventario.py`).
