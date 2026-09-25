@@ -177,5 +177,5 @@ export function CorporateFooter({ isHome = false }) {
     <div className="rodape-col"><h3>{t('Empresa')}</h3><NavLink href="#sobre">{t('Sobre a Kixima')}</NavLink><NavLink href="#roadmap">Roadmap</NavLink><Link to="/noticias">{t('Notícias e perspectivas')}</Link><Link to="/carreiras">{t('Carreiras')}</Link><a href="mailto:geral@kixima.net">{t('Contactos')}</a><Link to="/login">{t('Entrar')}</Link></div>
     <div className="rodape-col"><h3>{t('Confiança')}</h3><NavLink href="#diferenciais">{t('Diferenciais')}</NavLink><NavLink href="#avaliacoes">{t('Avaliações verificadas')}</NavLink><Link to="/faq">{t('Perguntas frequentes')}</Link><Link to="/recursos">{t('Guias e recursos')}</Link><Link to="/supplier-development">Supplier Development</Link><Link to="/parcerias">{t('Parceiros internacionais')}</Link><Link to="/termos">{t('Termos de uso')}</Link><Link to="/privacidade">{t('Privacidade')}</Link></div>
   </div><div className="rodape-fim"><span>{t('© 2026 KIXIMA.NET. Todos os direitos reservados.')}</span><b>{t('NASCIDO EM ANGOLA · PREPARADO PARA ÁFRICA')}</b></div>
-  <div className="rodape-legal">APP-KIXIMA.NET — Prestação de Serviços, (SU), Lda · NIF 5003488276 · Luanda, Angola</div></div></footer></>;
+  <div className="rodape-legal">{t('APP-KIXIMA.NET — Prestação de Serviços, (SU), Lda · NIF 5003488276 · Luanda, Angola')}</div></div></footer></>;
 }

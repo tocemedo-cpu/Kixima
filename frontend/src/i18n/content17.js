@@ -27,6 +27,11 @@ export const EN18 = {
   'Procurar': 'Search',
   'Sou comprador': 'I am a buyer',
   'Sou fornecedor': 'I am a supplier',
+  // Detalhe da ordem — anulação da factura
+  'A anular…': 'Cancelling…',
+  'Ex.: pedido de cancelamento do comprador…': 'E.g. cancellation requested by the buyer…',
+  // Linha legal do rodapé — denominação social, igual em todas as línguas
+  'APP-KIXIMA.NET — Prestação de Serviços, (SU), Lda · NIF 5003488276 · Luanda, Angola': 'APP-KIXIMA.NET — Prestação de Serviços, (SU), Lda · NIF 5003488276 · Luanda, Angola',
 };
 
 export const FR18 = {
@@ -55,4 +60,9 @@ export const FR18 = {
   'Procurar': 'Rechercher',
   'Sou comprador': 'Je suis acheteur',
   'Sou fornecedor': 'Je suis fournisseur',
+  // Detalhe da ordem — anulação da factura
+  'A anular…': 'Annulation…',
+  'Ex.: pedido de cancelamento do comprador…': "Ex. : demande d'annulation de l'acheteur…",
+  // Linha legal do rodapé — denominação social, igual em todas as línguas
+  'APP-KIXIMA.NET — Prestação de Serviços, (SU), Lda · NIF 5003488276 · Luanda, Angola': 'APP-KIXIMA.NET — Prestação de Serviços, (SU), Lda · NIF 5003488276 · Luanda, Angola',
 };
