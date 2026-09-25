@@ -1,0 +1,479 @@
+<div>
+  <app-page-header
+    title="Catálogo de Produtos e Serviços"
+    subtitle="Publique os seus itens com o essencial — produto, preço e disponibilidade, imagens e documentos."
+  >
+    <div action style="display:flex;gap:8px">
+      @if (showForm()) {
+        <button type="button" class="btn btn-ghost" (click)="cancelar()">Cancelar</button>
+      }
+      <button type="button" class="btn btn-accent" (click)="novoItem()">+ Novo item</button>
+    </div>
+  </app-page-header>
+
+  <app-error-banner [message]="error()"></app-error-banner>
+  <app-success-banner [message]="success()"></app-success-banner>
+
+  @if (meuPlano(); as plano) {
+    <div class="cls-box" style="margin-bottom:18px">
+      <span class="cls-k">Posição na pesquisa</span>
+      <p style="margin:4px 0 0">
+        O seu plano {{ plano.plano }} coloca os seus itens em {{ posicaoOrdinal(plano.features.posicaoNaPesquisa) }}º na
+        relevância da pesquisa do marketplace.
+        @if (plano.plano !== 'PRO') {
+          O plano seguinte melhora essa posição.
+        } @else {
+          É a melhor posição disponível.
+        }
+      </p>
+      @if (plano.plano !== 'PRO') {
+        <a routerLink="/planos" class="btn btn-ghost btn-sm" style="margin-top:8px">Ver planos</a>
+      }
+    </div>
+  }
+
+  @if (showForm()) {
+    <div class="card card-pad" style="margin-bottom:22px">
+      @if (editingId()) {
+        <p class="helptext" style="margin-top:0">A editar: {{ form().name }}</p>
+      }
+      <div class="tabs">
+        @for (tabLabel of TABS; track tabLabel; let i = $index) {
+          <button type="button" class="tab" [class.tab-active]="tab() === i" (click)="tab.set(i)">
+            <span class="tab-num">{{ i + 1 }}</span>{{ tabLabel }}
+          </button>
+        }
+      </div>
+
+      <form (submit)="$event.preventDefault(); handleSubmit()" class="prod-form">
+        <!-- ABA 1 — Produto -->
+        <div class="tab-panel" [style.display]="tab() === 0 ? 'block' : 'none'">
+          <label class="reg-section" style="display:block">Classificação</label>
+          <p class="helptext" style="margin-top:0">
+            Escolha o item na lista — o código de classificação, o tipo e a unidade preenchem-se automaticamente.
+          </p>
+          <div class="grid-cols grid-2">
+            <app-field label="Setor" #setorField="appField">
+              <select [id]="setorField.id" [value]="setor()" (change)="pickSetor($any($event.target).value)">
+                <option value="">— Escolher setor —</option>
+                @for (s of SETORES; track s) {
+                  <option [value]="s">{{ s }}</option>
+                }
+              </select>
+            </app-field>
+            <app-field label="Categoria" #setorCatField="appField">
+              <select
+                [id]="setorCatField.id"
+                [value]="categoria()"
+                [disabled]="!setor()"
+                (change)="categoria.set($any($event.target).value)"
+              >
+                <option value="">{{ setor() ? '— Escolher categoria —' : 'Escolha o setor primeiro' }}</option>
+                @if (setor()) {
+                  @for (c of categoriasDe(setor()); track c) {
+                    <option [value]="c">{{ c }}</option>
+                  }
+                }
+              </select>
+            </app-field>
+          </div>
+          <app-field label="Produto ou Serviço" #itemField="appField">
+            <select
+              [id]="itemField.id"
+              [value]="form().unspscCode"
+              [disabled]="!setor() || !categoria()"
+              (change)="pickItem($any($event.target).value)"
+            >
+              <option value="">{{ categoria() ? '— Escolher item —' : 'Escolha setor e categoria primeiro' }}</option>
+              @if (setor() && categoria()) {
+                @for (i of itensDe(setor(), categoria()); track i.code) {
+                  <option [value]="i.code">{{ i.nome }} — {{ i.tipo }}</option>
+                }
+              }
+            </select>
+          </app-field>
+          @if (form().unspscCode) {
+            <div class="cls-box cls-box-img">
+              @if (form().imageUrl) {
+                <img class="cls-thumb" [src]="form().imageUrl" [alt]="form().name" />
+              }
+              <div class="cls-info">
+                <div><span class="cls-k">Classificação internacional</span><strong>{{ form().unspscTitle }}</strong></div>
+                <div class="cls-row">
+                  <span class="badge badge-neutral bz-mono">UNSPSC {{ form().unspscCode }}</span>
+                  <span [class]="'badge ' + (form().kind === 'SERVICO' ? 'badge-info' : 'badge-neutral')">{{
+                    form().kind === 'SERVICO' ? 'Serviço' : 'Produto'
+                  }}</span>
+                  <span class="badge badge-success">IVA 14%</span>
+                </div>
+                @if (form().imageUrl) {
+                  <small class="helptext"
+                    >Imagem de referência do catálogo — será usada se não carregar uma foto própria (aba Imagens).</small
+                  >
+                }
+              </div>
+            </div>
+          }
+
+          <label class="reg-section" style="display:block;margin-top:16px">Dados do item</label>
+          <app-field label="Nome do Produto" [obrigatorio]="true" #nameField="appField">
+            <input
+              [id]="nameField.id"
+              [value]="form().name"
+              (input)="update('name', $any($event.target).value)"
+              placeholder="Preenchido pela escolha acima; pode ajustar."
+            />
+          </app-field>
+          <div class="grid-cols grid-2">
+            <app-field label="Categoria" [obrigatorio]="true" #categoryField="appField">
+              <select
+                [id]="categoryField.id"
+                [value]="form().category"
+                (change)="update('category', $any($event.target).value); update('subcategory', '')"
+              >
+                <option value="">Selecione…</option>
+                @for (c of CATEGORIES; track c) {
+                  <option [value]="c">{{ c }}</option>
+                }
+              </select>
+            </app-field>
+            <app-field label="Subcategoria" #subcategoryField="appField">
+              <input
+                [id]="subcategoryField.id"
+                list="subcat-list"
+                [value]="form().subcategory"
+                (input)="update('subcategory', $any($event.target).value)"
+                [placeholder]="form().category ? 'Selecione ou escreva…' : 'Escolha a categoria primeiro'"
+                [disabled]="!form().category"
+              />
+              <datalist id="subcat-list">
+                @for (s of taxonomySubcategorias(form().category); track s) {
+                  <option [value]="s"></option>
+                }
+              </datalist>
+            </app-field>
+          </div>
+          <div class="grid-cols grid-2">
+            <app-field label="Marca" #brandField="appField">
+              <input [id]="brandField.id" [value]="form().brand" (input)="update('brand', $any($event.target).value)" />
+            </app-field>
+            <app-field label="Unidade de Medida" #unitField="appField">
+              <input
+                [id]="unitField.id"
+                [value]="form().measurementUnit"
+                (input)="update('measurementUnit', $any($event.target).value)"
+                placeholder="Ex.: un, m, kg, caixa"
+              />
+            </app-field>
+          </div>
+          <app-field label="País de origem (proveniência do fabrico)" #originField="appField">
+            <input
+              [id]="originField.id"
+              [value]="form().countryOfOrigin"
+              (input)="update('countryOfOrigin', $any($event.target).value)"
+              placeholder="Ex.: Angola, EUA, China, UE — opcional"
+            />
+            <small class="helptext">Opcional. O fornecedor é sempre angolano; este campo indica só a origem do fabrico do bem.</small>
+          </app-field>
+          <app-field label="Descrição Curta" [obrigatorio]="true" #descField="appField">
+            <textarea
+              [id]="descField.id"
+              rows="3"
+              [value]="form().description"
+              (input)="update('description', $any($event.target).value)"
+            ></textarea>
+            <small class="helptext">Aparece nos cartões do marketplace.</small>
+          </app-field>
+
+          <label class="reg-section" style="display:block;margin-top:8px">Atributos (comuns a qualquer item)</label>
+          <div class="grid-cols grid-2">
+            @for (uf of UNIVERSAL_FIELDS; track uf[0]) {
+              <app-field [label]="uf[1]" #universalField="appField">
+                <input
+                  [id]="universalField.id"
+                  [value]="form()[uf[0]]"
+                  (input)="update(uf[0], $any($event.target).value)"
+                  [placeholder]="uf[2]"
+                />
+              </app-field>
+            }
+          </div>
+          <app-field label="Comentários" #notesField="appField">
+            <textarea
+              [id]="notesField.id"
+              rows="3"
+              [value]="form().supplierNotes"
+              (input)="update('supplierNotes', $any($event.target).value)"
+              placeholder="Qualquer requisito ou informação adicional que não caiba nos campos acima."
+            ></textarea>
+          </app-field>
+        </div>
+
+        <!-- ABA 2 — Preço & Disponibilidade -->
+        <div class="tab-panel" [style.display]="tab() === 1 ? 'block' : 'none'">
+          <div class="grid-cols grid-2">
+            <app-field label="Moeda" #currencyField="appField">
+              <select [id]="currencyField.id" [value]="form().currency" (change)="update('currency', $any($event.target).value)">
+                @for (c of CURRENCIES; track c) {
+                  <option [value]="c">{{ c }}</option>
+                }
+              </select>
+            </app-field>
+            <app-field label="Preço Unitário" [obrigatorio]="true" #priceField="appField">
+              <input
+                [id]="priceField.id"
+                type="number"
+                min="0"
+                step="0.01"
+                [value]="form().unitPrice"
+                (input)="update('unitPrice', $any($event.target).value)"
+              />
+            </app-field>
+            <app-field label="Preço Promocional" #promoField="appField">
+              <input
+                [id]="promoField.id"
+                type="number"
+                min="0"
+                step="0.01"
+                [value]="form().promoPrice"
+                (input)="update('promoPrice', $any($event.target).value)"
+              />
+            </app-field>
+            <app-field label="Disponibilidade" #availField="appField">
+              <select
+                [id]="availField.id"
+                [value]="form().availability"
+                (change)="update('availability', $any($event.target).value)"
+              >
+                @for (a of PRODUCT_AVAILABILITY; track a) {
+                  <option [value]="a">{{ a }}</option>
+                }
+              </select>
+            </app-field>
+            <app-field label="Quantidade em Stock" #stockField="appField">
+              <input
+                [id]="stockField.id"
+                type="number"
+                min="0"
+                [value]="form().stockQuantity"
+                (input)="update('stockQuantity', $any($event.target).value)"
+              />
+            </app-field>
+            <app-field label="Prazo de Entrega (dias)" #leadField="appField">
+              <input
+                [id]="leadField.id"
+                type="number"
+                min="0"
+                [value]="form().leadTimeDays"
+                (input)="update('leadTimeDays', $any($event.target).value)"
+              />
+            </app-field>
+          </div>
+          @if (form().unitPrice) {
+            <div class="cls-box">
+              <span class="cls-k">Impostos (lei angolana) — {{ form().kind === 'SERVICO' ? 'serviço' : 'produto' }}</span>
+              <div class="cls-row" style="justify-content:space-between">
+                <span>Preço sem IVA: <strong>{{ formatMoney(toNumber(form().unitPrice), form().currency) }}</strong></span>
+                <span>IVA (14%): <strong>{{ formatMoney(toNumber(form().unitPrice) * IVA_RATE, form().currency) }}</strong></span>
+                <span
+                  >Com IVA:
+                  <strong>{{ formatMoney(toNumber(form().unitPrice) * (1 + IVA_RATE), form().currency) }}</strong></span
+                >
+              </div>
+              @if (form().kind === 'SERVICO') {
+                <div class="cls-row" style="justify-content:space-between">
+                  <span
+                    >Retenção na fonte II (6,5%): <strong>− {{ formatMoney(toNumber(form().unitPrice) * 0.065, form().currency) }}</strong></span
+                  >
+                  <span
+                    >Líquido a receber:
+                    <strong>{{
+                      formatMoney(toNumber(form().unitPrice) * (1 + IVA_RATE) - toNumber(form().unitPrice) * 0.065, form().currency)
+                    }}</strong></span
+                  >
+                </div>
+              }
+              <small class="helptext">
+                O preço é <strong>sem IVA</strong>. O IVA (14%) soma-se à fatura.
+                @if (form().kind === 'SERVICO') {
+                  Nos serviços, o comprador retém 6,5% (Imposto Industrial) e entrega à AGT — reduz o líquido que recebe.
+                }
+              </small>
+            </div>
+          }
+        </div>
+
+        <!-- ABA 3 — Imagens & Documentos -->
+        <div class="tab-panel" [style.display]="tab() === 2 ? 'block' : 'none'">
+          @if (editingId() && form().imageUrl) {
+            <label class="reg-section" style="display:block">Imagem principal atual</label>
+            <img [src]="form().imageUrl" [alt]="form().name" class="dz-thumb" style="margin-bottom:12px" />
+          }
+          <label class="reg-section" style="display:block">{{
+            editingId() ? 'Substituir imagem principal' : 'Imagem Principal'
+          }}</label>
+          <app-dropzone
+            [hint]="editingId() ? 'Arraste uma nova imagem para substituir a atual' : 'Arraste a imagem principal ou clique para escolher'"
+            (files)="addMainImage($event)"
+          >
+            @if (mainImage(); as capa) {
+              <img [src]="capa.preview" alt="principal" class="dz-thumb" />
+            }
+          </app-dropzone>
+
+          @if (editingId() && existingGalleryImages().length > 0) {
+            <label class="reg-section" style="display:block;margin-top:16px">Galeria atual</label>
+            <div class="dz-grid">
+              @for (img of existingGalleryImages(); track img.id) {
+                <div class="dz-item">
+                  <img [src]="img.url" alt="" />
+                  <button type="button" class="dz-remove" (click)="handleRemoveExistingImage(img.id)" aria-label="Remover">×</button>
+                </div>
+              }
+            </div>
+          }
+
+          <label class="reg-section" style="display:block;margin-top:16px">{{ editingId() ? 'Acrescentar à galeria' : 'Galeria' }}</label>
+          <app-dropzone
+            [multiple]="true"
+            [disabled]="imagensNoLimite()"
+            (files)="addGallery($event)"
+            hint="Arraste várias imagens ou clique para escolher"
+          ></app-dropzone>
+          @if (meuPlano() && limiteImagens() != null) {
+            <p class="helptext" style="margin-top:4px">
+              @if (imagensNoLimite()) {
+                {{ totalImagens() }} de {{ limiteImagens() }} imagens do plano {{ meuPlano()!.plano }} — limite atingido (imagem
+                principal + galeria).
+              } @else {
+                {{ totalImagens() }} de {{ limiteImagens() }} imagens do plano {{ meuPlano()!.plano }} (imagem principal + galeria).
+              }
+            </p>
+          }
+          @if (gallery().length > 0) {
+            <div class="dz-grid">
+              @for (g of gallery(); track g.preview; let i = $index) {
+                <div class="dz-item">
+                  <img [src]="g.preview" [alt]="'galeria ' + (i + 1)" />
+                  <button type="button" class="dz-remove" (click)="removeGallery(i)" aria-label="Remover">×</button>
+                </div>
+              }
+            </div>
+          }
+
+          @if (editingId() && existingDocs().length > 0) {
+            <label class="reg-section" style="display:block;margin-top:16px">Documentos atuais</label>
+            <ul class="doc-chips">
+              @for (d of existingDocs(); track d.id) {
+                <li>
+                  <app-icon name="invoice" [size]="13"></app-icon> {{ d.originalName }}
+                  <button type="button" (click)="handleRemoveExistingDoc(d.id)" aria-label="Remover">×</button>
+                </li>
+              }
+            </ul>
+          }
+
+          <label class="reg-section" style="display:block;margin-top:16px">{{ editingId() ? 'Acrescentar documentos' : 'Documentos' }}</label>
+          <p class="helptext" style="margin-top:0">PDF ou imagem, até 15 MB cada. Opcional — pode anexar vários por tipo.</p>
+          @if (meuPlano() && limiteDocs() != null) {
+            <p class="helptext" style="margin-top:0">
+              @if (docsNoLimite()) {
+                {{ totalDocs() }} de {{ limiteDocs() }} documentos do plano {{ meuPlano()!.plano }} — limite atingido.
+              } @else {
+                {{ totalDocs() }} de {{ limiteDocs() }} documentos do plano {{ meuPlano()!.plano }}.
+              }
+            </p>
+          }
+          @for (dt of DOC_TYPES; track dt[0]) {
+            <app-field [label]="dt[1]" #docField="appField">
+              <input
+                [id]="docField.id"
+                type="file"
+                multiple
+                [disabled]="docsNoLimite()"
+                accept="application/pdf,image/*"
+                (change)="addDocs(dt[0], $event)"
+              />
+              @if ((docs()[dt[0]] || []).length > 0) {
+                <ul class="doc-chips">
+                  @for (f of docs()[dt[0]] || []; track f.name; let i = $index) {
+                    <li>
+                      <app-icon name="invoice" [size]="13"></app-icon> {{ f.name }}
+                      <button type="button" (click)="removeDoc(dt[0], i)" aria-label="Remover">×</button>
+                    </li>
+                  }
+                </ul>
+              }
+            </app-field>
+          }
+        </div>
+
+        <div class="prod-form-footer">
+          <div class="tab-nav">
+            <button type="button" class="btn btn-ghost" [disabled]="tab() === 0" (click)="tab.set(Math.max(0, tab() - 1))">
+              Anterior
+            </button>
+            @if (tab() < TABS.length - 1) {
+              <button type="button" class="btn btn-ghost" (click)="tab.set(Math.min(TABS.length - 1, tab() + 1))">Seguinte</button>
+            }
+          </div>
+          <button class="btn btn-accent" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'A guardar…' : editingId() ? 'Guardar alterações' : 'Publicar produto' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @if (products() === null) {
+    <app-loading></app-loading>
+  } @else if (products()!.length === 0) {
+    <div class="empty-state">
+      <h3>Ainda não publicou nenhum item</h3>
+      <p>Adicione produtos ou serviços para começar a receber ordens de compra.</p>
+    </div>
+  } @else {
+    <div class="cat-filter">
+      @for (opt of FILTER_OPTIONS; track opt[0]) {
+        <button type="button" class="chip" [class.chip-active]="listFilter() === opt[0]" (click)="listFilter.set(opt[0])">
+          {{ opt[1] }} <span class="cat-filter-n">{{ contagemPorFiltro(opt[0]) }}</span>
+        </button>
+      }
+    </div>
+    <div class="mk-grid">
+      @for (p of filteredProducts(); track p.id) {
+        <div class="mk-card">
+          <div class="mk-cover">
+            <app-product-cover [imageUrl]="p.imageUrl" [category]="p.category" [name]="p.name"></app-product-cover>
+            <input
+              #cardInput
+              type="file"
+              accept="image/*"
+              style="display:none"
+              (change)="handleCardPhoto(p.id, $any($event.target).files?.[0])"
+            />
+            <button type="button" class="mk-photo-btn" (click)="cardInput.click()" [disabled]="uploadingId() === p.id">
+              <app-icon name="catalog" [size]="13"></app-icon>
+              {{ uploadingId() === p.id ? 'A enviar…' : p.imageUrl ? 'Trocar foto' : 'Carregar foto' }}
+            </button>
+          </div>
+          <div class="mk-body">
+            <div class="mk-supplier"><span class="badge badge-neutral">{{ p.category }}</span></div>
+            <strong class="mk-title" style="cursor:default">{{ p.name }}</strong>
+            <p class="mk-desc">{{ p.description }}</p>
+            <div class="mk-meta">
+              <span class="mk-price">{{ formatMoney(p.unitPrice, p.currency) }}</span>
+              @if (p.leadTimeDays) {
+                <span class="mk-lead">Prazo {{ p.leadTimeDays }} dias</span>
+              }
+            </div>
+            <div class="mk-actions">
+              <button class="btn btn-ghost btn-sm" (click)="startEdit(p)">Editar</button>
+              <button class="btn btn-ghost btn-sm" (click)="handleDeactivate(p.id)">Remover</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

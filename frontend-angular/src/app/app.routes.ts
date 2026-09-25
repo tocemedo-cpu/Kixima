@@ -132,6 +132,14 @@ export const routes: Routes = [
         children: [
           { path: '', component: PendingPageComponent, data: { titulo: 'Início — Fornecedor' } },
           {
+            path: 'catalogo',
+            loadComponent: () => import('./features/catalog/catalog-manage.component').then((m) => m.CatalogManageComponent),
+          },
+          {
+            path: 'catalogo/servicos',
+            loadComponent: () => import('./features/catalog/catalog-manage.component').then((m) => m.CatalogManageComponent),
+          },
+          {
             path: 'pedidos/solicitacoes',
             loadComponent: () =>
               import('./features/quotes/supplier-quotes.component').then((m) => m.SupplierQuotesComponent),
