@@ -1,0 +1,135 @@
+@if (toast()) {
+  <div class="svc-toast">{{ toast() }}</div>
+}
+<app-crumbs [trail]="['Usuários & Perfis']"></app-crumbs>
+<app-buyer-page-head title="Usuários & Perfis" subtitle="Gerencie os usuários, perfis e permissões da empresa.">
+  <button class="btn btn-accent" (click)="openInviteModal()">+ Novo Usuário</button>
+</app-buyer-page-head>
+
+<app-error-banner [message]="error()"></app-error-banner>
+
+@if (pending().length > 0) {
+  <div class="bz-card bz-tablewrap" style="margin-bottom:16px">
+    <div class="ca-panel-title">Cadastros pendentes ({{ pending().length }})</div>
+    <table class="bz-table">
+      <tbody>
+        @for (u of pending(); track u.id) {
+          <tr>
+            <td>
+              <div class="bz-supplier">
+                <span class="bz-supplier-logo">{{ initials(u.name) }}</span>
+                <div><strong>{{ u.name }}</strong><span class="bz-supplier-loc">{{ u.email }}</span></div>
+              </div>
+            </td>
+            <td><app-pill [tone]="ROLE_TONE[u.role]">{{ roleLabel(u.role) }}</app-pill></td>
+            <td class="r">
+              <div class="bz-actions" style="justify-content:flex-end">
+                <button class="btn btn-accent btn-sm" (click)="accept(u.id, u.name)">Aceitar</button>
+                <button class="btn btn-ghost btn-sm" (click)="reject(u.id, u.name)">Recusar</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (invites().length > 0) {
+  <div class="bz-card bz-tablewrap" style="margin-bottom:16px">
+    <div class="ca-panel-title">Convites enviados ({{ invites().length }})</div>
+    <table class="bz-table">
+      <thead><tr><th>Funcionário</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Enviado</th><th></th></tr></thead>
+      <tbody>
+        @for (iv of invites(); track iv.id) {
+          <tr>
+            <td><div class="bz-supplier"><span class="bz-supplier-logo">{{ initials(iv.name) }}</span><strong>{{ iv.name }}</strong></div></td>
+            <td class="bz-muted">{{ iv.email }}</td>
+            <td><app-pill [tone]="ROLE_TONE[iv.role]">{{ roleLabel(iv.role) }}</app-pill></td>
+            <td><app-pill [tone]="INVITE_TONE[iv.status]">{{ INVITE_LABEL[iv.status] }}</app-pill></td>
+            <td class="bz-muted">{{ iv.createdAt ? formatDateTime(iv.createdAt) : '—' }}</td>
+            <td class="r">
+              @if (iv.status !== 'ACEITO') {
+                <div class="bz-actions" style="justify-content:flex-end">
+                  <button class="btn btn-ghost btn-sm" (click)="resendInvite(iv.id, iv.email)">Reenviar</button>
+                  @if (iv.status !== 'CANCELADO') {
+                    <button class="btn btn-ghost btn-sm" (click)="cancelInvite(iv.id)">Cancelar</button>
+                  }
+                </div>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<app-toolbar placeholder="Buscar usuário…" [q]="q()" (onQ)="q.set($event)"></app-toolbar>
+<div class="bz-card bz-tablewrap">
+  <table class="bz-table">
+    <thead><tr><th>Usuário</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Registado</th><th></th></tr></thead>
+    <tbody>
+      @if (!users()) {
+        <tr><td colspan="6"><app-empty-row>A carregar…</app-empty-row></td></tr>
+      } @else if (list().length === 0) {
+        <tr><td colspan="6"><app-empty-row>Sem utilizadores.</app-empty-row></td></tr>
+      } @else {
+        @for (u of list(); track u.id) {
+          <tr>
+            <td><div class="bz-supplier"><span class="bz-supplier-logo">{{ initials(u.name) }}</span><strong>{{ u.name }}</strong></div></td>
+            <td class="bz-muted">{{ u.email }}</td>
+            <td><app-pill [tone]="ROLE_TONE[u.role]">{{ roleLabel(u.role) }}</app-pill></td>
+            <td><app-pill [tone]="u.active ? 'success' : 'pending'">{{ u.active ? 'Ativo' : 'Pendente' }}</app-pill></td>
+            <td class="bz-muted">{{ u.createdAt ? formatDateTime(u.createdAt) : '—' }}</td>
+            <td>
+              <div class="bz-actions">
+                @if (u.role !== 'COMPANY_ADMIN') {
+                  <button class="bz-iconbtn" title="Remover" (click)="reject(u.id, u.name)"><app-icon name="approvals" [size]="14"></app-icon></button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+
+<h3 class="pf-h2">Perfis e Permissões</h3>
+<p class="bz-sub" style="margin-top:-6px">Defina os níveis de acesso e permissões que cada perfil terá na plataforma.</p>
+<div class="hs-quick">
+  @for (p of PERFIS; track p.t) {
+    <div class="hs-quickcard">
+      <span class="hs-quick-ico"><app-icon [name]="p.icon" [size]="18"></app-icon></span>
+      <div><strong>{{ p.t }}</strong><span class="bz-sub2">{{ p.d }}</span></div>
+    </div>
+  }
+</div>
+
+@if (modal()) {
+  <div class="av-modal" (click)="modal.set(false)">
+    <form class="hs-form" (click)="$event.stopPropagation()" (submit)="$event.preventDefault(); sendInvite()">
+      <h3>Adicionar funcionário</h3>
+      <p class="bz-sub">Informe o nome, o email e o perfil. O sistema gera o link único e envia o convite automaticamente para o email do funcionário.</p>
+      <label class="field"><span>Nome do funcionário</span>
+        <input [value]="name()" (input)="name.set($any($event.target).value)" required placeholder="Nome completo">
+      </label>
+      <label class="field"><span>Email do funcionário</span>
+        <input type="email" [value]="email()" (input)="email.set($any($event.target).value)" required placeholder="funcionario@empresa.co.ao">
+      </label>
+      <label class="field"><span>Perfil</span>
+        <select [value]="role()" (change)="role.set($any($event.target).value)">
+          @for (o of options(); track o.value) {
+            <option [value]="o.value">{{ o.label }}</option>
+          }
+        </select>
+      </label>
+      <app-error-banner [message]="formError()"></app-error-banner>
+      <div class="hs-form-actions">
+        <button type="button" class="btn btn-ghost" (click)="modal.set(false)">Cancelar</button>
+        <button type="submit" class="btn btn-accent" [disabled]="busy() || !options().length">{{ busy() ? 'A enviar…' : 'Salvar e enviar convite' }}</button>
+      </div>
+    </form>
+  </div>
+}

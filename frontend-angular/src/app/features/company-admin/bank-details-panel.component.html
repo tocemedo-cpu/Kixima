@@ -1,0 +1,29 @@
+@if (bank) {
+  <div class="bz-panel" style="margin-top:18px">
+    <h3>Dados bancários (para pagamento)</h3>
+    <p class="bz-sub2" style="margin:4px 0 12px">
+      Aparecem na secção <em>Dados bancários do fornecedor</em> das faturas — preencha para que o cliente saiba para onde pagar.
+    </p>
+    <form (submit)="$event.preventDefault(); save()">
+      <app-field label="Banco" #bancoField="appField">
+        <input [id]="bancoField.id" [value]="bank.bankName" (input)="update('bankName', $any($event.target).value)" placeholder="Ex.: Banco de Fomento Angola (BFA)">
+      </app-field>
+      <div class="grid-cols grid-2">
+        <div class="field">
+          <label>IBAN</label>
+          <input [value]="bank.iban" (input)="update('iban', $any($event.target).value)" placeholder="AO06 0000 0000 0000 0000 0000 0">
+        </div>
+        <div class="field">
+          <label>SWIFT / BIC</label>
+          <input [value]="bank.swift" (input)="update('swift', $any($event.target).value)" placeholder="Ex.: BFMXAOLU">
+        </div>
+      </div>
+      @if (msg) {
+        <p [class]="msg.ok ? 'helptext' : 'error-text'" style="margin:8px 0">{{ msg.text }}</p>
+      }
+      <button class="btn btn-accent" [disabled]="saving" type="submit">
+        {{ saving ? 'A guardar…' : 'Guardar dados bancários' }}
+      </button>
+    </form>
+  </div>
+}

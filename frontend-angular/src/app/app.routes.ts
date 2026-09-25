@@ -185,6 +185,20 @@ export const routes: Routes = [
             path: 'contratos',
             loadComponent: () => import('./features/contracts/contracts.component').then((m) => m.ContractsComponent),
           },
+          {
+            path: 'utilizadores',
+            loadComponent: () => import('./features/company-admin/users.component').then((m) => m.UsersComponent),
+          },
+          {
+            path: 'organizacao',
+            loadComponent: () =>
+              import('./features/company-admin/organization.component').then((m) => m.OrganizationComponent),
+          },
+          {
+            path: 'perfil',
+            loadComponent: () =>
+              import('./features/company-admin/company-profile.component').then((m) => m.CompanyProfileComponent),
+          },
           { path: '**', component: PendingPageComponent, data: { titulo: 'Administração da Empresa' } },
         ],
       },

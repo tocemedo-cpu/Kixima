@@ -10,7 +10,7 @@ import { CompanyDetail, CompanyListItem, SupplierPolicyDto } from '../../core/mo
 import { ApiError } from '../../core/models/api-error.model';
 
 function empresa(overrides: Partial<CompanyListItem> = {}): CompanyListItem {
-  return { id: 'c1', name: 'Kianda', taxId: 'AO-1', type: 'CLIENTE', status: 'PENDENTE', contactEmail: 'a@a.co', createdAt: '2026-01-01', ...overrides };
+  return { id: 'c1', name: 'Kianda', taxId: 'AO-1', type: 'CLIENTE', status: 'PENDENTE', contactEmail: 'a@a.co', verified: false, createdAt: '2026-01-01', ...overrides };
 }
 
 function apolice(overrides: Partial<SupplierPolicyDto> = {}): SupplierPolicyDto {

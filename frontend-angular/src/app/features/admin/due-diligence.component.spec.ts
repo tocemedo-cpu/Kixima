@@ -6,7 +6,7 @@ import { CompanyListItem } from '../../core/models/company.model';
 import { ApiError } from '../../core/models/api-error.model';
 
 function empresa(id: string): CompanyListItem {
-  return { id, name: `Empresa ${id}`, taxId: 'AO-1', type: 'CLIENTE', status: 'PENDENTE', contactEmail: 'a@a.co', createdAt: '2026-01-01' };
+  return { id, name: `Empresa ${id}`, taxId: 'AO-1', type: 'CLIENTE', status: 'PENDENTE', contactEmail: 'a@a.co', verified: false, createdAt: '2026-01-01' };
 }
 
 describe('DueDiligenceComponent', () => {

@@ -13,6 +13,11 @@ export interface CompanyListItem {
   status: CompanyStatus;
   contactEmail: string;
   contactPhone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  province?: string | null;
+  country?: string | null;
+  verified: boolean;
   createdAt: string;
 }
 

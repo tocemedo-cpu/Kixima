@@ -1,0 +1,64 @@
+@if (error()) {
+  <div class="empty-state"><h3>Não foi possível carregar</h3><p>{{ error() }}</p></div>
+} @else if (!data()) {
+  <div class="bz-empty">A carregar…</div>
+} @else {
+  <div>
+    <app-crumbs [trail]="['Perfil da Empresa']"></app-crumbs>
+    <app-buyer-page-head title="Perfil da Empresa" subtitle="Dados da empresa, contactos e documentos."></app-buyer-page-head>
+
+    <div class="bz-layout">
+      <div class="bz-panel">
+        <h3>Dados Gerais</h3>
+        <div class="bz-scroll-x">
+          <table class="bz-table">
+            <tbody>
+              <tr><td class="bz-muted" style="width:200px">Nome da Empresa</td><td><strong>{{ data()!.company.name }}</strong></td></tr>
+              <tr><td class="bz-muted">Tipo de Atuação</td><td><strong>{{ typeLabel() }}</strong></td></tr>
+              <tr><td class="bz-muted">NIF</td><td><strong>{{ data()!.company.taxId }}</strong></td></tr>
+              <tr><td class="bz-muted">Telefone</td><td><strong>{{ data()!.company.contactPhone || '—' }}</strong></td></tr>
+              <tr><td class="bz-muted">E-mail Corporativo</td><td><strong>{{ data()!.company.contactEmail }}</strong></td></tr>
+              <tr><td class="bz-muted">Endereço</td><td><strong>{{ data()!.company.address || '—' }}</strong></td></tr>
+              <tr><td class="bz-muted">Localização</td><td><strong>{{ location() }}</strong></td></tr>
+              <tr><td class="bz-muted">Data de Registo</td><td><strong>{{ formatDate(data()!.company.createdAt) }}</strong></td></tr>
+              <tr>
+                <td class="bz-muted">Estado</td>
+                <td>
+                  <app-pill [tone]="data()!.company.status === 'APROVADA' ? 'success' : 'pending'">
+                    {{ data()!.company.status === 'APROVADA' ? 'Ativa' : data()!.company.status }}
+                  </app-pill>
+                  @if (data()!.company.verified) {
+                    <app-pill tone="success">Verificada</app-pill>
+                  }
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bz-side">
+        <div class="bz-panel">
+          <h3>Informações de Contacto</h3>
+          <div class="pf-info"><app-icon name="policy" [size]="15"></app-icon> <span>{{ data()!.company.contactEmail }}</span></div>
+          <div class="pf-info"><app-icon name="building" [size]="15"></app-icon> <span>{{ data()!.company.contactPhone || '—' }}</span></div>
+          <div class="pf-info"><app-icon name="offshore" [size]="15"></app-icon> <span>{{ contactAddress() }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="pf-h2">Resumo da Organização</h3>
+    <div class="hs-quick">
+      @for (x of resumo(); track x.s) {
+        <div class="hs-quickcard">
+          <span class="hs-quick-ico"><app-icon [name]="x.icon" [size]="18"></app-icon></span>
+          <div><strong style="font-size:20px">{{ x.t }}</strong><span class="bz-sub2">{{ x.s }}</span></div>
+        </div>
+      }
+    </div>
+
+    @if (data()!.company.type === 'FORNECEDOR') {
+      <app-bank-details-panel [companyId]="auth.user()!.companyId!"></app-bank-details-panel>
+    }
+  </div>
+}

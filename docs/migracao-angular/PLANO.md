@@ -72,6 +72,9 @@ neste repositório.
 | Recuperação de senha | `features/auth/password-reset.component.ts` | `pages/shared/PasswordReset.jsx` | `POST /api/auth/{forgot-password,reset-password}` |
 | Acompanhar Entrega — Comprador | `features/orders/deliveries.component.ts` | `pages/comprador/Deliveries.jsx` | `GET /api/buyer/deliveries?stage=&q=` |
 | Recepção — Comprador | `features/orders/receptions.component.ts` | `pages/comprador/Receptions.jsx` | `GET /api/buyer/receptions?status=&q=` |
+| Usuários & Perfis — Company Admin | `features/company-admin/users.component.ts` | `pages/companyAdmin/Users.jsx` | `GET/POST/PATCH/DELETE /api/companies/{users,invites}` |
+| Perfil da Empresa (organização) — Company Admin | `features/company-admin/{organization,bank-details-panel}.component.ts` | `pages/companyAdmin/Organization.jsx` | `GET /api/company-admin/organizacao`, `GET/PUT /api/companies/:id/bank-details` |
+| Perfil da Empresa (apólices) — Company Admin | `features/company-admin/company-profile.component.ts` | `pages/companyAdmin/CompanyProfile.jsx` | `GET /api/companies/:id`, `GET /api/policies/company/:id` |
 
 **Verificação ao vivo desta etapa** (Postgres + backend Java a correr localmente, Angular com o seu proxy): login como Comprador → pesquisa no catálogo → produto → cesta → checkout (gera PO) → lista de ordens com KPIs → detalhe da PO → aprovação pelo Company Admin → aceitação pelo Fornecedor (gera fatura com os campos AGT presentes, correctamente vazios sem credenciais) → guarda de máquina de estados (despachar antes de pago devolve 400) → fluxo de rejeição com motivo. RBAC confirmado com 403 em cada ponto errado: Comprador não aprova nem aceita a própria PO, Fornecedor não aprova, Fornecedor não lê `/api/buyer/orders` (403), pedido sem sessão dá 401. Um bug de routing desta sessão anterior foi encontrado e corrigido: a rota de Cotações do Comprador estava em `/comprador/pedidos`, mas a real (`frontend/src/App.jsx:191`) é `/comprador/cotacoes` — nunca teria sido alcançável pela navegação real da aplicação.
 
@@ -90,6 +93,8 @@ neste repositório.
 **Verificação ao vivo — fluxos sem sessão (Cadastro/Convites/Recuperação de senha)**: os quatro endpoints Java (`POST /api/companies/register`, `GET/POST /api/companies/invite/:token`, `GET/POST /api/admin/invite/:token`, `POST /api/auth/{forgot,reset}-password`) já estavam correctos e completos — nenhuma correcção necessária. Os quatro fluxos foram exercitados de ponta a ponta pela UI real (browser headless, sem atalhos): cadastro público de uma empresa CLIENTE com dois documentos PDF reais anexados (a validação de conteúdo do Java recusou corretamente um `.pdf` que era só texto — teve de se gerar um PDF válido de facto); um convite COMPRADOR criado pelo Company Admin real, aceite através de `/convite/:token` (o utilizador fica `active:false`, à espera da aprovação do Company Admin, exactamente como o React); pedido de recuperação de senha com resposta anti-enumeração idêntica para email existente e inexistente, e definição da nova senha em `/recuperar/:token` (o token é um JWT assinado, nunca guardado em tabela — para o testar sem o SMTP configurado, foi construído à mão com o mesmo segredo/algoritmo HS256 do `JwtService`, só para fins de verificação; a senha do utilizador de teste foi reposta no valor de demonstração no final). O convite de Admin do Sistema (`/convite-admin/:token`) foi verificado ao nível do modelo/serviço (contratos confirmados) sem repetir o mesmo teste de ponta-a-ponta, já que a mecânica é idêntica à do convite de equipa.
 
 **Verificação ao vivo — Acompanhar Entrega/Recepção (Comprador)**: primeiras páginas de prioridade 2 migradas. `GET /api/buyer/{deliveries,receptions}` já estavam correctos e completos no Java. Confirmado por HTTP directo (KPIs reais — 1 em trânsito, 3 em preparação, 3 entregues, 2 canceladas; 1 a receber, 1 recebido, 1 com divergência) e por browser headless em `/comprador/{entregas,recepcao}`. RBAC confirmado: Fornecedor recebe 403 nos dois endpoints no servidor, e o `roleGuard('COMPRADOR')` do Angular bloqueia as duas rotas no cliente.
+
+**Verificação ao vivo — Usuários & Perfis/Organização/Perfil da Empresa (Company Admin)**: todos os endpoints (`/api/companies/{users,invites}`, `/api/company-admin/organizacao`, `/api/companies/:id/bank-details`, `/api/policies/company/:id`) já estavam correctos e completos no Java. Fluxo de convite testado ponta-a-ponta pela UI real: modal "+ Novo Usuário" → convite criado → toast de sucesso → convite novo na lista, sem reload da página. O convite de equipa aceite numa etapa anterior desta sessão (`convidado.teste@petroangola.co.ao`) foi confirmado a aparecer em "Cadastros pendentes" e activado com sucesso (`PATCH /api/companies/users/:id/activate`, `active: true`). Dados bancários testados ao vivo para o Fornecedor (Kianda): `GET`/`PUT /api/companies/:id/bank-details` com IBAN e SWIFT reais. RBAC confirmado nas três páginas: Comprador recebe 403 em `/api/companies/users` no servidor, e o `roleGuard('COMPANY_ADMIN')` bloqueia as três rotas no cliente. Dois ícones que faltavam (`cart`, `suppliers`) portados para `IconComponent`, e `CompanyListItem`/`CompanyDetail` ganharam os campos `address`/`city`/`province`/`country`/`verified` (usados por Organization.jsx, ainda não precisos pelos ecrãs anteriores).
 
 ## Inventário completo das 97 páginas React e prioridade sugerida
 
@@ -175,9 +180,9 @@ estático/ajuda. Dentro de cada prioridade, a ordem é a recomendada.
 | `Contracts.jsx` | 1 | **Migrado** |
 | `Assinatura.jsx` | 2 | Pendente |
 | `Home.jsx` | 2 | Pendente |
-| `Users.jsx` | 2 | Pendente |
-| `Organization.jsx` | 2 | Pendente |
-| `CompanyProfile.jsx` | 2 | Pendente |
+| `Users.jsx` | 2 | **Migrado** |
+| `Organization.jsx` | 2 | **Migrado** |
+| `CompanyProfile.jsx` | 2 | **Migrado** |
 | `CompanyDocuments.jsx` | 3 | Pendente |
 | `Permissions.jsx` | 3 | Pendente |
 | `Reports.jsx` | 3 | Pendente |

@@ -1,0 +1,66 @@
+@if (error()) {
+  <app-error-banner [message]="error()"></app-error-banner>
+} @else if (!company() || !policies()) {
+  <app-loading></app-loading>
+} @else {
+  <div>
+    <app-page-header title="Perfil da Empresa" subtitle="Dados, contactos e apólice KIXIMA→Cliente."></app-page-header>
+
+    <div class="grid-cols grid-2" style="align-items:start">
+      <div class="card card-pad">
+        <strong style="font-size:13.5px">Dados da empresa</strong>
+        <div style="margin-top:14px;display:grid;gap:10px;font-size:13.5px">
+          <div style="display:flex;justify-content:space-between;gap:12px">
+            <span style="color:var(--ink-400)">Nome</span><span>{{ company()!.name }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:12px">
+            <span style="color:var(--ink-400)">NIF</span><span>{{ company()!.taxId }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:12px">
+            <span style="color:var(--ink-400)">Tipo</span><span>{{ company()!.type === 'CLIENTE' ? 'Cliente' : 'Fornecedor' }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:12px">
+            <span style="color:var(--ink-400)">Estado do cadastro</span>
+            <span><app-badge [tone]="COMPANY_STATUS[company()!.status]?.tone">{{ COMPANY_STATUS[company()!.status]?.label }}</app-badge></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:12px">
+            <span style="color:var(--ink-400)">Contacto</span><span>{{ company()!.contactEmail }}</span>
+          </div>
+          @if (company()!.contactPhone) {
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <span style="color:var(--ink-400)">Telefone</span><span>{{ company()!.contactPhone }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="card card-pad">
+        <strong style="font-size:13.5px">Apólice KIXIMA→Cliente</strong>
+        @if (clientPolicy(); as policy) {
+          <div style="margin-top:14px;display:grid;gap:10px;font-size:13.5px">
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <span style="color:var(--ink-400)">Nº da apólice</span><span class="mono">{{ policy.policyNumber }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <span style="color:var(--ink-400)">Seguradora</span><span>{{ policy.insurer }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <span style="color:var(--ink-400)">Cobertura</span><span>{{ formatMoney(policy.coverageAmount, policy.currency) }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <span style="color:var(--ink-400)">Validade</span><span>{{ formatDate(policy.validFrom) }} — {{ formatDate(policy.validUntil) }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <span style="color:var(--ink-400)">Estado</span>
+              <span><app-badge [tone]="POLICY_STATUS[policy.status]?.tone">{{ POLICY_STATUS[policy.status]?.label }}</app-badge></span>
+            </div>
+          </div>
+        } @else {
+          <p class="helptext" style="margin-top:12px">
+            Ainda não há apólice KIXIMA→Cliente emitida. Isto é feito pelo Admin do Sistema KIXIMA após a aprovação do cadastro.
+          </p>
+        }
+      </div>
+    </div>
+  </div>
+}
