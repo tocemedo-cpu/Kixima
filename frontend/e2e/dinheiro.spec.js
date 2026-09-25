@@ -123,10 +123,25 @@ test.describe('Integridade da faturação', () => {
   });
 
   test('o SAF-T exige um período', async ({ page }) => {
-    const semPeriodo = await page.request.get('/api/faturacao/saft');
+    // O SAF-T é sempre de UMA empresa fornecedora — é ela o emitente fiscal.
+    // O Admin do Sistema não tem empresa própria, por isso tem de dizer de
+    // qual é (supplierCompanyId); sem isso a rota recusa antes de olhar ao
+    // período, e este teste estaria a medir a coisa errada. A Kianda é a
+    // fornecedora da demonstração.
+    const empresas = await page.request.get('/api/companies?type=FORNECEDOR');
+    expect(empresas.ok()).toBeTruthy();
+    const kianda = (await empresas.json()).find((c) => /kianda/i.test(c.name));
+    expect(kianda, 'a fornecedora Kianda tem de existir na base de demonstração').toBeDefined();
+    const saft = (params) => page.request.get(`/api/faturacao/saft?supplierCompanyId=${kianda.id}${params}`);
+
+    // Sem dizer de que empresa é, não há ficheiro — nem com período.
+    const semEmpresa = await page.request.get('/api/faturacao/saft?de=2020-01-01&ate=2035-12-31');
+    expect(semEmpresa.status()).toBe(422);
+
+    const semPeriodo = await saft('');
     expect(semPeriodo.status()).toBeGreaterThanOrEqual(400);
 
-    const comPeriodo = await page.request.get('/api/faturacao/saft?de=2020-01-01&ate=2035-12-31');
+    const comPeriodo = await saft('&de=2020-01-01&ate=2035-12-31');
     expect(comPeriodo.ok()).toBeTruthy();
     const xml = await comPeriodo.text();
     expect(xml.startsWith('<?xml')).toBe(true);

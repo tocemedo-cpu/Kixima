@@ -418,7 +418,10 @@ input[type="checkbox"] { accent-color: var(--solido); }
 .mk-price, .pc-price, .exp-price, .mini-price, .aside-item-price, .aside-total .mono { font-family: var(--font-display); font-weight: 700; color: var(--preto); }
 .pc-old { color: var(--ténue); }
 .mk-supplier, .svc-company, .pc-sup-name, .mini-company, .pc-brand { color: var(--suave); }
-.stars, .pc-rate strong, .svc-ratenum { color: var(--ocre); }
+/* As estrelas e a nota são texto: levam o ocre "de texto" (--aviso, 4,5:1
+   sobre marfim e branco) e não o ocre de superfície, que sobre claro fica
+   nos 2,4:1. */
+.stars, .pc-rate strong, .svc-ratenum { color: var(--aviso); }
 .pc-fav, .svc-fav { background: var(--branco); border: 1px solid var(--linha); color: var(--suave); }
 .pc-fav.on, .svc-fav.on { color: var(--vermelho); border-color: var(--r-bd); }
 .pc-add, .mk-actions .btn-accent { background: var(--solido); color: var(--marfim); border-color: var(--solido); }
@@ -509,12 +512,19 @@ input[type="checkbox"] { accent-color: var(--solido); }
   .home-kpis, .bz-kpis { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
 }
 @media (max-width: 759px) {
+  /* A camada mobile de global.css fica como estava: a barra passa a duas
+     linhas (marca e ações em cima, pesquisa inteira em baixo) e deixa de ter
+     altura fixa. A proposta só lhe muda a cor e o fio Samakaka — os 4px a
+     mais em baixo são o espaço do fio, que é absoluto. */
   .app-shell { grid-template-rows: auto 1fr; }
-  .navbar.shell { height: auto; min-height: 58px; padding: 8px 12px 12px; gap: 8px 10px; }
+  .navbar.shell { height: auto; min-height: 56px; padding: 8px 12px 12px; gap: 8px 10px; }
   .nav-sep { display: none; }
   .nav-company { display: none; }
-  .nav-search.busca { max-width: none; margin: 0; }
+  .nav-search.busca { flex: 1 0 100%; max-width: none; margin: 0; min-width: 0; }
   .nav-search.busca input { font-size: 16px; padding: 8px 10px 8px 32px; }
+  /* Alvos de toque: os ícones voltam aos 36px da camada mobile. */
+  .navbar .nav-icon { width: 36px; height: 36px; }
+  .navbar .nav-badge { top: 1px; right: -2px; }
   .app-shell > .content.conteudo { padding: 16px 14px 20px; }
   .page-header h1, .bz-title, .home-hi { font-size: 18px; }
   .kpi-value, .bz-kpi-value, .stat-value { font-size: 26px; }

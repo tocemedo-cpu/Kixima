@@ -22,6 +22,11 @@ const LARGURAS = [640, 540, 430, 414, 390, 375, 360];
 // A fronteira protegida: a partir daqui o desenho de desktop está congelado.
 const FRONTEIRA = 760;
 
+// A altura da barra de aplicação em desktop — os 58px do shell da Proposta 04
+// (src/styles/bancada.css). Se isto mudar, ou a identidade mudou de propósito,
+// ou a camada mobile escorregou para dentro do território protegido.
+const ALTURA_DESKTOP = 58;
+
 const PUBLICAS = ['/login', '/cadastro'];
 const POR_PERSONA = {
   comprador: ['/comprador', '/comprador/produtos', '/perfil'],
@@ -118,13 +123,13 @@ test.describe('Desktop continua congelado', () => {
     const page = await ctx.newPage();
     await page.goto('/comprador', { waitUntil: 'networkidle' });
 
-    // 62px é a altura de desktop. Se isto mudar, a camada mobile escorregou
-    // para dentro do território protegido.
     const altura = await page.locator('.navbar').evaluate((e) => Math.round(e.getBoundingClientRect().height));
-    expect(altura).toBe(62);
+    expect(altura).toBe(ALTURA_DESKTOP);
 
-    // E a tagline volta a aparecer: é o sinal de que a regra parou nos 759.
-    await expect(page.locator('.navbar .brand-sub')).toBeVisible();
+    // E o nome da empresa volta a aparecer na barra: é o sinal de que a regra
+    // parou nos 759. (A tagline já não vive na barra — o shell da proposta
+    // mostra "KIXIMA.NET" e a empresa; a tagline ficou nos ecrãs de entrada.)
+    await expect(page.locator('.navbar .nav-company')).toBeVisible();
     await ctx.close();
   });
 
@@ -135,9 +140,11 @@ test.describe('Desktop continua congelado', () => {
     });
     const page = await ctx.newPage();
     await page.goto('/comprador', { waitUntil: 'networkidle' });
+    // Duas linhas (marca e ações em cima, pesquisa inteira em baixo): mais alta
+    // do que a de desktop, e sem o nome da empresa, que é o que não cabe.
     const altura = await page.locator('.navbar').evaluate((e) => Math.round(e.getBoundingClientRect().height));
-    expect(altura).toBeGreaterThan(62);
-    await expect(page.locator('.navbar .brand-sub')).toBeHidden();
+    expect(altura).toBeGreaterThan(ALTURA_DESKTOP);
+    await expect(page.locator('.navbar .nav-company')).toBeHidden();
     await ctx.close();
   });
 });

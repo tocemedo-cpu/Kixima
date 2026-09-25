@@ -4,10 +4,18 @@
  * Trocar de fundo não altera uma linha de estrutura, e nenhum deles mexe no
  * símbolo, no losango Samakaka nem na tipografia." — KIXIMA_Proposta_4_Bancada.
  *
- * Os valores abaixo são os do HTML de referência, sem alteração. Todos os
- * tokens históricos da aplicação (global.css: --brand-*, --ink-*, --paper-*,
- * --navy-*, --amber-*, --teal-*, --line…) passaram a ler estas variáveis, por
- * isso qualquer ecrã muda de fundo sem tocar no seu CSS.
+ * Os valores abaixo são os do HTML de referência, com três afinações de
+ * contraste (WCAG AA, 4,5:1 em texto corrente, medidas com o axe nas páginas
+ * da suite de acessibilidade):
+ *   - Claro: --ténue 8F887A → 716B5F (dava 3,0–3,5:1 sobre branco, marfim e
+ *     canvas); --aviso e --cu-fg B3730A → 9B6309 (3,6:1 nos selos "em curso"
+ *     e 3,9:1 nas notas de avaliação).
+ *   - Escuro 1: --ténue 8A8276 → 8F877B (4,4:1 sobre o branco do fundo).
+ * Em cada caso é o mesmo tom, só mais escuro ou mais claro até ao primeiro
+ * valor que passa. Todos os tokens históricos da aplicação (global.css:
+ * --brand-*, --ink-*, --paper-*, --navy-*, --amber-*, --teal-*, --line…)
+ * passaram a ler estas variáveis, por isso qualquer ecrã muda de fundo sem
+ * tocar no seu CSS.
  *
  * Selecção (ver src/tema/TemaContext.jsx):
  *   - sem escolha guardada: Claro; Escuro 1 se o sistema pedir cores escuras
@@ -19,14 +27,14 @@
   color-scheme: light;
   --marfim: #F7F3EA; --canvas: #F1EEE6; --branco: #FFFFFF; --areia: #EBE4D6;
   --linha: #E0D9C9; --linha-2: #CFC6B2;
-  --preto: #111111; --texto: #2B2A28; --suave: #6A6458; --ténue: #8F887A;
-  --vermelho: #B8202E; --cta: #E11D2A; --ocre: #D99A05; --verde: #1B7F52; --aviso: #B3730A;
+  --preto: #111111; --texto: #2B2A28; --suave: #6A6458; --ténue: #716B5F;
+  --vermelho: #B8202E; --cta: #E11D2A; --ocre: #D99A05; --verde: #1B7F52; --aviso: #9B6309;
   --shell: #111111; --shell-txt: #F7F3EA; --shell-fg: #B8B0A2; --shell-linha: #38352F;
   --busca-bg: #1D1B18; --busca-bd: #3A3630; --busca-fg: #9C958A;
   --solido: #111111; --barra: #EBE4D6; --hover: #FBF9F4; --halo: #F6DCDE; --ref: #2B2A28;
   --alerta-bd: #E7C3C6; --r-bd: #E0B8BC;
   --al-fg: #B8202E; --al-bd: #E3BFC3; --al-bg: #FBEFF0;
-  --cu-fg: #B3730A; --cu-bd: #E2C592; --cu-bg: #FCF4E5;
+  --cu-fg: #9B6309; --cu-bd: #E2C592; --cu-bg: #FCF4E5;
   --ok-fg: #1B7F52; --ok-bd: #A9CCBA; --ok-bg: #EEF6F1;
   --r-btn: 6px; --r-card: 10px;
   --sombra: 0 1px 2px rgba(17,17,17,.06), 0 1px 10px rgba(17,17,17,.04);
@@ -42,7 +50,7 @@
   color-scheme: dark;
   --marfim: #131210; --canvas: #191714; --branco: #201E1A; --areia: #2A2723;
   --linha: #302C26; --linha-2: #453E34;
-  --preto: #F2EFE8; --texto: #E0DACF; --suave: #A79F92; --ténue: #8A8276;
+  --preto: #F2EFE8; --texto: #E0DACF; --suave: #A79F92; --ténue: #8F877B;
   --vermelho: #E0656D; --cta: #EF5A62; --ocre: #E5A821; --verde: #4CB183; --aviso: #DCA13C;
   --shell: #0C0B09; --shell-txt: #F7F3EA; --shell-fg: #A79F92; --shell-linha: #2E2A24;
   --busca-bg: #16140F; --busca-bd: #35302A; --busca-fg: #8E867A;
@@ -57,14 +65,14 @@
   color-scheme: light;
   --marfim: #F7F3EA; --canvas: #F1EEE6; --branco: #FFFFFF; --areia: #EBE4D6;
   --linha: #E0D9C9; --linha-2: #CFC6B2;
-  --preto: #111111; --texto: #2B2A28; --suave: #6A6458; --ténue: #8F887A;
-  --vermelho: #B8202E; --cta: #E11D2A; --ocre: #D99A05; --verde: #1B7F52; --aviso: #B3730A;
+  --preto: #111111; --texto: #2B2A28; --suave: #6A6458; --ténue: #716B5F;
+  --vermelho: #B8202E; --cta: #E11D2A; --ocre: #D99A05; --verde: #1B7F52; --aviso: #9B6309;
   --shell: #111111; --shell-txt: #F7F3EA; --shell-fg: #B8B0A2; --shell-linha: #38352F;
   --busca-bg: #1D1B18; --busca-bd: #3A3630; --busca-fg: #9C958A;
   --solido: #111111; --barra: #EBE4D6; --hover: #FBF9F4; --halo: #F6DCDE; --ref: #2B2A28;
   --alerta-bd: #E7C3C6; --r-bd: #E0B8BC;
   --al-fg: #B8202E; --al-bd: #E3BFC3; --al-bg: #FBEFF0;
-  --cu-fg: #B3730A; --cu-bd: #E2C592; --cu-bg: #FCF4E5;
+  --cu-fg: #9B6309; --cu-bd: #E2C592; --cu-bg: #FCF4E5;
   --ok-fg: #1B7F52; --ok-bd: #A9CCBA; --ok-bg: #EEF6F1;
   --sombra: 0 1px 2px rgba(17,17,17,.06), 0 1px 10px rgba(17,17,17,.04);
 }
@@ -72,7 +80,7 @@
   color-scheme: dark;
   --marfim: #131210; --canvas: #191714; --branco: #201E1A; --areia: #2A2723;
   --linha: #302C26; --linha-2: #453E34;
-  --preto: #F2EFE8; --texto: #E0DACF; --suave: #A79F92; --ténue: #8A8276;
+  --preto: #F2EFE8; --texto: #E0DACF; --suave: #A79F92; --ténue: #8F877B;
   --vermelho: #E0656D; --cta: #EF5A62; --ocre: #E5A821; --verde: #4CB183; --aviso: #DCA13C;
   --shell: #0C0B09; --shell-txt: #F7F3EA; --shell-fg: #A79F92; --shell-linha: #2E2A24;
   --busca-bg: #16140F; --busca-bd: #35302A; --busca-fg: #8E867A;
@@ -107,11 +115,11 @@
 .folha-clara {
   --marfim: #F7F3EA; --canvas: #F1EEE6; --branco: #FFFFFF; --areia: #EBE4D6;
   --linha: #E0D9C9; --linha-2: #CFC6B2;
-  --preto: #111111; --texto: #2B2A28; --suave: #6A6458; --ténue: #8F887A;
-  --vermelho: #B8202E; --cta: #E11D2A; --ocre: #D99A05; --verde: #1B7F52; --aviso: #B3730A;
+  --preto: #111111; --texto: #2B2A28; --suave: #6A6458; --ténue: #716B5F;
+  --vermelho: #B8202E; --cta: #E11D2A; --ocre: #D99A05; --verde: #1B7F52; --aviso: #9B6309;
   --solido: #111111; --barra: #EBE4D6; --hover: #FBF9F4; --halo: #F6DCDE; --ref: #2B2A28;
   --al-fg: #B8202E; --al-bd: #E3BFC3; --al-bg: #FBEFF0;
-  --cu-fg: #B3730A; --cu-bd: #E2C592; --cu-bg: #FCF4E5;
+  --cu-fg: #9B6309; --cu-bd: #E2C592; --cu-bg: #FCF4E5;
   --ok-fg: #1B7F52; --ok-bd: #A9CCBA; --ok-bg: #EEF6F1;
   --sombra: none;
 }

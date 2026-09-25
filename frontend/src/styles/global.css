@@ -1799,7 +1799,9 @@ tbody tr:hover {
 
 /* Caixa de classificação/IVA no formulário de produto (Vendedor) */
 .cls-box { background: var(--paper-100, var(--canvas)); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 10px 0 4px; display: flex; flex-direction: column; gap: 8px; }
-.cls-box .cls-k { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-400); display: block; }
+/* Sobre a areia (mais escura que o marfim) o cinzento ténue fica aquém dos
+   4,5:1 nos três fundos; a tinta secundária passa em todos. */
+.cls-box .cls-k { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-500); display: block; }
 .cls-box strong { font-size: var(--fs-xl); }
 .cls-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: var(--fs-lg); }
 .cls-box-img { flex-direction: row; align-items: flex-start; gap: 14px; }
@@ -2783,7 +2785,9 @@ tbody tr:hover {
 
 /* --- Supplier Development (página pública) ------------------------------- */
 .sd-page { min-height: 100vh; background: var(--paper-050, var(--canvas)); }
-.sd-top { display: flex; justify-content: space-between; align-items: center; padding: 14px 28px; background: var(--navy-900, #14161a); }
+/* A barra do topo leva o logótipo claro, por isso é a shell (escura nos três
+   fundos) e não o "preto" da tinta, que nos fundos escuros é quase branco. */
+.sd-top { display: flex; justify-content: space-between; align-items: center; padding: 14px 28px; background: var(--shell, #14161a); }
 .sd-brand { text-decoration: none; }
 .sd-top-actions { display: flex; gap: 10px; align-items: center; }
 .sd-lang { max-width: 170px; padding: 6px 10px; font-size: var(--fs-base); }
