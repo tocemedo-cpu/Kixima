@@ -26,5 +26,7 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicket, St
     /** Admin: listagem geral, sem filtro de estado (duas queries derivadas em vez de um JPQL com `(:status IS NULL OR ...)` — ver ProductSpecifications, M2, para o bug do Postgres com enum nativo nessa forma). */
     Page<SupportTicket> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
+    List<SupportTicket> findTop10ByOrderByCreatedAtDesc();
+
     Page<SupportTicket> findByStatusOrderByCreatedAtDesc(SupportStatus status, Pageable pageable);
 }

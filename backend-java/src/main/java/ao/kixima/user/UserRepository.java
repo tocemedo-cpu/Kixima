@@ -62,6 +62,17 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT u.companyId, COUNT(u) FROM User u WHERE u.companyId IN :ids AND u.active = true GROUP BY u.companyId")
     List<Object[]> contagemAtivosPorEmpresa(@Param("ids") List<String> ids);
 
+    /** adminService.listUsers — bloqueados primeiro, depois do mais recente. */
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.company ORDER BY u.active ASC, u.createdAt DESC")
+    List<User> findTodosOrderByActiveAscCreatedAtDesc();
+
+    List<User> findTop10ByOrderByCreatedAtDesc();
+
+    long countByRoleInAndActiveTrueAndTotpEnabledAtIsNull(List<PersonaRole> roles);
+
+    /** loginAttemptService.bloqueadasAgora — contas com bloqueio progressivo ainda a decorrer. */
+    List<User> findByBloqueadoAteAfterOrderByEmailAsc(Instant agora);
+
     long countByCompanyId(String companyId);
 
     List<User> findByCompanyId(String companyId);

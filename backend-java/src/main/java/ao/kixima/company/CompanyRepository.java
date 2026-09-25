@@ -20,6 +20,12 @@ public interface CompanyRepository extends JpaRepository<Company, String> {
     List<Company> findByStatusAndTypeOrderByCreatedAtDesc(CompanyStatus status, CompanyType type);
 
     // publicStatsService / buyerService.suppliers
+    List<Company> findTop10ByOrderByCreatedAtDesc();
+
+    long countByType(CompanyType type);
+
+    long countByTypeAndSerieFiscalIsNotNull(CompanyType type);
+
     long countByStatus(CompanyStatus status);
 
     long countByStatusAndType(CompanyStatus status, CompanyType type);

@@ -14,6 +14,8 @@ public interface PlanoCobrancaRepository extends JpaRepository<PlanoCobranca, St
 
     List<PlanoCobranca> findByCompanyIdAndStatusNotInOrderByCreatedAtDesc(String companyId, Collection<CobrancaStatus> statuses, Pageable pageable);
 
+    long countByComprovativoUrlStartingWith(String prefixo);
+
     /** fila(): em aberto, `orderBy: [{ status: 'desc' }, { createdAt: 'asc' }]`. */
     List<PlanoCobranca> findByStatusInOrderByStatusDescCreatedAtAsc(Collection<CobrancaStatus> statuses);
 

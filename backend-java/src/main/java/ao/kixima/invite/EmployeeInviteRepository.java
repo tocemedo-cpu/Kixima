@@ -13,6 +13,11 @@ public interface EmployeeInviteRepository extends JpaRepository<EmployeeInvite, 
 
     List<EmployeeInvite> findByCompanyIdOrderByCreatedAtDesc(String companyId);
 
+    /** Convites de assessor (ADMIN_SISTEMA) — mesma tabela que os convites de funcionário, sem empresa. */
+    List<EmployeeInvite> findByRoleOrderByCreatedAtDesc(ao.kixima.security.PersonaRole role);
+
+    Optional<EmployeeInvite> findByToken(String token);
+
     Optional<EmployeeInvite> findByIdAndCompanyId(String id, String companyId);
 
     long countByCompanyIdAndStatusAndExpiresAtAfter(String companyId, InviteStatus status, Instant instant);

@@ -145,6 +145,11 @@ kixima:
     env: ${AGT_ENV:hml}
     sandbox-username: ${AGT_SANDBOX_USERNAME:}
     sandbox-password: ${AGT_SANDBOX_PASSWORD:}
+  faturacao:
+    # Identidade da KIXIMA como FABRICANTE do software certificado (ProductCompanyTaxID /
+    # SoftwareCertificateNumber no SAF-T) — distinta do NIF de cada fornecedor emitente.
+    nif: ${KIXIMA_NIF:}
+    certificado-agt: ${KIXIMA_CERTIFICADO_AGT:}
   email:
     # 'console' (log), 'brevo'/'brevo-api' (API HTTP) — mesmas opções do Node.
     # 'smtp' ainda não portado (ver EmailDispatchService, M5): cai no aviso
@@ -158,6 +163,9 @@ kixima:
     # log (mesmo espírito do "S3 mal configurado" do Node), nunca silencioso.
     provider: ${STORAGE_PROVIDER:local}
     bucket: ${STORAGE_BUCKET:}
+    # Credenciais S3 — obrigatórias com STORAGE_PROVIDER=s3; a Prontidão diz o NOME das que faltam, nunca o valor.
+    access-key: ${STORAGE_ACCESS_KEY:}
+    secret-key: ${STORAGE_SECRET_KEY:}
     # Bucket PRIVADO só para cópias de segurança — nunca o das imagens, que é público.
     backup-bucket: ${STORAGE_BACKUP_BUCKET:}
     local-dir: ${STORAGE_LOCAL_DIR:uploads}

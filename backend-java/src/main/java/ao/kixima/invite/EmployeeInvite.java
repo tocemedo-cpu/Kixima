@@ -118,6 +118,15 @@ public class EmployeeInvite extends AbstractPersistableEntity<String> {
         return token;
     }
 
+    public List<String> getAdminAreas() {
+        return adminAreas;
+    }
+
+    /** Só o convite de assessor ADMIN_SISTEMA as usa (adminService.js) — os convites de funcionário ficam com a lista vazia. */
+    public void setAdminAreas(List<String> adminAreas) {
+        this.adminAreas = adminAreas == null ? new ArrayList<>() : new ArrayList<>(adminAreas);
+    }
+
     public void setToken(String token) {
         this.token = token;
     }

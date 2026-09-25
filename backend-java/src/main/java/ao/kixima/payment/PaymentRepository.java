@@ -23,4 +23,8 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
 
     /** dadosPessoaisService.exportar — pagamentos autorizados pelo titular. */
     List<Payment> findByProcessedByIdOrderByProcessedAtDesc(String processedById);
+
+    List<Payment> findTop10ByOrderByProcessedAtDesc();
+
+    long countByProofUrlStartingWith(String prefixo);
 }

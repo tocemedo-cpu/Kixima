@@ -1,5 +1,7 @@
 package ao.kixima.notification;
 
+import ao.kixima.common.error.BadGatewayException;
+import ao.kixima.common.error.ValidationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,6 +106,62 @@ public class EmailDispatchService {
      * sabe à partida que não vai a lado nenhum (provider 'console', ou um
      * provider real sem as credenciais que precisa).
      */
+    public String provider() {
+        return provider;
+    }
+
+    public String from() {
+        return from;
+    }
+
+    /** Espelha `config.email.apenasLog` — 'console' não é um provider a sério: escreve no log e segue. */
+    public boolean apenasLog() {
+        return "console".equals(provider);
+    }
+
+    /** Espelha `config.email.missing` — nomes das variáveis em falta para o provider configurado (nunca valores). */
+    public List<String> emFalta() {
+        if ("brevo".equals(provider) || "brevo-api".equals(provider)) {
+            return brevoApiKey == null || brevoApiKey.isBlank() ? List.of("BREVO_API_KEY") : List.of();
+        }
+        return List.of();
+    }
+
+    public record EnvioDireto(String provider, String para, String remetente) {
+    }
+
+    /**
+     * Espelha notificationService.enviarEmailDireto — o ÚNICO caminho em que o
+     * erro NÃO é engolido: quem está a configurar o email precisa de ver o que
+     * correu mal, e a mensagem crua do Brevo é a que diz o que corrigir.
+     */
+    public EnvioDireto enviarDireto(String to, String assunto, String corpo) {
+        if (apenasLog()) {
+            throw new ValidationException("EMAIL_PROVIDER=console — nada é enviado. Defina EMAIL_PROVIDER=brevo e BREVO_API_KEY.");
+        }
+        List<String> falta = emFalta();
+        if (!falta.isEmpty()) {
+            throw new ValidationException("Faltam variáveis de email: " + String.join(", ", falta) + ".");
+        }
+        if ("brevo".equals(provider) || "brevo-api".equals(provider)) {
+            try {
+                enviarViaBrevoApi(to, assunto, corpo);
+            } catch (Exception e) {
+                throw new BadGatewayException(e.getMessage() == null ? "Falha no envio de email." : e.getMessage());
+            }
+            return new EnvioDireto("brevo", to, from);
+        }
+        // 'smtp' ainda não portado (ver javadoc da classe) — recusa-se a fingir que enviou.
+        throw new ValidationException("EMAIL_PROVIDER \"" + provider + "\" não está suportado neste servidor. Use brevo.");
+    }
+
+    /** Email de teste da página de Prontidão — confirma a configuração de ponta a ponta. */
+    public EnvioDireto enviarEmailDeTeste(String to) {
+        return enviarDireto(to, "KIXIMA — teste de configuração de email",
+                "Se está a ler isto, o envio de email da plataforma KIXIMA está a funcionar.\n\n"
+                        + "Este email foi enviado a partir de Configurações e Suporte → Prontidão para produção.");
+    }
+
     public boolean configurado() {
         if ("brevo".equals(provider) || "brevo-api".equals(provider)) return !brevoApiKey.isBlank();
         return false;

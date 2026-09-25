@@ -58,6 +58,9 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, St
 
     long countByStatus(PoStatus status);
 
+    @Query("SELECT po FROM PurchaseOrder po LEFT JOIN FETCH po.buyerCompany LEFT JOIN FETCH po.supplierCompany ORDER BY po.updatedAt DESC")
+    List<PurchaseOrder> findRecentesComEmpresas(Pageable pageable);
+
     /** conteudoLocalService.gerar — compras com compromisso real, num período. */
     List<PurchaseOrder> findByBuyerCompanyIdAndStatusInAndCreatedAtBetweenOrderByCreatedAtAsc(String buyerCompanyId, Collection<PoStatus> statuses,
                                                                                               java.time.Instant de, java.time.Instant ate);

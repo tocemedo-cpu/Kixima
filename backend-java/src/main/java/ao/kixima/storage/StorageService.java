@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,11 +35,20 @@ public class StorageService {
 
     private final String provider;
     private final Path uploadsDir;
+    private final String bucket;
+    private final String accessKey;
+    private final String secretKey;
 
     public StorageService(@Value("${kixima.storage.provider:local}") String provider,
-                           @Value("${kixima.storage.local-dir:uploads}") String localDir) {
+                           @Value("${kixima.storage.local-dir:uploads}") String localDir,
+                           @Value("${kixima.storage.bucket:}") String bucket,
+                           @Value("${kixima.storage.access-key:}") String accessKey,
+                           @Value("${kixima.storage.secret-key:}") String secretKey) {
         this.provider = provider;
         this.uploadsDir = Paths.get(localDir).toAbsolutePath().normalize();
+        this.bucket = bucket == null ? "" : bucket.trim();
+        this.accessKey = accessKey == null ? "" : accessKey.trim();
+        this.secretKey = secretKey == null ? "" : secretKey.trim();
         if ("s3".equals(provider)) {
             log.error("STORAGE_PROVIDER=s3 pedido mas o provider S3 ainda não está portado para Java (M5+) — "
                     + "TODOS os ficheiros vão para o disco local ({}), que é efémero em produção. "
@@ -101,5 +112,27 @@ public class StorageService {
 
     String getProvider() {
         return provider;
+    }
+
+    /** O provider PEDIDO no ambiente (STORAGE_PROVIDER) — distinto de {@link #providerAtivo()}, que é o que este processo consegue mesmo usar. */
+    public String providerConfigurado() {
+        return provider;
+    }
+
+    public String bucket() {
+        return bucket;
+    }
+
+    /**
+     * Espelha `config.storage.missing` — NOMES das variáveis obrigatórias em falta
+     * quando o armazenamento é S3 (uma string vazia conta como ausente). Nunca valores.
+     */
+    public List<String> emFalta() {
+        if (!"s3".equals(provider)) return List.of();
+        List<String> falta = new ArrayList<>();
+        if (bucket.isBlank()) falta.add("STORAGE_BUCKET");
+        if (accessKey.isBlank()) falta.add("STORAGE_ACCESS_KEY");
+        if (secretKey.isBlank()) falta.add("STORAGE_SECRET_KEY");
+        return falta;
     }
 }

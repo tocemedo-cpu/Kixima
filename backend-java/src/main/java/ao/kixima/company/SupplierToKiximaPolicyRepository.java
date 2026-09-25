@@ -8,5 +8,9 @@ public interface SupplierToKiximaPolicyRepository extends JpaRepository<Supplier
 
     List<SupplierToKiximaPolicy> findByCompanyId(String companyId);
 
+    List<SupplierToKiximaPolicy> findTop10ByOrderByCreatedAtDesc();
+
+    long countByDocumentUrlStartingWith(String prefixo);
+
     long countByCompanyId(String companyId);
 }

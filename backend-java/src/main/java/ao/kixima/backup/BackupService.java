@@ -131,6 +131,23 @@ public class BackupService {
         return idadeMaximaHoras;
     }
 
+    public String bucket() {
+        return bucket;
+    }
+
+    public String backupBucket() {
+        return backupBucket;
+    }
+
+    /** A ligação libpq (DIRECT_URL) tal como chegou ao processo — contém a senha; só para uso interno, nunca para uma resposta. */
+    public String directUrl() {
+        return directUrl;
+    }
+
+    public String jdbcUrl() {
+        return jdbcUrl;
+    }
+
     // --- Guardas ---------------------------------------------------------------
 
     /**

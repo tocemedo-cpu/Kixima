@@ -25,17 +25,32 @@ public class MfaPolicyService {
 
     private final List<String> mfaRequiredRoles;
     private final Instant mfaEnforceFrom;
+    private final String mfaEnforceFromInvalido;
 
     public MfaPolicyService(@Value("${kixima.auth.mfa-required-roles:ADMIN_SISTEMA,COMPANY_ADMIN}") String mfaRequiredRoles,
                              @Value("${kixima.auth.mfa-enforce-from:}") String mfaEnforceFrom) {
         this.mfaRequiredRoles = List.of(mfaRequiredRoles.toUpperCase().split("\\s*,\\s*"));
         Instant parsed;
+        String invalido = null;
         try {
-            parsed = (mfaEnforceFrom == null || mfaEnforceFrom.isBlank()) ? null : Instant.parse(mfaEnforceFrom);
+            parsed = (mfaEnforceFrom == null || mfaEnforceFrom.isBlank()) ? null : parseData(mfaEnforceFrom.trim());
         } catch (Exception e) {
             parsed = null; // data mal escrita = nunca exige, tal como o Node (dataInvalida em env.js).
+            invalido = mfaEnforceFrom;
         }
         this.mfaEnforceFrom = parsed;
+        this.mfaEnforceFromInvalido = invalido;
+    }
+
+    /** Aceita o instante ISO completo ou só a data (2026-09-15), como o `new Date(...)` do Node. */
+    private static Instant parseData(String valor) {
+        if (valor.matches("\\d{4}-\\d{2}-\\d{2}")) return java.time.LocalDate.parse(valor).atStartOfDay(java.time.ZoneOffset.UTC).toInstant();
+        return Instant.parse(valor);
+    }
+
+    /** O valor bruto de MFA_ENFORCE_FROM quando NÃO é uma data legível — é ignorado, e a Prontidão tem de o dizer. */
+    public String mfaEnforceFromInvalido() {
+        return mfaEnforceFromInvalido;
     }
 
     public boolean exigeMfa(PersonaRole role) {

@@ -54,6 +54,9 @@ public class PublicPaths {
         adicionar("POST", "/api/companies/register");
         adicionar("/api/companies/invite/*");
         adicionar("/api/companies/invite/*/accept");
+        // Convite de assessor ADMIN_SISTEMA (adminRoutes.js) — o token opaco é a autorização.
+        adicionar("GET", "/api/admin/invite/*");
+        adicionar("POST", "/api/admin/invite/*/accept");
         // supplierDevRoutes.js — candidatura e a sua consulta pública são
         // abertas; GET /requests (listagem do Admin do Sistema) partilha o
         // MESMO caminho de POST /requests (candidatar) mas fica de fora —
