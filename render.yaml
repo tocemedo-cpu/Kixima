@@ -227,6 +227,16 @@ services:
         sync: false
       - key: STORAGE_BACKUP_BUCKET
         sync: false
+      # Omissões diferentes do Node (que decide sozinho, por ter um só
+      # STORAGE_ENDPOINT): fixar explicitamente para não depender disso
+      # (docs/migracao-java/M8-CUTOVER.md §2.2).
+      - key: STORAGE_FORCE_PATH_STYLE
+        value: "true"
+      # Cabeçalho ProductVersion do SAF-T: o Node usa npm_package_version
+      # (0.1.0); sem isto o Java assumia "1.0" e o SAF-T mudaria de versão a
+      # meio de uma série no cutover (M8-CUTOVER.md §2.1).
+      - key: KIXIMA_VERSAO
+        value: "0.1.0"
       # --- Integração ERP (OPCIONAL) — como no serviço Node ------------------
       - key: RABBITMQ_EXCHANGE
         value: kixima.events
@@ -242,6 +252,13 @@ services:
         sync: false
       # --- AGT (e-Fatura) — as mesmas notas do serviço Node; o Secret File
       # /etc/secrets/chavePrivada.pem também é lido aqui (AgtPrivateKeyLoader).
+      # SEM isto, o Java cai no seu próprio caminho por omissão dentro do jar
+      # (src/main/resources/chave/chavePrivada.pem, que não existe em
+      # produção) em vez de olhar para o Secret File do Render — criar o
+      # Secret File "chavePrivada.pem" neste serviço (Environment → Secret
+      # Files) ANTES do primeiro deploy (M8-CUTOVER.md §2.4/§3.1).
+      - key: AGT_JWS_PRIVATE_KEY_PATH
+        value: /etc/secrets/chavePrivada.pem
       - key: AGT_JWS_PRIVATE_KEY_BASE64
         sync: false
       - key: AGT_SOFTWARE_VALIDATION_NUMBER
