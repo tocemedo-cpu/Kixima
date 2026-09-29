@@ -30,27 +30,21 @@ describe('menu do comprador', () => {
   });
 });
 
-describe('menu "Chat" — comum a todas as personas com COMMON_TAIL', () => {
+// Suporte — Chat, Suporte — Feedback e Chat Comercial não têm item próprio na
+// sidebar (nem solto, nem agrupado num menu "Chat") — vivem como botões
+// dentro da página Ajuda (ver Help.jsx, atalhos "hs-quickcard"). Só "Ajuda"
+// fica no rodapé comum a todas as personas.
+describe('COMMON_TAIL — Suporte/Chat Comercial vivem em Ajuda, não na sidebar', () => {
   test.each(['COMPRADOR', 'COMPANY_ADMIN', 'FORNECEDOR', 'FINANCEIRO'])(
-    '%s tem um menu "Chat" agrupando Suporte — Chat, Suporte — Feedback e Chat Comercial',
+    '%s não tem "Chat", "Suporte — Chat", "Suporte — Feedback" nem "Chat Comercial" na sidebar',
     (papel) => {
       const menu = SIDEBAR_MENUS[papel];
-      const chat = menu.find((m) => m.label === 'Chat');
-      expect(chat).toBeTruthy();
-      const childLabels = (chat.children || []).map((c) => c.label);
-      expect(childLabels).toEqual(['Suporte — Chat', 'Suporte — Feedback', 'Chat Comercial']);
-      // Os contadores de não lidas continuam nos filhos certos.
-      const byLabel = Object.fromEntries(chat.children.map((c) => [c.label, c.badge]));
-      expect(byLabel['Suporte — Chat']).toBe('suporte');
-      expect(byLabel['Chat Comercial']).toBe('chatComercial');
+      for (const label of ['Chat', 'Suporte — Chat', 'Suporte — Feedback', 'Chat Comercial']) {
+        expect(menu.find((m) => m.label === label)).toBeUndefined();
+      }
+      expect(menu.find((m) => m.label === 'Ajuda')).toBeTruthy();
     },
   );
-
-  test('já não existem "Suporte — Chat"/"Chat Comercial" soltos ao nível de topo', () => {
-    const COMPRADOR = SIDEBAR_MENUS.COMPRADOR;
-    expect(COMPRADOR.find((m) => m.label === 'Suporte — Chat')).toBeUndefined();
-    expect(COMPRADOR.find((m) => m.label === 'Chat Comercial')).toBeUndefined();
-  });
 });
 
 describe('menus por papel', () => {

@@ -1965,8 +1965,6 @@ tbody tr:hover {
 .sb-subitem:hover .sb-dot { background: rgba(255,255,255,0.8); }
 .sb-subitem.sb-active { color: var(--sobre-cta); background: var(--sb-active); }
 .sb-subitem.sb-active .sb-dot { background: var(--branco); }
-.sb-subitem .sb-badge { margin-left: auto; }
-.sb-subitem.sb-active .sb-badge { background: rgba(255,255,255,0.25); }
 
 /* Rodapé — utilizador */
 .sb-user {

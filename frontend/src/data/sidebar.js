@@ -8,18 +8,12 @@
 
 // Itens comuns ao rodapé de todas as personas.
 //
-// Suporte — Chat, Suporte — Feedback e Chat Comercial viviam soltos aqui, três
-// entradas ao mesmo nível; agora vivem dentro de um único menu "Chat". Os
-// contadores de não lidas (badge) continuam nos filhos exactamente como
-// estavam — só a moldura à volta é que mudou.
+// Suporte — Chat, Suporte — Feedback e Chat Comercial deixaram de ter item
+// próprio na sidebar — não formam um menu à parte. Os três vivem agora como
+// botões dentro da página Ajuda (Help.jsx, cartões "hs-quickcard", o mesmo
+// padrão já usado por "Perguntas Frequentes"/"Contato com Suporte"/"Tickets
+// Abertos"), alcançável a partir do único item "Ajuda" abaixo.
 const COMMON_TAIL = [
-  {
-    label: 'Chat', icon: 'chat', badge: 'chatTotal', children: [
-      { label: 'Suporte — Chat', to: '/suporte/chat', badge: 'suporte' },
-      { label: 'Suporte — Feedback', to: '/suporte/feedback' },
-      { label: 'Chat Comercial', to: '/mensagens/chat-comercial', badge: 'chatComercial' },
-    ],
-  },
   { label: 'Ajuda', icon: 'help', to: '/ajuda' },
   { label: 'Sair', icon: 'logout', action: 'logout' },
 ];

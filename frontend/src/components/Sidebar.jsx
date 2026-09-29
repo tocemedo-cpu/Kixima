@@ -16,11 +16,7 @@ export default function Sidebar({ items, cartCount = 0, badges = {}, grupo, onLo
     const n = badges[item.badge];
     return n > 0 ? n : null;
   };
-  // Um acordeão conta como "apoio" quando TODOS os seus filhos já eram — é o
-  // caso do menu Chat (Suporte — Chat/Feedback, Chat Comercial), que antes
-  // eram três itens soltos aqui reconhecidos um a um pelo `to`.
-  const isTail = (item) => item.action === 'logout' || TAIL_PATHS.has(item.to)
-    || (item.children?.length > 0 && item.children.every((c) => TAIL_PATHS.has(c.to)));
+  const isTail = (item) => item.action === 'logout' || TAIL_PATHS.has(item.to);
   const main = items.filter((i) => !isTail(i));
   const tail = items.filter(isTail);
 
@@ -34,7 +30,6 @@ export default function Sidebar({ items, cartCount = 0, badges = {}, grupo, onLo
             item={item}
             num={i + 1}
             badge={badgeFor(item)}
-            badgeFor={badgeFor}
             onLogout={onLogout}
             onNavigate={onNavigate}
           />
@@ -44,7 +39,7 @@ export default function Sidebar({ items, cartCount = 0, badges = {}, grupo, onLo
       <div className="sb-tail">
         <div className="sb-grupo g">{t('Apoio')}</div>
         {tail.map((item, i) => (
-          <SidebarItem key={item.to || item.label || i} item={item} badge={badgeFor(item)} badgeFor={badgeFor} onLogout={onLogout} onNavigate={onNavigate} />
+          <SidebarItem key={item.to || item.label || i} item={item} badge={badgeFor(item)} onLogout={onLogout} onNavigate={onNavigate} />
         ))}
       </div>
     </aside>

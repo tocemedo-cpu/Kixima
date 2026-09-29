@@ -142,14 +142,9 @@ export default function Catalog() {
       <PageHead
         title="Produtos"
         actions={(
-          <>
-            <button className="btn btn-ghost btn-sm" disabled={compare.length < 2} onClick={() => setShowCompare(true)}>
-              <Icon name="report" size={14} /> {t('Comparar')} ({compare.length})
-            </button>
-            <Link className="btn btn-accent btn-sm" to="/comprador/checkout">
-              <Icon name="checkout" size={14} /> {t('Checkout')}
-            </Link>
-          </>
+          <button className="btn btn-ghost btn-sm" disabled={compare.length < 2} onClick={() => setShowCompare(true)}>
+            <Icon name="report" size={14} /> {t('Comparar')} ({compare.length})
+          </button>
         )}
       />
       <RouteTabs items={[

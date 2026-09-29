@@ -2,6 +2,7 @@
 // Ajuda & Suporte — base de conhecimento, canais de suporte, estado do sistema
 // e pedidos de suporte (tickets) do utilizador, ligados a /api/support.
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
 import { Icon } from '../../components/icons';
@@ -27,8 +28,13 @@ export default function Help() {
 
 function HelpUser() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [ov, setOv] = useState(null);
   const [tickets, setTickets] = useState([]);
+  // Não lidas de Suporte — Chat e Chat Comercial, para os atalhos abaixo
+  // mostrarem o mesmo badge que tinham quando eram itens próprios da sidebar.
+  const [suporteNaoLidas, setSuporteNaoLidas] = useState(0);
+  const [comercialNaoLidas, setComercialNaoLidas] = useState(0);
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');      // termo efetivamente pesquisado
   const [modal, setModal] = useState(false);
@@ -45,6 +51,10 @@ function HelpUser() {
     api.get('/api/support/tickets').then(setTickets).catch(() => {});
   }
   useEffect(reload, []);
+  useEffect(() => {
+    api.get('/api/support/unread-count').then((d) => setSuporteNaoLidas(d.count || 0)).catch(() => {});
+    api.get('/api/conversations/unread-count').then((d) => setComercialNaoLidas(d.count || 0)).catch(() => {});
+  }, []);
 
   // Upload da imagem de uma categoria (apenas Administrador do Sistema).
   function pickImage(key) { setUploadKey(key); fileRef.current?.click(); }
@@ -73,6 +83,11 @@ function HelpUser() {
     { k: 'quick_kb', i: 'catalog', t: t('Perguntas Frequentes'), s: t('{n} respostas disponíveis', { n: faqCount }), act: () => scrollTo(catsRef) },
     { k: 'quick_contact', i: 'help', t: t('Contato com Suporte'), s: t('Abra um pedido de suporte'), act: () => setModal(true) },
     { k: 'quick_tickets', i: 'invoice', t: t('Tickets Abertos'), s: t('Acompanhe os seus pedidos'), badge: ov?.openTickets, act: () => scrollTo(ticketsRef) },
+    // Suporte — Chat, Suporte — Feedback e Chat Comercial: não têm item
+    // próprio na sidebar, vivem aqui como atalhos, tal como o resto desta lista.
+    { k: 'quick_suporte_chat', i: 'chat', t: t('Suporte — Chat'), s: t('Fale em tempo real com a equipa de suporte'), badge: suporteNaoLidas, act: () => navigate('/suporte/chat') },
+    { k: 'quick_suporte_feedback', i: 'report', t: t('Suporte — Feedback'), s: t('Avalie a plataforma e dê a sua opinião'), act: () => navigate('/suporte/feedback') },
+    { k: 'quick_chat_comercial', i: 'chat', t: t('Chat Comercial'), s: t('Converse com fornecedores e compradores sobre negócios'), badge: comercialNaoLidas, act: () => navigate('/mensagens/chat-comercial') },
   ];
 
   return (

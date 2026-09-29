@@ -4,7 +4,7 @@
 import { NavLink } from 'react-router-dom';
 import { useI18n } from '../i18n';
 
-export default function SidebarSubItem({ item, badge, onNavigate }) {
+export default function SidebarSubItem({ item, onNavigate }) {
   const { t } = useI18n();
   return (
     <NavLink
@@ -15,7 +15,6 @@ export default function SidebarSubItem({ item, badge, onNavigate }) {
     >
       <span className="sb-dot" aria-hidden="true" />
       <span>{t(item.label)}</span>
-      {badge ? <span className="sb-badge">{badge}</span> : null}
     </NavLink>
   );
 }
