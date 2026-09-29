@@ -30,6 +30,36 @@ describe('menu do comprador', () => {
   });
 });
 
+// O Fornecedor tinha 9 itens de topo + 7 acordeões (27 destinos). Cada
+// acordeão colapsou num único link; os seus destinos viraram botões (RouteTabs)
+// dentro das páginas do grupo (CatalogManage/CatalogImport/CatalogInsights/
+// Kits, Inventory/StockMovements, OrdersReceived/SupplierQuotes/OrderHistory,
+// Invoices/Payments/Wallet, Documents, ProductRanking/Reports).
+describe('menu do fornecedor', () => {
+  const FORNECEDOR = SIDEBAR_MENUS.FORNECEDOR;
+
+  test('nenhum item tem `children` — todos os acordeões colapsaram em links directos', () => {
+    for (const item of FORNECEDOR) expect(item.children).toBeUndefined();
+  });
+
+  test('"API de catálogo" foi eliminada — não é alcançável a partir de nenhum item', () => {
+    const labels = FORNECEDOR.map((m) => m.label);
+    const tos = FORNECEDOR.map((m) => m.to);
+    expect(labels).not.toContain('API de catálogo');
+    expect(tos).not.toContain('/fornecedor/api');
+  });
+
+  test('Catálogo, Inventário, Ordens, Faturas, Documentação e Relatórios são links directos aos destinos certos', () => {
+    const byLabel = Object.fromEntries(FORNECEDOR.map((m) => [m.label, m.to]));
+    expect(byLabel['Catálogo']).toBe('/fornecedor/catalogo');
+    expect(byLabel['Inventário']).toBe('/fornecedor/inventario/stock');
+    expect(byLabel['Ordens']).toBe('/fornecedor/ordens');
+    expect(byLabel['Faturas']).toBe('/fornecedor/faturas');
+    expect(byLabel['Documentação']).toBe('/fornecedor/documentacao/certificacoes');
+    expect(byLabel['Relatórios']).toBe('/fornecedor/relatorios/estatisticas');
+  });
+});
+
 // Suporte — Chat, Suporte — Feedback e Chat Comercial não têm item próprio na
 // sidebar (nem solto, nem agrupado num menu "Chat") — vivem como botões
 // dentro da página Ajuda (ver Help.jsx, atalhos "hs-quickcard"). Só "Ajuda"

@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import Badge from '../../components/Badge';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
+import { PEDIDOS_TABS } from './menuTabs';
 
 const CLOSED = new Set(['CONCLUIDA', 'RECEBIDA_CONFORME', 'RECEBIDA_COM_DIVERGENCIA']);
 
@@ -28,6 +30,7 @@ export default function OrderHistory() {
   return (
     <div>
       <PageHeader title="Pedidos — Histórico" subtitle="Ordens de compra já concluídas ou recebidas." />
+      <RouteTabs items={PEDIDOS_TABS} />
       {closed.length === 0 ? (
         <div className="empty-state"><h3>{t('Sem histórico')}</h3><p>{t('Ordens concluídas aparecem aqui.')}</p></div>
       ) : (

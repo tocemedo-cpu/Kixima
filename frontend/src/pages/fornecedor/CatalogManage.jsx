@@ -7,11 +7,13 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import { formatMoney, PRODUCT_AVAILABILITY } from '../../domain';
 import ProductCover from '../../components/ProductCover';
 import { Icon } from '../../components/icons';
 import { useI18n } from '../../i18n';
 import { UNSPSC_ITEMS } from '../../data/unspscCatalog';
+import { CATALOGO_TABS } from './menuTabs';
 
 // IVA (lei angolana): 14% sobre tudo (produtos e serviços). Indicador no
 // formulário; o cálculo autoritativo é feito no backend (taxService).
@@ -364,6 +366,7 @@ export default function CatalogManage() {
           </div>
         }
       />
+      <RouteTabs items={CATALOGO_TABS} />
 
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />

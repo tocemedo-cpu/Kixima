@@ -6,9 +6,11 @@ import { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import Badge from '../../components/Badge';
 import { formatDate, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
+import { PEDIDOS_TABS } from './menuTabs';
 
 const STATUS = {
   ABERTA: { label: 'Aberta', tone: 'pending' },
@@ -38,6 +40,7 @@ export default function SupplierQuotes() {
         title={isInbox ? 'Pedidos — Solicitações' : 'Pedidos — Cotações'}
         subtitle={isInbox ? 'Pedidos de cotação recebidos que aguardam a sua resposta.' : 'Cotações que já respondeu.'}
       />
+      <RouteTabs items={PEDIDOS_TABS} />
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 

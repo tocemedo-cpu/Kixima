@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
 import DataTable from '../../components/DataTable';
-import { Pagination } from '../../components/BuyerUI';
+import { Pagination, RouteTabs } from '../../components/BuyerUI';
 import Badge from '../../components/Badge';
 import { INVOICE_STATUS, formatDate, formatMoney } from '../../domain';
+import { FINANCEIRO_TABS } from './menuTabs';
 
 export default function SupplierInvoices() {
   const [data, setData] = useState(null);
@@ -31,6 +32,7 @@ export default function SupplierInvoices() {
         title="Faturas"
         subtitle="Geradas automaticamente quando aceita uma PO — apenas consulta."
       />
+      <RouteTabs items={FINANCEIRO_TABS} />
 
       <div className="card">
         <DataTable

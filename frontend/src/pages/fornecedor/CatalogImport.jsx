@@ -6,7 +6,9 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import { useI18n } from '../../i18n';
+import { CATALOGO_TABS } from './menuTabs';
 
 export default function CatalogImport() {
   const { t } = useI18n();
@@ -42,6 +44,7 @@ export default function CatalogImport() {
   return (
     <div>
       <PageHeader title="Importar catálogo (Excel)" subtitle="Carregue muitos produtos e serviços de uma só vez, a partir de uma folha de cálculo." />
+      <RouteTabs items={CATALOGO_TABS} />
 
       <ErrorBanner message={error} />
       {semAcesso ? (

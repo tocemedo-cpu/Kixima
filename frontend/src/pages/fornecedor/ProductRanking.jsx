@@ -5,8 +5,10 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, JanelaDoHistorico } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import { formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
+import { RELATORIOS_TABS } from './menuTabs';
 
 export default function ProductRanking() {
   const { t } = useI18n();
@@ -32,6 +34,7 @@ export default function ProductRanking() {
         title={isViewed ? 'Relatórios — Produtos mais vistos' : 'Relatórios — Produtos mais vendidos'}
         subtitle={isViewed ? 'Ranking dos produtos com mais visualizações de compradores.' : 'Ranking dos produtos com mais unidades vendidas.'}
       />
+      <RouteTabs items={RELATORIOS_TABS} />
 
       {/* Só o ranking de VENDAS respeita a janela do plano. As visualizações
           vêm de um contador corrido, sem datas — não há por onde cortá-las, e

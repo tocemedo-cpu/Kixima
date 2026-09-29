@@ -3,10 +3,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
+import { PEDIDOS_TABS } from './menuTabs';
 
 export default function OrdersReceived() {
   const { t } = useI18n();
@@ -25,6 +27,7 @@ export default function OrdersReceived() {
         title="Ordens de Compra Recebidas"
         subtitle="Aceite ou recuse novas POs; acompanhe o estado até à entrega."
       />
+      <RouteTabs items={PEDIDOS_TABS} />
       <ErrorBanner message={error} />
 
       <div className="field" style={{ maxWidth: 260, marginBottom: 16 }}>

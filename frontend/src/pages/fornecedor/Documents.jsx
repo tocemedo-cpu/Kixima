@@ -6,8 +6,15 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { useI18n } from '../../i18n';
+
+const DOCUMENTACAO_TABS = [
+  { label: 'Certificados de Produto', to: '/fornecedor/documentacao/certificacoes' },
+  { label: 'Catálogos PDF', to: '/fornecedor/documentacao/catalogos' },
+  { label: 'Fichas Técnicas', to: '/fornecedor/documentacao/fichas' },
+];
 
 const PRODUCT_DOC_LABELS = {
   FICHA_TECNICA: 'Ficha Técnica', DATASHEET: 'Datasheet', MANUAL: 'Manual',
@@ -55,6 +62,7 @@ export default function Documents() {
         title={`${t('Documentação')} — ${t(view.title)}`}
         subtitle="Todos os documentos técnicos dos seus produtos e o credenciamento da empresa num só sítio."
       />
+      <RouteTabs items={DOCUMENTACAO_TABS} />
 
       {empty ? (
         <div className="empty-state">

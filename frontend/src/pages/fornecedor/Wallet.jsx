@@ -5,9 +5,11 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
 import { PageHeader, Loading, ErrorBanner, StatCard } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import Badge from '../../components/Badge';
 import { PO_STATUS, formatDate, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
+import { FINANCEIRO_TABS } from './menuTabs';
 
 const RECEIVED = new Set(['PAGA', 'EM_EXECUCAO', 'ENTREGUE', 'RECEBIDA_CONFORME', 'RECEBIDA_COM_DIVERGENCIA', 'CONCLUIDA']);
 const PENDING = new Set(['ACEITE_FORNECEDOR', 'AGUARDANDO_PAGAMENTO']);
@@ -44,6 +46,7 @@ export default function Wallet() {
   return (
     <div>
       <PageHeader title="Financeiro — Carteira" subtitle="A sua posição financeira na plataforma." />
+      <RouteTabs items={FINANCEIRO_TABS} />
 
       <div className="grid-cols grid-3" style={{ marginBottom: 18 }}>
         <StatCard label="Já recebido" value={formatMoney(received)} sub="Ordens pagas ou em execução" />

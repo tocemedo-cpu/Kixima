@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import { formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
+import { CATALOGO_TABS } from './menuTabs';
 
 export default function Kits() {
   const { t } = useI18n();
@@ -71,6 +73,7 @@ export default function Kits() {
         subtitle="Agrupe produtos num pacote para venda conjunta."
         action={<button className="btn btn-accent" onClick={() => { setShowForm((v) => !v); if (showForm) resetForm(); }}>{showForm ? t('Cancelar') : t('+ Novo kit')}</button>}
       />
+      <RouteTabs items={CATALOGO_TABS} />
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 

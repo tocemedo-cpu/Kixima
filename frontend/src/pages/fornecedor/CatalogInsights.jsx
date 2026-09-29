@@ -7,8 +7,10 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import { formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
+import { CATALOGO_TABS, INVENTARIO_TABS } from './menuTabs';
 
 // Categorias tratadas como "serviço" (não têm stock físico).
 const SERVICE_CATEGORIES = new Set([
@@ -62,6 +64,10 @@ export default function CatalogInsights() {
   return (
     <div>
       <PageHeader title={title} subtitle="Baseado nos produtos publicados pela sua empresa." />
+      {/* Armazéns é do grupo Inventário; Categorias/Marcas/Promoções são do
+          grupo Catálogo — o mesmo componente serve os dois, cada um com os
+          botões do seu próprio grupo. */}
+      <RouteTabs items={seg === 'armazens' ? INVENTARIO_TABS : CATALOGO_TABS} />
       {renderView(seg, grouped, title, t)}
     </div>
   );

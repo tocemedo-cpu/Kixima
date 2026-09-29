@@ -18,88 +18,26 @@ const COMMON_TAIL = [
   { label: 'Sair', icon: 'logout', action: 'logout' },
 ];
 
-// Estrutura ERP completa da visão do Fornecedor (SAP Ariba / Oracle-like).
+// Estrutura do Fornecedor. Já foi uma árvore de ERP (SAP Ariba/Oracle-like) —
+// nove itens de topo, sete acordeões, 27 entradas. Cada acordeão colapsou num
+// único link; os seus destinos passaram a botões (RouteTabs) DENTRO das
+// páginas do próprio grupo, tal como no Comprador (Catálogo/Ordens de Compra).
+// "API de catálogo" foi eliminada (deixou de ter botão nem rota alcançável
+// daqui). "Configurações" fica só como link — Perfil/Segurança/Notificações
+// são páginas partilhadas por todas as personas, não exclusivas do Fornecedor.
 const FORNECEDOR = [
   { label: 'Dashboard', icon: 'home', to: '/fornecedor', end: true },
-
-  // AS TRÊS DO DIA A DIA, à vista.
-  //
-  // O resto do menu são 27 entradas dentro de sete acordeões — uma estrutura
-  // de ERP, correta para quem a conhece e cara para quem a usa todos os dias:
-  // aceitar uma ordem custava abrir "Pedidos" e escolher entre quatro.
-  //
-  // Continuam nos acordeões de onde vieram, e isso é deliberado: quem já
-  // aprendeu o caminho antigo não o perde. A duplicação é o preço de não
-  // reeducar ninguém.
-  //
-  // Estas três são o CICLO COMPLETO do fornecedor — publicar, receber a ordem,
-  // ser pago. Numa versão anterior estava aqui "Stock" em vez de "Faturas";
-  // stock é manutenção do catálogo (e chega-se lá por Produtos), enquanto a
-  // fatura é o fim da linha de cada venda. Não ter as faturas à vista deixava
-  // o percurso do dinheiro a ser o único dos três que ficava escondido.
   { label: 'Catálogo', icon: 'catalog', to: '/fornecedor/catalogo', end: true },
+  { label: 'Inventário', icon: 'warehouse', to: '/fornecedor/inventario/stock' },
   { label: 'Ordens', icon: 'orders', to: '/fornecedor/ordens' },
   { label: 'Faturas', icon: 'invoice', to: '/fornecedor/faturas' },
-
-  // O Perfil da Empresa é a tela do Company Admin — não aparece aqui. O Vendedor
-  // vê a empresa em que está pelo seu perfil pessoal (/perfil).
-  {
-    label: 'Catálogo', icon: 'catalog', children: [
-      { label: 'Produtos & Serviços', to: '/fornecedor/catalogo' },
-      { label: 'Importar (Excel)', to: '/fornecedor/catalogo/importar' },
-      { label: 'API de catálogo', to: '/fornecedor/api' },
-      { label: 'Categorias', to: '/fornecedor/catalogo/categorias' },
-      { label: 'Marcas', to: '/fornecedor/catalogo/marcas' },
-      { label: 'Kits', to: '/fornecedor/catalogo/kits' },
-      { label: 'Promoções', to: '/fornecedor/catalogo/promocoes' },
-    ],
-  },
-  {
-    label: 'Inventário', icon: 'warehouse', children: [
-      { label: 'Stock', to: '/fornecedor/inventario/stock' },
-      { label: 'Entradas', to: '/fornecedor/inventario/entradas' },
-      { label: 'Saídas', to: '/fornecedor/inventario/saidas' },
-      { label: 'Armazéns', to: '/fornecedor/inventario/armazens' },
-    ],
-  },
-  {
-    label: 'Pedidos', icon: 'orders', children: [
-      { label: 'Solicitações', to: '/fornecedor/pedidos/solicitacoes' },
-      { label: 'Cotações', to: '/fornecedor/pedidos/cotacoes' },
-      { label: 'Ordens', to: '/fornecedor/ordens' },
-      { label: 'Histórico', to: '/fornecedor/pedidos/historico' },
-    ],
-  },
-  {
-    label: 'Financeiro', icon: 'wallet', children: [
-      { label: 'Pagamentos', to: '/fornecedor/pagamentos' },
-      { label: 'Faturas', to: '/fornecedor/faturas' },
-      { label: 'Carteira', to: '/fornecedor/financeiro/carteira' },
-    ],
-  },
   {
     // Documentação de produto (o vendedor gere o catálogo). Os documentos da
     // EMPRESA (licenças/alvarás) são geridos apenas pelo Company Admin.
-    label: 'Documentação', icon: 'contract', children: [
-      { label: 'Certificados de Produto', to: '/fornecedor/documentacao/certificacoes' },
-      { label: 'Catálogos PDF', to: '/fornecedor/documentacao/catalogos' },
-      { label: 'Fichas Técnicas', to: '/fornecedor/documentacao/fichas' },
-    ],
+    label: 'Documentação', icon: 'contract', to: '/fornecedor/documentacao/certificacoes',
   },
-  {
-    label: 'Relatórios', icon: 'report', children: [
-      { label: 'Produtos mais vistos', to: '/fornecedor/relatorios/mais-vistos' },
-      { label: 'Produtos mais vendidos', to: '/fornecedor/relatorios/mais-vendidos' },
-      { label: 'Estatísticas', to: '/fornecedor/relatorios/estatisticas' },
-    ],
-  },
-  {
-    label: 'Configurações', icon: 'settings', children: [
-      { label: 'Perfil', to: '/perfil' },
-      { label: 'Segurança', to: '/seguranca' },
-      { label: 'Notificações', to: '/notificacoes' },
-    ],
-  },
+  { label: 'Relatórios', icon: 'report', to: '/fornecedor/relatorios/estatisticas' },
+  { label: 'Configurações', icon: 'settings', to: '/perfil' },
   ...COMMON_TAIL,
 ];
 

@@ -6,8 +6,10 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner , Field } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import { formatDateTime } from '../../domain';
 import { useI18n } from '../../i18n';
+import { INVENTARIO_TABS } from './menuTabs';
 
 export default function StockMovements() {
   const { t } = useI18n();
@@ -69,6 +71,7 @@ export default function StockMovements() {
   return (
     <div>
       <PageHeader title={`${t('Inventário')} — ${t(title)}`} subtitle={isEntrada ? 'Registe entradas em armazém (aumentam o stock).' : 'Registe saídas de armazém (reduzem o stock).'} />
+      <RouteTabs items={INVENTARIO_TABS} />
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 

@@ -7,9 +7,11 @@ import { useAuth } from '../../auth/AuthContext';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, SuccessBanner, StatCard } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import Badge from '../../components/Badge';
 import { useI18n } from '../../i18n';
 import { PRODUCT_AVAILABILITY } from '../../domain';
+import { INVENTARIO_TABS } from './menuTabs';
 
 const isLow = (p) => p.stockQuantity != null && p.minStock != null && p.stockQuantity <= p.minStock;
 
@@ -67,6 +69,7 @@ export default function Inventory() {
   return (
     <div>
       <PageHeader title="Inventário — Stock" subtitle="Gira as quantidades em armazém dos seus produtos." />
+      <RouteTabs items={INVENTARIO_TABS} />
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 

@@ -5,9 +5,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner, StatCard, JanelaDoHistorico } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import Badge from '../../components/Badge';
 import { PO_STATUS, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
+import { RELATORIOS_TABS } from './menuTabs';
 
 export default function Reports() {
   const { t } = useI18n();
@@ -27,6 +29,7 @@ export default function Reports() {
   return (
     <div>
       <PageHeader title="Relatórios — Estatísticas" subtitle="Visão geral do desempenho da sua empresa na plataforma." />
+      <RouteTabs items={RELATORIOS_TABS} />
 
       <JanelaDoHistorico janela={stats.janela} />
 

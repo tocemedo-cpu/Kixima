@@ -7,10 +7,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { PageHeader, Loading, ErrorBanner } from '../../components/Common';
+import { RouteTabs } from '../../components/BuyerUI';
 import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
 import { formatDate, formatDateTime, formatMoney } from '../../domain';
 import { useI18n } from '../../i18n';
+import { FINANCEIRO_TABS } from './menuTabs';
 
 export default function SupplierPayments() {
   const { t } = useI18n();
@@ -49,6 +51,7 @@ export default function SupplierPayments() {
     <div>
       {toast ? <div className="svc-toast">{toast}</div> : null}
       <PageHeader title="Pagamentos Recebidos" subtitle="Comprovativos anexados pelo cliente — confirme quando o valor entrar na sua conta." />
+      <RouteTabs items={FINANCEIRO_TABS} />
       <ErrorBanner message={error} />
 
       <div className="card">
