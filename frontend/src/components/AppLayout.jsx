@@ -136,7 +136,12 @@ export default function AppLayout() {
 
       <Sidebar
         items={items} cartCount={cartCount}
-        badges={{ suporte: suporteNaoLidas, chatComercial: comercialNaoLidas, alertas: alertasAbertos }}
+        badges={{
+          suporte: suporteNaoLidas, chatComercial: comercialNaoLidas, alertas: alertasAbertos,
+          // Soma do que os dois destinos dentro do menu "Chat" mostram — o
+          // pai colapsado precisa de um número próprio para não ficar mudo.
+          chatTotal: suporteNaoLidas + comercialNaoLidas,
+        }}
         grupo={ROLE_LABELS[user.role]}
         onLogout={logout} onNavigate={() => setMenuOpen(false)}
       />

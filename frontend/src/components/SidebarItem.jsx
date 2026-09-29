@@ -14,7 +14,7 @@ function moduleIsActive(children, pathname) {
   return children.some((c) => pathname === c.to || pathname.startsWith(c.to + '/'));
 }
 
-export default function SidebarItem({ item, badge, num, onLogout, onNavigate }) {
+export default function SidebarItem({ item, badge, num, badgeFor, onLogout, onNavigate }) {
   const { pathname } = useLocation();
   const { t } = useI18n();
   const numEl = num ? <span className="sb-num">{num}.</span> : null;
@@ -31,7 +31,7 @@ export default function SidebarItem({ item, badge, num, onLogout, onNavigate }) 
 
   // Accordion (tem submenus).
   if (item.children?.length) {
-    return <AccordionItem item={item} pathname={pathname} num={num} onNavigate={onNavigate} />;
+    return <AccordionItem item={item} pathname={pathname} num={num} badge={badge} badgeFor={badgeFor} onNavigate={onNavigate} />;
   }
 
   // Link direto.
@@ -50,7 +50,7 @@ export default function SidebarItem({ item, badge, num, onLogout, onNavigate }) 
   );
 }
 
-function AccordionItem({ item, pathname, num, onNavigate }) {
+function AccordionItem({ item, pathname, num, badge, badgeFor, onNavigate }) {
   const { t } = useI18n();
   const active = moduleIsActive(item.children, pathname);
   // Abre por defeito quando a rota atual pertence ao módulo; o utilizador pode
@@ -73,6 +73,7 @@ function AccordionItem({ item, pathname, num, onNavigate }) {
         {num ? <span className="sb-num">{num}.</span> : null}
         <Icon name={item.icon} size={18} className="sb-ico" />
         <span>{t(item.label)}</span>
+        {badge ? <span className="sb-badge">{badge}</span> : null}
         <Icon name="chevron" size={15} className={`sb-arrow${open ? ' sb-arrow-open' : ''}`} />
       </button>
 
@@ -80,7 +81,7 @@ function AccordionItem({ item, pathname, num, onNavigate }) {
       <div className={`sb-sub-wrap${open ? ' open' : ''}`}>
         <div className="sb-sub-inner">
           {item.children.map((child) => (
-            <SidebarSubItem key={child.to} item={child} onNavigate={onNavigate} />
+            <SidebarSubItem key={child.to} item={child} badge={badgeFor ? badgeFor(child) : null} onNavigate={onNavigate} />
           ))}
         </div>
       </div>

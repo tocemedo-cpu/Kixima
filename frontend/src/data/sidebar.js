@@ -7,10 +7,19 @@
 // Para adicionar/alterar menus basta editar este ficheiro — nada de código novo.
 
 // Itens comuns ao rodapé de todas as personas.
+//
+// Suporte — Chat, Suporte — Feedback e Chat Comercial viviam soltos aqui, três
+// entradas ao mesmo nível; agora vivem dentro de um único menu "Chat". Os
+// contadores de não lidas (badge) continuam nos filhos exactamente como
+// estavam — só a moldura à volta é que mudou.
 const COMMON_TAIL = [
-  { label: 'Suporte — Chat', icon: 'chat', to: '/suporte/chat', badge: 'suporte' },
-  { label: 'Suporte — Feedback', icon: 'report', to: '/suporte/feedback' },
-  { label: 'Chat Comercial', icon: 'chat', to: '/mensagens/chat-comercial', badge: 'chatComercial' },
+  {
+    label: 'Chat', icon: 'chat', badge: 'chatTotal', children: [
+      { label: 'Suporte — Chat', to: '/suporte/chat', badge: 'suporte' },
+      { label: 'Suporte — Feedback', to: '/suporte/feedback' },
+      { label: 'Chat Comercial', to: '/mensagens/chat-comercial', badge: 'chatComercial' },
+    ],
+  },
   { label: 'Ajuda', icon: 'help', to: '/ajuda' },
   { label: 'Sair', icon: 'logout', action: 'logout' },
 ];
@@ -110,24 +119,18 @@ const CONFIG = {
 };
 
 // Comprador — descobrir, encomendar e acompanhar (não gere catálogo próprio).
+//
+// Catálogo e Ordens de Compra deixaram de ter submenu na sidebar: Produtos/
+// Serviços e Todas as Ordens/Acompanhar Entrega/Recepção passaram a ser
+// botões DENTRO de cada página (RouteTabs, ver Catalog.jsx/Services.jsx e
+// Orders.jsx/Deliveries.jsx/Receptions.jsx). Checkout deixou de ser item de
+// menu — vive como botão dentro do Catálogo (e continua alcançável a partir
+// da Cesta, como sempre esteve).
 const COMPRADOR = [
   { label: 'Home Marketplace', icon: 'home', to: '/comprador', end: true },
-  { label: 'Explorar / Pesquisa', icon: 'search', to: '/comprador/explorar' },
-  {
-    label: 'Catálogo', icon: 'catalog', children: [
-      { label: 'Produtos', to: '/comprador/catalogo' },
-      { label: 'Serviços', to: '/comprador/servicos' },
-    ],
-  },
+  { label: 'Catálogo', icon: 'catalog', to: '/comprador/catalogo' },
   { label: 'Minha Cesta', icon: 'cart', to: '/comprador/cesta', badge: 'cart' },
-  { label: 'Checkout', icon: 'checkout', to: '/comprador/checkout' },
-  {
-    label: 'Ordens de Compra', icon: 'orders', children: [
-      { label: 'Todas as Ordens', to: '/comprador/ordens' },
-      { label: 'Acompanhar Entrega', to: '/comprador/entregas' },
-      { label: 'Recepção', to: '/comprador/recepcao' },
-    ],
-  },
+  { label: 'Ordens de Compra', icon: 'orders', to: '/comprador/ordens' },
   { label: 'Pagamento', icon: 'payment', to: '/comprador/pagamentos' },
   { label: 'Fornecedores', icon: 'suppliers', to: '/comprador/fornecedores' },
   { label: 'Economia de Escala', icon: 'chart', to: '/comprador/economia-de-escala' },

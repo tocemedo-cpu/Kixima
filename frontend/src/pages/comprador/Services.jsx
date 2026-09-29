@@ -4,9 +4,10 @@
 // backend, favoritos persistidos e avaliações reais. Skeleton + estados de
 // erro/vazio. Estética alinhada com o mockup aprovado.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api/client';
 import ProductCover from '../../components/ProductCover';
+import { RouteTabs } from '../../components/BuyerUI';
 import { Icon, Stars } from '../../components/icons';
 import { formatMoney, formatNumber } from '../../domain';
 import { useI18n } from '../../i18n';
@@ -119,7 +120,16 @@ export default function Services() {
       {toast ? <div className="svc-toast">{toast}</div> : null}
 
       <div className="svc-crumbs">{t('Home')} <span>›</span> {t('Catálogo')} <span>›</span> <strong>{t('Serviços')}</strong></div>
-      <h1 className="svc-title">{t('Serviços')}</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <h1 className="svc-title">{t('Serviços')}</h1>
+        <Link className="btn btn-accent btn-sm" to="/comprador/checkout">
+          <Icon name="checkout" size={14} /> {t('Checkout')}
+        </Link>
+      </div>
+      <RouteTabs items={[
+        { label: 'Produtos', to: '/comprador/catalogo', end: true },
+        { label: 'Serviços', to: '/comprador/servicos' },
+      ]} />
 
       {/* Barra de pesquisa + ações */}
       <div className="svc-searchbar">

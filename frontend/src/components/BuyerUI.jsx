@@ -3,7 +3,7 @@
 // de estado, toolbar, paginação). Todas traduzem automaticamente as strings que
 // recebem (título, subtítulo, labels, tabs, estados, etc.) via i18n, por isso
 // quase todo o conteúdo estrutural muda de idioma sem alterar cada página.
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { Icon } from './icons';
 import { useI18n } from '../i18n';
 
@@ -81,6 +81,27 @@ export function KpiRow({ cards = [] }) {
         if (!c.to) return <div className="bz-kpi" key={i}>{corpo}</div>;
         return <Link className="bz-kpi bz-kpi-link" to={c.to} key={i}>{corpo}</Link>;
       })}
+    </div>
+  );
+}
+
+/**
+ * Sub-navegação entre páginas irmãs (ex.: Produtos/Serviços dentro de
+ * Catálogo, ou Ordens/Entrega/Recepção dentro de Ordens de Compra).
+ *
+ * Diferente de `Tabs`: aquele alterna um `value` interno na MESMA página;
+ * isto navega mesmo entre ROTAS diferentes — por isso usa `NavLink`
+ * (destaca-se sozinho pela rota atual) em vez de `onChange`.
+ */
+export function RouteTabs({ items = [] }) {
+  const tr = useT();
+  return (
+    <div className="bz-tabs">
+      {items.map((item) => (
+        <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `bz-tab${isActive ? ' on' : ''}`}>
+          {tr(item.label)}
+        </NavLink>
+      ))}
     </div>
   );
 }

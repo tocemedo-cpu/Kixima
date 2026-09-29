@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
-import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
+import { Crumbs, PageHead, RouteTabs, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
@@ -38,6 +38,11 @@ export default function Receptions() {
     <div>
       <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Recepção']} />
       <PageHead title="Recepção" subtitle="Acompanhe e gestione a recepção de mercadorias e serviços das suas ordens de compra." />
+      <RouteTabs items={[
+        { label: 'Todas as Ordens', to: '/comprador/ordens', end: true },
+        { label: 'Acompanhar Entrega', to: '/comprador/entregas' },
+        { label: 'Recepção', to: '/comprador/recepcao' },
+      ]} />
 
       <KpiRow cards={[
         { icon: 'truck', tone: 'info', label: 'A Receber', value: k?.aReceber ?? '—', sub: 'Itens aguardando' },

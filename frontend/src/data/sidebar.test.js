@@ -5,23 +5,51 @@ import { SIDEBAR_MENUS, filtrarPorAreas } from './sidebar';
 describe('menu do comprador', () => {
   const COMPRADOR = SIDEBAR_MENUS.COMPRADOR;
 
-  test('existe um menu "Catálogo" com submenus Produtos e Serviços', () => {
+  // Produtos/Serviços deixaram de ser submenu na sidebar — passaram a botões
+  // DENTRO da página Catálogo (RouteTabs, ver Catalog.jsx/Services.jsx). O
+  // menu em si é agora um link directo, sem `children`.
+  test('"Catálogo" é um link directo para /comprador/catalogo, sem submenu', () => {
     const catalogo = COMPRADOR.find((m) => m.label === 'Catálogo');
     expect(catalogo).toBeTruthy();
-    const childLabels = (catalogo.children || []).map((c) => c.label);
-    expect(childLabels).toContain('Produtos');
-    expect(childLabels).toContain('Serviços');
+    expect(catalogo.to).toBe('/comprador/catalogo');
+    expect(catalogo.children).toBeUndefined();
   });
 
-  test('já não existe o menu antigo "Produtos / Serviços"', () => {
-    expect(COMPRADOR.find((m) => m.label === 'Produtos / Serviços')).toBeUndefined();
+  // Idem para Ordens de Compra: Todas as Ordens/Acompanhar Entrega/Recepção
+  // viraram botões dentro da página (RouteTabs em Orders/Deliveries/Receptions.jsx).
+  test('"Ordens de Compra" é um link directo para /comprador/ordens, sem submenu', () => {
+    const ordens = COMPRADOR.find((m) => m.label === 'Ordens de Compra');
+    expect(ordens).toBeTruthy();
+    expect(ordens.to).toBe('/comprador/ordens');
+    expect(ordens.children).toBeUndefined();
   });
 
-  test('Produtos aponta para /comprador/catalogo e Serviços para /comprador/servicos', () => {
-    const catalogo = COMPRADOR.find((m) => m.label === 'Catálogo');
-    const byLabel = Object.fromEntries(catalogo.children.map((c) => [c.label, c.to]));
-    expect(byLabel.Produtos).toBe('/comprador/catalogo');
-    expect(byLabel.Serviços).toBe('/comprador/servicos');
+  test('já não existe "Explorar / Pesquisa" nem "Checkout" como itens de menu', () => {
+    expect(COMPRADOR.find((m) => m.label === 'Explorar / Pesquisa')).toBeUndefined();
+    expect(COMPRADOR.find((m) => m.label === 'Checkout')).toBeUndefined();
+  });
+});
+
+describe('menu "Chat" — comum a todas as personas com COMMON_TAIL', () => {
+  test.each(['COMPRADOR', 'COMPANY_ADMIN', 'FORNECEDOR', 'FINANCEIRO'])(
+    '%s tem um menu "Chat" agrupando Suporte — Chat, Suporte — Feedback e Chat Comercial',
+    (papel) => {
+      const menu = SIDEBAR_MENUS[papel];
+      const chat = menu.find((m) => m.label === 'Chat');
+      expect(chat).toBeTruthy();
+      const childLabels = (chat.children || []).map((c) => c.label);
+      expect(childLabels).toEqual(['Suporte — Chat', 'Suporte — Feedback', 'Chat Comercial']);
+      // Os contadores de não lidas continuam nos filhos certos.
+      const byLabel = Object.fromEntries(chat.children.map((c) => [c.label, c.badge]));
+      expect(byLabel['Suporte — Chat']).toBe('suporte');
+      expect(byLabel['Chat Comercial']).toBe('chatComercial');
+    },
+  );
+
+  test('já não existem "Suporte — Chat"/"Chat Comercial" soltos ao nível de topo', () => {
+    const COMPRADOR = SIDEBAR_MENUS.COMPRADOR;
+    expect(COMPRADOR.find((m) => m.label === 'Suporte — Chat')).toBeUndefined();
+    expect(COMPRADOR.find((m) => m.label === 'Chat Comercial')).toBeUndefined();
   });
 });
 

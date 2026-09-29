@@ -12,7 +12,7 @@ import { formatMoney } from '../../domain';
 import { useCart } from './CartContext';
 import { Icon, Stars } from '../../components/icons';
 import ProductCover from '../../components/ProductCover';
-import { Crumbs, PageHead } from '../../components/BuyerUI';
+import { Crumbs, PageHead, RouteTabs } from '../../components/BuyerUI';
 import { useI18n } from '../../i18n';
 import Button from '../../components/Button';
 
@@ -142,11 +142,20 @@ export default function Catalog() {
       <PageHead
         title="Produtos"
         actions={(
-          <button className="btn btn-ghost btn-sm" disabled={compare.length < 2} onClick={() => setShowCompare(true)}>
-            <Icon name="report" size={14} /> {t('Comparar')} ({compare.length})
-          </button>
+          <>
+            <button className="btn btn-ghost btn-sm" disabled={compare.length < 2} onClick={() => setShowCompare(true)}>
+              <Icon name="report" size={14} /> {t('Comparar')} ({compare.length})
+            </button>
+            <Link className="btn btn-accent btn-sm" to="/comprador/checkout">
+              <Icon name="checkout" size={14} /> {t('Checkout')}
+            </Link>
+          </>
         )}
       />
+      <RouteTabs items={[
+        { label: 'Produtos', to: '/comprador/catalogo', end: true },
+        { label: 'Serviços', to: '/comprador/servicos' },
+      ]} />
 
       <div className="pc-toolbar">
         <div className="pc-search">

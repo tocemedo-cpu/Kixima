@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
-import { Crumbs, PageHead, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow, Pagination } from '../../components/BuyerUI';
+import { Crumbs, PageHead, RouteTabs, KpiRow, Tabs, Pill, Toolbar, SupplierCell, EmptyRow, Pagination } from '../../components/BuyerUI';
 import { Icon } from '../../components/icons';
 import { PO_STATUS, formatMoney, formatDate } from '../../domain';
 import { useI18n } from '../../i18n';
@@ -38,6 +38,11 @@ export default function Orders() {
     <div>
       <Crumbs trail={[{ label: 'Home', to: '/comprador' }, 'Ordens de Compra']} />
       <PageHead title="Ordens de Compra" subtitle="Acompanhe todas as suas Ordens de Compra emitidas aos fornecedores." />
+      <RouteTabs items={[
+        { label: 'Todas as Ordens', to: '/comprador/ordens', end: true },
+        { label: 'Acompanhar Entrega', to: '/comprador/entregas' },
+        { label: 'Recepção', to: '/comprador/recepcao' },
+      ]} />
 
       <KpiRow cards={[
         { icon: 'orders', tone: 'info', label: 'Total de Ordens', value: k?.total ?? '—', sub: 'Todas as PO emitidas' },
