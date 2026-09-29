@@ -154,7 +154,7 @@ describe('Subscrição — comprovativo', () => {
     const cobranca = await pedirPro();
     const res = await request(app)
       .post(`/api/assinatura/${cobranca.id}/comprovativo`)
-      .set('Authorization', `Bearer ${financeiroToken}`)
+      .set('Authorization', `Bearer ${adminEmpresaToken}`)
       .attach('comprovativo', COMPROVATIVO, 'transferencia.pdf');
 
     expect(res.status).toBe(200);
@@ -164,6 +164,19 @@ describe('Subscrição — comprovativo', () => {
 
     const empresa = await prisma.company.findUnique({ where: { id: companyId } });
     expect(empresa.plan).toBe(planoOriginal);
+  });
+
+  // A Subscrição é só do Company Admin — o Financeiro deixou de ter acesso a
+  // esta rota (chegou a carregar aqui o comprovativo, por ser quem faz as
+  // transferências; deixou de o poder fazer).
+  test('o Financeiro não pode carregar o comprovativo (403)', async () => {
+    const cobranca = await pedirPro();
+    const res = await request(app)
+      .post(`/api/assinatura/${cobranca.id}/comprovativo`)
+      .set('Authorization', `Bearer ${financeiroToken}`)
+      .attach('comprovativo', COMPROVATIVO, 'transferencia.pdf');
+
+    expect(res.status).toBe(403);
   });
 
   test('não aceita comprovativo de cobrança de outra empresa (403)', async () => {

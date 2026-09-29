@@ -201,14 +201,6 @@ export default function App() {
           </Route>
 
           {/* Company Admin */}
-          {/* Subscrição — as DUAS personas que lhe tocam: o Company Admin
-              escolhe o plano, o Financeiro carrega o comprovativo. É a mesma
-              divisão do pagamento de faturas, e a mesma que o servidor aplica
-              em assinaturaRoutes. */}
-          <Route element={<RequireRole role={['COMPANY_ADMIN', 'FINANCEIRO']} />}>
-            <Route path="/empresa/assinatura" element={<Assinatura />} />
-          </Route>
-
           <Route element={<RequireRole role="COMPANY_ADMIN" />}>
             <Route path="/empresa" element={<CompanyAdminHome />} />
             <Route path="/empresa/aprovacoes" element={<Approvals />} />
@@ -223,6 +215,10 @@ export default function App() {
             <Route path="/empresa/conteudo-local" element={<ConteudoLocal />} />
             <Route path="/empresa/atividades" element={<CompanyActivities />} />
             <Route path="/empresa/configuracoes" element={<CompanySettings />} />
+            {/* Subscrição — só o Company Admin vê e subscreve. O Financeiro
+                chegou a carregar aqui o comprovativo da transferência; deixou
+                de ter acesso nenhum a esta página nem ao endpoint. */}
+            <Route path="/empresa/assinatura" element={<Assinatura />} />
           </Route>
 
           {/* Fornecedor */}

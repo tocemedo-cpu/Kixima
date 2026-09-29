@@ -85,6 +85,14 @@ describe('menus por papel', () => {
     }
   });
 
+  // Ver a subscrição e subscrever é só do Company Admin — o Financeiro
+  // deixou de ter acesso à página nem ao endpoint.
+  test('"Subscrição" só existe no menu do Company Admin', () => {
+    expect(SIDEBAR_MENUS.COMPANY_ADMIN.find((m) => m.label === 'Subscrição')).toBeTruthy();
+    expect(SIDEBAR_MENUS.FINANCEIRO.find((m) => m.label === 'Subscrição')).toBeUndefined();
+    expect(SIDEBAR_MENUS.FINANCEIRO_FORNECEDOR.find((m) => m.label === 'Subscrição')).toBeUndefined();
+  });
+
   test('o Admin do Sistema tem o livro "Taxa KIXIMA"', () => {
     expect(SIDEBAR_MENUS.ADMIN_SISTEMA.some((m) => m.label === 'Taxa KIXIMA')).toBe(true);
   });

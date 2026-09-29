@@ -65,9 +65,10 @@ export default function AppLayout() {
     api.get('/api/conversations/unread-count').then((d) => { if (!cancelled) setComercialNaoLidas(d.count || 0); }).catch(() => {});
     // O aviso de subscrição a vencer tem de se ver em QUALQUER página, não só
     // para quem visita /empresa/assinatura por iniciativa própria — é a
-    // mesma razão de existir do aviso de 2FA acima. Só para quem pode fazer
-    // alguma coisa com isto (a rota devolve 403 para o resto).
-    if (['COMPANY_ADMIN', 'FINANCEIRO'].includes(user.role)) {
+    // mesma razão de existir do aviso de 2FA acima. Só o Company Admin pode
+    // fazer alguma coisa com isto (a rota devolve 403 para o resto, incluindo
+    // agora o Financeiro).
+    if (user.role === 'COMPANY_ADMIN') {
       api.get('/api/assinatura').then((d) => { if (!cancelled) setSubscricao(d); }).catch(() => {});
     }
     // Só quem gere Suporte tem alertas para ver — a rota devolve 403 para o

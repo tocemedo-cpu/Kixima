@@ -27,10 +27,11 @@ router.post('/:id/confirmar', requireRole('ADMIN_SISTEMA'), requirePermission(FI
 });
 
 // --- Lado da empresa --------------------------------------------------------
-// O plano é dinheiro e é o Company Admin quem o compromete. O Financeiro
-// carrega o comprovativo (é quem faz as transferências) mas não escolhe o
-// plano — a mesma separação do fluxo das faturas.
-router.get('/', requireRole('COMPANY_ADMIN', 'FINANCEIRO'), async (req, res) => {
+// Só o Company Admin — ver, pedir, pagar e carregar o comprovativo são todos
+// dele. O Financeiro deixou de ter qualquer acesso a esta rota (antes via
+// o estado e carregava o comprovativo, por ser quem faz as transferências;
+// deixou de o poder fazer).
+router.get('/', requireRole('COMPANY_ADMIN'), async (req, res) => {
   res.json(await svc.estado(req.user.companyId));
 });
 
@@ -48,14 +49,11 @@ router.post('/pedir', requireRole('COMPANY_ADMIN'), async (req, res) => {
 // Quais canais automáticos (EMIS/PayPay/bancos) estão configurados — a
 // página só mostra o que responde `disponivel: true` aqui, nunca um botão
 // que vai falhar ao clicar.
-router.get('/canais', requireRole('COMPANY_ADMIN', 'FINANCEIRO'), async (req, res) => {
+router.get('/canais', requireRole('COMPANY_ADMIN'), async (req, res) => {
   res.json(canaisPagamentoService.estados());
 });
 
-// Inicia o pagamento num canal automático (mesma dupla que carrega o
-// comprovativo na transferência manual — pagar não é a mesma decisão que
-// escolher o plano).
-router.post('/:id/pagar-com', requireRole('COMPANY_ADMIN', 'FINANCEIRO'), async (req, res) => {
+router.post('/:id/pagar-com', requireRole('COMPANY_ADMIN'), async (req, res) => {
   const cobranca = await svc.iniciarPagamentoGateway(
     req.user.companyId,
     req.params.id,
@@ -68,7 +66,7 @@ router.post('/:id/pagar-com', requireRole('COMPANY_ADMIN', 'FINANCEIRO'), async 
 // Comprovativo OBRIGATÓRIO (multipart, campo "comprovativo": PDF ou imagem).
 router.post(
   '/:id/comprovativo',
-  requireRole('COMPANY_ADMIN', 'FINANCEIRO'),
+  requireRole('COMPANY_ADMIN'),
   uploadDocuments.single('comprovativo'),
   async (req, res) => {
     res.json(await svc.submeterComprovativo(

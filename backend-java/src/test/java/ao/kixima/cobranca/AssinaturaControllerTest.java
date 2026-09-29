@@ -205,8 +205,14 @@ class AssinaturaControllerTest {
                 .andExpect(status().isBadRequest());
         assertThat(planoAtual(companyId)).isEqualTo("CORE");
 
-        // O Financeiro carrega o comprovativo (é quem faz as transferências) — e o plano ainda não mudou.
-        comprovativo(financeiro, id);
+        // A Subscrição é só do Company Admin — o Financeiro não tem acesso nenhum aqui.
+        mockMvc.perform(multipart("/api/assinatura/" + id + "/comprovativo")
+                        .file(new MockMultipartFile("comprovativo", "transferencia.pdf", "application/pdf", COMPROVATIVO))
+                        .header("Authorization", "Bearer " + financeiro))
+                .andExpect(status().isForbidden());
+
+        // O Company Admin carrega o comprovativo — e o plano ainda não mudou.
+        comprovativo(adminEmpresa, id);
         assertThat(planoAtual(companyId)).isEqualTo("CORE");
         entityManager.flush();
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM notifications WHERE type = 'SUBSCRICAO_COMPROVATIVO' AND related_entity_id = ?", Integer.class, id))
@@ -323,7 +329,10 @@ class AssinaturaControllerTest {
         String financeiro = login(FINANCEIRO_EMAIL);
 
         mockMvc.perform(get("/api/assinatura/canais")).andExpect(status().isUnauthorized());
-        JsonNode canais = objectMapper.readTree(mockMvc.perform(get("/api/assinatura/canais").header("Authorization", "Bearer " + financeiro))
+        // A Subscrição é só do Company Admin — o Financeiro não vê sequer os canais.
+        mockMvc.perform(get("/api/assinatura/canais").header("Authorization", "Bearer " + financeiro))
+                .andExpect(status().isForbidden());
+        JsonNode canais = objectMapper.readTree(mockMvc.perform(get("/api/assinatura/canais").header("Authorization", "Bearer " + adminEmpresa))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         assertThat(canais.fieldNames()).toIterable().containsExactlyInAnyOrder("BAI", "BFA", "EMIS_MULTICAIXA", "PAYPAY", "STANDARD_BANK_ANGOLA");
         canais.forEach(c -> assertThat(c.get("disponivel").asBoolean()).isFalse());

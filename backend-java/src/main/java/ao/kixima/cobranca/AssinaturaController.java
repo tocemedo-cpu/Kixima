@@ -73,9 +73,13 @@ public class AssinaturaController {
     }
 
     // --- Lado da empresa --------------------------------------------------------
+    // Só o Company Admin — ver, pedir, pagar e carregar o comprovativo são
+    // todos dele. O Financeiro deixou de ter qualquer acesso a esta rota
+    // (chegou a ver o estado e a carregar o comprovativo, por ser quem faz
+    // as transferências; deixou de o poder fazer).
 
     @GetMapping
-    @RequireRole({COMPANY_ADMIN, PersonaRole.FINANCEIRO})
+    @RequireRole({COMPANY_ADMIN})
     public Map<String, Object> estado() {
         return svc.estado(CurrentUserHolder.get().companyId());
     }
@@ -92,13 +96,13 @@ public class AssinaturaController {
 
     /** Quais canais automáticos estão configurados — a página só mostra os que respondem `disponivel: true`. */
     @GetMapping("/canais")
-    @RequireRole({COMPANY_ADMIN, PersonaRole.FINANCEIRO})
+    @RequireRole({COMPANY_ADMIN})
     public Map<String, Object> canais() {
         return canaisPagamentoService.estados();
     }
 
     @PostMapping("/{id}/pagar-com")
-    @RequireRole({COMPANY_ADMIN, PersonaRole.FINANCEIRO})
+    @RequireRole({COMPANY_ADMIN})
     public PlanoCobrancaDto pagarCom(@PathVariable String id, @RequestBody(required = false) PagarComRequest body, HttpServletRequest req) {
         CurrentUser user = CurrentUserHolder.get();
         return svc.iniciarPagamentoGateway(user.companyId(), id, body == null ? null : body.canal(), body == null ? null : body.telemovel(),
@@ -107,7 +111,7 @@ public class AssinaturaController {
 
     /** Comprovativo OBRIGATÓRIO (multipart, campo "comprovativo": PDF ou imagem). */
     @PostMapping("/{id}/comprovativo")
-    @RequireRole({COMPANY_ADMIN, PersonaRole.FINANCEIRO})
+    @RequireRole({COMPANY_ADMIN})
     public PlanoCobrancaDto comprovativo(@PathVariable String id, @RequestParam(value = "comprovativo", required = false) MultipartFile comprovativo,
                                          HttpServletRequest req) {
         CurrentUser user = CurrentUserHolder.get();
