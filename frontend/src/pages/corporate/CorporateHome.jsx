@@ -120,7 +120,7 @@ export default function CorporateHome() {
       {/* ---------- herói: a compra guiada ---------- */}
       <section className="sec hero" aria-labelledby="hero-title">
         <div className="eyebrow"><b>{t('A fonte dos seus negócios.')}</b> · kixima.net</div>
-        <h1 id="hero-title">{t('The state of the art —')} <em>{t('do procurement à execução.')}</em></h1>
+        <h1 id="hero-title">{t('A fonte')} <em>{t('do conteúdo local')}</em></h1>
         <p className="lead">{t('O Oil & Gas na palma da sua mão - e o seu negócio à distância de um clique.')}</p>
         <p className="lead-nota">{t('Um conceito global. Uma solução local.')}</p>
         <div className="hero-acoes"><Link className="btn" to="/cadastro">{t('Registar empresa')} <Arrow /></Link><a className="btn alt" href="#demonstracao">{t('Conhecer a plataforma')}</a></div>
