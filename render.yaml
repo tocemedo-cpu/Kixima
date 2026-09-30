@@ -124,3 +124,139 @@ services:
         sync: false
       - key: AGT_SANDBOX_PASSWORD
         sync: false
+
+  # ---------------------------------------------------------------------------
+  # kixima-java — o ALVO DO CUTOVER (M8): o backend Java/Spring Boot com a
+  # MESMA topologia do serviço acima (um contentor, /api + SPA na mesma origem,
+  # a mesma base Supabase). Fica LADO A LADO com o serviço `kixima` (Node)
+  # durante a janela de rollback: o DNS/custom domain aponta a um ou ao outro,
+  # e voltar atrás é apontá-lo de volta — sem novo deploy. O serviço Node
+  # acima NÃO muda enquanto a janela não fechar.
+  #
+  # Lê os MESMOS nomes de variável que o Node (application.yml espelha
+  # config/env.js), incluindo a DATABASE_URL única (traduzida para JDBC no
+  # arranque — ver DatabaseUrlEnvironmentPostProcessor). Os segredos com
+  # `sync: false` definem-se no dashboard com os MESMOS valores do serviço
+  # Node. O schema continua a ser do Prisma: as migrações correm no serviço
+  # Node (ou à mão) — esta imagem não migra nada.
+  #
+  # Jobs agendados (retenção, apólices, subscrições, lembretes 2FA, robô de
+  # PO, cópia de segurança) vêm DESLIGADOS por omissão em application.yml —
+  # ligam-se com KIXIMA_JOB_*_ENABLED=true só quando o Node deixar de os
+  # correr, para não duplicar trabalho. Isso faz parte do runbook, não deste
+  # ficheiro.
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: kixima-java
+    runtime: docker
+    dockerfilePath: ./backend-java/Dockerfile
+    # Contexto = RAIZ, como o Node: o Dockerfile precisa de frontend/ E backend-java/.
+    dockerContext: .
+    plan: free
+    region: frankfurt
+    healthCheckPath: /ready
+    envVars:
+      # Perfil de produção do Spring: sem valores por omissão para segredos e
+      # com o guardião de arranque (ProducaoStartupGuard) ligado.
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      # Pool Hikari pequeno de propósito: durante a sobreposição os dois
+      # backends partilham o pooler do Supabase e o Java não pode esfomear o Node.
+      - key: DB_POOL_MAX
+        value: "5"
+      # O MESMO segredo do serviço Node, não um novo: as sessões (cookie/JWT)
+      # emitidas por um continuam válidas no outro, e o cutover não desliga
+      # ninguém. Um `generateValue: true` aqui criaria um segredo diferente.
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: kixima
+          envVarKey: JWT_SECRET
+      - key: JWT_EXPIRES_IN
+        value: 1d
+      - key: PAYMENT_SLA_DAYS
+        value: "7"
+      - key: POLICY_EXPIRY_ALERT_DAYS
+        value: "30"
+      # Email — as mesmas notas do serviço Node (Brevo por API; SMTP bloqueado no Render).
+      - key: EMAIL_PROVIDER
+        value: brevo
+      - key: EMAIL_FROM
+        value: "Kixima <tocemedo@gmail.com>"
+      - key: BREVO_API_KEY
+        sync: false
+      - key: SMTP_HOST
+        value: smtp-relay.brevo.com
+      - key: SMTP_PORT
+        value: "2525"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+      - key: CORS_ORIGINS
+        sync: false
+      # A MESMA connection string do serviço Node (pooler do Supabase, Session
+      # mode, porta 5432, ?sslmode=require). É a única forma de configurar a
+      # base aqui; DATABASE_URL_JDBC/DATABASE_USER/DATABASE_PASSWORD são a
+      # alternativa explícita e nunca são precisas no Render.
+      - key: DATABASE_URL
+        sync: false
+      # Ligação DIRETA (libpq) para o pg_dump da cópia de segurança — o mesmo
+      # valor que o serviço Node usa (pooler de SESSÃO, porta 5432).
+      - key: DIRECT_URL
+        sync: false
+      # Armazenamento S3-compatível (Supabase Storage). Em produção o Java —
+      # como o env.js do Node — RECUSA-SE a arrancar sem STORAGE_PROVIDER=s3 e
+      # as credenciais: o disco do contentor apaga-se a cada deploy. Copiar os
+      # valores do serviço Node (estão no dashboard, não neste ficheiro).
+      - key: STORAGE_PROVIDER
+        value: s3
+      - key: STORAGE_BUCKET
+        sync: false
+      - key: STORAGE_ACCESS_KEY
+        sync: false
+      - key: STORAGE_SECRET_KEY
+        sync: false
+      - key: STORAGE_REGION
+        sync: false
+      - key: STORAGE_ENDPOINT
+        sync: false
+      - key: STORAGE_PUBLIC_URL
+        sync: false
+      - key: STORAGE_BACKUP_BUCKET
+        sync: false
+      # --- Integração ERP (OPCIONAL) — como no serviço Node ------------------
+      - key: RABBITMQ_EXCHANGE
+        value: kixima.events
+      - key: RABBITMQ_URL
+        sync: false
+      - key: KIXIMA_CALLBACK_SECRET
+        sync: false
+      - key: ERP_CONFIG_ENCRYPTION_KEY
+        sync: false
+      - key: INTEGRATION_URL
+        sync: false
+      - key: INTEGRATION_ADMIN_TOKEN
+        sync: false
+      # --- AGT (e-Fatura) — as mesmas notas do serviço Node; o Secret File
+      # /etc/secrets/chavePrivada.pem também é lido aqui (AgtPrivateKeyLoader).
+      - key: AGT_JWS_PRIVATE_KEY_BASE64
+        sync: false
+      - key: AGT_SOFTWARE_VALIDATION_NUMBER
+        sync: false
+      - key: AGT_SOFTWARE_ID
+        sync: false
+      - key: AGT_SOFTWARE_VERSION
+        sync: false
+      - key: AGT_NIF
+        sync: false
+      - key: AGT_ESTABLISHMENT_NUMBER
+        sync: false
+      - key: AGT_ENV
+        sync: false
+      - key: AGT_SANDBOX_USERNAME
+        sync: false
+      - key: AGT_SANDBOX_PASSWORD
+        sync: false

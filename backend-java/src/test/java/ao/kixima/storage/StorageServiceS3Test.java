@@ -26,7 +26,7 @@ class StorageServiceS3Test {
 
     @Test
     void s3PedidoMasIncompletoCaiParaODiscoLocalEDizOQueFalta() {
-        StorageService s = new StorageService("s3", tmp.toString(), "imagens", "AKIA", "", "", "", "", true);
+        StorageService s = new StorageService("s3", tmp.toString(), "imagens", "AKIA", "", "", "", "", "true");
         assertThat(s.providerConfigurado()).isEqualTo("s3");
         assertThat(s.providerAtivo()).isEqualTo("local");
         assertThat(s.emFalta()).containsExactly("STORAGE_SECRET_KEY");
@@ -39,17 +39,17 @@ class StorageServiceS3Test {
 
     @Test
     void urlPublicoSegueAPrecedenciaDoNode() {
-        StorageService cdn = new StorageService("s3", tmp.toString(), "imagens", "a", "b", "eu-west-1", "https://x.supabase.co/storage/v1/s3/", "https://cdn.kixima.co.ao/", true);
+        StorageService cdn = new StorageService("s3", tmp.toString(), "imagens", "a", "b", "eu-west-1", "https://x.supabase.co/storage/v1/s3/", "https://cdn.kixima.co.ao/", "true");
         assertThat(cdn.publicUrlFor("products/a.png", null)).isEqualTo("https://cdn.kixima.co.ao/products/a.png");
         // Um bucket diferente (o das cópias) nunca sai pelo CDN das imagens.
         assertThat(cdn.publicUrlFor("copias/a.gz", "backups")).isEqualTo("https://x.supabase.co/storage/v1/s3/backups/copias/a.gz");
-        StorageService aws = new StorageService("s3", tmp.toString(), "imagens", "a", "b", "eu-west-1", "", "", false);
+        StorageService aws = new StorageService("s3", tmp.toString(), "imagens", "a", "b", "eu-west-1", "", "", "false");
         assertThat(aws.publicUrlFor("products/a.png", null)).isEqualTo("https://imagens.s3.eu-west-1.amazonaws.com/products/a.png");
     }
 
     @Test
     void endpointInacessivelDa502ComOMotivoEmVezDeFingir() {
-        StorageService s = new StorageService("s3", tmp.toString(), "imagens", "AKIA", "segredo", "us-east-1", "http://127.0.0.1:9", "", true);
+        StorageService s = new StorageService("s3", tmp.toString(), "imagens", "AKIA", "segredo", "us-east-1", "http://127.0.0.1:9", "", "true");
         assertThat(s.providerAtivo()).isEqualTo("s3");
         assertThatThrownBy(() -> s.saveFile(PNG, "x.png", "image/png", "teste"))
                 .isInstanceOf(AppException.class)

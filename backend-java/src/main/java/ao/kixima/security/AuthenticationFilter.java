@@ -1,6 +1,7 @@
 package ao.kixima.security;
 
 import ao.kixima.common.error.ErrorResponse;
+import ao.kixima.frontend.SpaHandlerMapping;
 import ao.kixima.user.User;
 import ao.kixima.user.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,6 +57,18 @@ public class AuthenticationFilter extends OncePerRequestFilter {
         if (header == null) return null;
         String[] parts = header.split(" ", 2);
         return parts.length == 2 && "Bearer".equals(parts[0]) && !parts[1].isBlank() ? parts[1] : null;
+    }
+
+    /**
+     * O SPA (páginas e ficheiros estáticos do frontend compilado) fica
+     * inteiramente FORA deste filtro, como no Node fica fora de `authenticate`
+     * — não é só "público": nem a política de 2FA restrita o pode travar, porque
+     * a página de Segurança tem de carregar para a pessoa poder ativar a 2FA
+     * (a API que ela chama continua sujeita a tudo o que está abaixo).
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return SpaHandlerMapping.eCaminhoDoSpa(request.getMethod(), request.getRequestURI());
     }
 
     @Override

@@ -90,11 +90,21 @@ e arranca `node backend/src/server.js`.
 > As imagens carregadas ficam em disco local (efémero em muitos hosts). Para
 > produção a sério, usa um disco persistente ou um bucket S3.
 
+**Backend Java (M8).** O `render.yaml` define um segundo serviço, `kixima-java`,
+com a **mesma topologia** (um contentor: `/api` + SPA na mesma origem, a mesma
+base Supabase) construído por `backend-java/Dockerfile` — contexto de build na
+raiz, como o Node. Lê os **mesmos nomes de variável** do serviço Node, incluindo
+a `DATABASE_URL` única (traduzida para JDBC no arranque). Fica lado a lado com o
+serviço `kixima` durante a janela de rollback; o procedimento de cutover vive
+num documento próprio, não aqui.
+
 ## Integração contínua
 
 `.github/workflows/ci.yml` corre em cada push/PR:
 
 - **backend-tests** — sobe um Postgres de serviço e corre a suite Jest + Supertest.
+- **backend-java-tests** — o mesmo Postgres, reposto e semeado como em
+  `backend/tests/globalSetup.js`, e a suite JUnit do `backend-java/` (`mvn test`).
 - **frontend-build** — instala e faz o build de produção do Vite.
 
 ## O produto em uma frase
