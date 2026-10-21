@@ -4,6 +4,7 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import { RequireAuth, RequireRole } from './auth/RequireAuth';
 import { ROLE_HOME } from './domain';
+import { useLancamento } from './launch/launch';
 import AppLayout from './components/AppLayout';
 import { CartProvider } from './pages/comprador/CartContext';
 import { RealtimeProvider } from './realtime/RealtimeContext';
@@ -14,6 +15,7 @@ import { RealtimeProvider } from './realtime/RealtimeContext';
 import LoginPage from './pages/shared/LoginPage';
 
 const CorporateHome = lazy(() => import('./pages/corporate/CorporateHome'));
+const ComingSoon = lazy(() => import('./pages/corporate/ComingSoon'));
 const Noticias = lazy(() => import('./pages/corporate/Noticias'));
 const Carreiras = lazy(() => import('./pages/corporate/Carreiras'));
 const Faq = lazy(() => import('./pages/corporate/Faq'));
@@ -121,11 +123,20 @@ function PageLoading() {
 // mostra a home corporativa (ver pages/corporate/CorporateHome.jsx), cujo
 // próprio botão "Entrar" leva ao login real. Nenhum comportamento existente
 // para quem já está autenticado muda.
-function Landing() {
+//
+// PÁGINA DE LANÇAMENTO: enquanto public/launch.json tiver { "enabled": true }
+// (ver src/launch/launch.js e LANCAMENTO.md), quem não tem sessão vê, no lugar
+// da home corporativa, "Estamos a chegar… Brevemente!". Só substitui esta
+// montra: todas as outras rotas, o login, a API e os utilizadores com sessão
+// ficam exactamente como estavam. A home corporativa continua em /institucional
+// e a página de lançamento em /em-breve, qualquer que seja o interruptor.
+export function Landing() {
   const { user, loading } = useAuth();
+  const lancamento = useLancamento(!loading && !user);
   if (loading) return null;
   if (user) return <Navigate to={ROLE_HOME[user.role]} replace />;
-  return <CorporateHome />;
+  if (lancamento === null) return null;
+  return lancamento ? <ComingSoon /> : <CorporateHome />;
 }
 
 // A cesta vive acima do AppLayout para que a sidebar possa mostrar o contador
@@ -288,6 +299,8 @@ export default function App() {
         </Route>
       </Route>
 
+      <Route path="/em-breve" element={<ComingSoon />} />
+      <Route path="/institucional" element={<CorporateHome />} />
       <Route path="/" element={<Landing />} />
       <Route path="*" element={<Landing />} />
     </Routes>

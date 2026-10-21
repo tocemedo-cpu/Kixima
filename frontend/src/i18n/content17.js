@@ -32,6 +32,12 @@ export const EN18 = {
   'Ex.: pedido de cancelamento do comprador…': 'E.g. cancellation requested by the buyer…',
   // Linha legal do rodapé — denominação social, igual em todas as línguas
   'APP-KIXIMA.NET — Prestação de Serviços, (SU), Lda · NIF 5003488276 · Luanda, Angola': 'APP-KIXIMA.NET — Prestação de Serviços, (SU), Lda · NIF 5003488276 · Luanda, Angola',
+  // Página de lançamento (pages/corporate/ComingSoon.jsx)
+  'Brevemente': 'Coming soon',
+  'O maior ecossistema africano de catálogos digitais': 'The largest African ecosystem of digital catalogs',
+  'Estamos a chegar…': 'We are arriving…',
+  'Brevemente!': 'Coming soon!',
+  'Procurement digital · Oil & Gas · África': 'Digital procurement · Oil & Gas · Africa',
 };
 
 export const FR18 = {
@@ -65,4 +71,10 @@ export const FR18 = {
   'Ex.: pedido de cancelamento do comprador…': "Ex. : demande d'annulation de l'acheteur…",
   // Linha legal do rodapé — denominação social, igual em todas as línguas
   'APP-KIXIMA.NET — Prestação de Serviços, (SU), Lda · NIF 5003488276 · Luanda, Angola': 'APP-KIXIMA.NET — Prestação de Serviços, (SU), Lda · NIF 5003488276 · Luanda, Angola',
+  // Página de lançamento (pages/corporate/ComingSoon.jsx)
+  'Brevemente': 'Bientôt',
+  'O maior ecossistema africano de catálogos digitais': 'Le plus grand écosystème africain de catalogues numériques',
+  'Estamos a chegar…': 'Nous arrivons…',
+  'Brevemente!': 'Bientôt !',
+  'Procurement digital · Oil & Gas · África': 'Procurement numérique · Oil & Gas · Afrique',
 };

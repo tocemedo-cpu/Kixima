@@ -18,7 +18,7 @@
 // desta página) — só a aparência foi actualizada para a nova identidade
 // (barra superior, cabeçalho maior, tipografia mais densa).
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useI18n, LANGS } from '../../i18n';
 import { SeletorDeFundo } from '../../tema/TemaContext';
 import './bancada-front.css';
@@ -48,7 +48,12 @@ export function buildNavGroups(t) {
 // rota real da app. Âncoras passam sempre por "/#secção": as secções só
 // existem na home, e useScrollToHash() trata do scroll assim que lá chega.
 export function NavLink({ href, className, children }) {
-  const to = href.startsWith('#') ? `/${href}` : href;
+  // A home também vive em /institucional (acesso directo enquanto a página de
+  // lançamento ocupa a raiz — ver src/launch/launch.js): nessa rota as âncoras
+  // ficam nela, em vez de saltarem para "/" e aterrarem na página de lançamento.
+  const { pathname } = useLocation();
+  const raiz = pathname === '/institucional' ? '/institucional' : '/';
+  const to = href.startsWith('#') ? `${raiz}${href}` : href;
   return <Link to={to} className={className}>{children}</Link>;
 }
 
