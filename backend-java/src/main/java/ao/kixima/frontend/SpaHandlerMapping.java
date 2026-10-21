@@ -65,6 +65,8 @@ public class SpaHandlerMapping extends AbstractHandlerMapping {
     private final ResourceHttpRequestHandler assets;
     private final ResourceHttpRequestHandler estaticos;
     private final ResourceHttpRequestHandler index;
+    private final ResourceHttpRequestHandler lancamento;
+    private final ModoLancamento modoLancamento;
 
     public SpaHandlerMapping(FrontendDist frontendDist) throws Exception {
         this.frontendDist = frontendDist;
@@ -75,10 +77,15 @@ public class SpaHandlerMapping extends AbstractHandlerMapping {
             this.assets = handler(raiz, CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable());
             this.estaticos = handler(raiz, CacheControl.maxAge(Duration.ZERO).cachePublic());
             this.index = handler(raiz, CacheControl.noCache());
+            // A página de lançamento nunca fica em cache: ligar/desligar tem de se ver no pedido seguinte.
+            this.lancamento = handler(raiz, CacheControl.noStore());
+            this.modoLancamento = new ModoLancamento(frontendDist.dir());
         } else {
             this.assets = null;
             this.estaticos = null;
             this.index = null;
+            this.lancamento = null;
+            this.modoLancamento = null;
         }
     }
 
@@ -102,15 +109,29 @@ public class SpaHandlerMapping extends AbstractHandlerMapping {
         String caminho = normalizar(request.getRequestURI(), request.getContextPath());
         if (caminho == null || !eCaminhoDoSpa(request.getMethod(), caminho)) return null;
 
+        // MODO DE LANÇAMENTO: com launch.json {"enabled": true}, qualquer página — "/", "/index.html",
+        // /login, dashboards, administração, rotas desconhecidas — é a página de lançamento, antes de
+        // se olhar para ficheiros ou para o fallback. Só chega aqui o que não é API/sondas/actuator.
+        if (ModoLancamento.ePagina(caminho) && modoLancamento.aplicar()) {
+            return paginaDeLancamento(request);
+        }
+
         String relativo = caminho.substring(1);
         Path ficheiro = frontendDist.ficheiro(relativo);
         if (ficheiro != null) {
             request.setAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE, relativo);
             return relativo.startsWith(ASSETS) ? assets : estaticos;
         }
+        // Ficheiro inexistente com extensão (ex.: /assets/velho.js): no modo de lançamento também não recebe a app.
+        if (modoLancamento.aplicar()) return paginaDeLancamento(request);
         // History fallback: qualquer outra rota de navegação é a app (React Router decide lá dentro).
         request.setAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE, FrontendDist.INDEX);
         return index;
+    }
+
+    private Object paginaDeLancamento(HttpServletRequest request) {
+        request.setAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE, ModoLancamento.PAGINA);
+        return lancamento;
     }
 
     /**

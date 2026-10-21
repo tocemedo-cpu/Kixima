@@ -1,4 +1,4 @@
 {
   "enabled": true,
-  "_nota": "Interruptor da página de lançamento de kixima.net (\"Estamos a chegar… Brevemente!\"). true = a raiz / mostra a página de lançamento a quem não tem sessão; false (ou apagar este ficheiro) = volta o site corporativo de sempre. Basta alterar o valor e fazer deploy — não há DNS, rotas nem código a tocar. Ver LANCAMENTO.md."
+  "_nota": "Interruptor do modo de lançamento de kixima.net. true = QUALQUER endereço do site (login, cadastro, dashboards, administração, rotas desconhecidas) mostra só a página \"Estamos a chegar… Brevemente!\"; a API e as sondas continuam a funcionar. false (ou apagar este ficheiro) = tudo normal. Basta alterar o valor e fazer deploy — não há DNS nem código a tocar. Ver LANCAMENTO.md."
 }

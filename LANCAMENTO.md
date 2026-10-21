@@ -1,49 +1,72 @@
-# Página de lançamento de kixima.net
+# Modo de lançamento de kixima.net
 
-**Estado actual: LIGADA** (`"enabled": true`) — a raiz de kixima.net mostra a página de lançamento a quem não tem sessão. Para voltar ao site de sempre, põe `false`.
-
-Enquanto estiver ligada, quem abre **kixima.net** (a raiz `/`) sem sessão vê
-"Estamos a chegar… Brevemente!" em vez da home corporativa. Tudo o resto fica
-como está: login, cadastro, planos, termos, notícias, a API, o WebSocket e todas
-as páginas da aplicação continuam acessíveis pelos seus endereços directos, e
-quem já tem sessão continua a ir para o seu dashboard. Não envolve DNS.
-
-## Ligar / desligar
-
-Um único ficheiro: [`frontend/public/launch.json`](frontend/public/launch.json)
+Enquanto [`frontend/public/launch.json`](frontend/public/launch.json) tiver `"enabled": true`,
+**qualquer endereço de kixima.net mostra apenas a página "Estamos a chegar… Brevemente!"**:
+`/`, `/login`, `/cadastro`, dashboards, páginas administrativas, rotas desconhecidas — para toda a
+gente, incluindo quem já tem sessão. Com `"enabled": false` tudo funciona normalmente.
 
 ```json
-{ "enabled": true }    // página de lançamento na raiz
-{ "enabled": false }   // site corporativo de sempre
+{ "enabled": true }    // só a página de lançamento
+{ "enabled": false }   // tudo normal
 ```
 
-Altera o valor e faz deploy (o ficheiro vai em `/launch.json`, que o backend
-serve com `max-age=0`: a mudança vê-se logo no pedido seguinte ao deploy, sem
-limpar cache). Só o booleano `true` liga a página; apagar o ficheiro, um valor
-diferente ou qualquer erro a ler `/launch.json` deixam o site de sempre.
+Alterar o valor e fazer deploy chega: não há DNS, rotas nem código a tocar. Só o booleano `true`
+liga; apagar o ficheiro, `"true"` em texto, `1`, JSON inválido ou um erro a ler o ficheiro deixam o
+site normal.
 
-> O `frontend/dist` é versionado neste repositório. No deploy por Docker
-> (`render.yaml`) o frontend é compilado de novo, por isso basta o commit do
-> `launch.json`; num deploy que sirva o `dist` já commitado, faz `npm run build`
-> e commita também o `dist`.
+## Como é imposto (sem forma de contornar)
 
-## Endereços fixos (independentes do interruptor)
+1. **No servidor** (a garantia). Os dois backends servem o SPA e aplicam o interruptor antes de
+   qualquer ficheiro ou rota: com o modo ligado, **todo o pedido de página** (GET/HEAD sem extensão ou
+   `.html` — incluindo `/`, `/index.html`, maiúsculas, `//login`, `/%6cogin`, `;x=1`, ficheiros
+   antigos que já não existem) recebe `launch.html`, uma página **estática, sem React**, com
+   `Cache-Control: no-store`. A aplicação nunca chega ao browser.
+   - Node: `backend/src/middleware/frontend.js` (`montarFrontend`, chamado em `app.js`).
+   - Java: `ModoLancamento` + `SpaHandlerMapping` (`backend-java/.../frontend/`).
+   - O ficheiro é relido quando muda, sem reiniciar. Sem `launch.html` no `dist` o servidor avisa uma
+     vez e serve a app (a guarda do SPA, abaixo, assume).
+2. **No SPA** (defesa em profundidade). `App.jsx` lê `/launch.json` acima de todas as rotas: com
+   `true` mostra só `ComingSoon`, e nenhuma rota é montada. Cobre separadores que já estavam abertos
+   (volta a ler quando a janela recupera o foco e de 5 em 5 minutos) e o servidor de desenvolvimento.
 
-| Endereço | O que mostra |
+## O que NÃO é bloqueado
+
+- A API (`/api/**`), o `/health`, o `/ready`, o `/socket.io`/`/ws`, o actuator e tudo o que os
+  backends registam antes do SPA (webhooks, etc.) — nada disto é "página".
+- Ficheiros estáticos (`/assets/**`, imagens, vídeos, `/launch.json`) — são ficheiros, não páginas.
+- Outros métodos que não GET/HEAD.
+- A app nativa (Capacitor) traz o seu próprio build e não é kixima.net: nunca mostra a página.
+
+Consequência a ter presente: com o modo ligado **ninguém consegue usar o site pelo browser**, nem
+administradores. A API continua a responder, por isso integrações, webhooks e sondas não são afectadas.
+
+## Rever a página com o modo desligado
+
+`/em-breve` mostra sempre a página de lançamento (só quando o modo está desligado — ligado, todos os
+endereços já a mostram).
+
+## Desenvolvimento e testes e2e
+
+No `vite dev`, `/launch.json` responde sempre `{"enabled": false}` (plugin em `vite.config.js`), para o
+servidor de dev e os testes Playwright não ficarem presos na página. `LAUNCH_DEV=on npm run dev` usa o
+ficheiro verdadeiro. Os testes e2e contra um ambiente já publicado (`E2E_BASE_URL`) precisam dele com
+`"enabled": false`.
+
+## Deploy
+
+- Docker (`render.yaml`): o frontend é compilado de novo, por isso basta o commit de `launch.json`.
+- O `frontend/dist` é versionado e está desfasado do código; num deploy que sirva o `dist` já commitado
+  é preciso `npm run build` e commitar o `dist` (traz `launch.html` e `launch.json`). Sem `launch.json`
+  no `dist`, os servidores não aplicam nada.
+- Pré-visualizações de link (WhatsApp, LinkedIn) usam o título e a descrição de `launch.html` (ligado)
+  ou de `index.html` (desligado).
+
+## Código e testes
+
+| | |
 |---|---|
-| `/em-breve` | a página de lançamento (para a rever com o interruptor desligado) |
-| `/institucional` | a home corporativa (para a rever com o interruptor ligado) |
-
-## Notas
-
-- Aplica-se à raiz e a endereços desconhecidos (que antes também mostravam a
-  home corporativa). Não se aplica à app nativa (Capacitor), que não teria forma
-  de iniciar sessão a partir da raiz.
-- Os links do menu corporativo para secções da home (`/#sobre`, …) vão para a
-  raiz; com a página ligada aterram nela. Em `/institucional` ficam na própria
-  rota.
-- Pré-visualizações de link (WhatsApp, LinkedIn) não correm JavaScript, por isso
-  continuam a usar o título e a descrição de `index.html`.
-- Código: `src/launch/launch.js` (interruptor), `src/pages/corporate/ComingSoon.jsx`
-  e `coming-soon.css` (página), `Landing` em `src/App.jsx` (decisão).
-  Testes: `src/launch/launch.test.js` e `src/App.launch.test.jsx`.
+| Interruptor | `frontend/public/launch.json`, `frontend/src/launch/launch.js` |
+| Página | `frontend/launch.html` + `src/launch/launch-page.js` (estática) · `src/pages/corporate/ComingSoon.jsx` (no SPA) · `coming-soon.css` |
+| Servidor Node | `backend/src/middleware/frontend.js` · teste `backend/tests/lancamento.test.js` |
+| Servidor Java | `ModoLancamento.java`, `SpaHandlerMapping.java` · teste `ModoLancamentoTest.java` |
+| SPA | `App.jsx` · testes `src/App.launch.test.jsx`, `src/launch/*.test.js` |

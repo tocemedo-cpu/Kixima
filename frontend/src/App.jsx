@@ -123,20 +123,11 @@ function PageLoading() {
 // mostra a home corporativa (ver pages/corporate/CorporateHome.jsx), cujo
 // próprio botão "Entrar" leva ao login real. Nenhum comportamento existente
 // para quem já está autenticado muda.
-//
-// PÁGINA DE LANÇAMENTO: enquanto public/launch.json tiver { "enabled": true }
-// (ver src/launch/launch.js e LANCAMENTO.md), quem não tem sessão vê, no lugar
-// da home corporativa, "Estamos a chegar… Brevemente!". Só substitui esta
-// montra: todas as outras rotas, o login, a API e os utilizadores com sessão
-// ficam exactamente como estavam. A home corporativa continua em /institucional
-// e a página de lançamento em /em-breve, qualquer que seja o interruptor.
-export function Landing() {
+function Landing() {
   const { user, loading } = useAuth();
-  const lancamento = useLancamento(!loading && !user);
   if (loading) return null;
   if (user) return <Navigate to={ROLE_HOME[user.role]} replace />;
-  if (lancamento === null) return null;
-  return lancamento ? <ComingSoon /> : <CorporateHome />;
+  return <CorporateHome />;
 }
 
 // A cesta vive acima do AppLayout para que a sidebar possa mostrar o contador
@@ -151,7 +142,21 @@ function Shell() {
   );
 }
 
+// MODO DE LANÇAMENTO (ver src/launch/launch.js e LANCAMENTO.md). Enquanto
+// public/launch.json tiver { "enabled": true}, QUALQUER endereço mostra só a
+// página "Estamos a chegar… Brevemente!": login, cadastro, dashboards, páginas
+// administrativas, rotas desconhecidas, e também quem já tem sessão. A guarda
+// está acima de TODAS as rotas — nenhuma delas chega a ser montada — e a API
+// não é tocada. Com "enabled": false não faz nada. (Os backends aplicam o mesmo
+// interruptor no servidor; este é o lado do SPA já carregado.)
 export default function App() {
+  const lancamento = useLancamento();
+  if (lancamento === null) return null; // a ler launch.json
+  if (lancamento) return <Suspense fallback={null}><ComingSoon /></Suspense>;
+  return <Aplicacao />;
+}
+
+function Aplicacao() {
   return (
     <Suspense fallback={<PageLoading />}>
     <Routes>
@@ -300,7 +305,6 @@ export default function App() {
       </Route>
 
       <Route path="/em-breve" element={<ComingSoon />} />
-      <Route path="/institucional" element={<CorporateHome />} />
       <Route path="/" element={<Landing />} />
       <Route path="*" element={<Landing />} />
     </Routes>
