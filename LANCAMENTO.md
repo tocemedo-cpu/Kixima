@@ -1,6 +1,6 @@
 # Página de lançamento de kixima.net
 
-**Estado entregue: DESLIGADA** (`"enabled": false`) — kixima.net mostra o site de sempre até alterares o valor.
+**Estado actual: LIGADA** (`"enabled": true`) — a raiz de kixima.net mostra a página de lançamento a quem não tem sessão. Para voltar ao site de sempre, põe `false`.
 
 Enquanto estiver ligada, quem abre **kixima.net** (a raiz `/`) sem sessão vê
 "Estamos a chegar… Brevemente!" em vez da home corporativa. Tudo o resto fica
