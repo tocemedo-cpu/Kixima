@@ -4,6 +4,7 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import { RequireAuth, RequireRole } from './auth/RequireAuth';
 import { ROLE_HOME } from './domain';
+import { useLancamento } from './launch/launch';
 import AppLayout from './components/AppLayout';
 import { CartProvider } from './pages/comprador/CartContext';
 import { RealtimeProvider } from './realtime/RealtimeContext';
@@ -14,6 +15,7 @@ import { RealtimeProvider } from './realtime/RealtimeContext';
 import LoginPage from './pages/shared/LoginPage';
 
 const CorporateHome = lazy(() => import('./pages/corporate/CorporateHome'));
+const ComingSoon = lazy(() => import('./pages/corporate/ComingSoon'));
 const Noticias = lazy(() => import('./pages/corporate/Noticias'));
 const Carreiras = lazy(() => import('./pages/corporate/Carreiras'));
 const Faq = lazy(() => import('./pages/corporate/Faq'));
@@ -140,7 +142,21 @@ function Shell() {
   );
 }
 
+// MODO DE LANÇAMENTO (ver src/launch/launch.js e LANCAMENTO.md). Enquanto
+// public/launch.json tiver { "enabled": true}, QUALQUER endereço mostra só a
+// página "Estamos a chegar… Brevemente!": login, cadastro, dashboards, páginas
+// administrativas, rotas desconhecidas, e também quem já tem sessão. A guarda
+// está acima de TODAS as rotas — nenhuma delas chega a ser montada — e a API
+// não é tocada. Com "enabled": false não faz nada. (Os backends aplicam o mesmo
+// interruptor no servidor; este é o lado do SPA já carregado.)
 export default function App() {
+  const lancamento = useLancamento();
+  if (lancamento === null) return null; // a ler launch.json
+  if (lancamento) return <Suspense fallback={null}><ComingSoon /></Suspense>;
+  return <Aplicacao />;
+}
+
+function Aplicacao() {
   return (
     <Suspense fallback={<PageLoading />}>
     <Routes>
@@ -288,6 +304,7 @@ export default function App() {
         </Route>
       </Route>
 
+      <Route path="/em-breve" element={<ComingSoon />} />
       <Route path="/" element={<Landing />} />
       <Route path="*" element={<Landing />} />
     </Routes>

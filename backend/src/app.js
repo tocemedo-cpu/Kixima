@@ -17,6 +17,7 @@ const config = require('./config/env');
 const prisma = require('./config/database');
 const logger = require('./config/logger');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { montarFrontend } = require('./middleware/frontend');
 const { apiLimiter, authLimiter, forgotPasswordLimiter, sensitiveLimiter } = require('./middleware/rateLimit');
 
 const authRoutes = require('./routes/authRoutes');
@@ -243,11 +244,8 @@ function resolveFrontendDist() {
 
 const { dir: frontendDist, checked: distChecked } = resolveFrontendDist();
 if (frontendDist) {
-  app.use(express.static(frontendDist));
-  app.get(/^(?!\/api\/).*/, (req, res, next) => {
-    if (req.method !== 'GET') return next();
-    return res.sendFile(path.join(frontendDist, 'index.html'));
-  });
+  // Ficheiros estáticos + fallback de SPA + modo de lançamento (ver middleware/frontend.js).
+  montarFrontend(app, express, frontendDist);
   if (!config.isTest) console.log(`[kixima] A servir o frontend (SPA) a partir de: ${frontendDist}`);
 } else if (!config.isTest) {
   console.warn(

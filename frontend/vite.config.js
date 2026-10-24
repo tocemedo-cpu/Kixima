@@ -1,12 +1,32 @@
 /// <reference types="vitest/config" />
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // KIXIMA — frontend dev server. A API do backend corre em http://localhost:4000
 // (ver kixima-backend/.env.development -> PORT=4000). O proxy evita problemas
 // de CORS em desenvolvimento.
+// Em desenvolvimento (vite dev) o /launch.json responde SEMPRE { "enabled": false }: o servidor de
+// dev e os testes e2e, que correm contra ele, não podem ficar presos na página de lançamento.
+// LAUNCH_DEV=on serve o ficheiro verdadeiro, para ver o modo de lançamento a trabalhar em dev.
+// (Num build/deploy o ficheiro é o de frontend/public/launch.json, sem este desvio.)
+function launchEmDev() {
+  return {
+    name: 'kixima-launch-dev',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/launch.json', (req, res, next) => {
+        if (process.env.LAUNCH_DEV === 'on') return next();
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Cache-Control', 'no-store');
+        res.end('{"enabled":false}');
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), launchEmDev()],
   server: {
     port: 5173,
     proxy: {
@@ -26,6 +46,9 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      // Duas páginas: a app (index.html) e a página de lançamento estática (launch.html),
+      // que os backends servem no lugar da app com o modo de lançamento ligado.
+      input: { main: fileURLToPath(new URL('./index.html', import.meta.url)), launch: fileURLToPath(new URL('./launch.html', import.meta.url)) },
       output: {
         // Separa as bibliotecas de terceiros em chunks próprios e cacheáveis —
         // mudam raramente, pelo que o browser reutiliza-os entre deploys.

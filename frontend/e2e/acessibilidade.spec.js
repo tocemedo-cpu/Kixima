@@ -23,7 +23,7 @@ async function analisar(page) {
   return r.violations;
 }
 
-const PUBLICAS = [['login', '/login'], ['planos', '/planos'], ['cadastro', '/cadastro']];
+const PUBLICAS = [['login', '/login'], ['planos', '/planos'], ['cadastro', '/cadastro'], ['em-breve', '/em-breve']];
 
 for (const [nome, caminho] of PUBLICAS) {
   test(`sem barreiras: ${nome}`, async ({ page }) => {
