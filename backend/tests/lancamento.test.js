@@ -176,3 +176,111 @@ describe('interruptor em tempo de execução e falhas', () => {
     expect(l.ligado()).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// ACESSO DA EQUIPA — a chave secreta (LAUNCH_BYPASS_KEY) e o cookie que deixam a equipa ver a app
+// com o modo de lançamento ligado, sem abrir nada ao público.
+// ---------------------------------------------------------------------------------------------
+describe('acesso da equipa', () => {
+  const CHAVE = 'chave-secreta-da-equipa-123456';
+  const cookieDe = (r) => (r.headers['set-cookie'] || []).find((c) => c.startsWith('kixima_equipa='));
+  const valorDo = (c) => c.split(';')[0];
+
+  async function entrar(app, caminho = '/login') {
+    const r = await request(app).get(`${caminho}?acesso=${CHAVE}`);
+    return { r, cookie: valorDo(cookieDe(r)) };
+  }
+
+  test('chave certa: grava o cookie (httpOnly, lax, 30 dias, HMAC e não a chave) e redirecciona sem o parâmetro', async () => {
+    const r = await request(montar({ chaveEquipa: CHAVE })).get(`/login?acesso=${CHAVE}&next=%2Fsistema`);
+    expect(r.status).toBe(302);
+    expect(r.headers.location).toBe('/login?next=%2Fsistema');
+    const c = cookieDe(r);
+    expect(c).toMatch(/HttpOnly/i);
+    expect(c).toMatch(/SameSite=Lax/i);
+    expect(c).toMatch(/Path=\//);
+    expect(c).toMatch(/Max-Age=2592000|Expires=/i);
+    expect(c).not.toContain(CHAVE); // o cookie nunca leva a chave
+    expect(r.headers['cache-control']).toBe('no-store');
+  });
+
+  test('com o cookie: a equipa vê a aplicação em qualquer página e o /launch.json diz "desligado"', async () => {
+    const app = montar({ chaveEquipa: CHAVE });
+    const { cookie } = await entrar(app);
+    for (const p of ['/', '/index.html', '/login', '/cadastro', '/sistema/auditoria', '/comprador', '/nao-existe', '/assets/velho.js']) {
+      const r = await request(app).get(p).set('Cookie', cookie);
+      expect(r.status).toBe(200);
+      expect(r.text).toContain('KIXIMA APP');
+      expect(r.text).not.toContain('ESTAMOS A CHEGAR');
+    }
+    const j = await request(app).get('/launch.json').set('Cookie', cookie);
+    expect(j.body).toEqual({ enabled: false });
+    expect(j.headers['cache-control']).toBe('no-store');
+  });
+
+  test('o público (sem cookie) continua a ver só a página em breve, e o launch.json verdadeiro', async () => {
+    const app = montar({ chaveEquipa: CHAVE });
+    for (const p of ['/', '/login', '/sistema', '/nao-existe']) {
+      expect((await request(app).get(p)).text).toContain('ESTAMOS A CHEGAR');
+    }
+    expect(JSON.parse((await request(app).get('/launch.json')).text)).toEqual({ enabled: true });
+  });
+
+  test('chave errada, em branco ou parcial: ignorada, sem cookie, sem pistas', async () => {
+    const app = montar({ chaveEquipa: CHAVE });
+    for (const errada of ['', 'x', CHAVE.slice(0, -1), `${CHAVE}x`, 'sair-2', encodeURIComponent(CHAVE.toUpperCase())]) {
+      const r = await request(app).get(`/login?acesso=${errada}`);
+      expect(r.status).toBe(200);
+      expect(r.text).toContain('ESTAMOS A CHEGAR');
+      expect(cookieDe(r)).toBeUndefined();
+    }
+  });
+
+  test('cookie falsificado, de outra chave ou truncado não vale', async () => {
+    const app = montar({ chaveEquipa: CHAVE });
+    const { cookie } = await entrar(app);
+    const outra = montar({ chaveEquipa: 'outra-chave-completamente-diferente' });
+    for (const c of ['kixima_equipa=abc', 'kixima_equipa=', cookie.slice(0, -4), cookie.replace(/.$/, (d) => (d === '0' ? '1' : '0'))]) {
+      expect((await request(app).get('/login').set('Cookie', c)).text).toContain('ESTAMOS A CHEGAR');
+    }
+    expect((await request(outra).get('/login').set('Cookie', cookie)).text).toContain('ESTAMOS A CHEGAR'); // mudar a chave revoga tudo
+  });
+
+  test('?acesso=sair apaga o cookie e volta a página em breve', async () => {
+    const app = montar({ chaveEquipa: CHAVE });
+    const { cookie } = await entrar(app);
+    const r = await request(app).get('/sistema?acesso=sair').set('Cookie', cookie);
+    expect(r.status).toBe(302);
+    expect(r.headers.location).toBe('/sistema');
+    expect(cookieDe(r)).toMatch(/kixima_equipa=;|Expires=Thu, 01 Jan 1970/i);
+  });
+
+  test('sem LAUNCH_BYPASS_KEY, ou com uma chave curta, o acesso da equipa está desligado (modo estrito)', async () => {
+    for (const chave of [undefined, '', 'curta', 'quinze-chars-ab']) {
+      const app = montar({ chaveEquipa: chave === undefined ? '' : chave });
+      const r = await request(app).get(`/login?acesso=${chave || 'qualquer'}`);
+      expect(r.status).toBe(200);
+      expect(r.text).toContain('ESTAMOS A CHEGAR');
+      expect(cookieDe(r)).toBeUndefined();
+    }
+  });
+
+  test('a API e as sondas não dependem do cookie nem do parâmetro', async () => {
+    const app = montar({ chaveEquipa: CHAVE });
+    expect((await request(app).get(`/api/ping?acesso=${CHAVE}`)).body).toEqual({ pong: true });
+    expect((await request(app).get(`/health?acesso=${CHAVE}`)).body).toEqual({ status: 'ok' });
+    expect(cookieDe(await request(app).get(`/api/ping?acesso=${CHAVE}`))).toBeUndefined();
+  });
+
+  test('só GET/HEAD: um POST com ?acesso= não grava nada', async () => {
+    const r = await request(montar({ chaveEquipa: CHAVE })).post(`/login?acesso=${CHAVE}`).send({});
+    expect(cookieDe(r)).toBeUndefined();
+    expect(r.status).toBe(404);
+  });
+
+  test('desligado o modo, o parâmetro é inofensivo e a app serve-se normalmente', async () => {
+    escreverLancamento({ enabled: false });
+    const r = await request(montar({ chaveEquipa: CHAVE })).get('/login');
+    expect(r.text).toContain('KIXIMA APP');
+  });
+});

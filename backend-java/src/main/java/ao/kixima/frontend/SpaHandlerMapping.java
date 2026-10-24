@@ -112,7 +112,7 @@ public class SpaHandlerMapping extends AbstractHandlerMapping {
         // MODO DE LANÇAMENTO: com launch.json {"enabled": true}, qualquer página — "/", "/index.html",
         // /login, dashboards, administração, rotas desconhecidas — é a página de lançamento, antes de
         // se olhar para ficheiros ou para o fallback. Só chega aqui o que não é API/sondas/actuator.
-        if (ModoLancamento.ePagina(caminho) && modoLancamento.aplicar()) {
+        if (!AcessoEquipaFilter.temAcesso(request) && ModoLancamento.ePagina(caminho) && modoLancamento.aplicar()) {
             return paginaDeLancamento(request);
         }
 
@@ -123,7 +123,7 @@ public class SpaHandlerMapping extends AbstractHandlerMapping {
             return relativo.startsWith(ASSETS) ? assets : estaticos;
         }
         // Ficheiro inexistente com extensão (ex.: /assets/velho.js): no modo de lançamento também não recebe a app.
-        if (modoLancamento.aplicar()) return paginaDeLancamento(request);
+        if (!AcessoEquipaFilter.temAcesso(request) && modoLancamento.aplicar()) return paginaDeLancamento(request);
         // History fallback: qualquer outra rota de navegação é a app (React Router decide lá dentro).
         request.setAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE, FrontendDist.INDEX);
         return index;

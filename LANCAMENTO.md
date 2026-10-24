@@ -29,6 +29,28 @@ site normal.
    `true` mostra só `ComingSoon`, e nenhuma rota é montada. Cobre separadores que já estavam abertos
    (volta a ler quando a janela recupera o foco e de 5 em 5 minutos) e o servidor de desenvolvimento.
 
+## Acesso da equipa (trabalhar no site com o modo ligado)
+
+Com o modo ligado o público só vê a página em breve. Para a **equipa** trabalhar no site real há um
+acesso por **chave secreta**, que nunca vai para o repositório:
+
+1. No Render, em **Environment** de cada serviço (`kixima-vju7`, `kixima-txjr`), cria a variável
+   `LAUNCH_BYPASS_KEY` com uma chave longa e aleatória (mínimo 16 caracteres; ex.: `openssl rand -hex 24`)
+   e guarda-a num gestor de segredos. Sem esta variável, ou com uma chave curta, o acesso da equipa fica
+   **desligado** e o modo é estrito para toda a gente.
+2. Cada pessoa da equipa abre **uma vez**, no seu browser, qualquer endereço com a chave:
+   `https://kixima.net/login?acesso=<A_CHAVE>`
+3. O servidor grava um cookie (`kixima_equipa`, httpOnly, 30 dias) e redirecciona para `/login` **sem** a
+   chave no endereço. Daí em diante, nesse browser, o site funciona normalmente (login, dashboards,
+   administração). Outros browsers e o público continuam a ver só a página em breve.
+4. `https://kixima.net/?acesso=sair` apaga o cookie nesse browser.
+
+**Segurança.** O cookie guarda um HMAC da chave, não a chave. Mudar `LAUNCH_BYPASS_KEY` revoga o acesso de
+todos de uma vez. A chave aparece no endereço da primeira visita (e por isso nos registos de pedidos do
+Render): trata-a como uma senha e muda-a se for partilhada fora da equipa. Uma chave errada é ignorada em
+silêncio. A API nunca depende deste acesso. Código: `acessoEquipa` em `backend/src/middleware/frontend.js` e
+`AcessoEquipaFilter.java`; testes em `backend/tests/lancamento.test.js` e `AcessoEquipaFilterTest.java`.
+
 ## O que NÃO é bloqueado
 
 - A API (`/api/**`), o `/health`, o `/ready`, o `/socket.io`/`/ws`, o actuator e tudo o que os
@@ -37,8 +59,7 @@ site normal.
 - Outros métodos que não GET/HEAD.
 - A app nativa (Capacitor) traz o seu próprio build e não é kixima.net: nunca mostra a página.
 
-Consequência a ter presente: com o modo ligado **ninguém consegue usar o site pelo browser**, nem
-administradores. A API continua a responder, por isso integrações, webhooks e sondas não são afectadas.
+Consequência a ter presente: com o modo ligado **o público não consegue usar o site pelo browser**; a equipa usa o acesso da secção anterior. A API continua a responder, por isso integrações, webhooks e sondas não são afectadas.
 
 ## Rever a página com o modo desligado
 
