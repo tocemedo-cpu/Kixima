@@ -1,6 +1,8 @@
 // src/components/AppLayout.jsx
-// Shell do mockup: navbar full-width no topo, menu escuro numerado à esquerda,
-// conteúdo à direita. Aplicado a todas as personas.
+// Shell da aplicação: navbar full-width no topo, menu HORIZONTAL por baixo
+// (MainNav) e o conteúdo ocupando a largura toda. Em ecrãs estreitos (até
+// 900px) o menu volta a ser a gaveta lateral (Sidebar), aberta pelo
+// hambúrguer da navbar. Aplicado a todas as personas.
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
@@ -10,7 +12,9 @@ import { api } from '../api/client';
 import NotificationPanel from './NotificationPanel';
 import SubscriptionBanner from './SubscriptionBanner';
 import Sidebar from './Sidebar';
+import MainNav from './MainNav';
 import Navbar from './Navbar';
+import { useMediaQuery } from './useMediaQuery';
 import { useCart } from '../pages/comprador/CartContext';
 import { useRealtime } from '../realtime/RealtimeContext';
 import { Icon } from './icons';
@@ -24,6 +28,9 @@ export default function AppLayout() {
   const [notifications, setNotifications] = useState([]);
   const [porLer, setPorLer] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Até 900px não há espaço para o menu em linha: usa-se a gaveta. O limite é o
+  // mesmo das regras de gaveta em global.css/bancada.css.
+  const compacto = useMediaQuery('(max-width: 900px)');
   const { count: cartCount } = useCart();
   const { socket } = useRealtime();
   // Três contadores SEPARADOS do sino de notificações genérico — "Suporte: X
@@ -113,6 +120,7 @@ export default function AppLayout() {
   // página: um sino que diz "3" e ao paginar passa a dizer "1" parece uma
   // avaria. Ao marcar como lida desconta-se aqui, para o número reagir já.
   const unread = porLer;
+  const contadores = { suporte: suporteNaoLidas, chatComercial: comercialNaoLidas, alertas: alertasAbertos };
 
   return (
     <div className={`app-shell${menuOpen ? ' menu-open' : ''}`}>
@@ -120,7 +128,7 @@ export default function AppLayout() {
           ordem de tabulação segue a ordem do DOM, por isso um salto colocado
           depois da barra superior só se alcança já tendo passado por ela — que
           é precisamente o que ele existe para evitar. Sem isto, quem navega por
-          teclado percorre os doze itens da barra lateral em CADA página antes
+          teclado percorre todos os itens do menu em CADA página antes
           de chegar ao que veio ver. Só aparece quando recebe o foco. */}
       <a href="#conteudo" className="skip-link">{t('Saltar para o conteúdo')}</a>
 
@@ -135,13 +143,19 @@ export default function AppLayout() {
         onLogout={logout}
       />
 
-      <Sidebar
-        items={items} cartCount={cartCount}
-        badges={{ suporte: suporteNaoLidas, chatComercial: comercialNaoLidas, alertas: alertasAbertos }}
-        grupo={ROLE_LABELS[user.role]}
-        onLogout={logout} onNavigate={() => setMenuOpen(false)}
-      />
-      <div className="sb-scrim" onClick={() => setMenuOpen(false)} />
+      {compacto ? (
+        <>
+          <Sidebar
+            items={items} cartCount={cartCount}
+            badges={contadores}
+            grupo={ROLE_LABELS[user.role]}
+            onLogout={logout} onNavigate={() => setMenuOpen(false)}
+          />
+          <div className="sb-scrim" onClick={() => setMenuOpen(false)} />
+        </>
+      ) : (
+        <MainNav items={items} cartCount={cartCount} badges={contadores} onLogout={logout} />
+      )}
 
       <main className="content conteudo" id="conteudo" tabIndex={-1}>
         {notifOpen ? (

@@ -532,3 +532,77 @@ input[type="checkbox"] { accent-color: var(--solido); }
   thead th, .bz-table th { padding: 8px 12px; }
   tbody td, .bz-table td { padding: 10px 12px; }
 }
+
+/* ---------- navegação horizontal (computador) ----------
+   O menu deixou de ser uma coluna à esquerda: é uma barra por baixo da barra
+   de aplicação (MainNav). Abaixo de 901px continua a gaveta (.sb.lateral,
+   regras acima) — o AppLayout só renderiza uma das duas. */
+.mainnav {
+  grid-area: menu;
+  position: sticky; top: 58px; z-index: 39;
+  display: flex; align-items: stretch; gap: 8px;
+  min-height: 44px; padding: 0 14px;
+  background: var(--branco);
+  border-bottom: 1px solid var(--linha);
+}
+.mn-list, .mn-tail { list-style: none; margin: 0; padding: 0; display: flex; align-items: stretch; column-gap: 2px; }
+.mn-list { flex: 1 1 0; min-width: 0; }
+.mn-tail { flex: none; margin-left: auto; padding-left: 8px; border-left: 1px solid var(--linha); }
+.mn-li { position: relative; flex: none; display: flex; }
+.mn-item {
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 0 12px; border: 0; border-bottom: 2px solid transparent; border-radius: 0;
+  background: none; cursor: pointer; text-decoration: none;
+  font: inherit; font-size: 13px; font-weight: 400; color: var(--texto);
+}
+.mn-item:hover { background: var(--hover); }
+.mn-ico { color: var(--suave); flex: none; }
+.mn-item.mn-active, .mn-item.mn-active-parent { color: var(--preto); font-weight: 600; border-bottom-color: var(--vermelho); }
+.mn-item.mn-active .mn-ico, .mn-item.mn-active-parent .mn-ico { color: var(--vermelho); }
+.mn-arrow { color: var(--ténue); transform: rotate(90deg); transition: transform .15s ease; }
+.mn-toggle[aria-expanded="true"] .mn-arrow { transform: rotate(-90deg); }
+.mn-action:hover { color: var(--vermelho); }
+.mn-badge {
+  background: var(--cta); color: var(--sobre-cta);
+  font-family: var(--font-mono); font-size: 8.5px; font-weight: 500; padding: 2px 5px; border-radius: 7px;
+}
+.mn-more > .mn-toggle { min-width: 84px; justify-content: center; }
+
+/* Menu suspenso (grupos e "Mais"). */
+.mn-drop {
+  position: absolute; top: 100%; left: 0; z-index: 45;
+  min-width: 230px; max-height: calc(100vh - 120px); overflow-y: auto;
+  padding: 6px; display: flex; flex-direction: column; gap: 1px;
+  background: var(--branco); border: 1px solid var(--linha); border-top: 0;
+  border-radius: 0 0 var(--r-btn) var(--r-btn);
+  box-shadow: 0 12px 28px rgba(0,0,0,.14);
+}
+.mn-drop-right { left: auto; right: 0; }
+.mn-sub {
+  display: block; padding: 7px 12px; border-radius: var(--r-btn);
+  font-size: 12.5px; color: var(--suave); text-decoration: none; white-space: nowrap;
+}
+.mn-sub:hover { color: var(--preto); background: var(--hover); }
+.mn-sub.mn-active { color: var(--preto); background: var(--areia); font-weight: 600; box-shadow: inset 3px 0 0 var(--vermelho); }
+.mn-item-drop { width: 100%; height: 34px; justify-content: flex-start; border-bottom: 0; border-radius: var(--r-btn); }
+.mn-item-drop.mn-active { background: var(--areia); box-shadow: inset 3px 0 0 var(--vermelho); }
+.mn-drop-grupo { display: flex; flex-direction: column; gap: 1px; padding-top: 4px; }
+.mn-drop-label {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ténue); padding: 8px 12px 4px;
+}
+
+/* Sem espaço para ícones, ficam só os rótulos (mais itens à vista). */
+@media (max-width: 1279px) { .mn-ico { display: none; } .mn-item { padding: 0 10px; } }
+
+@media (min-width: 901px) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 58px auto 1fr;
+    grid-template-areas: "navbar" "menu" "content";
+  }
+  .app-shell > .content.conteudo { width: 100%; margin-inline: auto; }
+  /* O que fica colado ao topo tem agora a barra do menu por cima também. */
+  .market-aside { top: calc(58px + 44px + 30px); }
+}
+@media (prefers-reduced-motion: reduce) { .mn-arrow { transition: none; } }

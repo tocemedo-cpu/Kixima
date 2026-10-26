@@ -30,7 +30,9 @@ A identidade é a da **Proposta 04 · Bancada** (Manual v1.0 da KIXIMA), com os
   `--paper-*`, `--navy-*`, `--amber-*`, `--teal-*`, `--line`…) lêem agora
   essas variáveis: todos os ecrãs mudam de fundo sem tocar no seu CSS.
 - `src/styles/bancada.css` — os componentes da proposta (barra preta com o fio
-  Samakaka, lateral branca com o item activo em areia e barra vermelha,
+  Samakaka, navegação horizontal branca (`MainNav`) com o item activo sublinhado a
+  vermelho — os grupos abrem em menu suspenso e o que não cabe vai para «Mais»;
+  abaixo de 901px volta a ser a gaveta lateral (`Sidebar`) —,
   mosaicos, tabelas com cabeçalho mono, selos `.est`, botões `.bt`, facetas,
   campo de pesquisa) aplicados às classes que a aplicação já usa.
 - `src/tema/TemaContext.jsx` — a escolha do fundo (`localStorage`
@@ -69,7 +71,7 @@ src/
   auth/                  # AuthContext (login/logout/sessão) + guards de rota
   components/             # componentes partilhados (tabela, badge, layout…)
   domain.js                # rótulos PT, mapeamentos de estado -> cor do badge
-  navConfig.js              # itens da sidebar por persona
+  data/sidebar.js           # itens do menu por persona (horizontal e gaveta móvel)
   pages/
     shared/                  # login, cadastro público, notificações, perfil, ajuda,
                               #   e o detalhe de PO (partilhado entre 4 personas)
