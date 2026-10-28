@@ -55,6 +55,13 @@ describe('Cotações (RFQ)', () => {
     expect(res.status).toBe(400);
   });
 
+  test('o Admin do Sistema (sem empresa) recebe uma lista vazia, nunca um 500', async () => {
+    const adminToken = await login('admin@kixima.co.ao');
+    const res = await auth(adminToken).get('/api/quotes');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
   test('um fornecedor não pode criar pedidos de cotação (403)', async () => {
     const res = await auth(fornecedorToken).post('/api/quotes').send({ supplierCompanyId, items: [{ productId, quantity: 1 }] });
     expect(res.status).toBe(403);

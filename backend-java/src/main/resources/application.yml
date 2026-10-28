@@ -34,6 +34,12 @@ spring:
       # do Node em produção enquanto os dois backends coexistem (plano,
       # secção 5 "Base de dados durante a sobreposição").
       maximum-pool-size: ${DB_POOL_MAX:5}
+      # Quanto um pedido espera por uma ligação ANTES de falhar. O valor por omissão do Hikari (30 s) fazia
+      # com que, com a base inacessível (parada, rede, senha recusada, pooler sem o utilizador), um simples
+      # login ficasse pendurado MAIS de 40 s — até o proxy do Render desistir — e só depois devolvesse um
+      # erro sem explicação. Com 5 s falha depressa, como 503 (GlobalExceptionHandler.baseIndisponivel), e a
+      # causa real fica no registo. Sobe-se com DB_CONNECTION_TIMEOUT_MS se a rede até à base for lenta.
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:5000}
 
   jpa:
     hibernate:

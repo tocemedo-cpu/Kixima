@@ -25,20 +25,31 @@ function launchEmDev() {
   };
 }
 
+// Para onde o servidor de desenvolvimento reencaminha a API. Por omissão o backend Node (porta 4000); para
+// trabalhar contra o backend Java (porta 4001) usa-se `npm run dev:java`, ou API_PROXY_TARGET=http://localhost:4001.
+const alvoApi = process.env.API_PROXY_TARGET || 'http://localhost:4000';
+
 export default defineConfig({
   plugins: [react(), launchEmDev()],
   server: {
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: alvoApi,
         changeOrigin: true,
       },
       // Chat de Suporte / Chat Comercial em tempo real — mesma origem lógica
       // que a API, precisa de `ws: true` porque é uma ligação WebSocket, não
       // um pedido HTTP normal.
       '/socket.io': {
-        target: 'http://localhost:4000',
+        target: alvoApi,
+        changeOrigin: true,
+        ws: true,
+      },
+      // Tempo real STOMP do backend Java (VITE_REALTIME=stomp). Sem esta entrada o próprio Vite
+      // atendia o /ws e o handshake nunca chegava ao Java.
+      '/ws': {
+        target: alvoApi,
         changeOrigin: true,
         ws: true,
       },

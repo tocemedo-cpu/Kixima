@@ -1,6 +1,6 @@
 // src/realtime/RealtimeContext.jsx
-// Uma única ligação Socket.IO por sessão — o Chat de Suporte, o Chat Comercial
-// e as notificações partilham-na, cada um só ouvindo os eventos que lhe dizem
+// Uma única ligação de tempo real por sessão (Socket.IO no backend Node, STOMP no Java) — o Chat de Suporte,
+// o Chat Comercial e as notificações partilham-na, cada um só ouvindo os eventos que lhe dizem
 // respeito. Ligado ao ciclo de vida da sessão: liga quando há utilizador
 // autenticado, desliga quando deixa de haver (logout, sessão expirada).
 //
@@ -15,6 +15,11 @@ import { apiBaseUrl, bearerNativoAtual } from '../api/client';
 
 const RealtimeContext = createContext(null);
 
+// O transporte escolhe-se NA COMPILAÇÃO: a imagem do backend Java (backend-java/Dockerfile) compila o SPA com
+// VITE_REALTIME=stomp, porque o Java só fala STOMP; a do Node fica com o Socket.IO por omissão. O Vite substitui
+// a constante e remove o ramo que não se usa (e a biblioteca respectiva) do pacote final.
+const USAR_STOMP = import.meta.env.VITE_REALTIME === 'stomp';
+
 export function RealtimeProvider({ children }) {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
@@ -28,6 +33,28 @@ export function RealtimeProvider({ children }) {
       setSocket(null);
       setConnected(false);
       return undefined;
+    }
+
+    if (USAR_STOMP) {
+      // STOMP (backend Java): mesma sessão (cookie httpOnly no upgrade, ou Bearer na app nativa) e a mesma
+      // base da API. Carregado à parte para não pesar no pacote do Node, onde este ramo nem existe.
+      let cancelado = false;
+      import('./stompSocket').then(({ criarSocketStomp }) => {
+        if (cancelado) return;
+        const s = criarSocketStomp({
+          base: apiBaseUrl(),
+          bearer: bearerNativoAtual(),
+          aoLigar: () => setConnected(true),
+          aoDesligar: () => setConnected(false),
+        });
+        socketRef.current = s;
+        setSocket(s);
+      });
+      return () => {
+        cancelado = true;
+        socketRef.current?.disconnect();
+        socketRef.current = null;
+      };
     }
 
     // withCredentials envia o MESMO cookie httpOnly de sessão que a API usa.

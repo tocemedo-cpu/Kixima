@@ -63,6 +63,26 @@ Certifique-se de que o `kixima-backend` está a correr em `localhost:4000`
 utilizadores de demonstração. A página de login já vem com atalhos para
 preencher as credenciais de cada persona.
 
+### Contra o backend Java (`backend-java/`)
+
+O frontend fala com qualquer um dos dois backends: a API (REST) é a mesma. O que muda é **para onde o servidor de
+desenvolvimento reencaminha** e **o transporte do tempo real** (chat e notificações): o Node usa Socket.IO, o Java usa
+STOMP em `/ws`. O transporte escolhe-se na compilação por `VITE_REALTIME` (`stomp` para o Java; por omissão é Socket.IO).
+
+```bash
+# 1) Backend Java (porta 4001), com a base de dados e os segredos no ambiente — nunca em ficheiros versionados:
+#    DATABASE_URL_JDBC (+ DATABASE_USER, DATABASE_PASSWORD) ou a DATABASE_URL do Node, e JWT_SECRET
+cd backend-java && mvn spring-boot:run          # ou: java -jar target/kixima-backend-*.jar
+
+# 2) Frontend em desenvolvimento, a apontar ao Java (proxy para :4001 e STOMP):
+cd frontend && npm run dev:java                 # http://localhost:5173
+```
+
+`npm run dev:java` equivale a `API_PROXY_TARGET=http://localhost:4001 VITE_REALTIME=stomp vite` (o `cross-env` faz o mesmo
+no Windows). Para outro alvo: `API_PROXY_TARGET=http://host:porta npm run dev`. Em produção o SPA é servido pelo próprio
+backend na mesma origem (ver `backend-java/Dockerfile`, que já compila com `VITE_REALTIME=stomp`), por isso não há CORS.
+Se o frontend ficar noutra origem, essa origem tem de constar de `CORS_ORIGINS` no backend.
+
 ## Estrutura
 
 ```

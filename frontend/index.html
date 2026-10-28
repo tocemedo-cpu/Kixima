@@ -19,12 +19,9 @@
     <!-- Fundo escolhido (Claro / Escuro 1 / Escuro 2) aplicado antes do primeiro
          paint, para não haver um clarão do fundo errado; sem escolha guardada o
          CSS segue o sistema (prefers-color-scheme). Ver src/tema/TemaContext.jsx. -->
-    <script>
-      try {
-        var t = localStorage.getItem('kixima.tema');
-        if (t === 'claro' || t === 'escuro-1' || t === 'escuro-2') document.documentElement.setAttribute('data-tema', t);
-      } catch (e) {}
-    </script>
+    <!-- Ficheiro e não <script> inline: a CSP do servidor (script-src 'self') recusa scripts inline, e o
+         navegador registava um erro em TODAS as páginas. Ver public/tema-init.js. -->
+    <script src="/tema-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

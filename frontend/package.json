@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:java": "cross-env API_PROXY_TARGET=http://localhost:4001 VITE_REALTIME=stomp vite",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -28,6 +29,7 @@
     "@fontsource-variable/sora": "^5.2.8",
     "@fontsource/ibm-plex-mono": "^5.2.7",
     "@sentry/react": "^10.69.0",
+    "@stomp/stompjs": "^7.5.0",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -42,6 +44,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.3",
     "@vitejs/plugin-react": "^4.3.1",
+    "cross-env": "^10.1.0",
     "jsdom": "^30.0.1",
     "prisma": "^5.22.0",
     "vite": "^5.4.6",

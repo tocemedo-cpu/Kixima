@@ -13,6 +13,9 @@ router.use(authenticate);
 router.get('/', async (req, res) => {
   const { role, companyId } = req.user;
   const status = req.query.status;
+  // O Admin do Sistema não pertence a nenhuma empresa (companyId null): o Prisma recusa `where: { buyerCompanyId: null }`
+  // numa coluna obrigatória e isto saía como 500. Sem empresa não há pedidos de cotação seus — lista vazia, como no Java.
+  if (!companyId) return res.json([]);
   if (role === 'FORNECEDOR' || role === 'COMPANY_ADMIN') {
     return res.json(await quoteService.listForSupplier(companyId, { status }));
   }
