@@ -19,3 +19,6 @@ build/
 *.log
 .DS_Store
 coverage/
+
+# Ficheiros carregados em testes locais (registos de empresa de teste)
+/uploads/
